@@ -1,0 +1,53 @@
+{
+  "configuration": {
+    "env": {
+      "params": {
+        "app.name": "test-sem-app"
+      },
+      "logging": {
+        "level": "trace",
+        "size": "5M",
+        "max-files": "3",
+        "console": "true"
+      }
+    },
+    "control": {
+      "def": [
+        {
+          "resource": {
+            "name": "dummy-resource-1",
+            "class": "com::watergate::core::dummy_resource",
+            "max_concurrency": "8"
+          },
+          "priorities": "2"
+        },
+        {
+          "resource": {
+            "name": "fs-resource-0",
+            "class": "com::watergate::core::io::filesystem_driver",
+            "params": {
+              "fs.path.root": "/private/tmp",
+              "fs.quota.bytes": "2000",
+              "fs.quota.lease.time": "200",
+              "fs.concurrency.max": "8"
+            }
+          },
+          "priorities": "3"
+        }
+      ],
+      "manager": {
+        "lock.reset.time": "50s",
+        "record.reset.time": "300s"
+      }
+    },
+    "test-lock-client": {
+      "process": "/work/dev/wookler/watergate/test/cmake/test_lock_client",
+      "process.count": "12",
+      "sleep.time": "30",
+      "lock.tries": "100"
+    },
+    "test-fs-writer": {
+      "data-file": "/work/dev/wookler/watergate/test/data/fs-data.txt"
+    }
+  }
+}

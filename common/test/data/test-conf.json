@@ -1,0 +1,42 @@
+{
+  "configuration": {
+    "env": {
+      "params": {
+        "app.name": "test-config-app"
+      },
+      "logging": {
+        "level": "debug",
+        "size": "5M",
+        "max-files": "3",
+        "mode": "debug",
+        "console": "true"
+      }
+    },
+    "test-list": [
+      "value1",
+      "value2",
+      "value3",
+      {
+        "nested": {
+          "params": {
+            "key1": "value1",
+            "key2": "value2",
+            "key3": "value3",
+            "key4": "value4"
+          },
+          "string": "string_value"
+        }
+      }
+    ],
+    "nested": {
+      "params": {
+        "key1": "value1",
+        "key2": "1000",
+        "key3": "99.12983",
+        "key4": "true",
+        "key5": "2016-09-14 19:28"
+      },
+      "string": "string_value"
+    }
+  }
+}

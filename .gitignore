@@ -27,3 +27,22 @@
 *.exe
 *.out
 *.app
+
+/**/.idea/
+/**/.vscode/
+*.swp
+*.iml
+
+# Java
+/**/target/
+*.class
+
+/**/cmake/
+build/
+
+cscope*
+
+/.clang_complete
+/.cxx_tags
+/.yavide_proj
+/.yavide_session

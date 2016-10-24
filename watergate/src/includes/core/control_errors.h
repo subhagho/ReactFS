@@ -1,0 +1,10 @@
+//
+// Created by Subhabrata Ghosh on 23/09/16.
+//
+
+#ifndef WATERGATE_CONTROL_ERRORS_H
+#define WATERGATE_CONTROL_ERRORS_H
+
+#define ERR_CORE_CONTROL_TIMEOUT -9000
+
+#endif //WATERGATE_CONTROL_ERRORS_H
