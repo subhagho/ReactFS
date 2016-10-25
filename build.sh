@@ -1,9 +1,9 @@
 #!/bin/bash
 
-CMAKE=/Applications/CMake.app/Contents/bin/cmake
-#CMAKE="cmake -DCMAKE_BUILD_TYPE=Debug"
+CMAKE="/Applications/CMake.app/Contents/bin/cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
+#CMAKE="cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
 
-DIRS="common watergate"
+DIRS="common watergate core"
 DIRS_TO_BUILD=""
 
 for dir in $DIRS;

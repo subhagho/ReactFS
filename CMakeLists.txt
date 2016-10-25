@@ -8,3 +8,5 @@ add_subdirectory(common/test)
 
 add_subdirectory(watergate)
 add_subdirectory(watergate/test)
+
+add_subdirectory(core)
