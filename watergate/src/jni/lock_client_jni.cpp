@@ -3,14 +3,16 @@
 //
 
 #include "./includes/lock_client_jni.h"
-#include "includes/common/common.h"
-#include "includes/core/control_def.h"
-#include "includes/core/init_utils.h"
+#include "common/includes/common.h"
+#include "watergate/includes/control_def.h"
+#include "watergate/includes/init_utils.h"
+#include "common/includes/init_utils.h"
 
 JNIEXPORT void JNICALL Java_com_watergate_library_LockControlClient_create
         (JNIEnv *jniEnv, jobject obj, jstring configpath) {
     try {
         const __env *env = init_utils::get_env();
+
         CHECK_NOT_NULL(env);
         CHECK_ENV_STATE(env);
 

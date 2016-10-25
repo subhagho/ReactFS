@@ -7,10 +7,11 @@
 #define CATCH_CONFIG_MAIN
 
 #include <iostream>
-#include "../include/catch.hpp"
-#include "includes/common/__env.h"
-#include "../common/test_common.h"
-#include "includes/core/lock_table.h"
+#include "include/catch.hpp"
+#include "common/includes/__env.h"
+#include "common/test/test_common.h"
+#include "watergate/includes/lock_table.h"
+#include "watergate/includes/init_utils.h"
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 

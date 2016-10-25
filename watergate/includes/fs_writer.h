@@ -7,11 +7,11 @@
 
 #include <string>
 
-#include "includes/common/common.h"
-#include "includes/common/file_utils.h"
-#include "includes/core/control_def.h"
-#include "includes/core/init_utils.h"
-#include "includes/core/__fs_base.h"
+#include "common/includes/common.h"
+#include "common/includes/file_utils.h"
+#include "control_def.h"
+#include "init_utils.h"
+#include "__fs_base.h"
 
 using namespace com::watergate::core;
 using namespace com::watergate::core::io;

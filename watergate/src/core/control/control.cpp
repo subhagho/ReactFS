@@ -2,10 +2,10 @@
 // Created by Subhabrata Ghosh on 16/09/16.
 //
 
-#include <includes/common/lock_record_def.h>
-#include <includes/core/control.h>
-#include <includes/common/alarm.h>
-#include "includes/core/resource_factory.h"
+#include "common/includes/lock_record_def.h"
+#include "watergate/includes/control.h"
+#include "common/includes/alarm.h"
+#include "watergate/includes/resource_factory.h"
 
 
 using namespace com::watergate::core;

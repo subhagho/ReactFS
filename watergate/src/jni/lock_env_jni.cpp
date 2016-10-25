@@ -4,9 +4,9 @@
 
 #include "./includes/lock_env_jni.h"
 
-#include "includes/common/common.h"
-#include "includes/common/__env.h"
-#include "includes/core/init_utils.h"
+#include "common/includes/common.h"
+#include "common/includes/__env.h"
+#include "watergate/includes/init_utils.h"
 
 using namespace com::watergate::common;
 using namespace com::watergate::core;

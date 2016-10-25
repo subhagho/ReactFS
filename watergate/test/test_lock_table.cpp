@@ -3,7 +3,7 @@
 //
 
 #include "test_lock_table.h"
-#include "core/control/dummy_resource.h"
+#include "watergate/src/core/control/dummy_resource.h"
 
 using namespace com::watergate::core;
 using namespace com::watergate::common;

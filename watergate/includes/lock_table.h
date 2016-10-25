@@ -9,17 +9,17 @@
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <includes/common/lock_record_def.h>
 #include <thread>
 #include <mutex>
 
-#include "includes/common/__app.h"
-#include "includes/common/timer.h"
-#include "includes/common/config.h"
-#include "includes/common/log_utils.h"
+#include "common/includes/lock_record_def.h"
+#include "common/includes/__app.h"
+#include "common/includes/timer.h"
+#include "common/includes/config.h"
+#include "common/includes/log_utils.h"
+#include "common/includes/lock_record_def.h"
 #include "exclusive_lock.h"
-#include "includes/common/lock_record_def.h"
-#include "includes/core/resource_def.h"
+#include "resource_def.h"
 
 #define CONST_LOCKT_ERROR_PREFIX "Lock Table Error : "
 #define LOCK_TABLE_LOCK_PREFIX "t_lock_"

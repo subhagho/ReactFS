@@ -7,11 +7,11 @@
 
 #include <unistd.h>
 
-#include "includes/common/__env.h"
-#include "includes/core/control_def.h"
-#include "includes/core/init_utils.h"
+#include "common/includes/__env.h"
+#include "watergate/includes/control_def.h"
+#include "watergate/includes/init_utils.h"
 
-#include "includes/ext/options_args.h"
+#include "include/options_args.h"
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"

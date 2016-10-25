@@ -2,8 +2,8 @@
 // Created by Subhabrata Ghosh on 13/10/16.
 //
 
-#ifndef WATERGATE_INIT_UTILS_H
-#define WATERGATE_INIT_UTILS_H
+#ifndef WATERGATE_ENV_UTILS_H
+#define WATERGATE_ENV_UTILS_H
 
 #include "__env.h"
 
@@ -53,4 +53,4 @@ namespace com {
         }
     }
 }
-#endif //WATERGATE_INIT_UTILS_H
+#endif //WATERGATE_ENV_UTILS_H

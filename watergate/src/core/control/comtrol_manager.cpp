@@ -2,7 +2,7 @@
 // Created by Subhabrata Ghosh on 11/10/16.
 //
 
-#include "includes/core/control_manager.h"
+#include "watergate/includes/control_manager.h"
 
 #define CONFIG_DEF_NODE_PATH "./def"
 #define CONFIG_MANAGER_NODE_PATH "./manager"

@@ -2,7 +2,7 @@
 // Created by Subhabrata Ghosh on 10/10/16.
 //
 
-#include "includes/core/filesystem_driver.h"
+#include "watergate/includes/filesystem_driver.h"
 
 const string com::watergate::core::io::fs_driver_constants::CONFIG_PARAM_ROOT_PATH = "fs.path.root";
 const string com::watergate::core::io::fs_driver_constants::CONFIG_PARAM_QUOTA_BYTES = "fs.quota.bytes";

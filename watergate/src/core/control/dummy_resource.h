@@ -5,8 +5,8 @@
 #ifndef WATERGATE_DUMMY_RESOURCE_H
 #define WATERGATE_DUMMY_RESOURCE_H
 
-#include "includes/core/resource_def.h"
-#include "includes/common/common_utils.h"
+#include "watergate/includes/resource_def.h"
+#include "common/includes/common_utils.h"
 
 #define CONST_DR_CONFIG_PARAM_SIZE "max_concurrency"
 

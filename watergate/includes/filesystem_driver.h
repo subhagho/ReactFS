@@ -16,9 +16,9 @@
 #include <linux/limits.h>
 #endif
 
-#include "includes/core/resource_def.h"
-#include "includes/common/file_utils.h"
-#include "includes/common/log_utils.h"
+#include "resource_def.h"
+#include "common/includes/file_utils.h"
+#include "common/includes/log_utils.h"
 
 using namespace com::watergate::core;
 

@@ -11,9 +11,9 @@
 #include <unordered_map>
 #include <semaphore.h>
 
-#include "includes/common/log_utils.h"
-#include "includes/common/common.h"
-#include "includes/common/base_error.h"
+#include "common/includes/log_utils.h"
+#include "common/includes/common.h"
+#include "common/includes/base_error.h"
 
 #define MAX_PRIORITY_ALLOWED 8
 #define DEFAULT_MAX_RECORDS 1024

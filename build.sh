@@ -3,7 +3,7 @@
 CMAKE=/Applications/CMake.app/Contents/bin/cmake
 #CMAKE="cmake -DCMAKE_BUILD_TYPE=Debug"
 
-DIRS="common"
+DIRS="common watergate"
 DIRS_TO_BUILD=""
 
 for dir in $DIRS;

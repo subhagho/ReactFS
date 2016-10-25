@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include "test_common.h"
-#include "init_utils.h"
+#include "common/includes/init_utils.h"
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 

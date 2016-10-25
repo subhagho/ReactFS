@@ -2,8 +2,8 @@
 // Created by Subhabrata Ghosh on 23/09/16.
 //
 
-#include <includes/common/lock_record_def.h>
-#include "includes/core/lock_table.h"
+#include "common/includes/lock_record_def.h"
+#include "watergate/includes/lock_table.h"
 
 void com::watergate::core::lock_table::create(string name, resource_def *resource, bool server) {
     try {

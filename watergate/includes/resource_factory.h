@@ -5,8 +5,8 @@
 #ifndef WATERGATE_RESOURCE_FACTORY_H
 #define WATERGATE_RESOURCE_FACTORY_H
 
-#include "core/control/dummy_resource.h"
-#include "includes/core/filesystem_driver.h"
+#include "watergate/src/core/control/dummy_resource.h"
+#include "filesystem_driver.h"
 
 using namespace com::watergate::core::io;
 

@@ -12,9 +12,9 @@
 #include <wait.h>
 #endif
 
-#include "../include/catch.hpp"
-#include "includes/common/__env.h"
-#include "includes/core/control_def.h"
-#include "../common/test_common.h"
+#include "include/catch.hpp"
+#include "common/includes/__env.h"
+#include "watergate/includes/control_def.h"
+#include "common/test/test_common.h"
 
 #endif //WATERGATE_TEST_SEM_LOCK_H

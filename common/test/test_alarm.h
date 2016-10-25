@@ -10,9 +10,9 @@
 #include <iostream>
 
 #include "test_common.h"
-#include "timer.h"
-#include "alarm.h"
-#include "init_utils.h"
+#include "common/includes/timer.h"
+#include "common/includes/alarm.h"
+#include "common/includes/init_utils.h"
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 

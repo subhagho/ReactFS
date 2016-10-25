@@ -2,9 +2,9 @@
 // Created by Subhabrata Ghosh on 15/09/16.
 //
 
-#include <includes/common/lock_record_def.h>
+#include "common/includes/lock_record_def.h"
 #include "dummy_resource.h"
-#include "includes/core/control.h"
+#include "watergate/includes/control.h"
 
 void com::watergate::core::dummy_resource::init(const ConfigValue *config) {
     const BasicConfigValue *nn = Config::get_value(CONST_SEM_CONFIG_PARAM_RESOURCE_NAME, config);

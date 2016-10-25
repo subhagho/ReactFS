@@ -5,9 +5,10 @@
 #ifndef WATERGATE_INIT_UTILS_H
 #define WATERGATE_INIT_UTILS_H
 
-#include "includes/common/__env.h"
-#include "includes/core/control_def.h"
-#include "includes/core/control_manager.h"
+#include "common/includes/__env.h"
+#include "common/includes/init_utils.h"
+#include "control_def.h"
+#include "control_manager.h"
 
 using namespace com::watergate::core;
 using namespace com::watergate::common;
@@ -15,10 +16,9 @@ using namespace com::watergate::common;
 namespace com {
     namespace watergate {
         namespace core {
-            class init_utils {
+            class init_utils : public env_utils {
             private:
                 static control_client *client;
-                static __env *env;
 
             public:
                 static control_manager *init_control_manager(const __env *env, const string path) {
@@ -68,39 +68,13 @@ namespace com {
                     client = client_p;
                 }
 
-                static void create_env(const string configfile) {
-                    env = new __env();
-                    env->create(configfile);
-                    CHECK_ENV_STATE(env);
-                }
-
-                static void create_env(const string configfile, const string appname) {
-                    env = new __env();
-                    env->create(configfile, appname);
-                    CHECK_ENV_STATE(env);
-                }
-
-                static const __env *get_env() {
-                    CHECK_NOT_NULL(env);
-                    CHECK_ENV_STATE(env);
-
-                    return env;
-                }
-
-                static const Config *get_config() {
-                    const __env *e = get_env();
-
-                    return e->get_config();
-                }
-
                 static void dispose() {
                     LOG_DEBUG("[pid=%d] Releasing control client...", getpid());
                     CHECK_AND_FREE(client);
-                    LOG_DEBUG("[pid=%d] Releasing environment handle...", getpid());
-                    CHECK_AND_FREE(env);
 
                     client = nullptr;
-                    env = nullptr;
+
+
                 }
             };
         }

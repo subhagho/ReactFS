@@ -8,14 +8,16 @@
 #include <semaphore.h>
 #include <vector>
 
-#include "includes/common/lock_record_def.h"
-#include "includes/common/common.h"
-#include "includes/common/base_error.h"
-#include "includes/common/common_utils.h"
-#include "includes/common/__app.h"
+#include "common/includes/lock_record_def.h"
+#include "common/includes/common.h"
+#include "common/includes/base_error.h"
+#include "common/includes/common_utils.h"
+#include "common/includes/config.h"
+#include "common/includes/__state__.h"
+#include "common/includes/__app.h"
+#include "common/includes/log_utils.h"
 #include "resource_def.h"
 #include "lock_table.h"
-#include "includes/common/__state__.h"
 
 #define DEFAULT_SEM_MODE 0760
 

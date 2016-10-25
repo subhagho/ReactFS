@@ -6,12 +6,11 @@
 
 #include "test_sem_lock.h"
 #include "test_lock_client.h"
-#include "includes/core/control_manager.h"
+#include "watergate/includes/control_manager.h"
 
 using namespace com::watergate::core;
 using namespace com::watergate::common;
 
-/*
 TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
     init_utils::create_env(CONFIG_FILE);
     const __env *env = init_utils::get_env();
@@ -195,7 +194,6 @@ TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]")
 
     init_utils::dispose();
 }
-*/
 
 TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]") {
     char cwd[1024];

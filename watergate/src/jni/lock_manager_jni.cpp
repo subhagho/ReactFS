@@ -3,9 +3,9 @@
 //
 
 #include "./includes/lock_manager_jni.h"
-#include "includes/common/common.h"
-#include "includes/core/control_manager.h"
-#include "includes/core/init_utils.h"
+#include "common/includes/common.h"
+#include "watergate/includes/control_manager.h"
+#include "watergate/includes/init_utils.h"
 
 static control_manager *control_manager_inst = nullptr;
 

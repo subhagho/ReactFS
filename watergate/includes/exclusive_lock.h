@@ -7,10 +7,10 @@
 
 #include <semaphore.h>
 
-#include "includes/common/common.h"
-#include "includes/common/base_error.h"
-#include "includes/common/common_utils.h"
-#include "includes/common/log_utils.h"
+#include "common/includes/common.h"
+#include "common/includes/base_error.h"
+#include "common/includes/common_utils.h"
+#include "common/includes/log_utils.h"
 
 #define DEFAULT_LOCK_MODE 0660
 

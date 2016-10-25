@@ -6,6 +6,6 @@
 #define WATERGATE_TEST_COMMON_H
 
 #include "include/catch.hpp"
-#include "__env.h"
+#include "common/includes/__env.h"
 
 #endif //WATERGATE_TEST_COMMON_H

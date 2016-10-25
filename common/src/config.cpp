@@ -1,7 +1,7 @@
 #include <fstream>
 #include <streambuf>
 
-#include "config.h"
+#include "common/includes/config.h"
 
 using namespace com::watergate::common;
 

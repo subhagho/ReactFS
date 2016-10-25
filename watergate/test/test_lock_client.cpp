@@ -5,8 +5,8 @@
 #include <unistd.h>
 
 #include "test_lock_client.h"
-#include "includes/common/alarm.h"
-#include "includes/common/timer.h"
+#include "common/includes/alarm.h"
+#include "common/includes/timer.h"
 
 #define REQUIRE _assert
 

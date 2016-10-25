@@ -8,15 +8,15 @@
 #include <stdio.h>
 #include <mutex>
 
-#include "includes/common/common_utils.h"
-#include "includes/common/file_utils.h"
-#include "includes/common/config.h"
+#include "common/includes/common_utils.h"
+#include "common/includes/file_utils.h"
+#include "common/includes/config.h"
+#include "common/includes/__state__.h"
+#include "common/includes/alarm.h"
+#include "common/includes/metrics.h"
 #include "resource_def.h"
 #include "control.h"
-#include "includes/common/__state__.h"
 #include "control_errors.h"
-#include "includes/common/alarm.h"
-#include "includes/common/metrics.h"
 
 #define DEFAULT_MAX_TIMEOUT 30 * 1000
 #define DEFAULT_LOCK_LOOP_SLEEP_TIME 10
