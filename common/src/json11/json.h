@@ -1,3 +1,19 @@
+/* 
+ * Copyright [2016] [Subhabrata Ghosh] 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ * 
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ *       limitations under the License. 
+ * 
+ */
 /* json11
  *
  * json11 is a tiny JSON library for C++11, providing JSON parsing and serialization.
@@ -27,6 +43,7 @@
  * will be exact for +/- 275 years.)
  */
 
+
 /* Copyright (c) 2013 Dropbox, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -47,6 +64,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 
 #pragma once
 
@@ -201,6 +219,7 @@ namespace json11 {
          * Return true if this is a JSON object and, for each item in types, has a field of
          * the given type. If not, return false and set err to a descriptive message.
          */
+
         typedef std::initializer_list<std::pair<std::string, Type>> shape;
         bool has_shape(const shape & types, std::string & err) const;
 

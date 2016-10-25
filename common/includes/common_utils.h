@@ -1,3 +1,19 @@
+/* 
+ * Copyright [2016] [Subhabrata Ghosh] 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ * 
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ *       limitations under the License. 
+ * 
+ */
 #ifndef _CORE_H_
 #define _CORE_H_
 
@@ -206,11 +222,13 @@ namespace com {
                 static std::string format(const string fmt_str, ...) {
                     int final_n, n =
                             ((int) fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
+
                     std::string str;
                     std::unique_ptr<char[]> formatted;
                     va_list ap;
                     while (1) {
                         formatted.reset(new char[n]); /* Wrap the plain char array into the unique_ptr */
+
                         strcpy(&formatted[0], fmt_str.c_str());
                         va_start(ap, fmt_str);
                         final_n = vsnprintf(&formatted[0], n, fmt_str.c_str(), ap);
