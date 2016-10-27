@@ -44,12 +44,12 @@
 
 namespace com {
     namespace watergate {
-        namespace core {
+        namespace common {
             class lock_error : public base_error {
             public:
                 lock_error(char const *file, const int line, string mesg) : base_error(file, line,
-                                                                                        CONST_LOCK_ERROR_PREFIX,
-                                                                                        mesg) {
+                                                                                       CONST_LOCK_ERROR_PREFIX,
+                                                                                       mesg) {
                 }
             };
 
@@ -107,7 +107,8 @@ namespace com {
                 void create() {
                     semaphore = sem_open(name->c_str(), O_CREAT, mode, 1);
                     if (IS_NULL(semaphore) || semaphore == SEM_FAILED) {
-                        lock_error e = LOCK_ERROR("Error creating lock. [name=%s][errno=%s]", name->c_str(), strerror(errno));
+                        lock_error e = LOCK_ERROR("Error creating lock. [name=%s][errno=%s]", name->c_str(),
+                                                  strerror(errno));
                         LOG_ERROR(e.what());
                         throw e;
                     }

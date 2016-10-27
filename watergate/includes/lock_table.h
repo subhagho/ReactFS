@@ -34,7 +34,7 @@
 #include "common/includes/config.h"
 #include "common/includes/log_utils.h"
 #include "common/includes/lock_record_def.h"
-#include "exclusive_lock.h"
+#include "common/includes/exclusive_lock.h"
 #include "resource_def.h"
 
 #define CONST_LOCKT_ERROR_PREFIX "Lock Table Error : "

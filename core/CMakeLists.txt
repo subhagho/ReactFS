@@ -13,7 +13,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 INCLUDE(../cmake/CMakeInclude.txt)
 
-set(COMMON_LIB_NAME ${PROJECT_NAME})
+LINK_DIRECTORIES(../common/cmake ../watergate/cmake)
+
+set(CORE_LIB_NAME ${PROJECT_NAME})
 
 file(GLOB_RECURSE RFS_C_SOURCES "src/*.cpp")
 file(GLOB_RECURSE RFS_C_INCLUDES "includes/*.h")
@@ -22,7 +24,8 @@ list(REMOVE_DUPLICATES RFS_C_SOURCES)
 
 MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
-add_library(${COMMON_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
+add_library(${CORE_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
+target_link_libraries(${CORE_LIB_NAME} rfs-common)
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
@@ -34,4 +37,7 @@ endif ()
 
 
 MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")
+
+add_executable(main_fsb adhoc/main_fsb.cpp)
+target_link_libraries(main_fsb rfs-core ${WG_LIBRARIES})
 

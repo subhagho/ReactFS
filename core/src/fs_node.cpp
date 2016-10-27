@@ -33,6 +33,7 @@ com::wookler::reactfs::core::fs_node *com::wookler::reactfs::core::fs_node::star
         CHECK_NOT_NULL(node);
 
 
+        return this;
     } catch (const exception &e) {
         fs_error_base be = FS_BASE_ERROR_E(e);
         state.set_error(&be);
