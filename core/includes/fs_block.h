@@ -28,21 +28,36 @@
 #include "fs_error_base.h"
 #include "fmstream.h"
 
-typedef struct {
-    uint64_t block_id;
-    char block_uid[128];
-    uint64_t create_time;
-    uint64_t update_time;
-    uint64_t block_size;
-    uint64_t used_bytes;
-    uint64_t write_offet;
-} __block_header;
 
 namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
+                typedef struct __block_record_type__ {
+                    static const uint16_t RAW = 0, TYPED = 1;
+                } __block_record_type;
+
+                typedef struct __block_type__ {
+                    static const uint16_t
+                            PRIMARY = 0, REPLICA = 1, DELETED = 2, CORRUPTED = 3;
+                } __block_type;
+
+                typedef struct {
+                    uint64_t block_id;
+                    char block_uid[128];
+                    uint16_t block_type = __block_type::PRIMARY;
+                    uint64_t create_time;
+                    uint64_t update_time;
+                    uint64_t block_size;
+                    uint64_t used_bytes;
+                    uint64_t write_offet;
+                    uint16_t record_type = __block_record_type::RAW;
+                } __block_header;
+
                 class fs_block {
+                private:
+                    string filename;
+
                 protected:
                     __block_header *header = nullptr;
                     void *data_ptr = nullptr;
@@ -52,7 +67,8 @@ namespace com {
 
                     void *write_r(const void *source, uint32_t len);
 
-                    string _create(uint64_t block_id, string filename, uint64_t block_size, bool overwrite);
+                    string _create(uint64_t block_id, string filename, uint16_t block_type,
+                                   uint16_t record_type, uint64_t block_size, bool overwrite);
 
                     void *_open(uint64_t block_id, string filename);
 
@@ -64,7 +80,9 @@ namespace com {
 
                     virtual string open(uint64_t block_id, string filename);
 
-                    virtual string create(uint64_t block_id, string filename, uint64_t block_size, bool overwrite);
+                    virtual string
+                    create(uint64_t block_id, string filename, uint16_t block_type, uint64_t block_size,
+                           bool overwrite);
 
                     virtual const void *read(uint64_t size, uint64_t offset = 0);
 
@@ -92,6 +110,8 @@ namespace com {
 
                         return header->used_bytes;
                     }
+
+                    virtual void remove();
 
                     static string get_lock_name(uint64_t block_id) {
                         return common_utils::format("block_%lu_lock", block_id);

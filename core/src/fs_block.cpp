@@ -29,6 +29,8 @@ string com::wookler::reactfs::core::fs_block::open(uint64_t block_id, string fil
 
         void *base_ptr = _open(block_id, filename);
 
+        PRECONDITION(header->block_type == __block_record_type::RAW);
+
         char *cptr = static_cast<char *>(base_ptr);
         data_ptr = cptr + sizeof(__block_header);
 
@@ -58,20 +60,24 @@ void *com::wookler::reactfs::core::fs_block::_open(uint64_t block_id, string fil
     header = static_cast<__block_header *>(base_ptr);
     PRECONDITION(header->block_id == block_id);
 
-    string lock_name = get_lock_name(header->block_id);
-    block_lock = new exclusive_lock(&lock_name);
-    block_lock->create();
+    if (IS_NULL(block_lock)) {
+        string lock_name = get_lock_name(header->block_id);
+        block_lock = new exclusive_lock(&lock_name);
+        block_lock->create();
+    }
+    this->filename = filename;
 
     return base_ptr;
 }
 
 string
-com::wookler::reactfs::core::fs_block::create(uint64_t block_id, string filename, uint64_t block_size, bool overwrite) {
+com::wookler::reactfs::core::fs_block::create(uint64_t block_id, string filename, uint16_t block_type,
+                                              uint64_t block_size, bool overwrite) {
     CHECK_NOT_EMPTY(filename);
     PRECONDITION(block_size > 0);
     PRECONDITION(block_id > 0);
     try {
-        string uuid = _create(block_id, filename, block_size, overwrite);
+        string uuid = _create(block_id, filename, block_type, __block_record_type::RAW, block_size, overwrite);
 
         delete (block_lock);
 
@@ -87,7 +93,8 @@ com::wookler::reactfs::core::fs_block::create(uint64_t block_id, string filename
     }
 }
 
-string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string filename, uint64_t block_size,
+string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string filename, uint16_t block_type,
+                                                      uint16_t record_type, uint64_t block_size,
                                                       bool overwrite) {
     Path p(filename);
     if (p.exists()) {
@@ -116,12 +123,14 @@ string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string 
     header->block_size = block_size;
     header->create_time = time_utils::now();
     header->update_time = header->create_time;
+    header->block_type = block_type;
+    header->record_type = record_type;
 
     string lock_name = get_lock_name(header->block_id);
-    block_lock = new exclusive_lock(&lock_name);
+    exclusive_lock *block_lock = new exclusive_lock(&lock_name);
     block_lock->create();
     block_lock->reset();
-
+    CHECK_AND_FREE(block_lock);
 
     return uuid;
 }
@@ -176,4 +185,19 @@ void *com::wookler::reactfs::core::fs_block::write_r(const void *source, uint32_
     write_ptr = cptr + header->write_offet;
 
     return ptr;
+}
+
+void com::wookler::reactfs::core::fs_block::remove() {
+    this->close();
+
+    if (!IS_EMPTY(filename)) {
+        LOG_WARN("Deleting block file. [file=%s]", filename.c_str());
+        Path p(filename);
+        if (!p.remove()) {
+            LOG_ERROR("Error deleting filesystem block. [file=%s]", filename.c_str());
+        }
+    }
+    if (NOT_NULL(block_lock)) {
+        block_lock->dispose();
+    }
 }

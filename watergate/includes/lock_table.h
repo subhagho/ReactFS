@@ -150,6 +150,12 @@ namespace com {
             class lock_table_manager : public lock_table {
 
             public:
+                ~lock_table_manager() {
+                    if (NOT_NULL(lock)) {
+                        lock->dispose();
+                    }
+                }
+
                 void init(string name, resource_def *resource) {
                     create(name, resource, true);
 

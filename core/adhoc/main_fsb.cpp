@@ -36,8 +36,10 @@ int main(int argc, char **argv) {
         env_utils::create_env(configf);
 
         fs_block *block = new fs_block();
-        block->create(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, DEFAULT_BLOCK_SIZE, true);
+        block->create(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY, DEFAULT_BLOCK_SIZE, true);
+        delete (block);
 
+        block = new fs_block();
         block->open(REUSE_BLOCK_ID, REUSE_BLOCK_FILE);
         const char *dptr = "Returns true if the stream is currently associated with a file, and false otherwise.\n";
 
@@ -53,11 +55,14 @@ int main(int argc, char **argv) {
 
         LOG_DEBUG("Data read from file. [data=%s]", read);
 
+        block->remove();
         delete (block);
 
         fs_typed_block<_test_typed> *typed_block = new fs_typed_block<_test_typed>();
-        typed_block->create(REUSE_TYPED_BLOCK_ID, REUSE_BLOCK_TYPED_FILE, DEFAULT_BLOCK_SIZE, true);
-
+        typed_block->create(REUSE_TYPED_BLOCK_ID, REUSE_BLOCK_TYPED_FILE, __block_type::PRIMARY, DEFAULT_BLOCK_SIZE,
+                            true);
+        delete (typed_block);
+        typed_block = new fs_typed_block<_test_typed>();
         typed_block->open(REUSE_TYPED_BLOCK_ID, REUSE_BLOCK_TYPED_FILE);
 
         _test_typed **ptr = (_test_typed **) malloc(COUNT_TYPED * sizeof(_test_typed **));
@@ -85,6 +90,10 @@ int main(int argc, char **argv) {
         LOG_DEBUG("BLOCK USED SPACE = %lu", typed_block->get_used_space());
         LOG_DEBUG("BLOCK AVAILABLE SPACE = %lu", typed_block->get_free_space());
 
+        delete (typed_block);
+        typed_block = new fs_typed_block<_test_typed>();
+        typed_block->open(REUSE_TYPED_BLOCK_ID, REUSE_BLOCK_TYPED_FILE);
+
         row<_test_typed> *r = nullptr;
 
         for (int ii = 0; ii < COUNT_TYPED; ii++) {
@@ -95,6 +104,7 @@ int main(int argc, char **argv) {
             LOG_DEBUG("record[rowid=%lu] : index=%d; timestamp=%lu; value=%s", rid, t->index, t->timestamp, t->value);
         }
 
+        typed_block->remove();
         delete (typed_block);
 
         exit(0);

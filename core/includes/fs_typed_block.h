@@ -62,7 +62,9 @@ namespace com {
                     uint64_t *next_rowid = nullptr;
 
                 public:
-                    virtual string create(uint64_t block_id, string filename, uint64_t count, bool overwrite) override;
+                    virtual string
+                    create(uint64_t block_id, string filename, uint16_t block_type, uint64_t block_size,
+                           bool overwrite) override;
 
                     virtual string open(uint64_t block_id, string filename) override;
 
@@ -78,8 +80,10 @@ namespace com {
 }
 
 template<class T>
-string com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id, string filename, uint64_t block_size,
-                                                              bool overwrite) {
+string
+com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id, string filename, uint16_t block_type,
+                                                       uint64_t block_size,
+                                                       bool overwrite) {
     PRECONDITION(block_size > 0);
     try {
         uint64_t r_size = sizeof(row<T>);
@@ -91,7 +95,7 @@ string com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id,
         }
         block_size = q * r_size + sizeof(uint64_t);
 
-        string uuid = _create(block_id, filename, block_size, overwrite);
+        string uuid = _create(block_id, filename, block_type, __block_record_type::TYPED, block_size, overwrite);
 
         void *base_ptr = stream->data();
 
@@ -132,13 +136,13 @@ row <T> **com::wookler::reactfs::core::fs_typed_block<T>::write_t(T **source, ui
 
                 uint64_t rowid = *this->next_rowid;
                 LOG_DEBUG("Current used rowid = %lu", rowid);
-                rowid++;
                 row<T> *r = new row<T>(rowid, sptr);
 
                 void *ptr = fs_block::write_r(r, sizeof(row<T>));
                 row<T> *tptr = static_cast<row<T> *>(ptr);
 
                 rows[ii] = tptr;
+                rowid++;
                 *this->next_rowid = rowid;
 
             }
@@ -182,6 +186,8 @@ template<class T>
 string com::wookler::reactfs::core::fs_typed_block<T>::open(uint64_t block_id, string filename) {
     try {
         void *base_ptr = _open(block_id, filename);
+
+        PRECONDITION(header->record_type == __block_record_type::TYPED);
 
         char *cptr = static_cast<char *>(base_ptr);
         void *rptr = cptr + sizeof(__block_header);
