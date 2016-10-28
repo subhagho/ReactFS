@@ -29,6 +29,7 @@
 #include "fmstream.h"
 #include "common_structs.h"
 #include "archive_reader.h"
+#include "block_utils.h"
 
 namespace com {
     namespace wookler {
@@ -64,6 +65,14 @@ namespace com {
 
                     virtual string
                     create(uint64_t block_id, string filename, __block_type block_type, uint64_t block_size,
+                           bool overwrite) {
+                        return create(block_id, filename, block_type, block_size, false, __compression_type::NONE, 0,
+                                      overwrite);
+                    }
+
+                    virtual string
+                    create(uint64_t block_id, string filename, __block_type block_type, uint64_t block_size,
+                           bool compressed, __compression_type compression_type, uint64_t raw_size,
                            bool overwrite);
 
                     virtual const void *read(uint64_t size, uint64_t offset = 0);
@@ -200,7 +209,25 @@ namespace com {
 
                     virtual void remove();
 
-                    virtual void write_compressed(void *data, uint64_t size, __compression_type compression_type);
+                    virtual string
+                    create_compressed_block(void *data, uint64_t size,
+                                            __compression_type compression_type) {
+                        CHECK_NOT_NULL(data);
+
+                        Path p(filename);
+                        string newf = p.get_filename();
+                        newf.append(block_utils::get_compression_ext(compression_type));
+
+                        Path np(p.get_parent_dir());
+                        np.append(newf);
+
+                        fs_block *block = new fs_block();
+                        block->create(this->header->block_id, np.get_path(), this->header->block_type, size, true,
+                                      compression_type,
+                                      header->used_bytes, true);
+
+                        return string(np.get_path());
+                    }
 
                     static string get_lock_name(uint64_t block_id) {
                         return common_utils::format("block_%lu_lock", block_id);

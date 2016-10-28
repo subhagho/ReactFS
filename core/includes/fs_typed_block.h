@@ -25,6 +25,7 @@
 
 #include "fs_block.h"
 #include "common/includes/log_utils.h"
+#include "common_structs.h"
 
 using namespace com::wookler::reactfs::core;
 
@@ -61,9 +62,18 @@ namespace com {
                 protected:
                     uint64_t *next_rowid = nullptr;
 
+
                 public:
                     virtual string
                     create(uint64_t block_id, string filename, __block_type block_type, uint64_t block_size,
+                           bool overwrite) override {
+                        return create(block_id, filename, block_type, block_size, false, __compression_type::NONE, 0,
+                                      overwrite);
+                    }
+
+                    virtual string
+                    create(uint64_t block_id, string filename, __block_type block_type, uint64_t block_size,
+                           bool compressed, __compression_type compression_type, uint64_t raw_size,
                            bool overwrite) override;
 
                     virtual string open(uint64_t block_id, string filename) override;
@@ -71,6 +81,10 @@ namespace com {
                     row<T> *read_t(uint64_t offset = 0);
 
                     row<T> **write_t(T **source, uint64_t count = 1);
+
+                    virtual string
+                    create_compressed_block(void *data, uint64_t size,
+                                            __compression_type compression_type) override;
                 };
 
 
@@ -83,19 +97,28 @@ template<class T>
 string
 com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id, string filename, __block_type block_type,
                                                        uint64_t block_size,
+                                                       bool compressed, __compression_type compression_type,
+                                                       uint64_t raw_size,
                                                        bool overwrite) {
     PRECONDITION(block_size > 0);
     try {
-        uint64_t r_size = sizeof(row<T>);
-        uint64_t q = block_size / r_size;
-        PRECONDITION(q > 0);
-        uint64_t rem = block_size % r_size;
-        if (rem > 0) {
-            q += 1;
+        if (!compressed) {
+            uint64_t r_size = sizeof(row<T>);
+            uint64_t q = block_size / r_size;
+            PRECONDITION(q > 0);
+            uint64_t rem = block_size % r_size;
+            if (rem > 0) {
+                q += 1;
+            }
+            block_size = q * r_size + sizeof(uint64_t);
         }
-        block_size = q * r_size + sizeof(uint64_t);
-
         string uuid = _create(block_id, filename, block_type, __block_record_type::TYPED, block_size, overwrite);
+        if (compressed) {
+            header->writable = false;
+            header->compression.compressed = true;
+            header->compression.uncompressed_size = raw_size;
+            header->compression.type = compression_type;
+        }
 
         void *base_ptr = stream->data();
 
@@ -219,6 +242,25 @@ string com::wookler::reactfs::core::fs_typed_block<T>::open(uint64_t block_id, s
     } catch (...) {
         throw FS_BASE_ERROR("Unkown error occurred while opening block.");
     }
+}
+
+template<class T>
+string com::wookler::reactfs::core::fs_typed_block<T>::create_compressed_block(void *data, uint64_t size,
+                                                                               __compression_type compression_type) {
+    CHECK_NOT_NULL(data);
+
+    Path p(get_filename());
+    string newf = p.get_filename();
+    newf.append(block_utils::get_compression_ext(compression_type));
+
+    Path np(p.get_parent_dir());
+    np.append(newf);
+
+    fs_typed_block *block = new fs_typed_block();
+    block->create(this->header->block_id, np.get_path(), this->header->block_type, size, true, compression_type,
+                  header->used_bytes, true);
+
+    return string(np.get_path());
 }
 
 #endif //REACTFS_FS_TYPED_BLOCK_H

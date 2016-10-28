@@ -23,7 +23,7 @@ namespace com {
 
                 typedef struct {
                     bool compressed = false;
-                    uint64_t compressed_size = 0;
+                    uint64_t uncompressed_size = 0;
                     __compression_type type = __compression_type::NONE;
                 } __compression;
 
@@ -46,6 +46,8 @@ namespace com {
                     uint64_t block_ttl = 0;
                     __archival archival = __archival::DISABLED;
                 } __block_header;
+
+
             }
         }
     }

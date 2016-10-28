@@ -34,21 +34,20 @@ namespace com {
             namespace core {
                 class block_archiver {
                 private:
-                    void archive_gzip(fs_block *block);
+                    string archive_gzip(fs_block *block);
 
-                    void archive_zlib(fs_block *block);
+                    string archive_zlib(fs_block *block);
 
-                    void archive_lzo(fs_block *block);
+                    string archive_lzo(fs_block *block);
 
-                    void archive_snappy(fs_block *block);
+                    string archive_snappy(fs_block *block);
 
-                    string archive_file(fs_block *block, Path dest_dir);
+                    string archive_file(string source_path, Path dest_dir);
 
                 public:
                     string
                     archive(fs_block *block, __compression_type compression, __archival archive, string archive_dir);
 
-                    static void read_archive(fs_block *block);
                 };
             }
         }

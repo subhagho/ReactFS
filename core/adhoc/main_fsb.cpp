@@ -29,12 +29,18 @@ typedef struct {
 
 int main(int argc, char **argv) {
     try {
+
         PRECONDITION(argc > 0);
         char *cf = argv[1];
         CHECK_NOT_NULL(cf);
 
         string configf(cf);
         env_utils::create_env(configf);
+
+        Path p("/tmp/test/dir/file.txt");
+        LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());
+        p = Path("who/cares/file.txt");
+        LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());
 
         fs_block *block = new fs_block();
         block->create(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY, DEFAULT_BLOCK_SIZE, true);
@@ -107,14 +113,12 @@ int main(int argc, char **argv) {
 
         block_archiver archiver;
 
-        string path = archiver.archive(typed_block, __compression_type::ZLIB, __archival::ARCHIVE,
-                                       "/tmp/block/archive");
-        CHECK_NOT_EMPTY(path);
-        typed_block->remove();
+        string new_path = archiver.archive(typed_block, __compression_type::ZLIB, __archival::ARCHIVE,
+                                           "/tmp/block/archive");
         delete (typed_block);
 
         typed_block = new fs_typed_block<_test_typed>();
-        typed_block->open(REUSE_TYPED_BLOCK_ID, path);
+        typed_block->open(REUSE_TYPED_BLOCK_ID, new_path);
 
         r = nullptr;
 

@@ -77,13 +77,20 @@ void *com::wookler::reactfs::core::fs_block::_open(uint64_t block_id, string fil
 
 string
 com::wookler::reactfs::core::fs_block::create(uint64_t block_id, string filename, __block_type block_type,
-                                              uint64_t block_size, bool overwrite) {
+                                              uint64_t block_size, bool compressed, __compression_type compression_type,
+                                              uint64_t raw_size,
+                                              bool overwrite) {
     CHECK_NOT_EMPTY(filename);
     PRECONDITION(block_size > 0);
     PRECONDITION(block_id > 0);
     try {
         string uuid = _create(block_id, filename, block_type, __block_record_type::RAW, block_size, overwrite);
-
+        if (compressed) {
+            header->writable = false;
+            header->compression.compressed = true;
+            header->compression.uncompressed_size = raw_size;
+            header->compression.type = compression_type;
+        }
         delete (block_lock);
 
         close();
@@ -132,7 +139,7 @@ string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string 
     header->record_type = record_type;
     header->writable = true;
     header->compression.compressed = false;
-    header->compression.compressed_size = 0;
+    header->compression.uncompressed_size = 0;
     header->compression.type = __compression_type::NONE;
     header->archival = __archival::DISABLED;
 
@@ -221,41 +228,13 @@ void com::wookler::reactfs::core::fs_block::remove() {
 
 void com::wookler::reactfs::core::fs_block::read_compressed_block(void *base_ptr) {
     write_ptr = nullptr;
-    data_ptr = malloc(header->block_size * sizeof(char));
+    data_ptr = malloc(header->compression.uncompressed_size * sizeof(char));
     CHECK_NOT_NULL(data_ptr);
 
     char *cptr = static_cast<char *>(base_ptr);
     void *buffer = cptr + sizeof(__block_header);
 
     archive_reader reader;
-    reader.read_archive_data(buffer, header->compression.compressed_size, data_ptr, header->block_size,
+    reader.read_archive_data(buffer, header->block_size, data_ptr, header->compression.uncompressed_size,
                              header->compression.type);
-}
-
-void com::wookler::reactfs::core::fs_block::write_compressed(void *data, uint64_t size,
-                                                             __compression_type compression_type) {
-    CHECK_NOT_NULL(data);
-
-    if (block_lock->wait_lock()) {
-        try {
-            write_ptr = data_ptr;
-            write_r(data, size);
-
-            header->writable = false;
-            header->compression.compressed = true;
-            header->compression.compressed_size = size;
-            header->compression.type = compression_type;
-
-        } catch (const exception &e) {
-            block_lock->release_lock();
-            throw FS_BASE_ERROR_E(e);
-        } catch (...) {
-            block_lock->release_lock();
-            throw FS_BASE_ERROR("Unhandled type exception.");
-        }
-        block_lock->release_lock();
-    } else {
-        throw FS_BASE_ERROR("Error getting write lock on file. [block id=%s]", header->block_uid);
-    }
-
 }

@@ -277,7 +277,7 @@ namespace com {
 
             class Path {
             private:
-                string *path = nullptr;
+                string *path = new string();
 
             public:
                 Path() {
@@ -302,8 +302,8 @@ namespace com {
                 const string append(string p) {
                     CHECK_NOT_EMPTY(p);
 
-                    if (IS_NULL(path)) {
-                        path = new string(p);
+                    if (IS_EMPTY_P(path)) {
+                        path->append(p);
                     } else {
                         string np = file_utils::concat_path(*path, p);
                         path->clear();
@@ -323,8 +323,15 @@ namespace com {
                 const string get_parent_dir() const {
                     vector<string> parts = common_utils::split(*path, '/');
                     if (parts.size() > 1) {
-                        string ss = string(parts[0]);
-                        for (uint32_t ii = 1; ii < parts.size() - 2; ii++) {
+                        string ss = string();
+                        uint32_t si = 0;
+                        if (IS_EMPTY(parts[0])) {
+                            si = 1;
+                        } else {
+                            ss.append(parts[0]);
+                        }
+                        for (uint32_t ii = 1; ii < parts.size() - 1; ii++) {
+                            ss.append("/");
                             ss.append(parts[ii]);
                         }
                         return ss;
@@ -385,10 +392,18 @@ namespace com {
                     }
                     return false;
                 }
+            };
 
+            class file_copy {
+            public:
                 static uint64_t copy(Path source, Path dest) {
-                    std::ifstream src(source.path->c_str(), std::ios::binary);
-                    std::ofstream dst(dest.path->c_str(), std::ios::binary);
+                    PRECONDITION(source.exists());
+                    if (dest.exists()) {
+                        dest.remove();
+                    }
+
+                    std::ifstream src(source.get_path().c_str(), std::ios::binary);
+                    std::ofstream dst(dest.get_path().c_str(), std::ios::binary);
 
                     dst << src.rdbuf();
 
