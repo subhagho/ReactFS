@@ -19,6 +19,7 @@
 //
 
 #include <core/includes/fs_block.h>
+#include <core/includes/common_structs.h>
 #include "core/includes/fs_block.h"
 #include "common/includes/file_utils.h"
 #include "common/includes/timer.h"
@@ -29,16 +30,20 @@ string com::wookler::reactfs::core::fs_block::open(uint64_t block_id, string fil
 
         void *base_ptr = _open(block_id, filename);
 
-        PRECONDITION(header->block_type == __block_record_type::RAW);
+        PRECONDITION(header->record_type == __block_record_type::RAW);
 
-        char *cptr = static_cast<char *>(base_ptr);
-        data_ptr = cptr + sizeof(__block_header);
+        if (!header->compression.compressed) {
+            char *cptr = static_cast<char *>(base_ptr);
+            data_ptr = cptr + sizeof(__block_header);
 
-        char *wptr = static_cast<char *>(data_ptr);
-        if (header->write_offet > 0) {
-            write_ptr = wptr + header->write_offet;
+            char *wptr = static_cast<char *>(data_ptr);
+            if (header->write_offset > 0) {
+                write_ptr = wptr + header->write_offset;
+            } else {
+                write_ptr = wptr;
+            }
         } else {
-            write_ptr = wptr;
+            read_compressed_block(base_ptr);
         }
         return header->block_uid;
     } catch (const exception &e) {
@@ -71,7 +76,7 @@ void *com::wookler::reactfs::core::fs_block::_open(uint64_t block_id, string fil
 }
 
 string
-com::wookler::reactfs::core::fs_block::create(uint64_t block_id, string filename, uint16_t block_type,
+com::wookler::reactfs::core::fs_block::create(uint64_t block_id, string filename, __block_type block_type,
                                               uint64_t block_size, bool overwrite) {
     CHECK_NOT_EMPTY(filename);
     PRECONDITION(block_size > 0);
@@ -93,8 +98,8 @@ com::wookler::reactfs::core::fs_block::create(uint64_t block_id, string filename
     }
 }
 
-string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string filename, uint16_t block_type,
-                                                      uint16_t record_type, uint64_t block_size,
+string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string filename, __block_type block_type,
+                                                      __block_record_type record_type, uint64_t block_size,
                                                       bool overwrite) {
     Path p(filename);
     if (p.exists()) {
@@ -125,6 +130,11 @@ string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string 
     header->update_time = header->create_time;
     header->block_type = block_type;
     header->record_type = record_type;
+    header->writable = true;
+    header->compression.compressed = false;
+    header->compression.compressed_size = 0;
+    header->compression.type = __compression_type::NONE;
+    header->archival = __archival::DISABLED;
 
     string lock_name = get_lock_name(header->block_id);
     exclusive_lock *block_lock = new exclusive_lock(&lock_name);
@@ -138,7 +148,9 @@ string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string 
 const void *com::wookler::reactfs::core::fs_block::read(uint64_t size, uint64_t offset) {
     CHECK_NOT_NULL(stream);
     CHECK_NOT_NULL(header);
-    PRECONDITION(offset + size <= header->block_size);
+    if ((offset + size) > header->block_size) {
+        return nullptr;
+    }
 
     char *ptr = static_cast<char *>(data_ptr);
     if (offset > 0)
@@ -153,6 +165,7 @@ const void *com::wookler::reactfs::core::fs_block::write(const void *source, uin
     CHECK_NOT_NULL(source);
     PRECONDITION(len > 0);
     PRECONDITION(header->used_bytes + len <= header->block_size);
+    PRECONDITION(header->writable);
 
     char *start_ptr = static_cast<char *>(write_ptr);
     if (block_lock->wait_lock()) {
@@ -179,11 +192,15 @@ void *com::wookler::reactfs::core::fs_block::write_r(const void *source, uint32_
     memcpy(write_ptr, source, len);
 
     header->used_bytes += len;
-    header->write_offet += len;
+    header->write_offset += len;
 
     char *cptr = static_cast<char *>(data_ptr);
-    write_ptr = cptr + header->write_offet;
+    write_ptr = cptr + header->write_offset;
 
+    if (header->used_bytes >= header->block_size) {
+        header->writable = false;
+        write_ptr = nullptr;
+    }
     return ptr;
 }
 
@@ -200,4 +217,45 @@ void com::wookler::reactfs::core::fs_block::remove() {
     if (NOT_NULL(block_lock)) {
         block_lock->dispose();
     }
+}
+
+void com::wookler::reactfs::core::fs_block::read_compressed_block(void *base_ptr) {
+    write_ptr = nullptr;
+    data_ptr = malloc(header->block_size * sizeof(char));
+    CHECK_NOT_NULL(data_ptr);
+
+    char *cptr = static_cast<char *>(base_ptr);
+    void *buffer = cptr + sizeof(__block_header);
+
+    archive_reader reader;
+    reader.read_archive_data(buffer, header->compression.compressed_size, data_ptr, header->block_size,
+                             header->compression.type);
+}
+
+void com::wookler::reactfs::core::fs_block::write_compressed(void *data, uint64_t size,
+                                                             __compression_type compression_type) {
+    CHECK_NOT_NULL(data);
+
+    if (block_lock->wait_lock()) {
+        try {
+            write_ptr = data_ptr;
+            write_r(data, size);
+
+            header->writable = false;
+            header->compression.compressed = true;
+            header->compression.compressed_size = size;
+            header->compression.type = compression_type;
+
+        } catch (const exception &e) {
+            block_lock->release_lock();
+            throw FS_BASE_ERROR_E(e);
+        } catch (...) {
+            block_lock->release_lock();
+            throw FS_BASE_ERROR("Unhandled type exception.");
+        }
+        block_lock->release_lock();
+    } else {
+        throw FS_BASE_ERROR("Error getting write lock on file. [block id=%s]", header->block_uid);
+    }
+
 }

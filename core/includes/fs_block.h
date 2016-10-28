@@ -27,33 +27,13 @@
 
 #include "fs_error_base.h"
 #include "fmstream.h"
-
+#include "common_structs.h"
+#include "archive_reader.h"
 
 namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
-                typedef struct __block_record_type__ {
-                    static const uint16_t RAW = 0, TYPED = 1;
-                } __block_record_type;
-
-                typedef struct __block_type__ {
-                    static const uint16_t
-                            PRIMARY = 0, REPLICA = 1, DELETED = 2, CORRUPTED = 3;
-                } __block_type;
-
-                typedef struct {
-                    uint64_t block_id;
-                    char block_uid[128];
-                    uint16_t block_type = __block_type::PRIMARY;
-                    uint64_t create_time;
-                    uint64_t update_time;
-                    uint64_t block_size;
-                    uint64_t used_bytes;
-                    uint64_t write_offet;
-                    uint16_t record_type = __block_record_type::RAW;
-                } __block_header;
-
                 class fs_block {
                 private:
                     string filename;
@@ -67,10 +47,12 @@ namespace com {
 
                     void *write_r(const void *source, uint32_t len);
 
-                    string _create(uint64_t block_id, string filename, uint16_t block_type,
-                                   uint16_t record_type, uint64_t block_size, bool overwrite);
+                    string _create(uint64_t block_id, string filename, __block_type block_type,
+                                   __block_record_type record_type, uint64_t block_size, bool overwrite);
 
                     void *_open(uint64_t block_id, string filename);
+
+                    void read_compressed_block(void *base_ptr);
 
                 public:
                     virtual ~fs_block() {
@@ -81,12 +63,30 @@ namespace com {
                     virtual string open(uint64_t block_id, string filename);
 
                     virtual string
-                    create(uint64_t block_id, string filename, uint16_t block_type, uint64_t block_size,
+                    create(uint64_t block_id, string filename, __block_type block_type, uint64_t block_size,
                            bool overwrite);
 
                     virtual const void *read(uint64_t size, uint64_t offset = 0);
 
                     virtual const void *write(const void *source, uint32_t len);
+
+                    void *get_data_ptr() {
+                        CHECK_NOT_NULL(header);
+
+                        return data_ptr;
+                    }
+
+                    virtual void finish() {
+                        CHECK_NOT_NULL(header);
+
+                        header->writable = false;
+                    }
+
+                    bool is_writable() {
+                        CHECK_NOT_NULL(header);
+
+                        return header->writable;
+                    }
 
                     virtual void close() {
                         if (NOT_NULL(stream)) {
@@ -99,19 +99,108 @@ namespace com {
                         data_ptr = nullptr;
                     }
 
-                    uint64_t get_free_space() {
+                    string get_filename() const {
+                        CHECK_NOT_NULL(header);
+
+                        return filename;
+                    }
+
+                    uint64_t get_free_space() const {
                         CHECK_NOT_NULL(header);
 
                         return (header->block_size - header->used_bytes);
                     }
 
-                    uint64_t get_used_space() {
+                    uint64_t get_used_space() const {
                         CHECK_NOT_NULL(header);
 
                         return header->used_bytes;
                     }
 
+                    bool is_compressed() const {
+                        CHECK_NOT_NULL(header);
+
+                        return header->compression.compressed;
+                    }
+
+                    fs_block *with_compression(bool compression) {
+                        CHECK_NOT_NULL(header);
+
+                        header->compression.compressed = compression;
+
+                        return this;
+                    }
+
+                    __compression_type get_compression_type() const {
+                        CHECK_NOT_NULL(header);
+
+                        return header->compression.type;
+                    }
+
+                    fs_block *with_compression_type(__compression_type type) {
+                        CHECK_NOT_NULL(header);
+
+                        header->compression.type = type;
+
+                        return this;
+                    }
+
+                    uint64_t get_block_ttl() const {
+                        CHECK_NOT_NULL(header);
+
+                        return header->block_ttl;
+                    }
+
+                    fs_block *with_block_ttl(uint64_t ttl) {
+                        PRECONDITION(ttl >= 0);
+                        CHECK_NOT_NULL(header);
+
+                        header->block_ttl = ttl;
+
+                        return this;
+                    }
+
+                    uint64_t get_create_time() const {
+                        CHECK_NOT_NULL(header);
+
+                        return header->create_time;
+                    }
+
+                    uint64_t get_update_time() const {
+                        CHECK_NOT_NULL(header);
+
+                        return header->update_time;
+                    }
+
+                    uint64_t get_block_size() const {
+                        CHECK_NOT_NULL(header);
+
+                        return header->block_size;
+                    }
+
+                    __block_type get_block_type() const {
+                        CHECK_NOT_NULL(header);
+
+                        return header->block_type;
+                    }
+
+                    __archival get_archival_type() {
+                        CHECK_NOT_NULL(header);
+
+                        return header->archival;
+                    }
+
+                    fs_block *with_archival_type(__archival type) {
+                        CHECK_NOT_NULL(header);
+
+                        header->archival = type;
+
+                        return this;
+                    }
+
                     virtual void remove();
+
+                    virtual void write_compressed(void *data, uint64_t size, __compression_type compression_type);
 
                     static string get_lock_name(uint64_t block_id) {
                         return common_utils::format("block_%lu_lock", block_id);

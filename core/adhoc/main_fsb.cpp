@@ -7,6 +7,7 @@
 #include "common/includes/__env.h"
 #include "common/includes/init_utils.h"
 #include "core/includes/fs_typed_block.h"
+#include "core/includes/block_archiver.h"
 
 #define REUSE_BLOCK_FILE "/tmp/block_reused.basic"
 #define REUSE_BLOCK_ID 1024
@@ -104,8 +105,26 @@ int main(int argc, char **argv) {
             LOG_DEBUG("record[rowid=%lu] : index=%d; timestamp=%lu; value=%s", rid, t->index, t->timestamp, t->value);
         }
 
+        block_archiver archiver;
+
+        string path = archiver.archive(typed_block, __compression_type::ZLIB, __archival::ARCHIVE,
+                                       "/tmp/block/archive");
+        CHECK_NOT_EMPTY(path);
         typed_block->remove();
         delete (typed_block);
+
+        typed_block = new fs_typed_block<_test_typed>();
+        typed_block->open(REUSE_TYPED_BLOCK_ID, path);
+
+        r = nullptr;
+
+        for (int ii = 0; ii < COUNT_TYPED; ii++) {
+            r = typed_block->read_t(ii);
+            const uint64_t rid = r->get_rowid();
+            const _test_typed *t = r->get_data();
+
+            LOG_DEBUG("record[rowid=%lu] : index=%d; timestamp=%lu; value=%s", rid, t->index, t->timestamp, t->value);
+        }
 
         exit(0);
     } catch (const exception &e) {

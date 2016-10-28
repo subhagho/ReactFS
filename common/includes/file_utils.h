@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <fstream>
 
 #include "common_utils.h"
 #include "base_error.h"
@@ -276,11 +277,10 @@ namespace com {
 
             class Path {
             private:
-                string *path;
+                string *path = nullptr;
 
             public:
                 Path() {
-                    path = new string();
                 }
 
                 ~Path() {
@@ -288,7 +288,6 @@ namespace com {
                 }
 
                 Path(const string p) {
-                    path = new string();
                     append(p);
                 }
 
@@ -301,9 +300,9 @@ namespace com {
                 }
 
                 const string append(string p) {
-                    assert(!p.empty());
+                    CHECK_NOT_EMPTY(p);
 
-                    if (path->empty()) {
+                    if (IS_NULL(path)) {
                         path = new string(p);
                     } else {
                         string np = file_utils::concat_path(*path, p);
@@ -329,6 +328,25 @@ namespace com {
                             ss.append(parts[ii]);
                         }
                         return ss;
+                    }
+                    return EMPTY_STRING;
+                }
+
+                const string get_filename() const {
+                    vector<string> parts = common_utils::split(*path, '/');
+                    if (parts.size() > 0) {
+                        return string(parts[parts.size() - 1]);
+                    }
+                    return EMPTY_STRING;
+                }
+
+                const string get_extension() const {
+                    const string file = get_filename();
+                    if (!IS_EMPTY(file)) {
+                        vector<string> parts = common_utils::split(file, '.');
+                        if (parts.size() > 0) {
+                            return string(parts[parts.size() - 1]);
+                        }
                     }
                     return EMPTY_STRING;
                 }
@@ -366,6 +384,20 @@ namespace com {
                         return file_utils::clean_directory(*path);
                     }
                     return false;
+                }
+
+                static uint64_t copy(Path source, Path dest) {
+                    std::ifstream src(source.path->c_str(), std::ios::binary);
+                    std::ofstream dst(dest.path->c_str(), std::ios::binary);
+
+                    dst << src.rdbuf();
+
+                    uint64_t pos = dst.tellp();
+
+                    src.close();
+                    dst.close();
+
+                    return pos;
                 }
             };
         }

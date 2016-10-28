@@ -63,7 +63,7 @@ namespace com {
 
                 public:
                     virtual string
-                    create(uint64_t block_id, string filename, uint16_t block_type, uint64_t block_size,
+                    create(uint64_t block_id, string filename, __block_type block_type, uint64_t block_size,
                            bool overwrite) override;
 
                     virtual string open(uint64_t block_id, string filename) override;
@@ -81,7 +81,7 @@ namespace com {
 
 template<class T>
 string
-com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id, string filename, uint16_t block_type,
+com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id, string filename, __block_type block_type,
                                                        uint64_t block_size,
                                                        bool overwrite) {
     PRECONDITION(block_size > 0);
@@ -125,6 +125,8 @@ row <T> **com::wookler::reactfs::core::fs_typed_block<T>::write_t(T **source, ui
     CHECK_NOT_NULL(header);
     CHECK_NOT_NULL(source);
     PRECONDITION(count > 0);
+    PRECONDITION(header->writable);
+
     row<T> **rows = new row<T> *[count];
 
     if (block_lock->wait_lock()) {
@@ -146,6 +148,7 @@ row <T> **com::wookler::reactfs::core::fs_typed_block<T>::write_t(T **source, ui
                 *this->next_rowid = rowid;
 
             }
+
         } catch (const exception &e) {
             block_lock->release_lock();
             throw FS_BASE_ERROR_E(e);
@@ -167,7 +170,9 @@ row <T> *com::wookler::reactfs::core::fs_typed_block<T>::read_t(uint64_t offset)
 
     CHECK_NOT_NULL(stream);
     CHECK_NOT_NULL(header);
-    PRECONDITION(offset + size <= header->block_size);
+    if ((offset + size) > header->block_size) {
+        return nullptr;
+    }
 
     char *ptr = static_cast<char *>(data_ptr);
     if (offset > 0)
@@ -189,19 +194,24 @@ string com::wookler::reactfs::core::fs_typed_block<T>::open(uint64_t block_id, s
 
         PRECONDITION(header->record_type == __block_record_type::TYPED);
 
-        char *cptr = static_cast<char *>(base_ptr);
-        void *rptr = cptr + sizeof(__block_header);
+        if (!header->compression.compressed) {
+            char *cptr = static_cast<char *>(base_ptr);
+            void *rptr = cptr + sizeof(__block_header);
 
-        next_rowid = static_cast<uint64_t *>(rptr);
-        LOG_DEBUG("Current used rowid = %lu", *next_rowid);
+            next_rowid = static_cast<uint64_t *>(rptr);
+            LOG_DEBUG("Current used rowid = %lu", *next_rowid);
 
-        data_ptr = cptr + sizeof(__block_header) + sizeof(uint64_t);
+            data_ptr = cptr + sizeof(__block_header) + sizeof(uint64_t);
 
-        char *wptr = static_cast<char *>(data_ptr);
-        if (header->write_offet > 0) {
-            write_ptr = wptr + header->write_offet;
+            char *wptr = static_cast<char *>(data_ptr);
+            if (header->write_offset > 0) {
+                write_ptr = wptr + header->write_offset;
+            } else {
+                write_ptr = wptr;
+            }
         } else {
-            write_ptr = wptr;
+            *next_rowid = 999999;
+            read_compressed_block(base_ptr);
         }
         return header->block_uid;
     } catch (const exception &e) {
