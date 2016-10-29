@@ -37,10 +37,6 @@ int main(int argc, char **argv) {
         string configf(cf);
         env_utils::create_env(configf);
 
-        Path p("/tmp/test/dir/file.txt");
-        LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());
-        p = Path("who/cares/file.txt");
-        LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());
 
         fs_block *block = new fs_block();
         block->create(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY, DEFAULT_BLOCK_SIZE, true);

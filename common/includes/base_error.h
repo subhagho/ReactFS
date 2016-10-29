@@ -64,7 +64,13 @@
 
 #define PRECONDITION(p) do { \
     if (!(p)) { \
-        throw BASE_ERROR("Check condition failed. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+        throw BASE_ERROR("Pre-condition : Check condition failed. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+
+#define POSTCONDITION(p) do { \
+    if (!(p)) { \
+        throw BASE_ERROR("Post-condition : Check condition failed. [%s][%s]", #p, __PRETTY_FUNCTION__); \
     } \
 } while(0);
 

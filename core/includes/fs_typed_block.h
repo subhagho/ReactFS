@@ -233,7 +233,14 @@ string com::wookler::reactfs::core::fs_typed_block<T>::open(uint64_t block_id, s
                 write_ptr = wptr;
             }
         } else {
+            char *cptr = static_cast<char *>(base_ptr);
+            void *rptr = cptr + sizeof(__block_header);
+
+            next_rowid = static_cast<uint64_t *>(rptr);
             *next_rowid = 999999;
+
+            LOG_DEBUG("Current used rowid = %lu", *next_rowid);
+
             read_compressed_block(base_ptr);
         }
         return header->block_uid;

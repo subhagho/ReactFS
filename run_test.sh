@@ -5,5 +5,7 @@ if [ $# -lt 2 ]; then
 fi
 
 export CONFIG_FILE_PATH=$1
+TEST=`find . -name $2`
 
-./cmake/$2
+echo "Executing test case $TEST..."
+$TEST

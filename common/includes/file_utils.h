@@ -284,7 +284,7 @@ namespace com {
                 }
 
                 ~Path() {
-                    CHECK_AND_FREE(path);
+                    CHECK_AND_FREE(this->path);
                 }
 
                 Path(const string p) {
@@ -299,13 +299,14 @@ namespace com {
                     return path;
                 }
 
-                const string append(string p) {
+                const string append(const string p) {
                     CHECK_NOT_EMPTY(p);
 
                     if (IS_EMPTY_P(path)) {
                         path->append(p);
                     } else {
-                        string np = file_utils::concat_path(*path, p);
+                        string sp = string(*path);
+                        string np = file_utils::concat_path(sp, p);
                         path->clear();
                         path->append(np);
                     }
@@ -396,23 +397,30 @@ namespace com {
 
             class file_copy {
             public:
-                static uint64_t copy(Path source, Path dest) {
-                    PRECONDITION(source.exists());
-                    if (dest.exists()) {
-                        dest.remove();
+                static uint64_t copy(const Path *source, Path *dest) {
+                    PRECONDITION(source->exists());
+                    if (dest->exists()) {
+                        dest->remove();
                     }
 
-                    std::ifstream src(source.get_path().c_str(), std::ios::binary);
-                    std::ofstream dst(dest.get_path().c_str(), std::ios::binary);
+                    std::ifstream src(source->get_path().c_str(), std::ios::binary);
+                    std::ofstream dst(dest->get_path().c_str(), std::ios::binary);
 
                     dst << src.rdbuf();
 
                     uint64_t pos = dst.tellp();
 
-                    src.close();
-                    dst.close();
-
                     return pos;
+                }
+
+                static vector<string> copy_lines(Path source) {
+                    vector<string> lines;
+                    std::ifstream infile(source.get_path());
+                    std::string line;
+                    while (std::getline(infile, line)) {
+                        lines.push_back(line);
+                    }
+                    return lines;
                 }
             };
         }

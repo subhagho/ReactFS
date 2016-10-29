@@ -42,7 +42,7 @@ namespace com {
 
                     string archive_snappy(fs_block *block);
 
-                    string archive_file(string source_path, Path dest_dir);
+                    string archive_file(string source_path, Path *dest_dir);
 
                 public:
                     string

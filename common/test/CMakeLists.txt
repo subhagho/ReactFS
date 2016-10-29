@@ -39,4 +39,8 @@ add_executable(test_alarm test_alarm.cpp)
 target_link_libraries(test_alarm rfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
 add_test(NAME test_alarm COMMAND test_alarm)
 
+add_executable(test_file_utils test_file_utils.cpp)
+target_link_libraries(test_file_utils rfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+add_test(NAME test_file_utils COMMAND test_file_utils)
+
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")

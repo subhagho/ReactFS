@@ -30,3 +30,5 @@ endif ()
 
 MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")
 
+add_executable(main_common adhoc/main_common.cpp)
+target_link_libraries(main_common ${COMMON_LIB_NAME} ${RFS_C_LIBRARIES})

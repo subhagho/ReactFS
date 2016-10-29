@@ -53,7 +53,7 @@ string com::wookler::reactfs::core::block_archiver::archive(fs_block *block, __c
                 throw FS_ARCHIVAL_ERROR("Specified destination path is not a valid directory. [path=%s]",
                                         archive_dir.c_str());
             }
-            new_block_path = block_archiver::archive_file(new_block_path, p);
+            new_block_path = block_archiver::archive_file(new_block_path, &p);
         }
 
         block->close();
@@ -66,20 +66,22 @@ string com::wookler::reactfs::core::block_archiver::archive(fs_block *block, __c
     }
 }
 
-string com::wookler::reactfs::core::block_archiver::archive_file(string source_path, Path dest_dir) {
+string com::wookler::reactfs::core::block_archiver::archive_file(string source_path, Path *dest_dir) {
     CHECK_NOT_EMPTY(source_path);
-    PRECONDITION(dest_dir.exists());
+    PRECONDITION(dest_dir->exists());
 
     Path source(source_path);
     string outf = source.get_filename();
     PRECONDITION(!IS_EMPTY(outf));
 
-    dest_dir.append(outf);
+    dest_dir->append(outf);
 
-    LOG_INFO("Copying block file. [source=%s][dest=%s]", source.get_path().c_str(), dest_dir.get_path().c_str());
-    file_copy::copy(source, dest_dir);
+    LOG_INFO("Copying block file. [source=%s][dest=%s]", source.get_path().c_str(), dest_dir->get_path().c_str());
+    file_copy::copy(&source, dest_dir);
 
-    return string(dest_dir.get_path());
+    string ss(dest_dir->get_path());
+
+    return ss;
 }
 
 string com::wookler::reactfs::core::block_archiver::archive_zlib(fs_block *block) {
