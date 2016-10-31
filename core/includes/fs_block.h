@@ -79,6 +79,24 @@ namespace com {
 
                     virtual const void *write(const void *source, uint32_t len);
 
+                    uint64_t get_block_id() {
+                        CHECK_NOT_NULL(header);
+
+                        return header->block_id;
+                    }
+
+                    string get_block_uuid() {
+                        CHECK_NOT_NULL(header);
+
+                        return header->block_uid;
+                    }
+
+                    __block_record_type get_record_type() {
+                        CHECK_NOT_NULL(header);
+
+                        return header->record_type;
+                    }
+
                     void *get_data_ptr() {
                         CHECK_NOT_NULL(header);
 
@@ -210,10 +228,8 @@ namespace com {
                     virtual void remove();
 
                     virtual string
-                    create_compressed_block(void *data, uint64_t size,
+                    create_compressed_block(uint64_t size,
                                             __compression_type compression_type) {
-                        CHECK_NOT_NULL(data);
-
                         Path p(filename);
                         string newf = p.get_filename();
                         newf.append(block_utils::get_compression_ext(compression_type));

@@ -40,3 +40,5 @@ target_link_libraries(${CORE_LIB_NAME} ${RFS_C_LIBRARIES})
 add_executable(main_fsb adhoc/main_fsb.cpp)
 target_link_libraries(main_fsb rfs-core ${RFS_C_LIBRARIES})
 
+add_executable(main_compress adhoc/main_compress.cpp)
+target_link_libraries(main_compress rfs-core ${RFS_C_LIBRARIES})

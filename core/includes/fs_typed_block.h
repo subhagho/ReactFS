@@ -83,7 +83,7 @@ namespace com {
                     row<T> **write_t(T **source, uint64_t count = 1);
 
                     virtual string
-                    create_compressed_block(void *data, uint64_t size,
+                    create_compressed_block(uint64_t size,
                                             __compression_type compression_type) override;
                 };
 
@@ -252,10 +252,8 @@ string com::wookler::reactfs::core::fs_typed_block<T>::open(uint64_t block_id, s
 }
 
 template<class T>
-string com::wookler::reactfs::core::fs_typed_block<T>::create_compressed_block(void *data, uint64_t size,
+string com::wookler::reactfs::core::fs_typed_block<T>::create_compressed_block(uint64_t size,
                                                                                __compression_type compression_type) {
-    CHECK_NOT_NULL(data);
-
     Path p(get_filename());
     string newf = p.get_filename();
     newf.append(block_utils::get_compression_ext(compression_type));
@@ -263,7 +261,7 @@ string com::wookler::reactfs::core::fs_typed_block<T>::create_compressed_block(v
     Path np(p.get_parent_dir());
     np.append(newf);
 
-    fs_typed_block *block = new fs_typed_block();
+    fs_typed_block<T> *block = new fs_typed_block<T>();
     block->create(this->header->block_id, np.get_path(), this->header->block_type, size, true, compression_type,
                   header->used_bytes, true);
 

@@ -27,7 +27,7 @@ void com::wookler::reactfs::core::archive_reader::read_archive_data(void *source
         default:
             throw FS_ARCHIVAL_ERROR("Unsupported compression type. [type=%d]", type);
     }
-    //PRECONDITION(ret > 0);
+    POSTCONDITION(ret > 0);
 }
 
 int com::wookler::reactfs::core::archive_reader::read_zlib_data(void *source, uint64_t in_size, void *dest,

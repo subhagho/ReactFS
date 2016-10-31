@@ -94,6 +94,7 @@ int main(int argc, char **argv) {
         LOG_DEBUG("BLOCK AVAILABLE SPACE = %lu", typed_block->get_free_space());
 
         delete (typed_block);
+
         typed_block = new fs_typed_block<_test_typed>();
         typed_block->open(REUSE_TYPED_BLOCK_ID, REUSE_BLOCK_TYPED_FILE);
 
@@ -107,15 +108,14 @@ int main(int argc, char **argv) {
             LOG_DEBUG("record[rowid=%lu] : index=%d; timestamp=%lu; value=%s", rid, t->index, t->timestamp, t->value);
         }
 
-        block_archiver archiver;
-
-        string new_path = archiver.archive(typed_block, __compression_type::ZLIB, __archival::ARCHIVE,
-                                           "/tmp/block/archive");
+        block_archiver<_test_typed> archiver;
+        fs_block *b = archiver.archive(typed_block, __compression_type::ZLIB, __archival::ARCHIVE,
+                                       "/tmp/block/archive");
+        POSTCONDITION(NOT_NULL(b));
+        typed_block->remove();
         delete (typed_block);
 
-        typed_block = new fs_typed_block<_test_typed>();
-        typed_block->open(REUSE_TYPED_BLOCK_ID, new_path);
-
+        typed_block = dynamic_cast<fs_typed_block<_test_typed> *>(b);
         r = nullptr;
 
         for (int ii = 0; ii < COUNT_TYPED; ii++) {
