@@ -32,17 +32,16 @@ string com::wookler::reactfs::core::fs_block::open(uint64_t block_id, string fil
 
         PRECONDITION(header->record_type == __block_record_type::RAW);
 
-        if (!header->compression.compressed) {
-            char *cptr = static_cast<char *>(base_ptr);
-            data_ptr = cptr + sizeof(__block_header);
+        data_ptr = get_data_ptr(base_ptr);
+        POSTCONDITION(NOT_NULL(data_ptr));
 
-            char *wptr = static_cast<char *>(data_ptr);
-            if (header->write_offset > 0) {
-                write_ptr = wptr + header->write_offset;
-            } else {
-                write_ptr = wptr;
-            }
+        char *wptr = static_cast<char *>(data_ptr);
+        if (header->write_offset > 0) {
+            write_ptr = wptr + header->write_offset;
         } else {
+            write_ptr = wptr;
+        }
+        if (header->compression.compressed) {
             read_compressed_block(base_ptr);
         }
         return header->block_uid;
@@ -166,13 +165,12 @@ const void *com::wookler::reactfs::core::fs_block::read(uint64_t size, uint64_t 
     return ptr;
 }
 
-const void *com::wookler::reactfs::core::fs_block::write(const void *source, uint32_t len) {
+const void *com::wookler::reactfs::core::fs_block::_write(const void *source, uint32_t len) {
     CHECK_NOT_NULL(stream);
     CHECK_NOT_NULL(header);
     CHECK_NOT_NULL(source);
     PRECONDITION(len > 0);
     PRECONDITION(header->used_bytes + len <= header->block_size);
-    PRECONDITION(header->writable);
 
     char *start_ptr = static_cast<char *>(write_ptr);
     if (block_lock->wait_lock()) {
@@ -227,14 +225,11 @@ void com::wookler::reactfs::core::fs_block::remove() {
 }
 
 void com::wookler::reactfs::core::fs_block::read_compressed_block(void *base_ptr) {
-    write_ptr = nullptr;
     data_ptr = malloc(header->compression.uncompressed_size * sizeof(char));
     CHECK_NOT_NULL(data_ptr);
-
-    char *cptr = static_cast<char *>(base_ptr);
-    void *buffer = cptr + sizeof(__block_header);
-
-    archive_reader reader;
-    reader.read_archive_data(buffer, header->block_size, data_ptr, header->compression.uncompressed_size,
-                             header->compression.type);
+    if (header->used_bytes > 0) {
+        archive_reader reader;
+        reader.read_archive_data(base_ptr, header->block_size, data_ptr, header->compression.uncompressed_size,
+                                 header->compression.type);
+    }
 }

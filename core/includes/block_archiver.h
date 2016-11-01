@@ -212,7 +212,7 @@ fs_block *com::wookler::reactfs::core::block_archiver<T>::archive_zlib(fs_block 
     block_factory<T> factory;
     fs_block *new_block = factory.open_block(block->get_block_id(), nb, block->get_record_type());
     POSTCONDITION(NOT_NULL(new_block));
-    new_block->write(data, buffer.size());
+    new_block->write_c(data, buffer.size());
 
     return new_block;
 }

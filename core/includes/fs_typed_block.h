@@ -62,6 +62,15 @@ namespace com {
                 protected:
                     uint64_t *next_rowid = nullptr;
 
+                    virtual void *get_data_ptr(void *base_ptr) override {
+                        char *cptr = static_cast<char *>(base_ptr);
+                        void *rptr = cptr + sizeof(__block_header);
+
+                        next_rowid = static_cast<uint64_t *>(rptr);
+                        LOG_DEBUG("Current used rowid = %lu", *next_rowid);
+
+                        return cptr + sizeof(__block_header) + sizeof(uint64_t);
+                    }
 
                 public:
                     virtual string
@@ -217,22 +226,17 @@ string com::wookler::reactfs::core::fs_typed_block<T>::open(uint64_t block_id, s
 
         PRECONDITION(header->record_type == __block_record_type::TYPED);
 
-        if (!header->compression.compressed) {
-            char *cptr = static_cast<char *>(base_ptr);
-            void *rptr = cptr + sizeof(__block_header);
 
-            next_rowid = static_cast<uint64_t *>(rptr);
-            LOG_DEBUG("Current used rowid = %lu", *next_rowid);
+        data_ptr = get_data_ptr(base_ptr);
+        POSTCONDITION(NOT_NULL(data_ptr));
 
-            data_ptr = cptr + sizeof(__block_header) + sizeof(uint64_t);
-
-            char *wptr = static_cast<char *>(data_ptr);
-            if (header->write_offset > 0) {
-                write_ptr = wptr + header->write_offset;
-            } else {
-                write_ptr = wptr;
-            }
+        char *wptr = static_cast<char *>(data_ptr);
+        if (header->write_offset > 0) {
+            write_ptr = wptr + header->write_offset;
         } else {
+            write_ptr = wptr;
+        }
+        if (header->compression.compressed) {
             char *cptr = static_cast<char *>(base_ptr);
             void *rptr = cptr + sizeof(__block_header);
 

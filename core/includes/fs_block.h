@@ -55,11 +55,17 @@ namespace com {
 
                     void read_compressed_block(void *base_ptr);
 
+                    virtual void *get_data_ptr(void *base_ptr) {
+                        char *cptr = static_cast<char *>(base_ptr);
+                        return cptr + sizeof(__block_header);
+                    }
+
                 public:
                     virtual ~fs_block() {
                         CHECK_AND_FREE(block_lock);
                         close();
                     }
+
 
                     virtual string open(uint64_t block_id, string filename);
 
@@ -77,7 +83,24 @@ namespace com {
 
                     virtual const void *read(uint64_t size, uint64_t offset = 0);
 
-                    virtual const void *write(const void *source, uint32_t len);
+                    virtual const void *write(const void *source, uint32_t len) {
+                        PRECONDITION(header->writable)
+                        return _write(source, len);
+                    }
+
+                    virtual const void *write_c(const void *source, uint32_t len) {
+                        PRECONDITION(header->compression.compressed);
+
+                        const void *ptr = _write(source, len);
+                        POSTCONDITION(header->used_bytes > 0);
+
+                        void *d_ptr = get_data_ptr(stream->data());
+                        read_compressed_block(d_ptr);
+
+                        return ptr;
+                    }
+
+                    const void *_write(const void *source, uint32_t len);
 
                     uint64_t get_block_id() {
                         CHECK_NOT_NULL(header);
