@@ -43,7 +43,7 @@
 namespace com {
     namespace watergate {
         namespace common {
-            class alarm {
+            class __alarm {
             private:
                 __callback *_c = nullptr;
                 long _d;
@@ -53,22 +53,22 @@ namespace com {
                 }
 
             public:
-                alarm(long delta) {
+                __alarm(long delta) {
                     this->_d = delta;
                 }
 
-                alarm(long delta, __callback *c) {
+                __alarm(long delta, __callback *c) {
                     this->_d = delta;
                     this->_c = c;
                 }
 
-                alarm(string duration) {
+                __alarm(string duration) {
                     assert(!IS_EMPTY(duration));
                     this->_d = common_utils::parse_duration(duration);
                     assert((this->_d > 0));
                 }
 
-                alarm(string duration, __callback *c) {
+                __alarm(string duration, __callback *c) {
                     assert(!IS_EMPTY(duration));
                     this->_d = common_utils::parse_duration(duration);
                     assert((this->_d > 0));

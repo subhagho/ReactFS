@@ -63,7 +63,7 @@ namespace com {
                     uint64_t *next_rowid = nullptr;
 
                     virtual void *get_data_ptr(void *base_ptr) override {
-                        char *cptr = static_cast<char *>(base_ptr);
+                        BYTE_PTR cptr = static_cast<BYTE_PTR>(base_ptr);
                         void *rptr = cptr + sizeof(__block_header);
 
                         next_rowid = static_cast<uint64_t *>(rptr);
@@ -134,8 +134,8 @@ com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id, string
 
         void *base_ptr = stream->data();
 
-        char *cptr = static_cast<char *>(base_ptr);
-        void *rptr = cptr + sizeof(__block_header);
+        BYTE_PTR cptr = static_cast<BYTE_PTR>(base_ptr);
+        void *rptr = (cptr + sizeof(__block_header));
 
         next_rowid = static_cast<uint64_t *>(rptr);
         *next_rowid = 0;
@@ -212,7 +212,7 @@ row <T> *com::wookler::reactfs::core::fs_typed_block<T>::read_t(uint64_t offset)
         return nullptr;
     }
 
-    char *ptr = static_cast<char *>(data_ptr);
+    BYTE_PTR ptr = static_cast<BYTE_PTR>(data_ptr);
     if (offset > 0)
         ptr += offset;
 
@@ -232,20 +232,19 @@ string com::wookler::reactfs::core::fs_typed_block<T>::open(uint64_t block_id, s
 
         PRECONDITION(header->record_type == __block_record_type::TYPED);
 
-
         data_ptr = get_data_ptr(base_ptr);
         POSTCONDITION(NOT_NULL(data_ptr));
 
-        char *wptr = static_cast<char *>(data_ptr);
+        BYTE_PTR wptr = static_cast<BYTE_PTR>(data_ptr);
         if (header->write_offset > 0) {
             write_ptr = wptr + header->write_offset;
         } else {
             write_ptr = wptr;
         }
+
         if (header->compression.compressed) {
-            void *ptr = data_ptr;
             data_ptr = nullptr;
-            read_compressed_block(ptr);
+            read_compressed_block(wptr);
         }
         return header->block_uid;
     } catch (const exception &e) {

@@ -20,7 +20,7 @@
 
 #include "common/includes/lock_record_def.h"
 #include "watergate/includes/control.h"
-#include "common/includes/alarm.h"
+#include "common/includes/__alarm.h"
 #include "watergate/includes/resource_factory.h"
 
 

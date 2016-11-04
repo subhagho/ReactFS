@@ -5,6 +5,9 @@
 #ifndef REACTFS_COMMON_STRUCTS_H
 #define REACTFS_COMMON_STRUCTS_H
 
+typedef uint8_t BYTE;
+typedef uint8_t *BYTE_PTR;
+
 namespace com {
     namespace wookler {
         namespace reactfs {
@@ -46,8 +49,6 @@ namespace com {
                     uint64_t block_ttl = 0;
                     __archival archival = __archival::DISABLED;
                 } __block_header;
-
-
             }
         }
     }

@@ -28,7 +28,7 @@
 #include "common/includes/file_utils.h"
 #include "common/includes/config.h"
 #include "common/includes/__state__.h"
-#include "common/includes/alarm.h"
+#include "common/includes/__alarm.h"
 #include "common/includes/metrics.h"
 #include "resource_def.h"
 #include "control.h"

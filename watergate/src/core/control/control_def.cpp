@@ -184,7 +184,7 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
             ret = Timeout;
         } else {
             int locked_priority = priority;
-            com::watergate::common::alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
+            com::watergate::common::__alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
             for (int ii = priority - 1; ii >= 0; ii--) {
                 while (true) {
                     if (t.get_current_elapsed() > timeout) {

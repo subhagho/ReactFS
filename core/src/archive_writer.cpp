@@ -43,15 +43,14 @@ com::wookler::reactfs::core::archive_writer::write_zlib_data(void *source, uint6
     std::vector<uint8_t> buffer;
 
 
-    uint64_t data_size = in_size;
-    const size_t BUFSIZE = (data_size > COMPRESS_BLOCK_SIZE ? COMPRESS_BLOCK_SIZE : (data_size + 32));
+    const size_t BUFSIZE = (in_size > COMPRESS_BLOCK_SIZE ? COMPRESS_BLOCK_SIZE : (in_size + 32));
     uint8_t temp_buffer[BUFSIZE];
 
     z_stream _z_stream;
     _z_stream.zalloc = 0;
     _z_stream.zfree = 0;
-    _z_stream.next_in = reinterpret_cast<Bytef *>(source);
-    _z_stream.avail_in = data_size;
+    _z_stream.next_in = static_cast<Bytef *>(source);
+    _z_stream.avail_in = in_size;
     _z_stream.next_out = temp_buffer;
     _z_stream.avail_out = BUFSIZE;
 

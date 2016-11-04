@@ -35,7 +35,7 @@ string com::wookler::reactfs::core::fs_block::open(uint64_t block_id, string fil
         data_ptr = get_data_ptr(base_ptr);
         POSTCONDITION(NOT_NULL(data_ptr));
 
-        char *wptr = static_cast<char *>(data_ptr);
+        BYTE_PTR wptr = static_cast<BYTE_PTR>(data_ptr);
         if (header->write_offset > 0) {
             write_ptr = wptr + header->write_offset;
         } else {
@@ -163,7 +163,7 @@ const void *com::wookler::reactfs::core::fs_block::read(uint64_t size, uint64_t 
         return nullptr;
     }
 
-    char *ptr = static_cast<char *>(data_ptr);
+    BYTE_PTR ptr = static_cast<BYTE_PTR>(data_ptr);
     if (offset > 0)
         ptr += offset;
 
@@ -177,7 +177,7 @@ const void *com::wookler::reactfs::core::fs_block::_write(const void *source, ui
     PRECONDITION(len > 0);
     PRECONDITION(header->used_bytes + len <= header->block_size);
 
-    char *start_ptr = static_cast<char *>(write_ptr);
+    BYTE_PTR start_ptr = static_cast<BYTE_PTR>(write_ptr);
     if (block_lock->wait_lock()) {
         try {
             write_r(source, len);
@@ -204,7 +204,7 @@ void *com::wookler::reactfs::core::fs_block::write_r(const void *source, uint32_
     header->used_bytes += len;
     header->write_offset += len;
 
-    char *cptr = static_cast<char *>(data_ptr);
+    BYTE_PTR cptr = static_cast<BYTE_PTR>(data_ptr);
     write_ptr = cptr + header->write_offset;
 
     if (header->used_bytes >= header->block_size) {

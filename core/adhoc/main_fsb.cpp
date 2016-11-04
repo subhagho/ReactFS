@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
         }
 
         block_archiver<_test_typed> archiver;
-        fs_block *b = archiver.archive(typed_block, __compression_type::ZLIB, __archival::ARCHIVE,
+        fs_block *b = archiver.archive(typed_block, __compression_type::ZLIB, __archival::COMPRESSED,
                                        "/tmp/block/archive");
         POSTCONDITION(NOT_NULL(b));
 

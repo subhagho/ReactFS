@@ -28,7 +28,7 @@ void com::watergate::core::control_manager::run(control_manager *owner) {
 
     try {
         LOG_INFO("Starting control manager thread...");
-        com::watergate::common::alarm sw(DEFAULT_CONTROL_THREAD_SLEEP);
+        com::watergate::common::__alarm sw(DEFAULT_CONTROL_THREAD_SLEEP);
         while (NOT_NULL(owner) && owner->state.is_available()) {
             if (!sw.start()) {
                 throw CONTROL_ERROR("Sleep state interrupted...");

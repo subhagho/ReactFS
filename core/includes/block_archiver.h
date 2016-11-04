@@ -95,6 +95,9 @@ fs_block *com::wookler::reactfs::core::block_archiver<T>::archive(fs_block *bloc
             CHECK_AND_FREE(data);
 
             new_block_path = n_block->get_filename();
+
+            block->remove();
+
         } else {
             new_block_path = block->get_filename();
         }

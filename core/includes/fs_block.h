@@ -24,12 +24,18 @@
 #include "common/includes/common.h"
 #include "common/includes/common_utils.h"
 #include "common/includes/exclusive_lock.h"
+#include "common/includes/__alarm.h"
+#include "common/includes/timer.h"
 
 #include "fs_error_base.h"
 #include "fmstream.h"
 #include "common_structs.h"
 #include "archive_reader.h"
 #include "block_utils.h"
+
+#define DEFAULT_LOCK_RETRY_INTERVAL 30
+
+using namespace com::watergate::common;
 
 namespace com {
     namespace wookler {
@@ -59,8 +65,8 @@ namespace com {
                     void read_compressed_block(void *base_ptr);
 
                     virtual void *get_data_ptr(void *base_ptr) {
-                        char *cptr = static_cast<char *>(base_ptr);
-                        return cptr + sizeof(__block_header);
+                        BYTE_PTR cptr = static_cast<BYTE_PTR>(base_ptr);
+                        return (cptr + sizeof(__block_header));
                     }
 
                 public:
@@ -69,6 +75,36 @@ namespace com {
                         close();
                     }
 
+                    bool wait_lock_block() {
+                        CHECK_NOT_NULL(block_lock);
+
+                        return block_lock->wait_lock();
+                    }
+
+                    bool try_lock_block(uint64_t timeout) {
+                        CHECK_NOT_NULL(block_lock);
+                        uint64_t startt = time_utils::now();
+                        while (true) {
+                            if (block_lock->try_lock()) {
+                                return true;
+                            }
+                            uint64_t now = time_utils::now();
+                            if ((now - startt) > timeout) {
+                                break;
+                            }
+                            com::watergate::common::__alarm a(DEFAULT_LOCK_RETRY_INTERVAL);
+                            if (!a.start()) {
+                                throw FS_BASE_ERROR("Error invoking sleep timer.");
+                            }
+                        }
+                        return false;
+                    }
+
+                    bool release_block_lock() {
+                        CHECK_NOT_NULL(block_lock);
+
+                        return block_lock->release_lock();
+                    }
 
                     virtual string open(uint64_t block_id, string filename);
 
@@ -162,8 +198,6 @@ namespace com {
                     }
 
                     string get_filename() const {
-                        CHECK_NOT_NULL(header);
-
                         return filename;
                     }
 
