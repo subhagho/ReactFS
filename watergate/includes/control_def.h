@@ -147,7 +147,7 @@ namespace com {
                     t.start();
 
                     _lock_state ret;
-                    com::watergate::common::alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
+                    __alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
                     while (true) {
                         err = 0;
                         ret = lock_get(name, priority, quota, timeout, err);

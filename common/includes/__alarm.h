@@ -29,13 +29,13 @@
 #include "base_error.h"
 
 #define START_ALARM(t) do {\
-    com::watergate::common::alarm a(t); \
+    com::watergate::common::__alarm a(t); \
     bool r = a.start(); \
     _assert(r); \
 } while(0);
 
 #define START_ALARM_WITH_CALLBACK(t, c) do {\
-    com::watergate::common::alarm a(t, c); \
+    com::watergate::common::__alarm a(t, c); \
     bool r = a.start(); \
     _assert(r); \
 } while(0);

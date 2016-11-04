@@ -27,7 +27,7 @@
 
 #include "test_common.h"
 #include "common/includes/timer.h"
-#include "common/includes/alarm.h"
+#include "common/includes/__alarm.h"
 #include "common/includes/init_utils.h"
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")

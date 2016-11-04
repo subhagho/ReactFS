@@ -21,7 +21,7 @@
 #include <unistd.h>
 
 #include "test_lock_client.h"
-#include "common/includes/alarm.h"
+#include "common/includes/__alarm.h"
 #include "common/includes/timer.h"
 
 #define REQUIRE _assert
