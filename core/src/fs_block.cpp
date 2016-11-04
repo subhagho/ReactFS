@@ -42,7 +42,9 @@ string com::wookler::reactfs::core::fs_block::open(uint64_t block_id, string fil
             write_ptr = wptr;
         }
         if (header->compression.compressed) {
-            read_compressed_block(base_ptr);
+            void *ptr = data_ptr;
+            data_ptr = nullptr;
+            read_compressed_block(ptr);
         }
         return header->block_uid;
     } catch (const exception &e) {
@@ -69,7 +71,7 @@ void *com::wookler::reactfs::core::fs_block::_open(uint64_t block_id, string fil
         block_lock = new exclusive_lock(&lock_name);
         block_lock->create();
     }
-    this->filename = filename;
+    this->filename = string(filename);
 
     return base_ptr;
 }
@@ -90,11 +92,9 @@ com::wookler::reactfs::core::fs_block::create(uint64_t block_id, string filename
             header->compression.uncompressed_size = raw_size;
             header->compression.type = compression_type;
         }
-        delete (block_lock);
+        CHECK_AND_FREE (block_lock);
 
         close();
-
-        header = nullptr;
 
         return uuid;
     } catch (const exception &e) {
@@ -154,7 +154,12 @@ string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string 
 const void *com::wookler::reactfs::core::fs_block::read(uint64_t size, uint64_t offset) {
     CHECK_NOT_NULL(stream);
     CHECK_NOT_NULL(header);
-    if ((offset + size) > header->block_size) {
+
+    uint64_t data_size = header->block_size;
+    if (header->compression.compressed) {
+        data_size = header->compression.uncompressed_size;
+    }
+    if ((offset + size) > data_size) {
         return nullptr;
     }
 

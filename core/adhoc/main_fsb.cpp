@@ -88,12 +88,12 @@ int main(int argc, char **argv) {
             const _test_typed *t = written[ii]->get_data();
             LOG_DEBUG("record[rowid=%lu] : index=%d; timestamp=%lu; value=%s", rid, t->index, t->timestamp, t->value);
         }
-        delete (written);
+        CHECK_AND_FREE (written);
 
         LOG_DEBUG("BLOCK USED SPACE = %lu", typed_block->get_used_space());
         LOG_DEBUG("BLOCK AVAILABLE SPACE = %lu", typed_block->get_free_space());
 
-        delete (typed_block);
+        CHECK_AND_FREE (typed_block);
 
         typed_block = new fs_typed_block<_test_typed>();
         typed_block->open(REUSE_TYPED_BLOCK_ID, REUSE_BLOCK_TYPED_FILE);
@@ -112,20 +112,28 @@ int main(int argc, char **argv) {
         fs_block *b = archiver.archive(typed_block, __compression_type::ZLIB, __archival::ARCHIVE,
                                        "/tmp/block/archive");
         POSTCONDITION(NOT_NULL(b));
-        typed_block->remove();
-        delete (typed_block);
 
-        typed_block = dynamic_cast<fs_typed_block<_test_typed> *>(b);
+        string fname(b->get_filename());
+        if (b != typed_block) {
+            CHECK_AND_FREE(b);
+        }
+        CHECK_AND_FREE (typed_block);
+
+        typed_block = new fs_typed_block<_test_typed>();
+        typed_block->open(REUSE_TYPED_BLOCK_ID, fname);
+
         r = nullptr;
 
         for (int ii = 0; ii < COUNT_TYPED; ii++) {
             r = typed_block->read_t(ii);
+            POSTCONDITION(NOT_NULL(r));
             const uint64_t rid = r->get_rowid();
             const _test_typed *t = r->get_data();
 
             LOG_DEBUG("record[rowid=%lu] : index=%d; timestamp=%lu; value=%s", rid, t->index, t->timestamp, t->value);
         }
 
+        CHECK_AND_FREE (typed_block);
         exit(0);
     } catch (const exception &e) {
         LOG_ERROR(e.what());

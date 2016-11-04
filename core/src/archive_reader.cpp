@@ -32,6 +32,8 @@ void com::wookler::reactfs::core::archive_reader::read_archive_data(void *source
 
 int com::wookler::reactfs::core::archive_reader::read_zlib_data(void *source, uint64_t in_size, void *dest,
                                                                 uint64_t out_size) {
+    char *c_ptr = static_cast<char *>(source);
+
     z_stream _z_stream = {0};
     _z_stream.total_in = _z_stream.avail_in = in_size;
     _z_stream.total_out = _z_stream.avail_out = out_size;
@@ -45,8 +47,7 @@ int com::wookler::reactfs::core::archive_reader::read_zlib_data(void *source, ui
     int err = -1;
     int ret = -1;
 
-    err = inflateInit2(&_z_stream,
-                       (15 + 32)); //15 window bits, and the +32 tells zlib to to detect if using gzip or zlib
+    err = inflateInit2(&_z_stream, 15); //15 window bits, and the +32 tells zlib to to detect if using gzip or zlib
     if (err == Z_OK) {
         err = inflate(&_z_stream, Z_FINISH);
         if (err == Z_STREAM_END) {
@@ -61,6 +62,8 @@ int com::wookler::reactfs::core::archive_reader::read_zlib_data(void *source, ui
     }
 
     inflateEnd(&_z_stream);
+
+    char *d_ptr = static_cast<char *>(dest);
     return ret;
 }
 

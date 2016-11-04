@@ -37,6 +37,7 @@ MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")
 add_library(${CORE_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
 target_link_libraries(${CORE_LIB_NAME} ${RFS_C_LIBRARIES})
 
+
 add_executable(main_fsb adhoc/main_fsb.cpp)
 target_link_libraries(main_fsb rfs-core ${RFS_C_LIBRARIES})
 

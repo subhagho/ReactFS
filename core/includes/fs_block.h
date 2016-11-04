@@ -40,11 +40,14 @@ namespace com {
                     string filename;
 
                 protected:
+                    exclusive_lock *block_lock = nullptr;
+
+                    fmstream *stream = nullptr;
+
                     __block_header *header = nullptr;
                     void *data_ptr = nullptr;
-                    exclusive_lock *block_lock = nullptr;
                     void *write_ptr = nullptr;
-                    fmstream *stream = nullptr;
+
 
                     void *write_r(const void *source, uint32_t len);
 
@@ -102,6 +105,14 @@ namespace com {
 
                     const void *_write(const void *source, uint32_t len);
 
+                    void flush() {
+                        CHECK_NOT_NULL(header);
+                        CHECK_NOT_NULL(stream);
+                        PRECONDITION(stream->is_open());
+
+                        stream->flush();
+                    }
+
                     uint64_t get_block_id() {
                         CHECK_NOT_NULL(header);
 
@@ -142,11 +153,12 @@ namespace com {
                         if (NOT_NULL(stream)) {
                             if (stream->is_open())
                                 stream->close();
-                            delete (stream);
-                            stream = nullptr;
+                            CHECK_AND_FREE (stream);
                         }
-                        header = nullptr;
+
                         data_ptr = nullptr;
+                        write_ptr = nullptr;
+                        header = nullptr;
                     }
 
                     string get_filename() const {
@@ -264,6 +276,8 @@ namespace com {
                         block->create(this->header->block_id, np.get_path(), this->header->block_type, size, true,
                                       compression_type,
                                       header->used_bytes, true);
+                        POSTCONDITION(NOT_NULL(block));
+                        CHECK_AND_FREE(block);
 
                         return string(np.get_path());
                     }

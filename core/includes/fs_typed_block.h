@@ -67,12 +67,15 @@ namespace com {
                         void *rptr = cptr + sizeof(__block_header);
 
                         next_rowid = static_cast<uint64_t *>(rptr);
-                        LOG_DEBUG("Current used rowid = %lu", *next_rowid);
 
                         return cptr + sizeof(__block_header) + sizeof(uint64_t);
                     }
 
                 public:
+                    virtual ~fs_typed_block() {
+                        next_rowid = nullptr;
+                    }
+
                     virtual string
                     create(uint64_t block_id, string filename, __block_type block_type, uint64_t block_size,
                            bool overwrite) override {
@@ -137,11 +140,9 @@ com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id, string
         next_rowid = static_cast<uint64_t *>(rptr);
         *next_rowid = 0;
 
-        delete (block_lock);
+        CHECK_AND_FREE (block_lock);
 
         close();
-
-        header = nullptr;
 
         return uuid;
     } catch (const exception &e) {
@@ -202,7 +203,12 @@ row <T> *com::wookler::reactfs::core::fs_typed_block<T>::read_t(uint64_t offset)
 
     CHECK_NOT_NULL(stream);
     CHECK_NOT_NULL(header);
-    if ((offset + size) > header->block_size) {
+
+    uint64_t data_size = header->block_size;
+    if (header->compression.compressed) {
+        data_size = header->compression.uncompressed_size;
+    }
+    if ((offset + size) > data_size) {
         return nullptr;
     }
 
@@ -237,15 +243,9 @@ string com::wookler::reactfs::core::fs_typed_block<T>::open(uint64_t block_id, s
             write_ptr = wptr;
         }
         if (header->compression.compressed) {
-            char *cptr = static_cast<char *>(base_ptr);
-            void *rptr = cptr + sizeof(__block_header);
-
-            next_rowid = static_cast<uint64_t *>(rptr);
-            *next_rowid = 999999;
-
-            LOG_DEBUG("Current used rowid = %lu", *next_rowid);
-
-            read_compressed_block(base_ptr);
+            void *ptr = data_ptr;
+            data_ptr = nullptr;
+            read_compressed_block(ptr);
         }
         return header->block_uid;
     } catch (const exception &e) {
@@ -268,6 +268,9 @@ string com::wookler::reactfs::core::fs_typed_block<T>::create_compressed_block(u
     fs_typed_block<T> *block = new fs_typed_block<T>();
     block->create(this->header->block_id, np.get_path(), this->header->block_type, size, true, compression_type,
                   header->used_bytes, true);
+
+    POSTCONDITION(NOT_NULL(block));
+    CHECK_AND_FREE(block);
 
     return string(np.get_path());
 }
