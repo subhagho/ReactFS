@@ -222,7 +222,7 @@ namespace com {
 
                 inline thread_lock_record *get_thread_lock() {
                     thread_lock_record *r = nullptr;
-                    string id = thread_lock_record::get_current_thread();
+                    string id = thread_utils::get_current_thread();
 
                     unordered_map<string, thread_lock_record *>::iterator iter = threads.find(id);
                     if (iter != threads.end()) {
@@ -300,7 +300,7 @@ namespace com {
                 thread_lock_record *register_thread() {
                     thread_lock_record *r = nullptr;
 
-                    string id = thread_lock_record::get_current_thread();
+                    string id = thread_utils::get_current_thread();
                     LOG_DEBUG("Registering thread. [id=%s]", id.c_str());
                     unordered_map<string, thread_lock_record *>::iterator iter = threads.find(id);
                     if (iter != threads.end()) {
@@ -370,7 +370,7 @@ namespace com {
                 void test_assert() {
                     if (!IS_EMPTY(counts)) {
                         pid_t pid = getpid();
-                        string thread_id = thread_lock_record::get_current_thread();
+                        string thread_id = thread_utils::get_current_thread();
                         for (int ii = 0; ii < priorities; ii++) {
                             LOG_DEBUG("[pid=%d][thread=%s] Lock status [lock=%s][priority=%d] count=%d", pid,
                                       thread_id.c_str(), name->c_str(),

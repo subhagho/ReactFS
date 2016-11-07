@@ -30,6 +30,7 @@
 #include "common/includes/log_utils.h"
 #include "common/includes/common.h"
 #include "common/includes/base_error.h"
+#include "common/includes/process_utils.h"
 
 #define MAX_PRIORITY_ALLOWED 8
 #define DEFAULT_MAX_RECORDS 1024
@@ -108,6 +109,7 @@ using namespace std;
 
 
 using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 
 namespace com {
     namespace watergate {
@@ -222,7 +224,7 @@ namespace com {
 
                 static thread_lock_ptr *create_new_ptr(int max_priority) {
                     thread_lock_ptr *ptr = new thread_lock_ptr();
-                    ptr->thread_id = get_current_thread();
+                    ptr->thread_id = thread_utils::get_current_thread();
                     ptr->priority_lock_index = (_lock_id **) malloc(max_priority * sizeof(_lock_id *));
                     for (int ii = 0; ii < max_priority; ii++) {
                         ptr->priority_lock_index[ii] = (_lock_id *) malloc(sizeof(_lock_id));

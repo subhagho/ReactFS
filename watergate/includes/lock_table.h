@@ -311,7 +311,7 @@ namespace com {
                                 "Lock record has been reset. [current owner=%d][proc id=%d]", lock_record->app.proc_id,
                                 pid);
                     }
-                    string thread_id = thread_lock_record::get_current_thread();
+                    string thread_id = thread_utils::get_current_thread();
 
                     lock_record->app.last_active_ts = time_utils::now();
                     if (lock_record->lock.locks[priority].state == _lock_state::Locked) {

@@ -172,7 +172,7 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
     t.start();
 
     pid_t pid = getpid();
-    string thread_id = thread_lock_record::get_current_thread();
+    string thread_id = thread_utils::get_current_thread();
 
     _lock_state ret = wait_lock(name, priority, priority, quota);
     if (ret == Error) {

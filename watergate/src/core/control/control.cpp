@@ -141,7 +141,7 @@ com::watergate::core::_semaphore_client::try_lock(int priority, double quota, in
             t_ptr->priority_lock_index[priority]->id = -1;
         }
     } else {
-        string tid = thread_lock_record::get_current_thread();
+        string tid = thread_utils::get_current_thread();
         if (IS_EMPTY(tid)) {
             tid = "UNKNOWN-THREAD";
         }
@@ -233,7 +233,7 @@ _lock_state com::watergate::core::_semaphore_client::try_lock_base(double quota,
             t_ptr->priority_lock_index[BASE_PRIORITY]->id = -1;
         }
     } else {
-        string tid = thread_lock_record::get_current_thread();
+        string tid = thread_utils::get_current_thread();
         if (IS_EMPTY(tid)) {
             tid = "UNKNOWN-THREAD";
         }
@@ -337,7 +337,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
             return false;
         }
     } else {
-        string tid = thread_lock_record::get_current_thread();
+        string tid = thread_utils::get_current_thread();
         if (IS_EMPTY(tid)) {
             tid = "UNKNOWN-THREAD";
         }
@@ -427,7 +427,7 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
             return false;
         }
     } else {
-        string tid = thread_lock_record::get_current_thread();
+        string tid = thread_utils::get_current_thread();
         if (IS_EMPTY(tid)) {
             tid = "UNKNOWN-THREAD";
         }

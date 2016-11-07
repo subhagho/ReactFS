@@ -126,7 +126,6 @@ com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id, string
         }
         string uuid = _create(block_id, filename, block_type, __block_record_type::TYPED, block_size, overwrite);
         if (compressed) {
-            header->writable = false;
             header->compression.compressed = true;
             header->compression.uncompressed_size = raw_size;
             header->compression.type = compression_type;
@@ -158,7 +157,7 @@ row <T> **com::wookler::reactfs::core::fs_typed_block<T>::write_t(T **source, ui
     CHECK_NOT_NULL(header);
     CHECK_NOT_NULL(source);
     PRECONDITION(count > 0);
-    PRECONDITION(header->writable);
+    PRECONDITION(header->write_state == __write_state::WRITABLE);
 
     row<T> **rows = new row<T> *[count];
 

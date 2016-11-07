@@ -7,6 +7,8 @@
 
 #include "common.h"
 
+#define SIZE_THREAD_ID 64
+
 namespace com {
     namespace wookler {
         namespace reactfs {
