@@ -69,6 +69,14 @@ namespace com {
                         return (cptr + sizeof(__block_header));
                     }
 
+                    bool is_commit_pending() {
+                        CHECK_NOT_NULL(header);
+                        if (header->rollback_info.write_offset != header->write_offset) {
+                            return true;
+                        }
+                        return false;
+                    }
+
                 public:
                     virtual ~fs_block() {
                         CHECK_AND_FREE(block_lock);
@@ -123,7 +131,8 @@ namespace com {
                     virtual const void *read(uint64_t size, uint64_t offset = 0);
 
                     virtual const void *write(const void *source, uint32_t len) {
-                        PRECONDITION(header->writable)
+                        PRECONDITION(header->write_state == __write_state::WRITABLE);
+
                         return _write(source, len);
                     }
 
@@ -169,20 +178,43 @@ namespace com {
 
                     void *get_data_ptr() {
                         CHECK_NOT_NULL(header);
+                        PRECONDITION(!is_commit_pending());
 
                         return data_ptr;
+                    }
+
+                    bool commit() {
+                        CHECK_NOT_NULL(header);
+                        PRECONDITION(is_writable());
+
+                        if (is_commit_pending()) {
+                            header->rollback_info.write_offset = header->write_offset;
+                            header->rollback_info.block_size = header->block_size;
+                        }
+                        return false;
+                    }
+
+                    bool rollback() {
+                        CHECK_NOT_NULL(header);
+                        PRECONDITION(is_writable());
+
+                        if (is_commit_pending()) {
+                            header->write_offset = header->rollback_info.write_offset;
+                            header->block_size = header->rollback_info.block_size;
+                        }
+                        return false;
                     }
 
                     virtual void finish() {
                         CHECK_NOT_NULL(header);
 
-                        header->writable = false;
+                        header->write_state = __write_state::CLOSED;
                     }
 
                     bool is_writable() {
                         CHECK_NOT_NULL(header);
 
-                        return header->writable;
+                        return (header->write_state == __write_state::WRITABLE);
                     }
 
                     virtual void close() {

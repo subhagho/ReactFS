@@ -87,7 +87,6 @@ com::wookler::reactfs::core::fs_block::create(uint64_t block_id, string filename
     try {
         string uuid = _create(block_id, filename, block_type, __block_record_type::RAW, block_size, overwrite);
         if (compressed) {
-            header->writable = false;
             header->compression.compressed = true;
             header->compression.uncompressed_size = raw_size;
             header->compression.type = compression_type;
@@ -136,7 +135,7 @@ string com::wookler::reactfs::core::fs_block::_create(uint64_t block_id, string 
     header->update_time = header->create_time;
     header->block_type = block_type;
     header->record_type = record_type;
-    header->writable = true;
+    header->write_state = __write_state::WRITABLE;
     header->compression.compressed = false;
     header->compression.uncompressed_size = 0;
     header->compression.type = __compression_type::NONE;
@@ -208,7 +207,7 @@ void *com::wookler::reactfs::core::fs_block::write_r(const void *source, uint32_
     write_ptr = cptr + header->write_offset;
 
     if (header->used_bytes >= header->block_size) {
-        header->writable = false;
+        header->write_state = __write_state::CLOSED;
         write_ptr = nullptr;
     }
     return ptr;

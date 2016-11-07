@@ -8,6 +8,8 @@
 #include "exclusive_lock.h"
 #include "timer.h"
 #include "__alarm.h"
+#include "process_utils.h"
+#include "unordered_map"
 
 #define DEFAULT_RW_LOCK_RETRY 10
 
@@ -17,11 +19,32 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
+                typedef struct __owner__ {
+                    char owner[SIZE_USER_NAME];
+                    char txn_id[SIZE_UUID];
+                    pid_t process_id;
+                    uint64_t lock_timestamp = 0;
+                } __owner;
+
+                typedef struct __lock_struct__ {
+                        
+                } __lock_struct;
+
                 class read_write_lock {
                 private:
                     exclusive_lock *lock;
                     bool write_locked = false;
                     uint16_t readers = 0;
+                    __owner owner;
+                    unordered_map<string, uint64_t> reader_threads;
+
+                    bool has_thread_lock(string thread_id) {
+                        unordered_map<std::string, uint64_t>::const_iterator iter = reader_threads.find(thread_id);
+                        if (iter != reader_threads.end()) {
+                            return true;
+                        }
+                        return false;
+                    }
 
                 public:
                     read_write_lock(const string *name) {
@@ -32,15 +55,26 @@ namespace com {
                         CHECK_AND_FREE(lock);
                     }
 
-                    bool write_lock(uint64_t timeout) {
+                    string write_lock(string owner, uint64_t timeout) {
                         CHECK_NOT_NULL(lock);
+                        PRECONDITION(!IS_EMPTY(owner));
 
                         uint64_t startt = time_utils::now();
                         bool locked = false;
+                        string txn_id;
                         while (true) {
                             if (lock->try_lock()) {
                                 if (!write_locked && readers == 0) {
                                     write_locked = true;
+
+                                    this->owner.lock_timestamp = time_utils::now();
+                                    memset(this->owner.owner, SIZE_USER_NAME, 0);
+                                    strncpy(this->owner.owner, owner.c_str(), owner.length());
+                                    this->owner.process_id = getpid();
+                                    memset(this->owner.txn_id, 0, SIZE_UUID);
+                                    txn_id = common_utils::uuid();
+                                    strncpy(this->owner.txn_id, txn_id, txn_id.length());
+
                                     locked = true;
                                 }
                                 lock->release_lock();
@@ -52,16 +86,16 @@ namespace com {
                             if (startt - now > timeout) {
                                 break;
                             }
-                            alarm a(DEFAULT_RW_LOCK_RETRY);
+                            __alarm a(DEFAULT_RW_LOCK_RETRY);
                             if (!a.start()) {
                                 throw BASE_ERROR("Error starting sleep timer.");
                             }
                         }
-                        return locked;
+                        return txn_id;
                     }
 
-                    bool write_lock() {
-                        return write_lock(0);
+                    string write_lock(string owner) {
+                        return write_lock(owner, 0);
                     }
 
                     bool read_lock(uint64_t timeout) {
@@ -72,7 +106,11 @@ namespace com {
                         while (true) {
                             if (lock->try_lock()) {
                                 if (!write_locked) {
-                                    readers++;
+                                    string thread_id = thread_utils::get_current_thread();
+                                    if (!has_thread_lock(thread_id)) {
+                                        reader_threads[thread_id] = time_utils::now();
+                                        readers++;
+                                    }
                                     locked = true;
                                 }
                                 lock->release_lock();
@@ -84,7 +122,7 @@ namespace com {
                             if (startt - now > timeout) {
                                 break;
                             }
-                            alarm a(DEFAULT_RW_LOCK_RETRY);
+                            __alarm a(DEFAULT_RW_LOCK_RETRY);
                             if (!a.start()) {
                                 throw BASE_ERROR("Error starting sleep timer.");
                             }
@@ -96,24 +134,35 @@ namespace com {
                         return read_lock(0);
                     }
 
-                    bool release_write_lock() {
+                    bool release_write_lock(string txn_id) {
                         CHECK_NOT_NULL(lock);
+                        PRECONDITION(!IS_EMPTY(txn_id));
 
                         bool locked = false;
                         while (true) {
                             if (lock->try_lock()) {
                                 if (write_locked) {
-                                    write_locked = false;
-                                    locked = true;
+                                    pid_t pid = getpid();
+                                    if (this->owner.process_id == pid &&
+                                        strncmp(this->owner.txn_id, txn_id.c_str(), txn_id.length()) == 0) {
+                                        this->owner.process_id = -1;
+                                        this->owner.lock_timestamp = 0;
+                                        memset(this->owner.txn_id, 0, SIZE_UUID);
+                                        memset(this->owner.owner, 0, SIZE_USER_NAME);
+
+                                        write_locked = false;
+                                        locked = true;
+                                    }
                                 }
                                 lock->release_lock();
                                 break;
                             }
-                            alarm a(DEFAULT_RW_LOCK_RETRY);
+                            __alarm a(DEFAULT_RW_LOCK_RETRY);
                             if (!a.start()) {
                                 throw BASE_ERROR("Error starting sleep timer.");
                             }
                         }
+                        return locked;
                     }
 
                     bool release_read_lock() {
@@ -123,17 +172,22 @@ namespace com {
                         while (true) {
                             if (lock->try_lock()) {
                                 if (readers > 0) {
-                                    readers--;
-                                    locked = true;
+                                    string thread_id = thread_utils::get_current_thread();
+                                    if (has_thread_lock(thread_id)) {
+                                        reader_threads.erase(thread_id);
+                                        readers--;
+                                        locked = true;
+                                    }
                                 }
                                 lock->release_lock();
                                 break;
                             }
-                            alarm a(DEFAULT_RW_LOCK_RETRY);
+                            __alarm a(DEFAULT_RW_LOCK_RETRY);
                             if (!a.start()) {
                                 throw BASE_ERROR("Error starting sleep timer.");
                             }
                         }
+                        return locked;
                     }
                 };
             }

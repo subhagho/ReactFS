@@ -220,12 +220,6 @@ namespace com {
                     }
                 }
 
-                static std::string get_current_thread() {
-                    std::stringstream ss;
-                    ss << std::this_thread::get_id();
-                    return std::string(ss.str());
-                }
-
                 static thread_lock_ptr *create_new_ptr(int max_priority) {
                     thread_lock_ptr *ptr = new thread_lock_ptr();
                     ptr->thread_id = get_current_thread();

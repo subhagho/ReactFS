@@ -51,6 +51,9 @@
 
 #define DEFAULT_DATETIME_BUFFSIZE 32
 
+#define SIZE_UUID 128
+#define SIZE_USER_NAME 64
+
 using namespace std;
 
 #endif
