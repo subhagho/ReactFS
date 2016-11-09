@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 
 
-project(rfs-core VERSION 0.1.0)
+project(reactfs-core VERSION 0.1.0)
 
 if (${APPLE})
     set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk)
@@ -26,10 +26,10 @@ MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
-    set(RFS_C_LIBRARIES "-lrfs-common -lwatergate -lz")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lwatergate -lz")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "pthread uuid rt rfs-common watergate z")
+    set(RFS_C_LIBRARIES "pthread uuid rt reactfs-common watergate z")
 endif ()
 
 MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")
@@ -39,7 +39,7 @@ target_link_libraries(${CORE_LIB_NAME} ${RFS_C_LIBRARIES})
 
 
 add_executable(main_fsb adhoc/main_fsb.cpp)
-target_link_libraries(main_fsb rfs-core ${RFS_C_LIBRARIES})
+target_link_libraries(main_fsb reactfs-core ${RFS_C_LIBRARIES})
 
 add_executable(main_compress adhoc/main_compress.cpp)
-target_link_libraries(main_compress rfs-core ${RFS_C_LIBRARIES})
+target_link_libraries(main_compress reactfs-core ${RFS_C_LIBRARIES})

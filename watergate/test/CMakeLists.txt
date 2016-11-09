@@ -17,10 +17,10 @@ find_package(Threads)
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
-    set(WG_LIBRARIES rfs-common)
+    set(WG_LIBRARIES reactfs-common)
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(WG_LIBRARIES "rfs-common pthread uuid rt")
+    set(WG_LIBRARIES "reactfs-common pthread uuid rt")
 endif ()
 
 MESSAGE("Using libraries : [" ${WG_LIBRARIES} "]")

@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <thread>
+#include <unordered_map>
 
 #include "exclusive_lock.h"
 #include "timer.h"
@@ -70,6 +71,7 @@ namespace com {
                     bool used = false;
                     char name[SIZE_LOCK_NAME];
                     bool write_locked = false;
+                    uint32_t ref_count = 0;
                     __owner owner;
                     uint64_t reader_count;
                     __lock_readers readers[MAX_READER_LOCKS];
@@ -140,6 +142,7 @@ namespace com {
                     unordered_map<string, int> reader_threads;
                     mutex thread_mutex;
                     shared_lock_table *table = nullptr;
+                    string name;
 
                     int find_free_reader() {
                         __lock_readers *ptr = lock_struct->readers;
@@ -175,6 +178,7 @@ namespace com {
                                 release_read_lock(*it);
                             }
                         }
+                        table->remove_lock(name);
                     }
 
                     bool release_read_lock(string thread_id) {
@@ -213,7 +217,9 @@ namespace com {
                     void create(const string *name, shared_lock_table *table) {
                         try {
                             CHECK_NOT_NULL(table);
+                            CHECK_NOT_EMPTY_P(name);
 
+                            this->name = string(*name);
                             lock = new exclusive_lock(name);
                             lock->create();
 
@@ -414,6 +420,7 @@ namespace com {
                     __state__ state;
                     shared_lock_table *table = nullptr;
                     thread *manager_thread = nullptr;
+                    unordered_map<string, read_write_lock *> locks;
 
                     void check_lock_states();
 
@@ -437,7 +444,7 @@ namespace com {
 
                     void create(mode_t mode, uint32_t count);
 
-                    __lock_struct *add_lock(string name);
+                    read_write_lock *add_lock(string name);
 
                     bool remove_lock(string name);
 

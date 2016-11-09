@@ -30,16 +30,16 @@ add_library(${WATERGATE_LIB_NAME} SHARED ${WG_INCLUDES} ${WG_SOURCES})
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
-    set(WG_LIBRARIES rfs-common)
+    set(WG_LIBRARIES reactfs-common)
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(WG_LIBRARIES "rfs-common" "pthread" "uuid" "rt")
+    set(WG_LIBRARIES "reactfs-common" "pthread" "uuid" "rt")
 endif ()
 
 
 MESSAGE("Using libraries : #" ${WG_LIBRARIES} "#")
 
-target_link_libraries(${WATERGATE_LIB_NAME} rfs-common)
+target_link_libraries(${WATERGATE_LIB_NAME} ${WG_LIBRARIES})
 
 add_executable(main src/test/main.cpp)
 target_link_libraries(main watergate ${WG_LIBRARIES})

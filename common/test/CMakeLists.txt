@@ -32,19 +32,19 @@ endif ()
 MESSAGE("Using libraries : [" ${RFS_LIBRARIES} "]")
 
 add_executable(test_config test_config.cpp)
-target_link_libraries(test_config rfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+target_link_libraries(test_config reactfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
 add_test(NAME test_config COMMAND test_config)
 
 add_executable(test_alarm test_alarm.cpp)
-target_link_libraries(test_alarm rfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+target_link_libraries(test_alarm reactfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
 add_test(NAME test_alarm COMMAND test_alarm)
 
 add_executable(test_file_utils test_file_utils.cpp)
-target_link_libraries(test_file_utils rfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+target_link_libraries(test_file_utils reactfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
 add_test(NAME test_file_utils COMMAND test_file_utils)
 
 add_executable(test_shared_lock test_shared_lock.cpp)
-target_link_libraries(test_shared_lock rfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+target_link_libraries(test_shared_lock reactfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
 add_test(NAME test_shared_lock COMMAND test_shared_lock)
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")

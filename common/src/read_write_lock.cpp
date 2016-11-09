@@ -20,6 +20,8 @@
 
 #include "common/includes/read_write_lock.h"
 
+using namespace com::wookler::reactfs::common;
+
 void com::wookler::reactfs::common::shared_lock_table::create(mode_t mode, uint32_t count) {
     LOG_DEBUG("Creating shared memory. [name=%s]", SHARED_LOCK_NAME);
 
@@ -200,12 +202,16 @@ bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) 
             __lock_struct *r_ptr = locks + found_index;
             POSTCONDITION(NOT_NULL(r_ptr));
             POSTCONDITION(r_ptr->used);
-            memset(r_ptr, 0, sizeof(__lock_struct));
-            r_ptr->used = false;
-            r_ptr->reader_count = 0;
-            r_ptr->write_locked = false;
 
-            header_ptr->used_count--;
+            r_ptr->ref_count--;
+            if (r_ptr->ref_count <= 0) {
+                memset(r_ptr, 0, sizeof(__lock_struct));
+                r_ptr->used = false;
+                r_ptr->reader_count = 0;
+                r_ptr->write_locked = false;
+
+                header_ptr->used_count--;
+            }
         }
         table_lock->release_lock();
     } catch (const exception &e) {
@@ -291,16 +297,38 @@ void com::wookler::reactfs::common::lock_manager::check_lock_states() {
     }
 }
 
-com::wookler::reactfs::common::__lock_struct *com::wookler::reactfs::common::lock_manager::add_lock(string name) {
+read_write_lock *com::wookler::reactfs::common::lock_manager::add_lock(string name) {
     CHECK_STATE_AVAILABLE(state);
 
-    return table->add_lock(name);
+    read_write_lock *lock = nullptr;
+    unordered_map<std::string, read_write_lock *>::const_iterator iter = locks.find(name);
+    if (iter != locks.end()) {
+        lock = iter->second;
+        CHECK_NOT_NULL(lock);
+    } else {
+        lock = new read_write_lock();
+        lock->create(&name, table);
+        locks[name] = lock;
+    }
+
+    return lock;
 }
 
 bool com::wookler::reactfs::common::lock_manager::remove_lock(string name) {
     CHECK_STATE_AVAILABLE(state);
 
-    return table->remove_lock(name);
+    read_write_lock *lock = nullptr;
+    unordered_map<std::string, read_write_lock *>::const_iterator iter = locks.find(name);
+    if (iter != locks.end()) {
+        lock = iter->second;
+        CHECK_NOT_NULL(lock);
+
+        delete (lock);
+    }
+    if (NOT_NULL(lock)) {
+
+    }
+    return false;
 }
 
 void com::wookler::reactfs::common::lock_manager::reset() {

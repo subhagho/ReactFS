@@ -57,7 +57,7 @@
 } while(0);
 
 #define CHECK_NOT_EMPTY_P(p) do { \
-    if (IS_NULL(p) || IS_EMPTY(p)) { \
+    if (IS_NULL(p) || IS_EMPTY_P(p)) { \
         throw BASE_ERROR("Specified instance is null or empty. [%s][%s]", #p, __PRETTY_FUNCTION__); \
     } \
 } while(0);
