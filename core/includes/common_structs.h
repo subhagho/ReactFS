@@ -7,8 +7,6 @@
 
 #include "common/includes/common.h"
 
-typedef uint8_t BYTE;
-typedef uint8_t *BYTE_PTR;
 
 namespace com {
     namespace wookler {

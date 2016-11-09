@@ -23,7 +23,7 @@
 
 void com::watergate::core::lock_table::create(string name, resource_def *resource, bool server) {
     try {
-        assert(!IS_EMPTY(name));
+        PRECONDITION(!IS_EMPTY(name));
 
         this->name = common_utils::get_normalized_name(name);
 

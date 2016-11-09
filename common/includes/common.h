@@ -54,6 +54,9 @@
 #define SIZE_UUID 128
 #define SIZE_USER_NAME 64
 
+typedef uint8_t BYTE;
+typedef uint8_t *BYTE_PTR;
+
 using namespace std;
 
 #endif
