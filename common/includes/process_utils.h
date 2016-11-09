@@ -5,6 +5,9 @@
 #ifndef REACTFS_PROCESS_UTILS_H
 #define REACTFS_PROCESS_UTILS_H
 
+#include <sys/types.h>
+#include <signal.h>
+
 #include "common.h"
 
 #define SIZE_THREAD_ID 64

@@ -43,4 +43,8 @@ add_executable(test_file_utils test_file_utils.cpp)
 target_link_libraries(test_file_utils rfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
 add_test(NAME test_file_utils COMMAND test_file_utils)
 
+add_executable(test_shared_lock test_shared_lock.cpp)
+target_link_libraries(test_shared_lock rfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+add_test(NAME test_shared_lock COMMAND test_shared_lock)
+
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")

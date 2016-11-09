@@ -9,7 +9,7 @@ using namespace com::wookler::reactfs::common;
 
 #define CONFIG_LOCK_COUNT 8
 
-TEST_CASE("Create shared lock", "[com::wookler::reactfs::common::read_write_lock") {
+TEST_CASE("Check basic shared lock operations", "[com::wookler::reactfs::common::read_write_lock") {
     env_utils::create_env(CONFIG_FILE);
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
@@ -21,8 +21,32 @@ TEST_CASE("Create shared lock", "[com::wookler::reactfs::common::read_write_lock
     manager->create(0755, CONFIG_LOCK_COUNT);
 
     string name("test_lock_01");
-    read_write_lock *lock = new read_write_lock(&name, manager->get_lock_table());
+    read_write_lock *lock = new read_write_lock();
+    lock->create(&name, manager->get_lock_table());
+    lock->reset();
+
     POSTCONDITION(NOT_NULL(lock));
+
+    char *user_name = getenv("USER");
+    if (IS_NULL(user_name)) {
+        user_name = getenv("USERNAME");
+    }
+    PRECONDITION(NOT_NULL(user_name));
+    string uname(user_name);
+    string txid = lock->write_lock(uname);
+    POSTCONDITION(!IS_EMPTY(txid));
+    LOG_INFO("Acquired write lock. [transation id=%s]", txid.c_str());
+    bool r = lock->release_write_lock();
+    POSTCONDITION(r);
+    LOG_INFO("Released write lock. [transation id=%s]", txid.c_str());
+
+    r = lock->read_lock();
+    POSTCONDITION(r);
+    LOG_INFO("Acquired read lock.");
+    txid = lock->write_lock(uname, 1000);
+    POSTCONDITION(IS_EMPTY(txid));
+    lock->release_read_lock();
+    LOG_INFO("Released read lock.");
 
     CHECK_AND_FREE(manager);
     env_utils::dispose();

@@ -179,22 +179,20 @@ namespace com {
 
                     bool release_read_lock(string thread_id) {
                         bool locked = false;
-                        while (true) {
-                            if (lock->try_lock()) {
-                                if (lock_struct->reader_count > 0) {
-                                    int index = get_reader_index(thread_id);
-                                    if (index >= 0) {
-                                        lock_struct->reader_count--;
-                                        lock_struct->readers[index].used = false;
+                        if (lock->wait_lock()) {
+                            if (lock_struct->reader_count > 0) {
+                                int index = get_reader_index(thread_id);
+                                if (index >= 0) {
+                                    lock_struct->reader_count--;
+                                    lock_struct->readers[index].used = false;
 
-                                        reader_threads.erase(thread_id);
-                                        locked = true;
-                                    }
+                                    reader_threads.erase(thread_id);
+                                    locked = true;
                                 }
-                                lock->release_lock();
-                                break;
+                            } else {
+                                throw LOCK_ERROR("Error getting lock. [name=%s]", lock->get_name()->c_str());
                             }
-                            START_ALARM(DEFAULT_RW_LOCK_RETRY);
+                            lock->release_lock();
                         }
                         return locked;
                     }
@@ -308,7 +306,7 @@ namespace com {
                                 break;
                             }
                             uint64_t now = time_utils::now();
-                            if (startt - now > timeout) {
+                            if ((now - startt) > timeout) {
                                 break;
                             }
                             START_ALARM(DEFAULT_RW_LOCK_RETRY);
@@ -361,7 +359,7 @@ namespace com {
                                 break;
                             }
                             uint64_t now = time_utils::now();
-                            if (startt - now > timeout) {
+                            if ((now - startt) > timeout) {
                                 break;
                             }
                             START_ALARM(DEFAULT_RW_LOCK_RETRY);
@@ -378,27 +376,25 @@ namespace com {
                         PRECONDITION(!IS_EMPTY(txn_id));
 
                         bool locked = false;
-                        while (true) {
-                            if (lock->try_lock()) {
-                                if (lock_struct->write_locked) {
-                                    pid_t pid = getpid();
-                                    if (lock_struct->owner.process_id == pid &&
-                                        strncmp(lock_struct->owner.txn_id, txn_id.c_str(), txn_id.length()) == 0) {
-                                        lock_struct->owner.process_id = -1;
-                                        lock_struct->owner.lock_timestamp = 0;
-                                        memset(lock_struct->owner.txn_id, 0, SIZE_UUID);
-                                        memset(lock_struct->owner.owner, 0, SIZE_USER_NAME);
+                        if (lock->wait_lock()) {
+                            if (lock_struct->write_locked) {
+                                pid_t pid = getpid();
+                                if (lock_struct->owner.process_id == pid &&
+                                    strncmp(lock_struct->owner.txn_id, txn_id.c_str(), txn_id.length()) == 0) {
+                                    lock_struct->owner.process_id = -1;
+                                    lock_struct->owner.lock_timestamp = 0;
+                                    memset(lock_struct->owner.txn_id, 0, SIZE_UUID);
+                                    memset(lock_struct->owner.owner, 0, SIZE_USER_NAME);
 
-                                        lock_struct->write_locked = false;
+                                    lock_struct->write_locked = false;
 
-                                        txn_id = EMPTY_STRING;
-                                        locked = true;
-                                    }
+                                    txn_id = EMPTY_STRING;
+                                    locked = true;
                                 }
-                                lock->release_lock();
-                                break;
                             }
-                            START_ALARM(DEFAULT_RW_LOCK_RETRY);
+                            lock->release_lock();
+                        } else {
+                            throw LOCK_ERROR("Error getting lock. [name=%s]", lock->get_name()->c_str());
                         }
                         return locked;
                     }
