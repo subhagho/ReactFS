@@ -75,6 +75,62 @@ namespace com {
                     __lock_readers readers[MAX_READER_LOCKS];
                 } __lock_struct;
 
+                typedef struct __shared_lock_data__ {
+                    uint32_t max_count = 0;
+                    uint32_t used_count = 0;
+                } __shared_lock_data;
+
+                class shared_lock_table {
+                private:
+                    __lock_struct *locks = nullptr;
+                    exclusive_lock *table_lock = nullptr;
+                    int shm_fd = -1;
+                    void *mem_ptr = nullptr;
+                    __shared_lock_data *header_ptr = nullptr;
+
+                public:
+                    ~shared_lock_table() {
+                        CHECK_AND_FREE(table_lock);
+                        if (shm_fd >= 0 && NOT_NULL(mem_ptr)) {
+                            shm_unlink(SHARED_LOCK_TABLE_NAME);
+                        }
+                        locks = nullptr;
+                        mem_ptr = nullptr;
+                        header_ptr = nullptr;
+                        shm_fd = -1;
+                    }
+
+                    uint32_t get_max_size() {
+                        PRECONDITION(NOT_NULL(header_ptr));
+                        return header_ptr->max_count;
+                    }
+
+                    uint32_t get_used_size() {
+                        PRECONDITION(NOT_NULL(header_ptr));
+                        return header_ptr->used_count;
+                    }
+
+                    __lock_struct *get_at(uint32_t index) {
+                        PRECONDITION(NOT_NULL(locks));
+                        PRECONDITION(NOT_NULL(header_ptr));
+                        PRECONDITION(index >= 0 && index < header_ptr->max_count);
+
+                        __lock_struct *ptr = locks + index;
+                        if (ptr->used) {
+                            return ptr;
+                        }
+                        return nullptr;
+                    }
+
+                    void create(mode_t mode, uint32_t count);
+
+                    void create(uint32_t count);
+
+                    __lock_struct *add_lock(string name);
+
+                    bool remove_lock(string name);
+                };
+
                 class read_write_lock {
                 private:
                     __state__ state;
@@ -83,6 +139,7 @@ namespace com {
                     string txn_id;
                     unordered_map<string, int> reader_threads;
                     mutex thread_mutex;
+                    shared_lock_table *table = nullptr;
 
                     int find_free_reader() {
                         __lock_readers *ptr = lock_struct->readers;
@@ -143,9 +200,28 @@ namespace com {
                     }
 
                 public:
-                    read_write_lock(const string *name) {
+                    read_write_lock() {
+
+                    }
+
+                    ~read_write_lock() {
+                        state.set_state(__state_enum::Disposed);
+                        check_and_clear();
+
+                        CHECK_AND_FREE(lock);
+                        lock_struct = nullptr;
+                    }
+
+                    void create(const string *name, shared_lock_table *table) {
                         try {
+                            CHECK_NOT_NULL(table);
+
                             lock = new exclusive_lock(name);
+                            lock->create();
+
+                            this->table = table;
+                            lock_struct = this->table->add_lock(*name);
+                            POSTCONDITION(NOT_NULL(lock_struct));
 
                             state.set_state(__state_enum::Available);
                         } catch (const exception &e) {
@@ -159,17 +235,13 @@ namespace com {
                         }
                     }
 
-                    ~read_write_lock() {
-                        state.set_state(__state_enum::Disposed);
-                        check_and_clear();
-
-                        CHECK_AND_FREE(lock);
-                        lock_struct = nullptr;
+                    void reset() {
+                        CHECK_STATE_AVAILABLE(state);
+                        lock->reset();
                     }
 
                     string get_txn_id() {
-                        CHECK_NOT_NULL(lock);
-
+                        CHECK_STATE_AVAILABLE(state);
                         return txn_id;
                     }
 
@@ -268,6 +340,10 @@ namespace com {
                                                         thread_id.length());
                                                 lock_struct->readers[index].used = true;
                                                 reader_threads[thread_id] = index;
+
+                                                lock_struct->reader_count++;
+
+                                                locked = true;
                                             } else {
                                                 throw BASE_ERROR("Error getting free read lock pointer. [name=%s]",
                                                                  lock_struct->name);
@@ -336,61 +412,6 @@ namespace com {
                     }
                 };
 
-                typedef struct __shared_lock_data__ {
-                    uint32_t max_count = 0;
-                    uint32_t used_count = 0;
-                } __shared_lock_data;
-
-                class shared_lock_table {
-                private:
-                    __lock_struct *locks = nullptr;
-                    exclusive_lock *table_lock = nullptr;
-                    int shm_fd = -1;
-                    void *mem_ptr = nullptr;
-                    __shared_lock_data *header_ptr = nullptr;
-
-                public:
-                    ~shared_lock_table() {
-                        CHECK_AND_FREE(table_lock);
-                        if (shm_fd >= 0 && NOT_NULL(mem_ptr)) {
-                            shm_unlink(SHARED_LOCK_TABLE_NAME);
-                        }
-                        locks = nullptr;
-                        mem_ptr = nullptr;
-                        header_ptr = nullptr;
-                        shm_fd = -1;
-                    }
-
-                    uint32_t get_max_size() {
-                        PRECONDITION(NOT_NULL(header_ptr));
-                        return header_ptr->max_count;
-                    }
-
-                    uint32_t get_used_size() {
-                        PRECONDITION(NOT_NULL(header_ptr));
-                        return header_ptr->used_count;
-                    }
-
-                    __lock_struct *get_at(uint32_t index) {
-                        PRECONDITION(NOT_NULL(locks));
-                        PRECONDITION(NOT_NULL(header_ptr));
-                        PRECONDITION(index >= 0 && index < header_ptr->max_count);
-
-                        __lock_struct *ptr = locks + index;
-                        if (ptr->used) {
-                            return ptr;
-                        }
-                        return nullptr;
-                    }
-
-                    void create(mode_t mode, uint32_t count);
-
-                    void create(uint32_t count);
-
-                    __lock_struct *add_lock(string name);
-
-                    bool remove_lock(string name);
-                };
 
                 class lock_manager {
                 private:
@@ -413,11 +434,18 @@ namespace com {
                         }
                     }
 
+                    shared_lock_table *get_lock_table() {
+                        CHECK_STATE_AVAILABLE(state);
+                        return table;
+                    }
+
                     void create(mode_t mode, uint32_t count);
 
                     __lock_struct *add_lock(string name);
 
                     bool remove_lock(string name);
+
+                    void reset();
                 };
             }
         }

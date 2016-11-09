@@ -20,6 +20,18 @@ namespace com {
                         ss << std::this_thread::get_id();
                         return std::string(ss.str());
                     }
+
+
+                };
+
+                class process_utils {
+                public:
+                    static bool check_process(pid_t pid) {
+                        if (0 == kill(pid, 0)) {
+                            return true;
+                        }
+                        return false;
+                    }
                 };
             }
         }

@@ -26,6 +26,7 @@ void com::wookler::reactfs::common::shared_lock_table::create(mode_t mode, uint3
     string name_l(SHARED_LOCK_NAME);
     table_lock = new exclusive_lock(&name_l, mode);
     table_lock->create();
+    table_lock->reset();
 
     shm_fd = shm_open(SHARED_LOCK_TABLE_NAME, O_CREAT | O_RDWR, mode);
     if (shm_fd < 0) {
@@ -158,6 +159,7 @@ com::wookler::reactfs::common::__lock_struct *com::wookler::reactfs::common::sha
             POSTCONDITION(NOT_NULL(r_ptr));
             POSTCONDITION(!r_ptr->used);
 
+            memset(r_ptr, 0, sizeof(__lock_struct));
             r_ptr->used = true;
             memset(r_ptr->name, 0, SIZE_LOCK_NAME);
             strncpy(r_ptr->name, name.c_str(), name.length());
@@ -200,6 +202,8 @@ bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) 
             POSTCONDITION(r_ptr->used);
             memset(r_ptr, 0, sizeof(__lock_struct));
             r_ptr->used = false;
+            r_ptr->reader_count = 0;
+            r_ptr->write_locked = false;
 
             header_ptr->used_count--;
         }
@@ -220,6 +224,8 @@ void com::wookler::reactfs::common::lock_manager::create(mode_t mode, uint32_t c
         table->create(mode, count);
 
         state.set_state(__state_enum::Available);
+
+        reset();
 
         manager_thread = new thread(lock_manager::run, this);
 
@@ -295,4 +301,56 @@ bool com::wookler::reactfs::common::lock_manager::remove_lock(string name) {
     CHECK_STATE_AVAILABLE(state);
 
     return table->remove_lock(name);
+}
+
+void com::wookler::reactfs::common::lock_manager::reset() {
+    CHECK_STATE_AVAILABLE(state);
+    uint32_t count = table->get_max_size();
+    for (uint32_t ii = 0; ii < count; ii++) {
+        __lock_struct *ptr = table->get_at(ii);
+        if (NOT_NULL(ptr)) {
+            if (ptr->write_locked) {
+                pid_t pid = ptr->owner.process_id;
+                if (!process_utils::check_process(pid)) {
+                    ptr->owner.lock_timestamp = 0;
+                    ptr->owner.process_id = -1;
+                    memset(ptr->owner.txn_id, 0, SIZE_UUID);
+                    memset(ptr->owner.owner, 0, SIZE_USER_NAME);
+                    ptr->write_locked = false;
+                } else {
+                    uint64_t now = time_utils::now();
+                    if ((now - ptr->owner.lock_timestamp) > DEFAULT_WRITE_LOCK_TIMEOUT) {
+                        ptr->owner.lock_timestamp = 0;
+                        ptr->owner.process_id = -1;
+                        memset(ptr->owner.txn_id, 0, SIZE_UUID);
+                        memset(ptr->owner.owner, 0, SIZE_USER_NAME);
+                        ptr->write_locked = false;
+                    }
+                }
+            }
+            __lock_readers *r_ptr = ptr->readers;
+            int reader_count = 0;
+            for (int ii = 0; ii < MAX_READER_LOCKS; ii++) {
+                if (r_ptr[ii].used) {
+                    bool used = true;
+                    pid_t pid = r_ptr[ii].process_id;
+                    if (!process_utils::check_process(pid)) {
+                        r_ptr[ii].used = false;
+                        used = false;
+                    } else {
+                        uint64_t now = time_utils::now();
+                        if ((now - r_ptr->lock_timestamp) > DEFAULT_READ_LOCK_TIMEOUT) {
+                            r_ptr[ii].used = false;
+                            used = false;
+                        }
+                    }
+                    if (used) {
+                        reader_count++;
+                    }
+                }
+            }
+            ptr->reader_count = reader_count;
+        }
+    }
+
 }
