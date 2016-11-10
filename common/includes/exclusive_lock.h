@@ -58,6 +58,7 @@ namespace com {
                 string *name = nullptr;
                 mode_t mode = DEFAULT_LOCK_MODE;
                 sem_t *semaphore = nullptr;
+                bool locked = false;
 
             public:
                 exclusive_lock(const string *name) {
@@ -85,6 +86,10 @@ namespace com {
                     CHECK_AND_FREE(name);
                 }
 
+                bool is_locked() {
+                    return locked;
+                }
+
                 void reset() {
                     CHECK_SEMAPHORE_PTR(semaphore, name);
                     if (sem_trywait(semaphore) == 0) {
@@ -102,6 +107,7 @@ namespace com {
                             throw e;
                         }
                     }
+                    locked = false;
                 }
 
                 void create() {
@@ -113,6 +119,7 @@ namespace com {
                         throw e;
                     }
                     LOG_DEBUG("Created exclusive lock. [name=%s]", name->c_str());
+                    locked = false;
                 }
 
                 const string *get_name() const {
@@ -122,6 +129,7 @@ namespace com {
                 bool try_lock() {
                     CHECK_SEMAPHORE_PTR(semaphore, name);
                     if (sem_trywait(semaphore) == 0) {
+                        locked = true;
                         return true;
                     } else {
                         return false;
@@ -131,6 +139,7 @@ namespace com {
                 bool wait_lock() {
                     CHECK_SEMAPHORE_PTR(semaphore, name);
                     if (sem_wait(semaphore) == 0) {
+                        locked = true;
                         return true;
                     } else {
                         return false;
@@ -140,6 +149,7 @@ namespace com {
                 bool release_lock() {
                     CHECK_SEMAPHORE_PTR(semaphore, name);
                     if (sem_post(semaphore) == 0) {
+                        locked = false;
                         return true;
                     } else {
                         return false;

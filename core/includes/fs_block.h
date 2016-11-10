@@ -186,22 +186,32 @@ namespace com {
                     bool commit() {
                         CHECK_NOT_NULL(header);
                         PRECONDITION(is_writable());
+                        PRECONDITION(block_lock->is_locked());
 
                         if (is_commit_pending()) {
                             header->rollback_info.write_offset = header->write_offset;
                             header->rollback_info.block_size = header->block_size;
+
+                            block_lock->release_lock();
+                            return true;
                         }
+                        block_lock->release_lock();
                         return false;
                     }
 
                     bool rollback() {
                         CHECK_NOT_NULL(header);
                         PRECONDITION(is_writable());
+                        PRECONDITION(block_lock->is_locked());
 
                         if (is_commit_pending()) {
                             header->write_offset = header->rollback_info.write_offset;
                             header->block_size = header->rollback_info.block_size;
+
+                            block_lock->release_lock();
+                            return true;
                         }
+                        block_lock->release_lock();
                         return false;
                     }
 

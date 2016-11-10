@@ -451,6 +451,8 @@ namespace com {
                     shared_lock_table *table = nullptr;
                     unordered_map<string, read_write_lock *> locks;
 
+                    void create(mode_t mode, uint32_t count);
+
                 public:
                     ~lock_env() {
                         state.set_state(__state_enum::Disposed);
@@ -462,7 +464,7 @@ namespace com {
                         return table;
                     }
 
-                    void create(mode_t mode, uint32_t count);
+                    void create(uint32_t count);
 
                     read_write_lock *add_lock(string name);
 

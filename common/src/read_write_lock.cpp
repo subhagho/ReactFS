@@ -243,6 +243,24 @@ void com::wookler::reactfs::common::lock_env::create(mode_t mode, uint32_t count
     }
 }
 
+void com::wookler::reactfs::common::lock_env::create(uint32_t count) {
+    try {
+        table = new shared_lock_table();
+        table->create(count);
+
+        state.set_state(__state_enum::Available);
+
+    } catch (const exception &e) {
+        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=%s]", e.what());
+        state.set_error(&le);
+        throw le;
+    } catch (...) {
+        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=Unknown]");
+        state.set_error(&le);
+        throw le;
+    }
+}
+
 void com::wookler::reactfs::common::lock_manager::init(mode_t mode, uint32_t count) {
     try {
         create(mode, count);

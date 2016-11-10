@@ -61,6 +61,11 @@ namespace com {
                     uint64_t block_size = 0; // Block data size at the time of the last commit.
                 } __rollback_info;
 
+                typedef struct __compressed_block__ {
+                    uint32_t block_size = 0;
+                    void *data_ptr = nullptr;
+                } __compressed_block;
+
                 typedef struct {
                     uint64_t block_id;
                     char block_uid[SIZE_UUID];

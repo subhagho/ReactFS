@@ -28,9 +28,11 @@ int main(int argc, char **argv) {
         lock_manager *manager = new lock_manager();
         manager->init(0755, CONFIG_LOCK_COUNT);
 
+        lock_env *l_env = new lock_env();
+        l_env->create(CONFIG_LOCK_COUNT);
+
         string name("test_lock_01");
-        read_write_lock *lock = new read_write_lock();
-        lock->create(&name, manager->get_lock_table());
+        read_write_lock *lock = l_env->add_lock(name);
         lock->reset();
 
         POSTCONDITION(NOT_NULL(lock));
@@ -56,6 +58,7 @@ int main(int argc, char **argv) {
         lock->release_read_lock();
         LOG_INFO("Released read lock.");
 
+        CHECK_AND_FREE(l_env);
         CHECK_AND_FREE(manager);
         env_utils::dispose();
 

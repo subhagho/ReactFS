@@ -20,9 +20,12 @@ TEST_CASE("Check basic shared lock operations", "[com::wookler::reactfs::common:
     lock_manager *manager = new lock_manager();
     manager->init(0755, CONFIG_LOCK_COUNT);
 
+    lock_env *l_env = new lock_env();
+    l_env->create(CONFIG_LOCK_COUNT);
+
     string name("test_lock_01");
-    read_write_lock *lock = new read_write_lock();
-    lock->create(&name, manager->get_lock_table());
+    read_write_lock *lock = l_env->add_lock(name);
+    CHECK_NOT_NULL(lock);
     lock->reset();
 
     POSTCONDITION(NOT_NULL(lock));

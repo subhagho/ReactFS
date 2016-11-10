@@ -71,6 +71,8 @@ namespace com {
                         return cptr + sizeof(__block_header) + sizeof(uint64_t);
                     }
 
+                    row<T> **_write_t(T **source, uint64_t count = 1);
+
                 public:
                     virtual ~fs_typed_block() {
                         next_rowid = nullptr;
@@ -91,6 +93,7 @@ namespace com {
                     virtual string open(uint64_t block_id, string filename) override;
 
                     row<T> *read_t(uint64_t offset = 0);
+
 
                     row<T> **write_t(T **source, uint64_t count = 1);
 
@@ -152,6 +155,31 @@ com::wookler::reactfs::core::fs_typed_block<T>::create(uint64_t block_id, string
 }
 
 template<class T>
+row <T> **com::wookler::reactfs::core::fs_typed_block<T>::_write_t(T **source, uint64_t count) {
+    row<T> **rows = new row<T> *[count];
+
+    for (int ii = 0; ii < count; ii++) {
+        const T *sptr = source[ii];
+        CHECK_NOT_NULL(sptr);
+        PRECONDITION((header->used_bytes + sizeof(row<T>)) <= header->block_size);
+
+        uint64_t rowid = *this->next_rowid;
+        LOG_DEBUG("Current used rowid = %lu", rowid);
+        row<T> *r = new row<T>(rowid, sptr);
+
+        void *ptr = fs_block::write_r(r, sizeof(row<T>));
+        row<T> *tptr = static_cast<row<T> *>(ptr);
+
+        rows[ii] = tptr;
+        rowid++;
+        *this->next_rowid = rowid;
+
+    }
+
+    return rows;
+}
+
+template<class T>
 row <T> **com::wookler::reactfs::core::fs_typed_block<T>::write_t(T **source, uint64_t count) {
     CHECK_NOT_NULL(stream);
     CHECK_NOT_NULL(header);
@@ -159,39 +187,25 @@ row <T> **com::wookler::reactfs::core::fs_typed_block<T>::write_t(T **source, ui
     PRECONDITION(count > 0);
     PRECONDITION(header->write_state == __write_state::WRITABLE);
 
-    row<T> **rows = new row<T> *[count];
-
-    if (block_lock->wait_lock()) {
-        try {
-            for (int ii = 0; ii < count; ii++) {
-                const T *sptr = source[ii];
-                CHECK_NOT_NULL(sptr);
-                PRECONDITION((header->used_bytes + sizeof(row<T>)) <= header->block_size);
-
-                uint64_t rowid = *this->next_rowid;
-                LOG_DEBUG("Current used rowid = %lu", rowid);
-                row<T> *r = new row<T>(rowid, sptr);
-
-                void *ptr = fs_block::write_r(r, sizeof(row<T>));
-                row<T> *tptr = static_cast<row<T> *>(ptr);
-
-                rows[ii] = tptr;
-                rowid++;
-                *this->next_rowid = rowid;
-
+    if (!block_lock->is_locked()) {
+        if (block_lock->wait_lock()) {
+            row<T> **rows = nullptr;
+            try {
+                rows = _write_t(source, count);
+            } catch (const exception &e) {
+                block_lock->release_lock();
+                throw FS_BASE_ERROR_E(e);
+            } catch (...) {
+                block_lock->release_lock();
+                throw FS_BASE_ERROR("Unhandled type exception.");
             }
-
-        } catch (const exception &e) {
             block_lock->release_lock();
-            throw FS_BASE_ERROR_E(e);
-        } catch (...) {
-            block_lock->release_lock();
-            throw FS_BASE_ERROR("Unhandled type exception.");
+            return rows;
+        } else {
+            throw FS_BASE_ERROR("Error getting write lock on file. [block id=%s]", header->block_uid);
         }
-        block_lock->release_lock();
-        return rows;
     } else {
-        throw FS_BASE_ERROR("Error getting write lock on file. [block id=%s]", header->block_uid);
+        return _write_t(source, count);
     }
 }
 

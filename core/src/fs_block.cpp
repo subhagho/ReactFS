@@ -176,22 +176,29 @@ const void *com::wookler::reactfs::core::fs_block::_write(const void *source, ui
     PRECONDITION(len > 0);
     PRECONDITION(header->used_bytes + len <= header->block_size);
 
-    BYTE_PTR start_ptr = static_cast<BYTE_PTR>(write_ptr);
-    if (block_lock->wait_lock()) {
-        try {
-            write_r(source, len);
-        } catch (const exception &e) {
-            block_lock->release_lock();
-            throw FS_BASE_ERROR_E(e);
-        } catch (...) {
-            block_lock->release_lock();
-            throw FS_BASE_ERROR("Unhandled type exception.");
-        }
-        block_lock->release_lock();
 
-        return start_ptr;
+    if (!block_lock->is_locked()) {
+        if (block_lock->wait_lock()) {
+            BYTE_PTR start_ptr = static_cast<BYTE_PTR>(write_ptr);
+            try {
+                write_r(source, len);
+            } catch (const exception &e) {
+                block_lock->release_lock();
+                throw FS_BASE_ERROR_E(e);
+            } catch (...) {
+                block_lock->release_lock();
+                throw FS_BASE_ERROR("Unhandled type exception.");
+            }
+            block_lock->release_lock();
+
+            return start_ptr;
+        } else {
+            throw FS_BASE_ERROR("Error getting write lock on file. [block id=%s]", header->block_uid);
+        }
     } else {
-        throw FS_BASE_ERROR("Error getting write lock on file. [block id=%s]", header->block_uid);
+        BYTE_PTR start_ptr = static_cast<BYTE_PTR>(write_ptr);
+        write_r(source, len);
+        return start_ptr;
     }
 }
 
