@@ -18,7 +18,7 @@ TEST_CASE("Check basic shared lock operations", "[com::wookler::reactfs::common:
     REQUIRE(NOT_NULL(config));
 
     lock_manager *manager = new lock_manager();
-    manager->create(0755, CONFIG_LOCK_COUNT);
+    manager->init(0755, CONFIG_LOCK_COUNT);
 
     string name("test_lock_01");
     read_write_lock *lock = new read_write_lock();

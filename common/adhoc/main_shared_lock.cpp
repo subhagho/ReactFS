@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
         CHECK_NOT_NULL(env);
 
         lock_manager *manager = new lock_manager();
-        manager->create(0755, CONFIG_LOCK_COUNT);
+        manager->init(0755, CONFIG_LOCK_COUNT);
 
         string name("test_lock_01");
         read_write_lock *lock = new read_write_lock();

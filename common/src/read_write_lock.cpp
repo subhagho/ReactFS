@@ -204,7 +204,8 @@ bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) 
             POSTCONDITION(r_ptr->used);
 
             r_ptr->ref_count--;
-            if (r_ptr->ref_count <= 0) {
+            uint64_t delta = (time_utils::now() - r_ptr->last_used);
+            if (r_ptr->ref_count <= 0 && delta >= DEFAULT_RW_LOCK_EXPIRY) {
                 memset(r_ptr, 0, sizeof(__lock_struct));
                 r_ptr->used = false;
                 r_ptr->reader_count = 0;
@@ -224,13 +225,27 @@ bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) 
     return ret;
 }
 
-void com::wookler::reactfs::common::lock_manager::create(mode_t mode, uint32_t count) {
+void com::wookler::reactfs::common::lock_env::create(mode_t mode, uint32_t count) {
     try {
         table = new shared_lock_table();
         table->create(mode, count);
 
         state.set_state(__state_enum::Available);
 
+    } catch (const exception &e) {
+        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=%s]", e.what());
+        state.set_error(&le);
+        throw le;
+    } catch (...) {
+        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=Unknown]");
+        state.set_error(&le);
+        throw le;
+    }
+}
+
+void com::wookler::reactfs::common::lock_manager::init(mode_t mode, uint32_t count) {
+    try {
+        create(mode, count);
         reset();
 
         manager_thread = new thread(lock_manager::run, this);
@@ -292,12 +307,16 @@ void com::wookler::reactfs::common::lock_manager::check_lock_states() {
                         }
                     }
                 }
+                uint64_t delta = (time_utils::now() - ptr->last_used);
+                if (ptr->ref_count <= 0 && delta >= DEFAULT_RW_LOCK_EXPIRY) {
+                    table->remove_lock(ptr->name);
+                }
             }
         }
     }
 }
 
-read_write_lock *com::wookler::reactfs::common::lock_manager::add_lock(string name) {
+read_write_lock *com::wookler::reactfs::common::lock_env::add_lock(string name) {
     CHECK_STATE_AVAILABLE(state);
 
     read_write_lock *lock = nullptr;
@@ -314,7 +333,7 @@ read_write_lock *com::wookler::reactfs::common::lock_manager::add_lock(string na
     return lock;
 }
 
-bool com::wookler::reactfs::common::lock_manager::remove_lock(string name) {
+bool com::wookler::reactfs::common::lock_env::remove_lock(string name) {
     CHECK_STATE_AVAILABLE(state);
 
     read_write_lock *lock = nullptr;
