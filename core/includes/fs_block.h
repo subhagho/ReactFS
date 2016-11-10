@@ -77,6 +77,12 @@ namespace com {
                         return false;
                     }
 
+                    const void *_write(const void *source, uint32_t len);
+
+                    const void *_write_compressed(const void *source, uint32_t len);
+
+                    const void *_read_compressed(uint64_t size, uint64_t offset = 0);
+
                 public:
                     virtual ~fs_block() {
                         CHECK_AND_FREE(block_lock);
@@ -148,7 +154,6 @@ namespace com {
                         return ptr;
                     }
 
-                    const void *_write(const void *source, uint32_t len);
 
                     void flush() {
                         CHECK_NOT_NULL(header);

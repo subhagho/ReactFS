@@ -29,6 +29,9 @@
 namespace com {
     namespace watergate {
         namespace common {
+            /*!
+             *
+             */
             class __app {
             private:
                 string name;

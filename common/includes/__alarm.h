@@ -27,69 +27,176 @@
 #include "common_utils.h"
 #include "__callback.h"
 #include "base_error.h"
+#include "log_utils.h"
+#include "__signals.h"
 
+/*!
+ * Macro defined for running an alarm for the specified interval.
+ *
+ * @param t - Interval to set the alarm for.
+ */
 #define START_ALARM(t) do {\
-    com::watergate::common::__alarm a(t); \
+    com::wookler::reactfs::common::__alarm_signal_handler h(__FILE__, __LINE__); \
+    com::wookler::reactfs::common::__alarm a(t, &h); \
     bool r = a.start(); \
-    _assert(r); \
+    POSTCONDITION(r); \
 } while(0);
 
+/*!
+ * Macro defined for running an alarm for the specified interval
+ * with a callback to be invoked once the alarm is raised.
+ *
+ * @param t - Interval to set the alarm for.
+ * @param c - Callback to invoke
+ */
 #define START_ALARM_WITH_CALLBACK(t, c) do {\
-    com::watergate::common::__alarm a(t, c); \
+    com::wookler::reactfs::common::__alarm a(t, c); \
     bool r = a.start(); \
     _assert(r); \
 } while(0);
 
 namespace com {
-    namespace watergate {
-        namespace common {
-            class __alarm {
-            private:
-                __callback *_c = nullptr;
-                long _d;
+    namespace wookler {
+        namespace reactfs {
+            namespace common {
+                /*!
+                 * Default interrupt signal handler class for alarms.
+                 */
+                class __alarm_signal_handler : public __callback {
+                private:
+                    /// Filename of the source where the alarm was called.
+                    char *filename;
+                    /// Line no. of the source where the alarm was called.
+                    uint32_t lineno;
 
-                static void signal_handler(int signal) {
-                    throw BASE_ERROR("Alarm interrupted...");
-                }
-
-            public:
-                __alarm(long delta) {
-                    this->_d = delta;
-                }
-
-                __alarm(long delta, __callback *c) {
-                    this->_d = delta;
-                    this->_c = c;
-                }
-
-                __alarm(string duration) {
-                    assert(!IS_EMPTY(duration));
-                    this->_d = common_utils::parse_duration(duration);
-                    assert((this->_d > 0));
-                }
-
-                __alarm(string duration, __callback *c) {
-                    assert(!IS_EMPTY(duration));
-                    this->_d = common_utils::parse_duration(duration);
-                    assert((this->_d > 0));
-
-                    this->_c = c;
-                }
-
-                bool start() {
-                    assert(_d > 0);
-                    signal(SIGINT, &signal_handler);
-
-                    long s_time = _d * 1000;
-                    usleep(s_time);
-
-                    if (NOT_NULL(_c)) {
-                        _c->set_state(__callback_state_enum::SUCCESS);
-                        _c->callback();
+                public:
+                    /*!< constructor
+                     * Default constructor with the source filename and line no.
+                     *
+                     * @param filename - Source filename of the caller.
+                     * @param lineno  - Source line no. of the caller
+                     * @return - Constructor
+                     */
+                    __alarm_signal_handler(char *filename, uint32_t lineno) {
+                        this->filename = filename;
+                        this->lineno = lineno;
                     }
-                    return true;
-                }
-            };
+
+                    /*!
+                     * Empty method. Doesn't do anything as only the error method is expected to be called.
+                     */
+                    void callback() override {
+
+                    }
+
+                    /*!
+                     * Log the interrupt call.
+                     */
+                    void error() override {
+                        LOG_ERROR("[file=%s][line=%lu] Alarm interrupted...", filename, lineno);
+                    }
+                };
+
+                /*!
+                 * Class represents a timer based alarm. The invoking thread will go into a sleep mode
+                 * once the alarm is started. If a callback is specified if will be invoked once the thread resumes,
+                 * else control will be returned to the caller.
+                 *
+                 */
+                class __alarm {
+                private:
+                    /// Callback handler to be invoked once the alaram is reaised.
+                    __callback *_c = nullptr;
+                    /// Duration the thread should sleep (in millisecods)
+                    long _d;
+
+                    /// Generic signal handler to catch sleep interrupts.
+                    static void signal_handler(int signal) {
+                        throw BASE_ERROR("Alarm interrupted...");
+                    }
+
+                public:
+
+                    /*!< constructor
+                     * Create an alarm instance with the specified timeout duration.
+                     *
+                     * @param delta - Duration to sleep (in milliseconds)
+                     * @return - Constructor
+                     */
+                    __alarm(long delta) {
+                        this->_d = delta;
+                    }
+
+                    /*!< constructor
+                     * Create an alarm instance with the specified timeout duration and a callback handler
+                     * to be invoked once the alarm is completed.
+                     *
+                     * @param delta - Duration to sleep (in milliseconds)
+                     * @param c - Callback handler to be invoked
+                     * @return - Constructor
+                     */
+                    __alarm(long delta, __callback *c) {
+                        this->_d = delta;
+                        this->_c = c;
+                    }
+
+                    /*!< constructor
+                     * Create an alarm instance with the specified timeout duration.
+                     *
+                     * @param duration - String representation of duration [duration parser]: @ref common_utils::parse_duration()
+                     * @return - Constructor
+                     */
+                    __alarm(string duration) {
+                        PRECONDITION(!IS_EMPTY(duration));
+                        this->_d = common_utils::parse_duration(duration);
+                        POSTCONDITION((this->_d > 0));
+                    }
+
+                    /*!< constructor
+                     * Create an alarm instance with the specified timeout duration and a callback handler
+                     * to be invoked once the alarm is completed.
+                     *
+                     * @param duration - String representation of duration [duration parser]: @ref common_utils::parse_duration()
+                     * @param c - Callback handler to be invoked
+                     * @return - Constructor
+                     */
+                    __alarm(string duration, __callback *c) {
+                        PRECONDITION(!IS_EMPTY(duration));
+                        this->_d = common_utils::parse_duration(duration);
+                        POSTCONDITION((this->_d > 0));
+
+                        this->_c = c;
+                    }
+
+                    /*!
+                     * Start the alarm. This call will cause the current thread
+                     * to sleep for the duration specified in the constructor. If callback handler is set, then the handler
+                     * will be invoked once the thread wakes up, else control will return directly to the caller.
+                     *
+                     * @return - True, if everything went fine.
+                     */
+                    bool start() {
+                        if (NOT_NULL(_c)) {
+                            // If callback is not null, use the callback to register to the signal handler.
+                            __signals::add_handler(SIGINT, _c);
+                        } else {
+                            // Else register a generic signal handler.
+                            signal(SIGINT, &signal_handler);
+                        }
+
+                        long s_time = _d * 1000;
+                        usleep(s_time);
+
+                        if (NOT_NULL(_c)) {
+                            _c->set_state(__callback_state_enum::SUCCESS);
+                            _c->callback();
+                            // Un-register the callback from the signal handlers.
+                            __signals::remove_handler(SIGINT, _c);
+                        }
+                        return true;
+                    }
+                };
+            }
         }
     }
 }

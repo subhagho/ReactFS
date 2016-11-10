@@ -24,81 +24,143 @@
 #include "common.h"
 
 namespace com {
-    namespace watergate {
-        namespace common {
-            enum __callback_state_enum {
-                UNKNOWN, SUCCESS, IGNORED, ERROR
-            };
+    namespace wookler {
+        namespace reactfs {
+            namespace common {
+                /*!
+                 * Enumeration for defining the call-stack state prior to invoking the callback(s)
+                 */
+                enum __callback_state_enum {
+                    /// State is unknown
+                            UNKNOWN,
+                    /// State is success
+                            SUCCESS,
+                    /// State is ignored.
+                            IGNORED,
+                    /// Error occured prior to invoking this callback
+                            ERROR
+                };
 
-            class __callback_state {
-            private:
-                __callback_state_enum state = __callback_state_enum::UNKNOWN;
-                exception *error = nullptr;
+                /*!
+                 * Encapsulating class to propagate the execution state to a callback.
+                 */
+                class __callback_state {
+                private:
+                    /// Execution state
+                    __callback_state_enum state = __callback_state_enum::UNKNOWN;
+                    /// Exception handle, if any error occurred.
+                    exception *error = nullptr;
 
-            public:
-                ~__callback_state() {
-                    dispose();
-                }
-
-                void set_state(__callback_state_enum state) {
-                    this->state = state;
-                }
-
-                void set_error(exception *error) {
-                    set_state(ERROR);
-                    this->error = error;
-                }
-
-                const __callback_state_enum get_state() const {
-                    return state;
-                }
-
-                const exception *get_error() const {
-                    return this->error;
-                }
-
-                void dispose() {
-                    CHECK_AND_FREE(error);
-                }
-            };
-
-            class __callback {
-            protected:
-                void *context;
-                __callback_state state;
-
-            public:
-                virtual ~__callback() {
-                    state.dispose();
-                }
-
-                const __callback_state get_state() const {
-                    return state;
-                }
-
-                template<typename T>
-                T *get_context(T *t) const {
-                    if (NOT_NULL(context)) {
-                        T *tt = static_cast<T *>(context);
-                        return tt;
+                public:
+                    /*!< destructor
+                     * Dispose this callback instance.
+                     */
+                    ~__callback_state() {
+                        dispose();
                     }
-                    return t;
-                }
 
-                void set_context(void *context) {
-                    this->context = context;
-                }
+                    /*!
+                     * Set the execution state prior to the callback being invoked.
+                     *
+                     * @param state - Execution state.
+                     */
+                    void set_state(__callback_state_enum state) {
+                        this->state = state;
+                    }
 
-                void set_state(__callback_state_enum state) {
-                    this->state.set_state(state);
-                }
+                    /*!
+                     * Set the execution state to error and record the generated exception.
+                     *
+                     * @param error - Exception generated.
+                     */
+                    void set_error(exception *error) {
+                        set_state(ERROR);
+                        this->error = error;
+                    }
 
-                void set_error(exception *error) {
-                    this->state.set_error(error);
-                }
+                    /*!
+                     * Get the execution state.
+                     *
+                     * @return - Execution state.
+                     */
+                    const __callback_state_enum get_state() const {
+                        return state;
+                    }
 
-                virtual void callback() = 0;
-            };
+                    /*!
+                     * Get the execption, if any.
+                     *
+                     * @return - Exception handle.
+                     */
+                    const exception *get_error() const {
+                        return this->error;
+                    }
+
+                    void dispose() {
+                        CHECK_AND_FREE(error);
+                    }
+                };
+
+                class __callback {
+                protected:
+                    string uuid;
+                    void *context;
+                    __callback_state state;
+
+                public:
+                    virtual __callback() {
+                        uuid = common_utils::uuid();
+                    }
+
+                    virtual ~__callback() {
+                        state.dispose();
+                    }
+
+                    const string get_uuid() const {
+                        return uuid;
+                    }
+
+                    bool operator==(const __callback *c) const {
+                        if (NOT_NULL(c)) {
+                            return (uuid == c->uuid);
+                        }
+                        return false;
+                    }
+
+                    bool operator==(const __callback c) const {
+                        return (uuid == c.uuid);
+                    }
+
+                    const __callback_state get_state() const {
+                        return state;
+                    }
+
+                    template<typename T>
+                    T *get_context(T *t) const {
+                        if (NOT_NULL(context)) {
+                            T *tt = static_cast<T *>(context);
+                            return tt;
+                        }
+                        return t;
+                    }
+
+                    void set_context(void *context) {
+                        this->context = context;
+                    }
+
+                    void set_state(__callback_state_enum state) {
+                        this->state.set_state(state);
+                    }
+
+                    void set_error(exception *error) {
+                        this->state.set_error(error);
+                    }
+
+                    virtual void callback() = 0;
+
+                    virtual void error() = 0;
+                };
+            }
         }
     }
 }
