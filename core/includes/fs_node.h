@@ -30,7 +30,7 @@
 
 #define CONFIG_NODE_FS_PATH "/configuration/filesystem/node"
 
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 
 namespace com {
     namespace wookler {

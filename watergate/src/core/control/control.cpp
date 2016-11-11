@@ -24,9 +24,7 @@
 #include "watergate/includes/resource_factory.h"
 
 
-using namespace com::watergate::core;
-
-void com::watergate::core::_semaphore::create(const __app *app, const ConfigValue *config, bool server) {
+void com::wookler::watergate::core::_semaphore::create(const __app *app, const ConfigValue *config, bool server) {
     CHECK_NOT_NULL(app);
     CHECK_NOT_NULL(config);
 
@@ -86,7 +84,7 @@ void com::watergate::core::_semaphore::create(const __app *app, const ConfigValu
     }
 }
 
-void com::watergate::core::_semaphore::create_sem(int index) {
+void com::wookler::watergate::core::_semaphore::create_sem(int index) {
     PRECONDITION(index >= 0 && index < priorities);
 
     string sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
@@ -99,7 +97,7 @@ void com::watergate::core::_semaphore::create_sem(int index) {
     semaphores[index] = ptr;
 }
 
-void com::watergate::core::_semaphore::delete_sem(int index) {
+void com::wookler::watergate::core::_semaphore::delete_sem(int index) {
     PRECONDITION(index >= 0 && index < priorities);
 
     if (IS_VALID_SEM_PTR(semaphores[index])) {
@@ -117,14 +115,14 @@ void com::watergate::core::_semaphore::delete_sem(int index) {
     }
 }
 
-com::watergate::core::_semaphore::~_semaphore() {
+com::wookler::watergate::core::_semaphore::~_semaphore() {
     CHECK_AND_FREE(this->name);
     CHECK_AND_FREE(resource);
     CHECK_AND_FREE(table);
 }
 
 _lock_state
-com::watergate::core::_semaphore_client::try_lock(int priority, double quota, int base_priority, bool wait) {
+com::wookler::watergate::core::_semaphore_client::try_lock(int priority, double quota, int base_priority, bool wait) {
     PRECONDITION(priority >= 0 && priority < priorities);
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
@@ -217,7 +215,7 @@ com::watergate::core::_semaphore_client::try_lock(int priority, double quota, in
                         priority);
 }
 
-_lock_state com::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
+_lock_state com::wookler::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
     ASSERT(NOT_NULL(semaphores));
@@ -314,7 +312,7 @@ _lock_state com::watergate::core::_semaphore_client::try_lock_base(double quota,
                         BASE_PRIORITY);
 }
 
-bool com::watergate::core::_semaphore_client::release_lock_base(int base_priority) {
+bool com::wookler::watergate::core::_semaphore_client::release_lock_base(int base_priority) {
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
     ASSERT(NOT_NULL(semaphores));
@@ -405,7 +403,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
     return false;
 }
 
-bool com::watergate::core::_semaphore_client::release_lock(int priority, int base_priority) {
+bool com::wookler::watergate::core::_semaphore_client::release_lock(int priority, int base_priority) {
     PRECONDITION(priority >= 0 && priority < priorities);
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
@@ -491,12 +489,12 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
     return false;
 }
 
-void com::watergate::core::_semaphore_owner::reset() {
+void com::wookler::watergate::core::_semaphore_owner::reset() {
     LOG_DEBUG("[name=%s] Resetting all semaphores...", name->c_str());
     clear_locks();
 }
 
-void com::watergate::core::_semaphore_owner::check_expired_locks(uint64_t expiry_time) {
+void com::wookler::watergate::core::_semaphore_owner::check_expired_locks(uint64_t expiry_time) {
     PRECONDITION(expiry_time > 0);
 
     uint32_t counts[MAX_PRIORITY_ALLOWED];
@@ -522,7 +520,7 @@ void com::watergate::core::_semaphore_owner::check_expired_locks(uint64_t expiry
     }
 }
 
-void com::watergate::core::_semaphore_owner::check_expired_records(uint64_t expiry_time) {
+void com::wookler::watergate::core::_semaphore_owner::check_expired_records(uint64_t expiry_time) {
     PRECONDITION(expiry_time > 0);
 
     lock_table_manager *tm = get_table_manager();

@@ -39,84 +39,86 @@
 } while(0);
 
 namespace com {
-    namespace watergate {
-        namespace common {
-            enum __state_enum {
-                Unknown, Initialized, Available, Disposed, Exception
-            };
+    namespace wookler {
+        namespace reactfs {
+            namespace common {
+                enum __state_enum {
+                    Unknown, Initialized, Available, Disposed, Exception
+                };
 
-            class __state__ {
-            private:
-                __state_enum state = Unknown;
-                const exception *error = NULL;
+                class __state__ {
+                private:
+                    __state_enum state = Unknown;
+                    const exception *error = NULL;
 
-            public:
-                const __state_enum get_state() const {
-                    return state;
-                }
-
-                string get_state_string() const {
-                    switch (state) {
-                        case Unknown:
-                            return "Unknown";
-                        case Initialized:
-                            return "Initialized";
-                        case Available:
-                            return "Available";
-                        case Disposed:
-                            return "Disposed";
-                        case Exception:
-                            return "Exception";
-                        default:
-                            return EMPTY_STRING;
+                public:
+                    const __state_enum get_state() const {
+                        return state;
                     }
-                }
 
-                int get_state_int() const {
-                    switch (state) {
-                        case Unknown:
-                            return 0;
-                        case Initialized:
-                            return 1;
-                        case Available:
-                            return 2;
-                        case Disposed:
-                            return 3;
-                        case Exception:
-                            return 4;
-                        default:
-                            return 0;
+                    string get_state_string() const {
+                        switch (state) {
+                            case Unknown:
+                                return "Unknown";
+                            case Initialized:
+                                return "Initialized";
+                            case Available:
+                                return "Available";
+                            case Disposed:
+                                return "Disposed";
+                            case Exception:
+                                return "Exception";
+                            default:
+                                return EMPTY_STRING;
+                        }
                     }
-                }
 
-                void set_state(__state_enum s) {
-                    state = s;
-                }
-
-                void set_error(const exception *e) {
-                    error = e;
-                    state = Exception;
-                }
-
-                const exception *get_error() const {
-                    if (state == Exception) {
-                        return error;
+                    int get_state_int() const {
+                        switch (state) {
+                            case Unknown:
+                                return 0;
+                            case Initialized:
+                                return 1;
+                            case Available:
+                                return 2;
+                            case Disposed:
+                                return 3;
+                            case Exception:
+                                return 4;
+                            default:
+                                return 0;
+                        }
                     }
-                    return NULL;
-                }
 
-                bool has_error() const {
-                    return (state == Exception);
-                }
+                    void set_state(__state_enum s) {
+                        state = s;
+                    }
 
-                bool is_available() const {
-                    return (state == Available);
-                }
+                    void set_error(const exception *e) {
+                        error = e;
+                        state = Exception;
+                    }
 
-                bool is_disposed() const {
-                    return (state == Disposed);
-                }
-            };
+                    const exception *get_error() const {
+                        if (state == Exception) {
+                            return error;
+                        }
+                        return NULL;
+                    }
+
+                    bool has_error() const {
+                        return (state == Exception);
+                    }
+
+                    bool is_available() const {
+                        return (state == Available);
+                    }
+
+                    bool is_disposed() const {
+                        return (state == Disposed);
+                    }
+                };
+            }
         }
     }
 }

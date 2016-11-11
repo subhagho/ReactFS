@@ -20,10 +20,7 @@
 
 #include "watergate/includes/control_def.h"
 
-using namespace com::watergate::core;
-
-
-void com::watergate::core::control_def::create(const __app *app, const ConfigValue *config, bool server) {
+void com::wookler::watergate::core::control_def::create(const __app *app, const ConfigValue *config, bool server) {
     try {
         CHECK_NOT_NULL(app);
         CHECK_NOT_NULL(config);
@@ -47,7 +44,7 @@ void com::watergate::core::control_def::create(const __app *app, const ConfigVal
     }
 }
 
-void com::watergate::core::control_def::add_resource_lock(const __app *app, const ConfigValue *config, bool server) {
+void com::wookler::watergate::core::control_def::add_resource_lock(const __app *app, const ConfigValue *config, bool server) {
     _semaphore *sem = nullptr;
     if (server) {
         sem = new _semaphore_owner();
@@ -79,7 +76,7 @@ void com::watergate::core::control_def::add_resource_lock(const __app *app, cons
     LOG_INFO("Created new semaphore handle. [name=%s]...", sem->get_name()->c_str());
 }
 
-com::watergate::core::control_def::~control_def() {
+com::wookler::watergate::core::control_def::~control_def() {
     state.set_state(Disposed);
     if (!IS_EMPTY(semaphores)) {
         for (auto kv : semaphores) {
@@ -92,7 +89,7 @@ com::watergate::core::control_def::~control_def() {
 }
 
 _lock_state
-com::watergate::core::control_client::try_lock(string name, int priority, int base_priority, double quota) const {
+com::wookler::watergate::core::control_client::try_lock(string name, int priority, int base_priority, double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -107,7 +104,7 @@ com::watergate::core::control_client::try_lock(string name, int priority, int ba
         r = sem_c->try_lock_base(quota, base_priority, false);
         if (r == Locked) {
             string q_name = get_metrics_name(METRIC_QUOTA_PREFIX, name, -1);
-            com::watergate::common::metrics_utils::update(q_name, quota);
+            metrics_utils::update(q_name, quota);
         }
     } else
         r = sem_c->try_lock(priority, quota, base_priority, false);
@@ -115,7 +112,7 @@ com::watergate::core::control_client::try_lock(string name, int priority, int ba
 }
 
 _lock_state
-com::watergate::core::control_client::wait_lock(string name, int priority, int base_priority, double quota) const {
+com::wookler::watergate::core::control_client::wait_lock(string name, int priority, int base_priority, double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -131,14 +128,14 @@ com::watergate::core::control_client::wait_lock(string name, int priority, int b
         r = sem_c->try_lock_base(quota, base_priority, true);
         if (r == Locked) {
             string q_name = get_metrics_name(METRIC_QUOTA_PREFIX, name, -1);
-            com::watergate::common::metrics_utils::update(q_name, quota);
+            metrics_utils::update(q_name, quota);
         }
     } else
         r = sem_c->try_lock(priority, quota, base_priority, true);
     return r;
 }
 
-bool com::watergate::core::control_client::release_lock(string name, int priority, int base_priority) const {
+bool com::wookler::watergate::core::control_client::release_lock(string name, int priority, int base_priority) const {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -154,7 +151,7 @@ bool com::watergate::core::control_client::release_lock(string name, int priorit
         return sem_c->release_lock(priority, base_priority);
 }
 
-bool com::watergate::core::control_client::has_valid_lock(string name, int priority) const {
+bool com::wookler::watergate::core::control_client::has_valid_lock(string name, int priority) const {
     _semaphore *sem = get_lock(name);
     if (IS_NULL(sem)) {
         throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
@@ -166,7 +163,7 @@ bool com::watergate::core::control_client::has_valid_lock(string name, int prior
 }
 
 _lock_state
-com::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout, int *err) const {
+com::wookler::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout, int *err) const {
 
     timer t;
     t.start();
@@ -184,7 +181,7 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
             ret = Timeout;
         } else {
             int locked_priority = priority;
-            com::watergate::common::__alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
+            __alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
             for (int ii = priority - 1; ii >= 0; ii--) {
                 while (true) {
                     if (t.get_current_elapsed() > timeout) {
@@ -251,18 +248,18 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
     if (ret == Timeout) {
         string m = get_metrics_name(METRIC_LOCK_TIMEOUT_PREFIX, name, -1);
         if (!IS_EMPTY(m)) {
-            com::watergate::common::metrics_utils::update(m, 1);
+            metrics_utils::update(m, 1);
         }
     } else if (ret == QuotaReached) {
         string m = get_metrics_name(METRIC_QUOTA_REACHED_PREFIX, name, -1);
         if (!IS_EMPTY(m)) {
-            com::watergate::common::metrics_utils::update(m, 1);
+            metrics_utils::update(m, 1);
         }
     }
     return ret;
 }
 
-bool com::watergate::core::control_client::release(string name, int priority) const {
+bool com::wookler::watergate::core::control_client::release(string name, int priority) const {
     CHECK_STATE_AVAILABLE(state);
 
     bool r = true;

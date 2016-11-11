@@ -24,8 +24,8 @@
 #include "test_lock_client.h"
 #include "watergate/includes/control_manager.h"
 
-using namespace com::watergate::core;
-using namespace com::watergate::common;
+using namespace com::wookler::watergate::core;
+using namespace com::wookler::reactfs::common;
 
 TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
     init_utils::create_env(CONFIG_FILE);

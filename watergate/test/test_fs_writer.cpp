@@ -20,8 +20,8 @@
 
 #include "test_fs_writer.h"
 
-using namespace com::watergate::core;
-using namespace com::watergate::common;
+using namespace com::wookler::watergate::core;
+using namespace com::wookler::reactfs::common;
 
 TEST_CASE("Basic locked write test", "[com::watergate::core::io::fs_writer]") {
     init_utils::create_env(CONFIG_FILE);

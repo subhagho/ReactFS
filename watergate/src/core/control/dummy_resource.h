@@ -27,34 +27,36 @@
 #define CONST_DR_CONFIG_PARAM_SIZE "max_concurrency"
 
 namespace com {
-    namespace watergate {
-        namespace core {
-            class dummy_resource : public resource_def {
-            private:
-                int size = 2048;
-                string *name;
+    namespace wookler {
+        namespace watergate {
+            namespace core {
+                class dummy_resource : public resource_def {
+                private:
+                    int size = 2048;
+                    string *name;
 
-            public:
-                dummy_resource() : resource_def(resource_type_enum::IO) {
-                    this->name = new string(common_utils::uuid());
-                }
-
-                ~dummy_resource() override {
-                    if (NOT_NULL(name)) {
-                        delete (name);
+                public:
+                    dummy_resource() : resource_def(resource_type_enum::IO) {
+                        this->name = new string(common_utils::uuid());
                     }
-                }
 
-                void init(const ConfigValue *config) override;
+                    ~dummy_resource() override {
+                        if (NOT_NULL(name)) {
+                            delete (name);
+                        }
+                    }
 
-                int get_control_size() override;
+                    void init(const ConfigValue *config) override;
 
-                const string *get_resource_name() override;
+                    int get_control_size() override;
 
-                bool accept(const string name) override {
-                    return false;
-                }
-            };
+                    const string *get_resource_name() override;
+
+                    bool accept(const string name) override {
+                        return false;
+                    }
+                };
+            }
         }
     }
 }

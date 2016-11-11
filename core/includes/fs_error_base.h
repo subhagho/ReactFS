@@ -37,7 +37,7 @@
 #define FS_ARCHIVAL_ERROR_E(e) fs_error_base(__FILE__, __LINE__, e)
 #define FS_ARCHIVAL_ERROR_E_PTR(e) new fs_error_base(__FILE__, __LINE__, e)
 
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 
 namespace com {
     namespace wookler {

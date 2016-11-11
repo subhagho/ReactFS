@@ -101,40 +101,62 @@ namespace com {
                     }
                 };
 
+                /*!
+                 * Base class for defining callback handlers. Callback handlers can be registered with alarms, signal
+                 * handlers to invoke context specific functions in reaction to certain events.
+                 *
+                 * Note: The responsibility of freeing the handler(s) lies with the calling code. Pointers will not be
+                 * automatically deleted.
+                 */
                 class __callback {
                 protected:
+                    /// Unique ID of this callback instance.
                     string uuid;
+                    /// Context that needs to be passed to the callback while being invoked.
                     void *context;
+                    /// Execution state prior to invoking the callback.
                     __callback_state state;
 
                 public:
-                    virtual __callback() {
+                    /*!< constructor
+                     * Default constructor of the callback.
+                     *
+                     * @return - Constructor
+                     */
+                    __callback() {
                         uuid = common_utils::uuid();
                     }
 
+                    /*!< destructor
+                     * Virtual base destructor.
+                     */
                     virtual ~__callback() {
                         state.dispose();
                     }
 
+                    /*!
+                     * Get the UUID for this callback instance.
+                     *
+                     * @return - UUID of this instance.
+                     */
                     const string get_uuid() const {
                         return uuid;
                     }
 
-                    bool operator==(const __callback *c) const {
-                        if (NOT_NULL(c)) {
-                            return (uuid == c->uuid);
-                        }
-                        return false;
-                    }
-
-                    bool operator==(const __callback c) const {
-                        return (uuid == c.uuid);
-                    }
-
+                    /*!
+                     * Get the execution state this callback handler was invoked with.
+                     *
+                     * @return - Execution state.
+                     */
                     const __callback_state get_state() const {
                         return state;
                     }
 
+                    /*!
+                     * Template method, which returns the context by typecasting to the required type.
+                     *
+                     * @return - Typecasted context value, if not null.
+                     */
                     template<typename T>
                     T *get_context(T *t) const {
                         if (NOT_NULL(context)) {
@@ -144,20 +166,45 @@ namespace com {
                         return t;
                     }
 
+                    /*!
+                     * Set the context value, the context is used to pass data from the execution context
+                     * to the callback. Data to be required for storing local context should be stored as
+                     * member variables and not as the context.
+                     *
+                     * @param context - Context object.
+                     */
                     void set_context(void *context) {
                         this->context = context;
                     }
 
+                    /*!
+                     * Set the execution state prior to invoking the callback.
+                     *
+                     * @param state - Execution state.
+                     */
                     void set_state(__callback_state_enum state) {
                         this->state.set_state(state);
                     }
 
+                    /*!
+                     * Set the execution error raised prior to invoking the callback.
+                     *
+                     * @param error - Exception handle.
+                     */
                     void set_error(exception *error) {
                         this->state.set_error(error);
                     }
 
+                    /*!
+                     * Virtual method to be implemented by sub-classes.
+                     * This will be invoked in case of normal execution.
+                     */
                     virtual void callback() = 0;
 
+                    /*!
+                     * Virtual method to be implemented by sub-classes.
+                     * This will be invoked in case of error conditions.
+                     */
                     virtual void error() = 0;
                 };
             }

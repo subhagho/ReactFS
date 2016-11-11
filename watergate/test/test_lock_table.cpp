@@ -21,8 +21,9 @@
 #include "test_lock_table.h"
 #include "watergate/src/core/control/dummy_resource.h"
 
-using namespace com::watergate::core;
-using namespace com::watergate::common;
+using namespace com::wookler::watergate::core;
+using namespace com::wookler::reactfs::common;
+
 
 #define LOCK_TABLE_NAME "Test lock-table"
 

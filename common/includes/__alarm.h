@@ -65,7 +65,7 @@ namespace com {
                 class __alarm_signal_handler : public __callback {
                 private:
                     /// Filename of the source where the alarm was called.
-                    char *filename;
+                    char const *filename;
                     /// Line no. of the source where the alarm was called.
                     uint32_t lineno;
 
@@ -77,7 +77,7 @@ namespace com {
                      * @param lineno  - Source line no. of the caller
                      * @return - Constructor
                      */
-                    __alarm_signal_handler(char *filename, uint32_t lineno) {
+                    __alarm_signal_handler(char const *filename, uint32_t lineno) {
                         this->filename = filename;
                         this->lineno = lineno;
                     }

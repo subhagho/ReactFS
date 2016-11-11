@@ -30,8 +30,6 @@
 #include "archive_writer.h"
 #include "core/includes/block_factory.h"
 
-using namespace com::wookler::reactfs::core;
-
 namespace com {
     namespace wookler {
         namespace reactfs {

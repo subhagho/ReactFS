@@ -11,6 +11,7 @@
 #include "common.h"
 #include "base_error.h"
 #include "log_utils.h"
+#include "__callback.h"
 
 namespace com {
     namespace wookler {
@@ -43,12 +44,12 @@ namespace com {
                      *
                      * @param signal - Signal constant
                      */
-                    static void signal_handler(int signal) {
+                    static void signal_handler(int sigint) {
                         std::lock_guard<std::mutex> guard(_lock);
 
-                        LOG_DEBUG("Signal handler invoked with signal [%d]", signal);
+                        LOG_DEBUG("Signal handler invoked with signal [%d]", sigint);
 
-                        unordered_map<int, __callback_chain *>::iterator iter = signal_map.find(signal);
+                        unordered_map<int, __callback_chain *>::iterator iter = signal_map.find(sigint);
                         if (iter != signal_map.end()) {
                             __callback_chain *ptr = iter->second;
                             while (NOT_NULL(ptr)) {
@@ -70,12 +71,12 @@ namespace com {
                      * @param signal - Signal constant
                      * @param c - Handler callback.
                      */
-                    static void add_handler(int signal, __callback *c) {
+                    static void add_handler(int sigint, __callback *c) {
                         PRECONDITION(NOT_NULL(c));
 
                         std::lock_guard<std::mutex> guard(_lock);
 
-                        unordered_map<int, __callback_chain *>::iterator iter = signal_map.find(signal);
+                        unordered_map<int, __callback_chain *>::iterator iter = signal_map.find(sigint);
                         if (iter != signal_map.end()) {
                             __callback_chain *ptr = iter->second;
                             if (NOT_NULL(ptr)) {
@@ -95,16 +96,16 @@ namespace com {
                                 __callback_chain *next = new __callback_chain();
                                 next->callback = c;
                                 next->next = nullptr;
-                                signal_map[signal] = next;
+                                signal_map[sigint] = next;
                             }
                         } else {
-                            signal(signal, &signal_handler);
+                            signal(sigint, &signal_handler);
 
                             __callback_chain *next = new __callback_chain();
                             next->callback = c;
                             next->next = nullptr;
 
-                            signal_map[signal] = next;
+                            signal_map[sigint] = next;
                         }
                     }
 
@@ -114,21 +115,21 @@ namespace com {
                      * @param signal - Signal constant
                      * @param uuid - UUID of the registered callback instance.
                      */
-                    static void remove_handler(int signal, string uuid) {
+                    static void remove_handler(int sigint, string uuid) {
                         CHECK_NOT_EMPTY(uuid);
 
                         std::lock_guard<std::mutex> guard(_lock);
 
-                        unordered_map<int, __callback_chain *>::iterator iter = signal_map.find(signal);
+                        unordered_map<int, __callback_chain *>::iterator iter = signal_map.find(sigint);
                         if (iter != signal_map.end()) {
                             __callback_chain *ptr = iter->second;
                             while (NOT_NULL(ptr)) {
                                 if (ptr->callback->get_uuid() == uuid) {
                                     if (ptr == iter->second) {
                                         if (IS_NULL(ptr->next)) {
-                                            signal_map[signal] = nullptr;
+                                            signal_map[sigint] = nullptr;
                                         } else {
-                                            signal_map[signal] = ptr->next;
+                                            signal_map[sigint] = ptr->next;
                                         }
                                         break;
                                     }
@@ -156,9 +157,9 @@ namespace com {
                      * @param signal - Signal constant
                      * @param c - Registered callback pointer.
                      */
-                    static void remove_handler(int signal, __callback *c) {
+                    static void remove_handler(int sigint, __callback *c) {
                         CHECK_NOT_NULL(c);
-                        remove_handler(c->get_uuid());
+                        remove_handler(sigint, c->get_uuid());
                     }
 
                     /*!
@@ -167,8 +168,8 @@ namespace com {
                     * @param signal - Signal constant
                     * @param c - Registered callback.
                     */
-                    static void remove_handler(int signal, __callback c) {
-                        remove_handler(c.get_uuid());
+                    static void remove_handler(int sigint, __callback c) {
+                        remove_handler(sigint, c.get_uuid());
                     }
 
                     /*!
@@ -176,7 +177,7 @@ namespace com {
                      */
                     static void dispose() {
                         std::lock_guard<std::mutex> guard(_lock);
-                        if (!singal_map.empty()) {
+                        if (!signal_map.empty()) {
                             unordered_map<int, __callback_chain *>::iterator iter = signal_map.begin();
                             while (iter != signal_map.end()) {
                                 __callback_chain *ptr = iter->second;

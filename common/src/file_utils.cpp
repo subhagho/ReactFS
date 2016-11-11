@@ -19,4 +19,4 @@
 //
 #include "common/includes/file_utils.h"
 
-string com::watergate::common::file_utils::TEMP_DIR = DEFAULT_TEMP_DIR;
+string com::wookler::reactfs::common::file_utils::TEMP_DIR = DEFAULT_TEMP_DIR;

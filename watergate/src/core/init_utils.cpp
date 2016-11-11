@@ -20,4 +20,4 @@
 
 #include "watergate/includes/init_utils.h"
 
-control_client *com::watergate::core::init_utils::client = nullptr;
+control_client *com::wookler::watergate::core::init_utils::client = nullptr;

@@ -21,7 +21,7 @@
 #include "common/includes/lock_record_def.h"
 #include "watergate/includes/lock_table.h"
 
-void com::watergate::core::lock_table::create(string name, resource_def *resource, bool server) {
+void com::wookler::watergate::core::lock_table::create(string name, resource_def *resource, bool server) {
     try {
         PRECONDITION(!IS_EMPTY(name));
 
@@ -81,7 +81,7 @@ void com::watergate::core::lock_table::create(string name, resource_def *resourc
     }
 }
 
-void com::watergate::core::lock_table::remove_record(int index) {
+void com::wookler::watergate::core::lock_table::remove_record(int index) {
 
     PRECONDITION(index >= 0 && index < DEFAULT_MAX_RECORDS);
 
@@ -124,7 +124,7 @@ void com::watergate::core::lock_table::remove_record(int index) {
     }
 }
 
-_lock_record *com::watergate::core::lock_table::create_new_record(string app_name, string app_id, pid_t pid) {
+_lock_record *com::wookler::watergate::core::lock_table::create_new_record(string app_name, string app_id, pid_t pid) {
 
     _lock_table *ptr = (_lock_table *) mem_ptr;
     if (!lock->wait_lock()) {

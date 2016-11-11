@@ -35,7 +35,7 @@
 
 #define DEFAULT_LOCK_RETRY_INTERVAL 30
 
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 
 namespace com {
     namespace wookler {
@@ -106,7 +106,7 @@ namespace com {
                             if ((now - startt) > timeout) {
                                 break;
                             }
-                            com::watergate::common::__alarm a(DEFAULT_LOCK_RETRY_INTERVAL);
+                            __alarm a(DEFAULT_LOCK_RETRY_INTERVAL);
                             if (!a.start()) {
                                 throw FS_BASE_ERROR("Error invoking sleep timer.");
                             }

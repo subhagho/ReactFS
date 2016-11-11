@@ -20,12 +20,12 @@
 
 #include "watergate/includes/filesystem_driver.h"
 
-const string com::watergate::core::io::fs_driver_constants::CONFIG_PARAM_ROOT_PATH = "fs.path.root";
-const string com::watergate::core::io::fs_driver_constants::CONFIG_PARAM_QUOTA_BYTES = "fs.quota.bytes";
-const string com::watergate::core::io::fs_driver_constants::CONFIG_PARAM_QUOTA_LEASE_TIME = "fs.quota.lease.time";
-const string com::watergate::core::io::fs_driver_constants::CONFIG_PARAM_MAX_CONCURRENCY = "fs.concurrency.max";
+const string com::wookler::watergate::core::io::fs_driver_constants::CONFIG_PARAM_ROOT_PATH = "fs.path.root";
+const string com::wookler::watergate::core::io::fs_driver_constants::CONFIG_PARAM_QUOTA_BYTES = "fs.quota.bytes";
+const string com::wookler::watergate::core::io::fs_driver_constants::CONFIG_PARAM_QUOTA_LEASE_TIME = "fs.quota.lease.time";
+const string com::wookler::watergate::core::io::fs_driver_constants::CONFIG_PARAM_MAX_CONCURRENCY = "fs.concurrency.max";
 
-void com::watergate::core::io::filesystem_driver::init(const ConfigValue *config) {
+void com::wookler::watergate::core::io::filesystem_driver::init(const ConfigValue *config) {
     const ParamConfigValue *params = Config::get_params(config);
     if (IS_NULL(params)) {
         throw CONFIG_ERROR("Cannot find configuration parameters. [node=%s]", config->get_key().c_str());
@@ -72,6 +72,6 @@ void com::watergate::core::io::filesystem_driver::init(const ConfigValue *config
 
 }
 
-const string *com::watergate::core::io::filesystem_driver::get_resource_name() {
+const string *com::wookler::watergate::core::io::filesystem_driver::get_resource_name() {
     return root_path->get_path_p();
 }

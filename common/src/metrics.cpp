@@ -20,8 +20,8 @@
 
 #include "common/includes/metrics.h"
 
-mutex com::watergate::common::metrics_utils::g_lock;
+mutex com::wookler::reactfs::common::metrics_utils::g_lock;
 
-__state__ com::watergate::common::metrics_utils::state;
+__state__ com::wookler::reactfs::common::metrics_utils::state;
 
-unordered_map<string, __metric *> *com::watergate::common::metrics_utils::metrics = new unordered_map<string, __metric *>();
+unordered_map<string, __metric *> *com::wookler::reactfs::common::metrics_utils::metrics = new unordered_map<string, __metric *>();

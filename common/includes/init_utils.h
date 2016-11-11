@@ -24,49 +24,51 @@
 
 #include "__env.h"
 
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 
 namespace com {
-    namespace watergate {
-        namespace common {
-            class env_utils {
-            private:
-                static __env *env;
+    namespace wookler {
+        namespace reactfs {
+            namespace common {
+                class env_utils {
+                private:
+                    static __env *env;
 
-            public:
+                public:
 
-                static void create_env(const string configfile) {
-                    env = new __env();
-                    env->create(configfile);
-                    CHECK_ENV_STATE(env);
-                }
+                    static void create_env(const string configfile) {
+                        env = new __env();
+                        env->create(configfile);
+                        CHECK_ENV_STATE(env);
+                    }
 
-                static void create_env(const string configfile, const string appname) {
-                    env = new __env();
-                    env->create(configfile, appname);
-                    CHECK_ENV_STATE(env);
-                }
+                    static void create_env(const string configfile, const string appname) {
+                        env = new __env();
+                        env->create(configfile, appname);
+                        CHECK_ENV_STATE(env);
+                    }
 
-                static const __env *get_env() {
-                    CHECK_NOT_NULL(env);
-                    CHECK_ENV_STATE(env);
+                    static const __env *get_env() {
+                        CHECK_NOT_NULL(env);
+                        CHECK_ENV_STATE(env);
 
-                    return env;
-                }
+                        return env;
+                    }
 
-                static const Config *get_config() {
-                    const __env *e = get_env();
+                    static const Config *get_config() {
+                        const __env *e = get_env();
 
-                    return e->get_config();
-                }
+                        return e->get_config();
+                    }
 
-                static void dispose() {
-                    LOG_DEBUG("[pid=%d] Releasing environment handle...", getpid());
-                    CHECK_AND_FREE(env);
+                    static void dispose() {
+                        LOG_DEBUG("[pid=%d] Releasing environment handle...", getpid());
+                        CHECK_AND_FREE(env);
 
-                    env = nullptr;
-                }
-            };
+                        env = nullptr;
+                    }
+                };
+            }
         }
     }
 }

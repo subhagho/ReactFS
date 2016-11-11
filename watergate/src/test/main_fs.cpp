@@ -22,7 +22,7 @@
 #include <thread>
 #include "main_fs.h"
 
-using namespace com::watergate::core;
+using namespace com::wookler::watergate::core;
 
 #define REQUIRE _assert
 #define METRIC_LOCK_TIME "lock.acquire.wait.time"

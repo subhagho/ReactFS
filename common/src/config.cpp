@@ -19,14 +19,14 @@
 
 #include "common/includes/config.h"
 
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 
-com::watergate::common::Config::~Config() {
+com::wookler::reactfs::common::Config::~Config() {
     state.set_state(Disposed);
     CHECK_AND_FREE(config);
 }
 
-void com::watergate::common::Config::create(string filename) {
+void com::wookler::reactfs::common::Config::create(string filename) {
     CHECK_NOT_EMPTY(filename);
 
     try {
@@ -75,7 +75,7 @@ void com::watergate::common::Config::create(string filename) {
     }
 }
 
-ConfigValue *com::watergate::common::Config::process_node(Json json) {
+ConfigValue *com::wookler::reactfs::common::Config::process_node(Json json) {
     config = new NodeConfigValue(CONST_CONFIG_ROOT_NAME, nullptr);
 
     map<string, Json> values = json.object_items();
@@ -95,7 +95,7 @@ ConfigValue *com::watergate::common::Config::process_node(Json json) {
     return config;
 }
 
-ConfigValue *com::watergate::common::Config::process_node(string name, Json json, ConfigValue *parent) {
+ConfigValue *com::wookler::reactfs::common::Config::process_node(string name, Json json, ConfigValue *parent) {
     if (!json.is_null()) {
         if (json.is_string() || json.is_number() || json.is_bool()) {
             return process_value_node(name, json, parent);
@@ -108,7 +108,7 @@ ConfigValue *com::watergate::common::Config::process_node(string name, Json json
     return nullptr;
 }
 
-ConfigValue *com::watergate::common::Config::process_value_node(string name, Json json, ConfigValue *parent) {
+ConfigValue *com::wookler::reactfs::common::Config::process_value_node(string name, Json json, ConfigValue *parent) {
     assert(!json.is_null());
     assert(!IS_NULL(parent));
 
@@ -144,7 +144,7 @@ ConfigValue *com::watergate::common::Config::process_value_node(string name, Jso
     return nullptr;
 }
 
-ConfigValue *com::watergate::common::Config::process_list_node(string name, Json json, ConfigValue *parent) {
+ConfigValue *com::wookler::reactfs::common::Config::process_list_node(string name, Json json, ConfigValue *parent) {
     assert(!json.is_null());
     assert(!IS_NULL(parent));
 
@@ -170,7 +170,7 @@ ConfigValue *com::watergate::common::Config::process_list_node(string name, Json
     return nullptr;
 }
 
-ConfigValue *com::watergate::common::Config::process_object_node(string name, Json json, ConfigValue *parent) {
+ConfigValue *com::wookler::reactfs::common::Config::process_object_node(string name, Json json, ConfigValue *parent) {
     assert(!json.is_null());
     assert(!IS_NULL(parent));
 
@@ -202,7 +202,7 @@ ConfigValue *com::watergate::common::Config::process_object_node(string name, Js
     return nullptr;
 }
 
-ConfigValue *com::watergate::common::Config::process_param_node(string name, Json json, ConfigValue *parent) {
+ConfigValue *com::wookler::reactfs::common::Config::process_param_node(string name, Json json, ConfigValue *parent) {
     assert(!json.is_null());
     assert(!IS_NULL(parent));
 
@@ -230,11 +230,11 @@ ConfigValue *com::watergate::common::Config::process_param_node(string name, Jso
     return nullptr;
 }
 
-const ConfigValue *com::watergate::common::Config::find(string path) const {
+const ConfigValue *com::wookler::reactfs::common::Config::find(string path) const {
     return this->find(path, false);
 }
 
-const ConfigValue *com::watergate::common::Config::find(string path, bool error) const {
+const ConfigValue *com::wookler::reactfs::common::Config::find(string path, bool error) const {
     CHECK_STATE_AVAILABLE(this->state);
     if (!IS_NULL(config)) {
         const ConfigValue *cv = config->find(path);

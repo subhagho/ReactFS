@@ -24,8 +24,8 @@
 #include "common/includes/__env.h"
 #include "watergate/includes/init_utils.h"
 
-using namespace com::watergate::common;
-using namespace com::watergate::core;
+using namespace com::wookler::reactfs::common;
+using namespace com::wookler::watergate::core;
 
 JNIEXPORT void JNICALL Java_com_watergate_library_LockEnv_create
         (JNIEnv *jniEnv, jobject obj, jstring filename, jstring appname) {

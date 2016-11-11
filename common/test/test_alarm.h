@@ -32,7 +32,7 @@
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 
 class test_type {
 private:
@@ -50,7 +50,7 @@ public:
     }
 };
 
-class test_callback : public com::watergate::common::__callback {
+class test_callback : public __callback {
 public:
     test_callback(test_type *value) {
         this->set_context(value);
@@ -60,6 +60,10 @@ public:
         test_type *p = nullptr;
         p = get_context(p);
         LOG_INFO("Callback context [value=%s]", p->get_value().c_str());
+    }
+
+    void error() override {
+
     }
 };
 

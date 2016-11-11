@@ -44,75 +44,78 @@
     CHECK_STATE_AVAILABLE(env->get_state()); \
 } while(0)
 
+using namespace com::wookler::reactfs::common;
 
 namespace com {
-    namespace watergate {
-        namespace common {
-            class __env {
-            private:
-                __state__ state;
-                Config *config;
-                __app *app;
+    namespace wookler {
+        namespace reactfs {
+            namespace common {
+                class __env {
+                private:
+                    __state__ state;
+                    Config *config;
+                    __app *app;
 
-                Path *work_dir;
-                Path *temp_dir;
+                    Path *work_dir;
+                    Path *temp_dir;
 
-                void setup_defaults() {
-                    this->app = new __app(CONST_CONFIG_ENV_PARAM_APPNAME);
+                    void setup_defaults() {
+                        this->app = new __app(CONST_CONFIG_ENV_PARAM_APPNAME);
 
-                    this->work_dir = new Path(CONST_DEFAULT_DIR);
-                    string appdir = this->app->get_app_directory();
-                    if (!IS_EMPTY(appdir)) {
-                        this->work_dir->append(appdir);
+                        this->work_dir = new Path(CONST_DEFAULT_DIR);
+                        string appdir = this->app->get_app_directory();
+                        if (!IS_EMPTY(appdir)) {
+                            this->work_dir->append(appdir);
+                        }
+                        this->work_dir->append("work");
+
+                        if (!this->work_dir->exists()) {
+                            this->work_dir->create(0755);
+                        }
+
+                        this->temp_dir = new Path(CONST_DEFAULT_DIR);
+                        if (!IS_EMPTY(appdir)) {
+                            this->temp_dir->append(appdir);
+                        }
+                        this->temp_dir->append("temp");
+
+                        if (!this->temp_dir->exists()) {
+                            this->temp_dir->create(0755);
+                        }
                     }
-                    this->work_dir->append("work");
 
-                    if (!this->work_dir->exists()) {
-                        this->work_dir->create(0755);
+                public:
+                    ~__env();
+
+                    void create(string filename) {
+                        create(filename, EMPTY_STRING);
                     }
 
-                    this->temp_dir = new Path(CONST_DEFAULT_DIR);
-                    if (!IS_EMPTY(appdir)) {
-                        this->temp_dir->append(appdir);
+                    void create(string filename, string app_name);
+
+                    const __state__ get_state() const {
+                        return state;
                     }
-                    this->temp_dir->append("temp");
 
-                    if (!this->temp_dir->exists()) {
-                        this->temp_dir->create(0755);
+                    Config *get_config() const {
+                        CHECK_STATE_AVAILABLE(this->state);
+
+                        return this->config;
                     }
-                }
 
-            public:
-                ~__env();
+                    const Path *get_work_dir() const;
 
-                void create(string filename) {
-                    create(filename, EMPTY_STRING);
-                }
+                    const Path *get_temp_dir() const;
 
-                void create(string filename, string app_name);
+                    const __app *get_app() const {
+                        return app;
+                    }
 
-                const __state__ get_state() const {
-                    return state;
-                }
+                    Path *get_work_dir(string name, mode_t mode) const;
 
-                Config *get_config() const {
-                    CHECK_STATE_AVAILABLE(this->state);
-
-                    return this->config;
-                }
-
-                const Path *get_work_dir() const;
-
-                const Path *get_temp_dir() const;
-
-                const __app *get_app() const {
-                    return app;
-                }
-
-                Path *get_work_dir(string name, mode_t mode) const;
-
-                Path *get_temp_dir(string name, mode_t mode) const;
-            };
+                    Path *get_temp_dir(string name, mode_t mode) const;
+                };
+            }
         }
     }
 }

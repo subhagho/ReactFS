@@ -34,7 +34,7 @@
     } \
 } while(0);
 
-size_t com::watergate::core::io::fs_writer::write(const void *ptr, size_t size, size_t nitems, uint64_t timeout) {
+size_t com::wookler::watergate::core::io::fs_writer::write(const void *ptr, size_t size, size_t nitems, uint64_t timeout) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(ptr);
 

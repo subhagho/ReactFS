@@ -25,6 +25,7 @@
 
 #define CONST_NOTF_ERROR_PREFIX "Data Not Found : "
 
+/// Convinience macros to create exception(s)
 #define BASE_ERROR(fmt, ...) base_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define BASE_ERROR_PTR(fmt, ...) new base_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
@@ -44,6 +45,7 @@
 
 #define ASSERT _assert
 
+/// Check to ensure that the specified pointer is not null. Will raise an exception if NULL.
 #define CHECK_NOT_NULL(p) do { \
     if (IS_NULL(p)) { \
         throw BASE_ERROR("Specified pointer is null. [%s][%s]", #p, __PRETTY_FUNCTION__); \
@@ -78,13 +80,23 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
+                /*!
+                 * Base exception class to be used, added functionality of capturing source information.
+                 */
                 class base_error : public exception {
                 private:
+                    /// Error message associated with this exception.
                     string mesg;
+                    /// Source filename where the exception was defined.
                     string file;
+                    /// Source line no. where the exception was defined.
                     int lineno;
+                    /// Processed message with the added source infromation.
                     string r_mesg;
 
+                    /*!
+                     *
+                     */
                     void set_r_mesg() {
                         stringstream ss;
                         if (!IS_EMPTY(file)) {

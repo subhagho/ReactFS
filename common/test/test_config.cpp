@@ -20,7 +20,7 @@
 
 #include "test_config.h"
 
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 
 
 TEST_CASE("Create environment and load configuration", "[com::watergate::common::_env]") {

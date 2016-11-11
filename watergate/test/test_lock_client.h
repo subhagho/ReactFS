@@ -43,28 +43,30 @@
 #define CONTROL_NAME "dummy-resource-1"
 #define FS_CONTROL_NAME "/private/tmp"
 
-using namespace com::watergate::common;
-using namespace com::watergate::core;
+using namespace com::wookler::watergate::core;
+using namespace com::wookler::reactfs::common;
 
 namespace com {
-    namespace watergate {
-        namespace tests {
-            namespace common {
-                class basic_lock_client {
-                private:
-                    int priority;
-                    long sleep_timeout;
-                    int lock_tries;
+    namespace wookler {
+        namespace watergate {
+            namespace tests {
+                namespace common {
+                    class basic_lock_client {
+                    private:
+                        int priority;
+                        long sleep_timeout;
+                        int lock_tries;
 
-                public:
-                    basic_lock_client(int priority) {
-                        this->priority = priority;
-                    }
+                    public:
+                        basic_lock_client(int priority) {
+                            this->priority = priority;
+                        }
 
-                    void setup();
+                        void setup();
 
-                    void run();
-                };
+                        void run();
+                    };
+                }
             }
         }
     }

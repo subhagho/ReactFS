@@ -48,8 +48,6 @@
 #define SHARED_LOCK_TABLE_NAME "sharedLockTable"
 #define SHARED_LOCK_NAME "_lock_sharedLockTable"
 
-using namespace com::watergate::common;
-
 namespace com {
     namespace wookler {
         namespace reactfs {

@@ -26,73 +26,75 @@
 #include "control_def.h"
 #include "control_manager.h"
 
-using namespace com::watergate::core;
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
+using namespace com::wookler::watergate::core;
 
 namespace com {
-    namespace watergate {
-        namespace core {
-            class init_utils : public env_utils {
-            private:
-                static control_client *client;
+    namespace wookler {
+        namespace watergate {
+            namespace core {
+                class init_utils : public env_utils {
+                private:
+                    static control_client *client;
 
-            public:
-                static control_manager *init_control_manager(const __env *env, const string path) {
-                    CHECK_NOT_NULL(env);
-                    CHECK_NOT_EMPTY(path);
+                public:
+                    static control_manager *init_control_manager(const __env *env, const string path) {
+                        CHECK_NOT_NULL(env);
+                        CHECK_NOT_EMPTY(path);
 
-                    const Config *config = env->get_config();
-                    CHECK_NOT_NULL(config);
+                        const Config *config = env->get_config();
+                        CHECK_NOT_NULL(config);
 
-                    const ConfigValue *m_config = config->find(path);
-                    CHECK_NOT_NULL(m_config);
+                        const ConfigValue *m_config = config->find(path);
+                        CHECK_NOT_NULL(m_config);
 
-                    control_manager *manager = new control_manager();
-                    manager->init(env->get_app(), m_config);
+                        control_manager *manager = new control_manager();
+                        manager->init(env->get_app(), m_config);
 
-                    return manager;
-                }
+                        return manager;
+                    }
 
-                static const control_client *init_control_client(const __env *env, const string path) {
-                    CHECK_NOT_NULL(env);
-                    CHECK_NOT_EMPTY(path);
+                    static const control_client *init_control_client(const __env *env, const string path) {
+                        CHECK_NOT_NULL(env);
+                        CHECK_NOT_EMPTY(path);
 
-                    const Config *config = env->get_config();
-                    CHECK_NOT_NULL(config);
+                        const Config *config = env->get_config();
+                        CHECK_NOT_NULL(config);
 
-                    const ConfigValue *c_config = config->find(path);
-                    CHECK_NOT_NULL(c_config);
+                        const ConfigValue *c_config = config->find(path);
+                        CHECK_NOT_NULL(c_config);
 
-                    control_client *control = new control_client();
-                    control->init(env->get_app(), c_config);
+                        control_client *control = new control_client();
+                        control->init(env->get_app(), c_config);
 
-                    set_client(control);
+                        set_client(control);
 
-                    return control;
-                }
+                        return control;
+                    }
 
-                static const control_client *get_client() {
-                    CHECK_NOT_NULL(client);
-                    CHECK_STATE_AVAILABLE(client->get_state());
-                    return client;
-                }
+                    static const control_client *get_client() {
+                        CHECK_NOT_NULL(client);
+                        CHECK_STATE_AVAILABLE(client->get_state());
+                        return client;
+                    }
 
-                static void set_client(control_client *client_p) {
-                    CHECK_NOT_NULL(client_p);
-                    CHECK_STATE_AVAILABLE(client_p->get_state());
+                    static void set_client(control_client *client_p) {
+                        CHECK_NOT_NULL(client_p);
+                        CHECK_STATE_AVAILABLE(client_p->get_state());
 
-                    client = client_p;
-                }
+                        client = client_p;
+                    }
 
-                static void dispose() {
-                    LOG_DEBUG("[pid=%d] Releasing control client...", getpid());
-                    CHECK_AND_FREE(client);
+                    static void dispose() {
+                        LOG_DEBUG("[pid=%d] Releasing control client...", getpid());
+                        CHECK_AND_FREE(client);
 
-                    client = nullptr;
+                        client = nullptr;
 
 
-                }
-            };
+                    }
+                };
+            }
         }
     }
 }

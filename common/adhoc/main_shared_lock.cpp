@@ -7,7 +7,6 @@
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 
-using namespace com::watergate::common;
 using namespace com::wookler::reactfs::common;
 
 #define CONFIG_LOCK_COUNT 4

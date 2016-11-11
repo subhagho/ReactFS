@@ -32,7 +32,7 @@
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 
 #define COPY_FILE_PATH "common/test/data/test-conf.json"
 #define COPY_DEST_PATH "test/copy"

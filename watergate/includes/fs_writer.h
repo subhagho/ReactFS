@@ -29,26 +29,27 @@
 #include "init_utils.h"
 #include "__fs_base.h"
 
-using namespace com::watergate::core;
-using namespace com::watergate::core::io;
+using namespace com::wookler::watergate::core::io;
 
 namespace com {
-    namespace watergate {
-        namespace core {
-            namespace io {
-                class fs_writer : public __fs_base {
+    namespace wookler {
+        namespace watergate {
+            namespace core {
+                namespace io {
+                    class fs_writer : public __fs_base {
 
-                public:
-                    fs_writer(const string filename, int16_t priority) : __fs_base(filename, priority) {
+                    public:
+                        fs_writer(const string filename, int16_t priority) : __fs_base(filename, priority) {
 
-                    }
+                        }
 
-                    size_t write(const void *ptr, size_t size, size_t nitems) {
-                        return write(ptr, size, nitems, this->timeout);
-                    }
+                        size_t write(const void *ptr, size_t size, size_t nitems) {
+                            return write(ptr, size, nitems, this->timeout);
+                        }
 
-                    size_t write(const void *ptr, size_t size, size_t nitems, uint64_t timeout);
-                };
+                        size_t write(const void *ptr, size_t size, size_t nitems, uint64_t timeout);
+                    };
+                }
             }
         }
     }

@@ -23,12 +23,12 @@
 #define CONFIG_DEF_NODE_PATH "./def"
 #define CONFIG_MANAGER_NODE_PATH "./manager"
 
-void com::watergate::core::control_manager::run(control_manager *owner) {
+void com::wookler::watergate::core::control_manager::run(control_manager *owner) {
     CHECK_NOT_NULL(owner);
 
     try {
         LOG_INFO("Starting control manager thread...");
-        com::watergate::common::__alarm sw(DEFAULT_CONTROL_THREAD_SLEEP);
+        __alarm sw(DEFAULT_CONTROL_THREAD_SLEEP);
         while (NOT_NULL(owner) && owner->state.is_available()) {
             if (!sw.start()) {
                 throw CONTROL_ERROR("Sleep state interrupted...");
@@ -52,7 +52,7 @@ void com::watergate::core::control_manager::run(control_manager *owner) {
     }
 }
 
-void com::watergate::core::control_manager::init(const __app *app, const ConfigValue *config) {
+void com::wookler::watergate::core::control_manager::init(const __app *app, const ConfigValue *config) {
     CHECK_NOT_NULL(config);
 
     const ConfigValue *dn = config->find(CONFIG_DEF_NODE_PATH);

@@ -26,7 +26,7 @@
 
 #define REQUIRE _assert
 
-void com::watergate::tests::common::basic_lock_client::setup() {
+void com::wookler::watergate::tests::common::basic_lock_client::setup() {
     pid_t pid = getpid();
 
     const __env *env = init_utils::get_env();
@@ -66,7 +66,7 @@ void com::watergate::tests::common::basic_lock_client::setup() {
     LOG_DEBUG("[pid=%d] Setup done...", pid);
 }
 
-void com::watergate::tests::common::basic_lock_client::run() {
+void com::wookler::watergate::tests::common::basic_lock_client::run() {
     try {
         pid_t pid = getpid();
         LOG_INFO("[pid=%d] Running lock control client. ", pid);
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
             string configf = o.arg;
             index = atoi(i.arg);
             if (!IS_EMPTY(configf) && index >= 0) {
-                string pname = com::watergate::common::common_utils::format("basic_lock_client.%d", index);
+                string pname = common_utils::format("basic_lock_client.%d", index);
                 init_utils::create_env(CONFIG_FILE, pname);
                 const __env *env = init_utils::get_env();
                 REQUIRE(NOT_NULL(env));
@@ -199,7 +199,8 @@ int main(int argc, char *argv[]) {
         if (priority < 0)
             throw BASE_ERROR("Invalid priority specified. [priority=%d]", priority);
 
-        com::watergate::tests::common::basic_lock_client *client = new com::watergate::tests::common::basic_lock_client(
+        com::wookler::watergate::tests::common::basic_lock_client *client =
+                new com::wookler::watergate::tests::common::basic_lock_client(
                 priority);
         client->setup();
         client->run();

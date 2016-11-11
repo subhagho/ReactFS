@@ -20,9 +20,9 @@
 
 #include "common/includes/__env.h"
 
-com::watergate::common::__log *LOG = nullptr;
+com::wookler::reactfs::common::__log *LOG = nullptr;
 
-void com::watergate::common::__env::create(string filename, string app_name) {
+void com::wookler::reactfs::common::__env::create(string filename, string app_name) {
     try {
         this->config = new Config();
         this->config->create(filename);
@@ -93,13 +93,13 @@ void com::watergate::common::__env::create(string filename, string app_name) {
     }
 }
 
-const Path *com::watergate::common::__env::get_temp_dir() const {
+const Path *com::wookler::reactfs::common::__env::get_temp_dir() const {
     CHECK_STATE_AVAILABLE(this->state);
 
     return this->temp_dir;
 }
 
-Path *com::watergate::common::__env::get_temp_dir(string name, mode_t mode) const {
+Path *com::wookler::reactfs::common::__env::get_temp_dir(string name, mode_t mode) const {
     CHECK_STATE_AVAILABLE(this->state);
     assert(!name.empty());
 
@@ -111,13 +111,13 @@ Path *com::watergate::common::__env::get_temp_dir(string name, mode_t mode) cons
     return pp;
 }
 
-const Path *com::watergate::common::__env::get_work_dir() const {
+const Path *com::wookler::reactfs::common::__env::get_work_dir() const {
     CHECK_STATE_AVAILABLE(this->state);
 
     return this->work_dir;
 }
 
-Path *com::watergate::common::__env::get_work_dir(string name, mode_t mode) const {
+Path *com::wookler::reactfs::common::__env::get_work_dir(string name, mode_t mode) const {
     CHECK_STATE_AVAILABLE(this->state);
     assert(!name.empty());
 
@@ -129,7 +129,7 @@ Path *com::watergate::common::__env::get_work_dir(string name, mode_t mode) cons
     return pp;
 }
 
-com::watergate::common::__env::~__env() {
+com::wookler::reactfs::common::__env::~__env() {
     this->state.set_state(Disposed);
     metrics_utils::dump();
     metrics_utils::dispose();

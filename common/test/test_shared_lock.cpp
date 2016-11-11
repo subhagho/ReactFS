@@ -4,7 +4,6 @@
 
 #include "test_shared_lock.h"
 
-using namespace com::watergate::common;
 using namespace com::wookler::reactfs::common;
 
 #define CONFIG_LOCK_COUNT 8

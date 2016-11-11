@@ -30,7 +30,7 @@
 #define CONTROL_CONFIG_PATH "/configuration/control"
 
 
-using namespace com::watergate::core;
+using namespace com::wookler::watergate::core;
 
 #define CONTROL_NAME "dummy-resource-1"
 #define REQUIRE _assert

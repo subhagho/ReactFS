@@ -34,59 +34,61 @@
 #define DEFAULT_CONTROL_THREAD_SLEEP 5 * 1000 // 10 seconds
 
 namespace com {
-    namespace watergate {
-        namespace core {
-            class control_manager : public control_def {
-            private:
-                uint64_t lock_timeout;
-                uint64_t record_timeout;
-                thread *control_thread;
+    namespace wookler {
+        namespace watergate {
+            namespace core {
+                class control_manager : public control_def {
+                private:
+                    uint64_t lock_timeout;
+                    uint64_t record_timeout;
+                    thread *control_thread;
 
 
-                void start() {
-                    control_thread = new thread(control_manager::run, this);
-                }
-
-                void join() {
-                    PRECONDITION(!state.is_available());
-
-                    if (NOT_NULL(control_thread)) {
-                        control_thread->join();
+                    void start() {
+                        control_thread = new thread(control_manager::run, this);
                     }
-                }
 
-                static void run(control_manager *owner);
+                    void join() {
+                        PRECONDITION(!state.is_available());
 
-            public:
-                ~control_manager() override {
-                    state.set_state(Disposed);
-                    LOG_INFO("Disposing control manager. [state=%s]", state.get_state_string().c_str());
-                    join();
-                }
+                        if (NOT_NULL(control_thread)) {
+                            control_thread->join();
+                        }
+                    }
 
-                void init(const __app *app, const ConfigValue *config) override;
+                    static void run(control_manager *owner);
 
-                void clear_locks() {
-                    if (!IS_EMPTY(semaphores)) {
-                        unordered_map<string, _semaphore *>::iterator iter;
-                        for (iter = semaphores.begin(); iter != semaphores.end(); iter++) {
-                            _semaphore *sem = iter->second;
-                            if (NOT_NULL(sem)) {
-                                _semaphore_owner *c = static_cast<_semaphore_owner *>(sem);
-                                c->reset();
+                public:
+                    ~control_manager() override {
+                        state.set_state(Disposed);
+                        LOG_INFO("Disposing control manager. [state=%s]", state.get_state_string().c_str());
+                        join();
+                    }
+
+                    void init(const __app *app, const ConfigValue *config) override;
+
+                    void clear_locks() {
+                        if (!IS_EMPTY(semaphores)) {
+                            unordered_map<string, _semaphore *>::iterator iter;
+                            for (iter = semaphores.begin(); iter != semaphores.end(); iter++) {
+                                _semaphore *sem = iter->second;
+                                if (NOT_NULL(sem)) {
+                                    _semaphore_owner *c = static_cast<_semaphore_owner *>(sem);
+                                    c->reset();
+                                }
                             }
                         }
                     }
-                }
 
-                uint64_t get_record_timeout() {
-                    return record_timeout;
-                }
+                    uint64_t get_record_timeout() {
+                        return record_timeout;
+                    }
 
-                uint64_t get_lock_timeout() {
-                    return lock_timeout;
-                }
-            };
+                    uint64_t get_lock_timeout() {
+                        return lock_timeout;
+                    }
+                };
+            }
         }
     }
 }

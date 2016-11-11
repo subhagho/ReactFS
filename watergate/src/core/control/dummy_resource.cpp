@@ -22,7 +22,7 @@
 #include "dummy_resource.h"
 #include "watergate/includes/control.h"
 
-void com::watergate::core::dummy_resource::init(const ConfigValue *config) {
+void com::wookler::watergate::core::dummy_resource::init(const ConfigValue *config) {
     const BasicConfigValue *nn = Config::get_value(CONST_SEM_CONFIG_PARAM_RESOURCE_NAME, config);
     if (IS_NULL(nn)) {
         throw ERROR_MISSING_CONFIG_NODE(CONST_SEM_CONFIG_PARAM_RESOURCE_NAME);
@@ -45,10 +45,10 @@ void com::watergate::core::dummy_resource::init(const ConfigValue *config) {
     this->resource_quota = 1000;
 }
 
-int com::watergate::core::dummy_resource::get_control_size() {
+int com::wookler::watergate::core::dummy_resource::get_control_size() {
     return this->size;
 }
 
-const string *com::watergate::core::dummy_resource::get_resource_name() {
+const string *com::wookler::watergate::core::dummy_resource::get_resource_name() {
     return this->name;
 }

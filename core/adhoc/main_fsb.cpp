@@ -18,7 +18,7 @@
 
 #define COUNT_TYPED 5
 
-using namespace com::watergate::common;
+using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
 
 typedef struct {
