@@ -38,6 +38,12 @@
     } \
 } while(0);
 
+#define CHECK_AND_DISPOSE(s) do { \
+    if (s.get_state() != __state_enum::Exception) { \
+        s.set_state(__state_enum::Disposed); \
+    } \
+} while(0);
+
 namespace com {
     namespace wookler {
         namespace reactfs {

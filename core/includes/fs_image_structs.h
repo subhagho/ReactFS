@@ -30,7 +30,7 @@ namespace com {
                     _fs_file_node_type type;
                     uint64_t size_local = 0;
                     uint64_t create_time = 0;
-                    unit64_t update_time = 0;
+                    uint64_t update_time = 0;
                     char owner[MAX_USERNAME_SIZE];
                     char group[MAX_USERNAME_SIZE];
                     mode_t mode;

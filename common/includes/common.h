@@ -38,6 +38,13 @@
     } \
 } while(0);
 
+#define FREE_PTR(p) do {\
+    if (NOT_NULL(p)) { \
+        free(p); \
+        p = nullptr; \
+    } \
+} while(0);
+
 #define BOOL_TRUE "true"
 #define BOOL_FALSE "false"
 

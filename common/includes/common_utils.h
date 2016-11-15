@@ -307,6 +307,71 @@ namespace com {
                         return DUMMY_LOCAL_IP;
                     }
                 };
+
+                class temp_buffer {
+                private:
+                    void *buffer;
+                    uint32_t size;
+                    uint32_t used_size;
+
+                public:
+
+                    ~temp_buffer() {
+                        FREE_PTR(buffer);
+                        size = 0;
+                    }
+
+                    uint32_t get_size() {
+                        return this->size;
+                    }
+
+                    void *allocate(uint32_t size) {
+                        if (NOT_NULL(buffer)) {
+                            if (size <= this->size) {
+                                memset(buffer, 0, this->size);
+
+                                return buffer;
+                            } else {
+                                free(buffer);
+                                buffer = nullptr;
+                            }
+                        }
+                        this->size = size;
+                        buffer = (void *) malloc(size * sizeof(BYTE));
+                        if (NOT_NULL(buffer)) {
+                            memset(buffer, 0, size);
+                        }
+                        return buffer;
+                    }
+
+                    void *get_ptr() {
+                        return buffer;
+                    }
+
+                    void set_used_size(uint32_t size) {
+                        this->used_size = size;
+                    }
+
+                    uint32_t get_used_size() {
+                        return this->used_size;
+                    }
+
+                    uint32_t copy(const void *source, uint32_t size) {
+                        allocate(size);
+                        if (NOT_NULL(buffer)) {
+                            memcpy(buffer, source, (size_t) size);
+                            this->used_size = size;
+                        }
+                        return 0;
+                    }
+
+                    uint32_t read(void *dest, uint32_t size) {
+                        if (NOT_NULL(buffer)) {
+                            uint32_t c_size = (size > this->size ? this->size : size);
+                        }
+                        return 0;
+                    }
+                };
             }
         }
     }
