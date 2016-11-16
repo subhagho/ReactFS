@@ -24,7 +24,6 @@
 #include <fstream>
 
 #include "watergate/includes/control_def.h"
-#include "watergate/includes/fs_writer.h"
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"

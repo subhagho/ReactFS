@@ -37,8 +37,4 @@ add_executable(test_lock_table test_lock_table.cpp)
 target_link_libraries(test_lock_table watergate ${CMAKE_THREAD_LIBS_INIT} ${WG_LIBRARIES})
 add_test(NAME test_lock_table COMMAND test_lock_table)
 
-add_executable(test_fs_writer test_fs_writer.cpp)
-target_link_libraries(test_fs_writer watergate ${CMAKE_THREAD_LIBS_INIT} ${WG_LIBRARIES})
-add_test(NAME test_fs_writer COMMAND test_fs_writer)
-
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")
