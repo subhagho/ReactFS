@@ -6,6 +6,8 @@ project(watergate VERSION 0.1.0)
 if (${APPLE})
     set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk)
     INCLUDE_DIRECTORIES(/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers/)
+elseif (${LINUX})
+    INCLUDE_DIRECTORIES(/usr/lib/jvm/java-8-openjdk-amd64/include)
 endif ()
 
 set(CMAKE_CXX_STANDARD 11)
