@@ -39,6 +39,9 @@ namespace com {
                     /// Map to register handler chains for each type of signal
                     static unordered_map<int, __callback_chain *> signal_map;
 
+
+                public:
+
                     /*!
                      * Handler function to be registered and invoked with the OS.
                      *
@@ -64,7 +67,6 @@ namespace com {
                         }
                     }
 
-                public:
                     /*!
                      * Register a new signal handler for the specified signal event.
                      *
@@ -99,7 +101,7 @@ namespace com {
                                 signal_map[sigint] = next;
                             }
                         } else {
-                            signal(sigint, &signal_handler);
+                            signal(sigint, &__signals::signal_handler);
 
                             __callback_chain *next = new __callback_chain();
                             next->callback = c;
