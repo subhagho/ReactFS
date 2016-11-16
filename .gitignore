@@ -46,3 +46,5 @@ cscope*
 /.cxx_tags
 /.yavide_proj
 /.yavide_session
+
+.env

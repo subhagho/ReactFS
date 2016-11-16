@@ -28,7 +28,7 @@ if (${APPLE})
     set(RFS_C_LIBRARIES "-lreactfs-common -lwatergate -lz")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "pthread uuid rt reactfs-common watergate z")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lwatergate -lpthread -luuid -lrt -lz")
 endif ()
 
 MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")
