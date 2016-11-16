@@ -141,9 +141,9 @@ namespace com {
                     __lock_struct *lock_struct;
                     string txn_id;
                     unordered_map<string, int> reader_threads;
-                    mutex thread_mutex;
                     shared_lock_table *table = nullptr;
                     string name;
+                    uint32_t reference_count = 0;
 
                     int find_free_reader() {
                         __lock_readers *ptr = lock_struct->readers;
@@ -441,11 +441,28 @@ namespace com {
                         bool locked = false;
                         return release_read_lock(thread_id);
                     }
+
+                    string get_name() {
+                        return this->name;
+                    }
+
+                    void increment_ref_count() {
+                        reference_count++;
+                    }
+
+                    void decrement_ref_count() {
+                        reference_count--;
+                    }
+
+                    uint32_t get_reference_count() {
+                        return reference_count;
+                    }
                 };
 
                 class lock_env {
                 protected:
                     __state__ state;
+                    mutex thread_mutex;
                     shared_lock_table *table = nullptr;
                     unordered_map<string, read_write_lock *> locks;
 
@@ -453,7 +470,17 @@ namespace com {
 
                 public:
                     ~lock_env() {
+                        std::lock_guard<std::mutex> guard(thread_mutex);
                         state.set_state(__state_enum::Disposed);
+                        if (!locks.empty()) {
+                            unordered_map<string, read_write_lock *>::iterator iter;
+                            for (iter = locks.begin(); iter != locks.end(); iter++) {
+                                read_write_lock *lock = iter->second;
+                                if (NOT_NULL(lock)) {
+                                    delete (lock);
+                                }
+                            }
+                        }
                         CHECK_AND_FREE(table);
                     }
 
@@ -491,6 +518,59 @@ namespace com {
                     void init(mode_t mode, uint32_t count);
 
                     void reset();
+                };
+
+                class lock_env_utils {
+                private:
+                    static mutex env_mutex;
+                    static bool is_manager;
+                    static lock_env *env;
+                public:
+                    static lock_env *create_manager(mode_t mode, uint32_t max_lock_count) {
+                        std::lock_guard<std::mutex> guard(env_mutex);
+                        if (NOT_NULL(env) && !is_manager) {
+                            throw LOCK_ERROR("Lock environment already initialized in client mode.");
+                        }
+                        if (is_manager && NOT_NULL(env)) {
+                            return env;
+                        }
+                        is_manager = true;
+
+                        lock_manager *manager = new lock_manager();
+                        manager->init(mode, max_lock_count);
+
+                        env = manager;
+                        return env;
+                    }
+
+                    static lock_env *create_client(uint32_t max_lock_count) {
+                        std::lock_guard<std::mutex> guard(env_mutex);
+                        if (NOT_NULL(env)) {
+                            return env;
+                        }
+                        is_manager = false;
+                        env = new lock_env();
+                        env->create(max_lock_count);
+
+                        return env;
+                    }
+
+                    static lock_env *get() {
+                        CHECK_NOT_NULL(env);
+                        return env;
+                    }
+
+                    static lock_manager *get_manager() {
+                        CHECK_NOT_NULL(env);
+                        PRECONDITION(is_manager);
+
+                        return static_cast<lock_manager *>(env);
+                    }
+
+                    static void dispose() {
+                        std::lock_guard<std::mutex> guard(env_mutex);
+                        CHECK_AND_FREE(env);
+                    }
                 };
             }
         }

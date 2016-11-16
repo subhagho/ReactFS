@@ -244,6 +244,7 @@ void com::wookler::reactfs::common::lock_env::create(mode_t mode, uint32_t count
 }
 
 void com::wookler::reactfs::common::lock_env::create(uint32_t count) {
+    std::lock_guard<std::mutex> guard(thread_mutex);
     try {
         table = new shared_lock_table();
         table->create(count);
@@ -336,6 +337,7 @@ void com::wookler::reactfs::common::lock_manager::check_lock_states() {
 
 read_write_lock *com::wookler::reactfs::common::lock_env::add_lock(string name) {
     CHECK_STATE_AVAILABLE(state);
+    std::lock_guard<std::mutex> guard(thread_mutex);
 
     read_write_lock *lock = nullptr;
     unordered_map<std::string, read_write_lock *>::const_iterator iter = locks.find(name);
@@ -347,29 +349,42 @@ read_write_lock *com::wookler::reactfs::common::lock_env::add_lock(string name) 
         lock->create(&name, table);
         locks[name] = lock;
     }
+    lock->increment_ref_count();
 
     return lock;
 }
 
 bool com::wookler::reactfs::common::lock_env::remove_lock(string name) {
     CHECK_STATE_AVAILABLE(state);
+    std::lock_guard<std::mutex> guard(thread_mutex);
 
     read_write_lock *lock = nullptr;
     unordered_map<std::string, read_write_lock *>::const_iterator iter = locks.find(name);
     if (iter != locks.end()) {
         lock = iter->second;
         CHECK_NOT_NULL(lock);
-
-        delete (lock);
     }
     if (NOT_NULL(lock)) {
-
+        string thread_id = thread_utils::get_current_thread();
+        if (lock->has_write_lock(thread_id)) {
+            lock->release_write_lock();
+        }
+        if (lock->has_thread_lock(thread_id)) {
+            lock->release_read_lock();
+        }
+        lock->decrement_ref_count();
+        if (lock->get_reference_count() <= 0) {
+            table->remove_lock(lock->get_name());
+            locks.erase(lock->get_name());
+            delete (lock);
+        }
     }
     return false;
 }
 
 void com::wookler::reactfs::common::lock_manager::reset() {
     CHECK_STATE_AVAILABLE(state);
+    std::lock_guard<std::mutex> guard(thread_mutex);
     uint32_t count = table->get_max_size();
     for (uint32_t ii = 0; ii < count; ii++) {
         __lock_struct *ptr = table->get_at(ii);
@@ -417,5 +432,8 @@ void com::wookler::reactfs::common::lock_manager::reset() {
             ptr->reader_count = reader_count;
         }
     }
-
 }
+
+bool com::wookler::reactfs::common::lock_env_utils::is_manager = false;
+lock_env *com::wookler::reactfs::common::lock_env_utils::env = nullptr;
+mutex com::wookler::reactfs::common::lock_env_utils::env_mutex;

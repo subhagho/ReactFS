@@ -13,9 +13,10 @@
 #define REUSE_BLOCK_FILE_COMP "/tmp/block_reused.comp"
 #define REUSE_BLOCK_ID_COMP 1025
 
-#define DEFAULT_BLOCK_SIZE 1024
-
+#define DEFAULT_BLOCK_SIZE 1024 * 6
+#define RECORD_START_INDEX 100000
 #define COUNT_RECORDS 50
+#define CONFIG_LOCK_COUNT 20
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
@@ -28,7 +29,8 @@ typedef struct {
 
 void test_raw() {
     base_block *block = new base_block();
-    block->create(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY, DEFAULT_BLOCK_SIZE, true);
+    block->create(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY, DEFAULT_BLOCK_SIZE, RECORD_START_INDEX,
+                  true);
     CHECK_AND_FREE(block);
 
     block = new base_block();
@@ -36,7 +38,8 @@ void test_raw() {
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
     string txid = block->start_transaction();
-    POSTCONDITION(!IS_EMPTY(txid));
+    POSTCONDITION(!IS_EMPTY(txid))
+    int count = 0;
     for (int ii = 0; ii < COUNT_RECORDS; ii++) {
         _test_typed t;
         t.index = ii;
@@ -44,9 +47,36 @@ void test_raw() {
         string uuid = common_utils::uuid();
         strncpy(t.value, uuid.c_str(), uuid.length());
 
+        if (block->get_free_space() < sizeof(_test_typed))
+            break;
         block->write(&t, sizeof(_test_typed), txid);
+        count++;
     }
     block->commit(txid);
+    LOG_INFO("Written [%d] records to block. [used bytes=%lu]", count, block->get_used_space());
+
+    CHECK_AND_FREE(block);
+    block = new base_block();
+    block->open(REUSE_BLOCK_ID, REUSE_BLOCK_FILE);
+    POSTCONDITION(block->get_block_state() == __state_enum::Available);
+
+    int fetched = 0;
+    vector<shared_read_ptr> r;
+    while (fetched <= count) {
+        uint32_t r_count = block->read((RECORD_START_INDEX + fetched), 5, &r);
+        if (r_count > 0) {
+            for (int ii = 0; ii < r.size(); ii++) {
+                void *ptr = r[ii].get()->get_data_ptr();
+                CHECK_NOT_NULL(ptr);
+                _test_typed *t = reinterpret_cast<_test_typed *>(ptr);
+                LOG_DEBUG("[index=%d][uuid=%s]", t->index, t->value);
+            }
+            fetched += r.size();
+            r.clear();
+        } else
+            break;
+    }
+    CHECK_AND_FREE(block);
 }
 
 void test_compressed() {
@@ -63,9 +93,15 @@ int main(int argc, char **argv) {
         string configf(cf);
         env_utils::create_env(configf);
 
+        lock_env_utils::create_manager(0755, CONFIG_LOCK_COUNT);
+        lock_env *manager = lock_env_utils::get_manager();
+        CHECK_NOT_NULL(manager);
+
         test_raw();
 
         test_compressed();
+
+        lock_env_utils::dispose();
 
         exit(0);
     } catch (const exception &e) {

@@ -29,7 +29,7 @@
 #include "common/includes/file_utils.h"
 #include "common/includes/timer.h"
 #include "common/includes/__alarm.h"
-#include "common/includes/exclusive_lock.h"
+#include "common/includes/read_write_lock.h"
 
 #include "fmstream.h"
 #include "common_structs.h"
@@ -50,7 +50,7 @@ namespace com {
                 /*!
                  * Base data block class. This class is responsible for managing read/write of data into the memory mapped
                  * files. The format of the binary file is:
-                 * <HEADER: __block_header>[<RECORD: <HEADER:__record_header><BYTES: DATA>>...]
+                 * <HEADER: __block_header>[<RECORD: <HEADER:__record_header><BYTES: data>>...]
                  *
                  * The class is defined as a template type to facilitate typed read/write funtions. The data representation
                  * is in bytes and hence type agnostic.
@@ -58,14 +58,14 @@ namespace com {
                  */
                 class base_block {
                 protected:
-                    /// State of this instance of the block object.
+                    //! State of this instance of the block object.
                     __state__ state;
 
-                    /// Backing file path for the memory mapped file.
+                    //! Backing file path for the memory mapped file.
                     string filename;
 
-                    /// Shared lock for writing
-                    exclusive_lock *block_lock = nullptr;
+                    //! Shared lock for writing
+                    read_write_lock *block_lock = nullptr;
 
                     /// Memory-mapped file handle.
                     fmstream *stream = nullptr;
@@ -96,11 +96,13 @@ namespace com {
                      * @param block_type - Type of this data block. (PRIMARY or REPLICATED)
                      * @param record_type - Record type of the data stored in this block.
                      * @param block_size - Maximum data size allowed for this block.
+                     * @param start_index - Starting record index for this block.
                      * @param overwrite - Overwrite if data block file already exists?
                      * @return - UUID of the new block created.
                      */
                     string __create_block(uint64_t block_id, string filename, __block_type block_type,
-                                          __block_record_type record_type, uint64_t block_size, bool overwrite);
+                                          __block_record_type record_type, uint64_t block_size, uint64_t start_index,
+                                          bool overwrite);
 
                     /*!
                      * Open a new instance of the specified data block.
@@ -115,10 +117,11 @@ namespace com {
                      * Read (N) records from this block.
                      *
                      * @param index - Start index of the record.
-                     * @param count - Number of records to read. (default = 1)
+                     * @param count - Number of records to read.
+                     * @param data - Record vector to copy the results into.
                      * @return - Vector of record pointers.
                      */
-                    vector<__record *> __read_records(uint64_t index, uint32_t count = 1);
+                    uint32_t __read_records(uint64_t index, uint32_t count, vector<__record *> *data);
 
                     /*!
                      * Create a new data record and save it to the backing file.
@@ -164,24 +167,55 @@ namespace com {
                      * @return - Is transaction in progress?
                      */
                     bool in_transaction() const {
-                        return NOT_NULL(rollback_info);
+                        if (NOT_NULL(rollback_info)) {
+                            return rollback_info->in_transaction;
+                        }
+                        return false;
                     }
 
                     /*!
                      * Setup a new transaction context.
                      *
+                     * @param txid - Transaction ID of the current transaction.
                      * @return - New transaction ID.
                      */
-                    string setup_transaction() {
-                        CHECK_AND_FREE(rollback_info);
-
-                        rollback_info = (__rollback_info *) malloc(sizeof(__rollback_info));
+                    string setup_transaction(string txid) {
+                        if (IS_NULL(rollback_info)) {
+                            rollback_info = (__rollback_info *) malloc(sizeof(__rollback_info));
+                            rollback_info->transaction_id = new string();
+                        }
                         CHECK_NOT_NULL(rollback_info);
+
+                        rollback_info->in_transaction = true;
                         rollback_info->last_index = header->last_index;
                         rollback_info->start_time = time_utils::now();
-                        rollback_info->transaction_id = string(common_utils::uuid());
+                        rollback_info->transaction_id->assign(txid);
+                        rollback_info->write_offset = header->write_offset;
+                        rollback_info->start_index = nullptr;
+                        rollback_info->used_bytes = 0;
 
-                        return rollback_info->transaction_id;
+                        return *rollback_info->transaction_id;
+                    }
+
+                    /*!
+                     * End the currently active transaction session.
+                     *
+                     */
+                    void end_transaction() {
+                        string thread_id = thread_utils::get_current_thread();
+
+                        PRECONDITION(block_lock->has_write_lock(thread_id));
+                        CHECK_NOT_NULL(rollback_info);
+
+                        rollback_info->in_transaction = false;
+                        rollback_info->last_index = 0;
+                        rollback_info->start_time = 0;
+                        rollback_info->transaction_id->assign(EMPTY_STRING);
+                        rollback_info->write_offset = 0;
+                        rollback_info->start_index = nullptr;
+                        rollback_info->used_bytes = 0;
+
+                        block_lock->release_write_lock();
                     }
 
                     /*!
@@ -233,12 +267,13 @@ namespace com {
                         ptr->index = get_next_index();
                         ptr->readable = false;
                         ptr->next = nullptr;
+                        ptr->read_ptr = nullptr;
 
                         if (IS_NULL(index_ptr)) {
                             index_ptr = ptr;
                         } else {
                             uint32_t offset = (ptr->index - header->start_index);
-                            __record_index *last = (index_ptr + (offset - 1));
+                            __record_index *last = (index_ptr + offset);
                             CHECK_NOT_NULL(last);
                             last->next = ptr;
                         }
@@ -246,7 +281,32 @@ namespace com {
                         return ptr;
                     }
 
+                    /*!
+                     * Get the index pointer at the specified index offset. Offset is specified as a delta from the
+                     * start index and not the absolute index value.
+                     *
+                     * @param offset - Index offset.
+                     * @return - Index pointer.
+                     */
+                    __record_index *get_index_ptr_at(uint32_t offset) {
+                        CHECK_NOT_NULL(index_ptr);
+                        __record_index *ptr = index_ptr;
+                        for (uint32_t ii = 0; ii < offset; ii++) {
+                            ptr = ptr->next;
+                            if (IS_NULL(ptr))
+                                break;
+                        }
+                        return ptr;
+                    }
+
                 public:
+                    /*!< destructor
+                     * Base class destructor.
+                     */
+                    virtual ~base_block() {
+                        this->close();
+                    }
+
                     /*!
                      * Get the absolute file path of the backing file.
                      *
@@ -264,9 +324,10 @@ namespace com {
                     uint32_t get_free_space() const {
                         CHECK_STATE_AVAILABLE(state);
                         if (in_transaction()) {
-                            return (header->block_size - (header->used_bytes + rollback_info->used_bytes));
+                            return (header->block_size -
+                                    (header->used_bytes + rollback_info->used_bytes + sizeof(__record_header)));
                         }
-                        return (header->block_size - header->used_bytes);
+                        return (header->block_size - (header->used_bytes + sizeof(__record_header)));
                     }
 
                     /*!
@@ -487,13 +548,14 @@ namespace com {
                      * @param filename - Backing filename for this data block.
                      * @param block_type - Type of this data block. (PRIMARY or REPLICATED)
                      * @param block_size - Maximum data size allowed for this block.
+                     * @param start_index - Starting record index for this block.
                      * @param overwrite - Overwrite if data block file already exists?
                      * @return - UUID of the new block created.
                      */
                     string create(uint64_t block_id, string filename, __block_type block_type,
-                                  uint64_t block_size, bool overwrite) {
+                                  uint64_t block_size, uint64_t start_index, bool overwrite) {
                         string uuid = __create_block(block_id, filename, block_type, __block_record_type::RAW,
-                                                     block_size, overwrite);
+                                                     block_size, start_index, overwrite);
                         close();
 
                         POSTCONDITION(!IS_EMPTY(uuid));
@@ -508,19 +570,7 @@ namespace com {
                      * @param filename - Backing filename for this data block.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    void open(uint64_t block_id, string filename) {
-                        void *ptr = __open_block(block_id, filename);
-                        POSTCONDITION(NOT_NULL(ptr));
-                        BYTE_PTR bptr = static_cast<BYTE_PTR>(ptr);
-                        bptr = (bptr + sizeof(__block_header));
-
-                        if (header->write_state == __write_state::WRITABLE) {
-                            write_ptr = (bptr + header->write_offset);
-                        }
-
-                        state.set_state(__state_enum::Available);
-                    }
-
+                    void open(uint64_t block_id, string filename);
 
                     /*!
                      * Write a data record to the block. Check should be done to ensure that
@@ -540,14 +590,21 @@ namespace com {
                      *
                      * @param index - Start record index.
                      * @param count - No. of records to read.
-                     * @return - Vector of record pointers.
+                     * @param data - Result vector to copy the records to.
+                     * @return - No. of records returned.
                      */
-                    vector<shared_read_ptr> read(uint64_t index, uint32_t count);
+                    uint32_t read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data);
 
                     const __state_enum get_block_state() const {
                         return state.get_state();
                     }
 
+                    /*!
+                     * Static utility funtion to get the lockname for the specified block id.
+                     *
+                     * @param block_id - Block ID
+                     * @return - Lock name associated with this block.
+                     */
                     static string get_lock_name(uint64_t block_id) {
                         return common_utils::format("block_%lu_lock", block_id);
                     }
@@ -560,7 +617,7 @@ namespace com {
 string
 com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, string filename, __block_type block_type,
                                                         __block_record_type record_type, uint64_t block_size,
-                                                        bool overwrite) {
+                                                        uint64_t start_index, bool overwrite) {
     try {
         Path p(filename);
         if (p.exists()) {
@@ -596,10 +653,14 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
         header->compression.type = __compression_type::NO_COMPRESSION;
         header->encryption.encrypted = false;
         header->encryption.type = __encryption_type::NO_ENCRYPTION;
+        header->start_index = start_index;
+        header->last_index = header->start_index;
 
         string lock_name = get_lock_name(header->block_id);
-        block_lock = new exclusive_lock(&lock_name);
-        block_lock->create();
+        lock_env *env = lock_env_utils::get();
+
+        block_lock = env->add_lock(lock_name);
+        CHECK_NOT_NULL(block_lock);
         block_lock->reset();
 
         state.set_state(__state_enum::Available);
@@ -633,8 +694,9 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
 
         if (IS_NULL(block_lock)) {
             string lock_name = get_lock_name(header->block_id);
-            block_lock = new exclusive_lock(&lock_name);
-            block_lock->create();
+            lock_env *env = lock_env_utils::get();
+            block_lock = env->add_lock(lock_name);
+            CHECK_NOT_NULL(block_lock);
         }
         this->filename = string(filename);
 
@@ -668,10 +730,21 @@ void com::wookler::reactfs::core::base_block::close() {
     }
 
     if (NOT_NULL(block_lock)) {
-        if (block_lock->is_locked()) {
-            block_lock->release_lock();
+        string thread_id = thread_utils::get_current_thread();
+        if (block_lock->has_write_lock(thread_id)) {
+            block_lock->release_write_lock();
         }
-        CHECK_AND_FREE(block_lock);
+        if (block_lock->has_thread_lock(thread_id)) {
+            block_lock->release_read_lock();
+        }
+        lock_env *env = lock_env_utils::get();
+        env->remove_lock(block_lock->get_name());
+
+        block_lock = nullptr;
+    }
+    if (NOT_NULL(rollback_info)) {
+        CHECK_AND_FREE(rollback_info->transaction_id);
+        FREE_PTR(rollback_info);
     }
     header = nullptr;
     write_ptr = nullptr;
@@ -687,7 +760,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t s
     PRECONDITION(header->write_state == __write_state::WRITABLE);
     PRECONDITION(has_space(size));
     PRECONDITION(in_transaction());
-    PRECONDITION(!IS_EMPTY(transaction_id) && rollback_info->transaction_id == transaction_id);
+    PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
 
     void *w_ptr = get_write_ptr();
 
@@ -702,15 +775,15 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t s
     record->header->data_size = size;
     record->header->timestamp = time_utils::now();
     record->header->uncompressed_size = uncompressed_size;
+    record->header->state = __record_state::R_DIRTY;
 
     w_ptr = increment_data_ptr(w_ptr, sizeof(__record_header));
     record->data_ptr = w_ptr;
 
     memcpy(record->data_ptr, source, size);
 
-    rollback_info->last_index = record->header->index;
     rollback_info->used_bytes += size;
-    rollback_info->write_offset += sizeof(__record_header) + size;
+    rollback_info->write_offset += (sizeof(__record_header) + size);
     if (IS_NULL(rollback_info->start_index)) {
         rollback_info->start_index = i_ptr;
     }
@@ -720,45 +793,50 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t s
     return i_ptr->read_ptr;
 }
 
-vector<__record *> com::wookler::reactfs::core::base_block::__read_records(uint64_t index, uint32_t count) {
+uint32_t
+com::wookler::reactfs::core::base_block::__read_records(uint64_t index, uint32_t count, vector<__record *> *data) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
 
-    vector<__record *> result(count);
     uint32_t offset = (index - header->start_index);
-    for (int ii = 0; ii < count; ii++) {
-        if (offset + ii > header->last_index)
+    uint32_t available = (header->last_index - header->start_index);
+    uint32_t added = 0;
+    for (int ii = 0; ii < available; ii++) {
+        if ((header->start_index + offset + ii) >= header->last_index)
             break;
-        __record_index *ptr = (index_ptr + (offset + ii));
+        __record_index *ptr = get_index_ptr_at(offset + ii);
         CHECK_NOT_NULL(ptr);
-        PRECONDITION(ptr->readable);
-        result[ii] = ptr->read_ptr;
+        if (!ptr->readable) {
+            continue;
+        }
+        if (ptr->read_ptr->header->state != __record_state::R_READABLE) {
+            continue;
+        }
+        data->push_back(ptr->read_ptr);
+        added++;
+        if (added == count)
+            break;
     }
-    return result;
+    return data->size();
 }
 
 string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeout) {
     CHECK_STATE_AVAILABLE(state);
     string txid = EMPTY_STRING;
-    if (timeout <= 0) {
-        if (block_lock->wait_lock()) {
-            txid = setup_transaction();
-        } else {
-            throw FS_BASE_ERROR("Error getting wait lock. [lock=%s]", block_lock->get_name()->c_str());
-        }
-    } else {
-        uint64_t startt = time_utils::now();
-        while (true) {
-            if (block_lock->try_lock()) {
-                txid = setup_transaction();
-                break;
-            }
-            START_ALARM(DEFAULT_LOCK_RETRY_INTERVAL);
-            if ((time_utils::now() - startt) > timeout) {
-                break;
-            }
-        }
+    char *user_name = getenv("USER");
+    if (IS_NULL(user_name)) {
+        user_name = getenv("USERNAME");
     }
+    PRECONDITION(NOT_NULL(user_name));
+    string uname(user_name);
+
+    txid = block_lock->write_lock(uname, timeout);
+    if (!IS_EMPTY(txid)) {
+        setup_transaction(txid);
+    } else {
+        throw FS_BASE_ERROR("Error getting wait lock. [lock=%s]", block_lock->get_name().c_str());
+    }
+
     return txid;
 }
 
@@ -792,62 +870,63 @@ uint32_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t l
     return r_ptr->header->data_size;
 }
 
-vector<shared_read_ptr> com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t count) {
+uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data) {
     CHECK_STATE_AVAILABLE(state);
+    vector<__record *> r;
+    uint32_t r_count = __read_records(index, count, &r);
+    if (r_count > 0) {
+        if (is_encrypted() || is_compressed()) {
+            temp_buffer *buffer = new temp_buffer();
+            temp_buffer *writebuff = nullptr;
 
-    vector<shared_read_ptr> result;
-    vector<__record *> r = __read_records(index, count);
-    if (is_encrypted() || is_compressed()) {
-        temp_buffer *buffer = new temp_buffer();
-        temp_buffer *writebuff = nullptr;
-
-        if (r.size() > 0) {
-            for (int ii = 0; ii < r.size(); ii++) {
-                __record *ptr = r[ii];
-                bool use_buffer = false;
-                CHECK_NOT_NULL(ptr);
-                if (is_encrypted()) {
-                    use_buffer = true;
-                    // TODO : Implement encryption handlers.
-                }
-                if (is_compressed()) {
-                    CHECK_NOT_NULL(compression);
-
-                    void *data_ptr = (use_buffer ? buffer->get_ptr() : ptr->data_ptr);
-                    uint32_t data_size = (use_buffer ? buffer->get_used_size() : ptr->header->data_size);
-
-                    if (use_buffer && IS_NULL(writebuff)) {
-                        writebuff = new temp_buffer();
+            if (r.size() > 0) {
+                for (int ii = 0; ii < r.size(); ii++) {
+                    __record *ptr = r[ii];
+                    bool use_buffer = false;
+                    CHECK_NOT_NULL(ptr);
+                    if (is_encrypted()) {
+                        use_buffer = true;
+                        // TODO : Implement encryption handlers.
                     }
-                    temp_buffer *buff = (use_buffer ? writebuff : buffer);
-                    int ret = compression->read_archive_data(data_ptr, ptr->header->uncompressed_size, buff);
-                    POSTCONDITION(ret > 0);
+                    if (is_compressed()) {
+                        CHECK_NOT_NULL(compression);
 
-                    shared_read_ptr s_ptr = make_shared<__read_ptr>(buff->get_used_size());
-                    (*s_ptr).copy(buff->get_ptr());
+                        void *data_ptr = (use_buffer ? buffer->get_ptr() : ptr->data_ptr);
+                        uint32_t data_size = (use_buffer ? buffer->get_used_size() : ptr->header->data_size);
 
-                    result[ii] = s_ptr;
+                        if (use_buffer && IS_NULL(writebuff)) {
+                            writebuff = new temp_buffer();
+                        }
+                        temp_buffer *buff = (use_buffer ? writebuff : buffer);
+                        int ret = compression->read_archive_data(data_ptr, ptr->header->uncompressed_size, buff);
+                        POSTCONDITION(ret > 0);
+
+                        shared_read_ptr s_ptr = make_shared<__read_ptr>(buff->get_used_size());
+                        (*s_ptr).copy(buff->get_ptr());
+
+                        data->push_back(s_ptr);
+                    }
                 }
             }
-        }
-        CHECK_AND_FREE(buffer);
-        CHECK_AND_FREE(writebuff);
-    } else {
-        for (int ii = 0; ii < r.size(); ii++) {
-            __record *ptr = r[ii];
-            shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);
-            (*s_ptr).set_data_ptr(ptr->data_ptr);
+            CHECK_AND_FREE(buffer);
+            CHECK_AND_FREE(writebuff);
+        } else if (r.size() > 0) {
+            for (int ii = 0; ii < r.size(); ii++) {
+                __record *ptr = r[ii];
+                shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);
+                (*s_ptr).set_data_ptr(ptr->data_ptr);
 
-            result[ii] = s_ptr;
+                data->push_back(s_ptr);
+            }
         }
     }
-    return result;
+    return data->size();
 }
 
 void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(in_transaction());
-    PRECONDITION(!IS_EMPTY(transaction_id) && rollback_info->transaction_id == transaction_id);
+    PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
 
     header->last_index = rollback_info->last_index;
     header->used_bytes += rollback_info->used_bytes;
@@ -856,17 +935,16 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     __record_index *iptr = rollback_info->start_index;
     while (NOT_NULL(iptr)) {
         iptr->readable = true;
+        iptr->read_ptr->header->state = __record_state::R_READABLE;
         iptr = iptr->next;
     }
-    FREE_PTR(rollback_info);
-
-    block_lock->release_lock();
+    end_transaction();
 }
 
 void com::wookler::reactfs::core::base_block::rollback(string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(in_transaction());
-    PRECONDITION(!IS_EMPTY(transaction_id) && rollback_info->transaction_id == transaction_id);
+    PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
 
     force_rollback();
 }
@@ -877,13 +955,60 @@ void com::wookler::reactfs::core::base_block::force_rollback() {
 
     __record_index *iptr = rollback_info->start_index;
     while (NOT_NULL(iptr)) {
+        iptr->read_ptr->header->state = __record_state::R_FREE;
         __record_index *ptr = iptr;
         iptr = iptr->next;
         FREE_PTR(ptr);
     }
-    FREE_PTR(rollback_info);
+    end_transaction();
+}
 
-    block_lock->release_lock();
+void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string filename) {
+
+    void *ptr = __open_block(block_id, filename);
+    POSTCONDITION(NOT_NULL(ptr));
+    void *bptr = get_data_ptr();
+    CHECK_NOT_NULL(bptr);
+
+    if (header->write_state == __write_state::WRITABLE) {
+        write_ptr = increment_data_ptr(bptr, header->write_offset);
+    } else {
+        write_ptr = nullptr;
+    }
+
+    uint32_t count = (header->last_index - header->start_index);
+    uint64_t offset = 0;
+    __record_index *i_ptr = nullptr;
+    while (count > 0) {
+        void *rptr = increment_data_ptr(bptr, offset);
+        __record_header *hptr = reinterpret_cast<__record_header *>(rptr);
+        if (hptr->state != __record_state::R_READABLE) {
+            offset += sizeof(__record_header) + hptr->data_size;
+            continue;
+        }
+        __record *record = (__record *) malloc(sizeof(__record));
+        CHECK_NOT_NULL(record);
+        record->header = hptr;
+        rptr = increment_data_ptr(rptr, sizeof(__record_header));
+        record->data_ptr = rptr;
+        if (IS_NULL(i_ptr)) {
+            i_ptr = (__record_index *) malloc(sizeof(__record_index));
+            CHECK_NOT_NULL(i_ptr);
+            index_ptr = i_ptr;
+        } else {
+            __record_index *next = (__record_index *) malloc(sizeof(__record_index));
+            CHECK_NOT_NULL(next);
+            i_ptr->next = next;
+            i_ptr = next;
+        }
+
+        i_ptr->index = record->header->index;
+        i_ptr->read_ptr = record;
+        i_ptr->readable = true;
+        offset += sizeof(__record_header) + record->header->data_size;
+        count--;
+    }
+    state.set_state(__state_enum::Available);
 }
 
 #endif //REACTFS_BASE_BLOCK_H_H

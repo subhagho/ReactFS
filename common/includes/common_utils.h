@@ -179,7 +179,7 @@ namespace com {
                         char s[DEFAULT_UUID_SZIE];
                         uuid_unparse(uuid, s);
 #endif
-                        return s;
+                        return string(s);
                     }
 
                     static string *format_time(const time_t time, string fmt) {
@@ -310,7 +310,7 @@ namespace com {
 
                 class temp_buffer {
                 private:
-                    void *buffer;
+                    void *buffer = nullptr;
                     uint32_t size;
                     uint32_t used_size;
 

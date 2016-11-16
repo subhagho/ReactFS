@@ -231,7 +231,7 @@ namespace com {
 
                         spd::set_pattern(format);
 
-                        console = console = spd::stdout_logger_mt("console", true);
+                        console = console = spd::stdout_logger_mt("console");
                         if (NOT_NULL(console))
                             console->set_level(level);
                         if (!IS_EMPTY(filename)) {

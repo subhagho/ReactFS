@@ -77,8 +77,13 @@ namespace com {
                     WRITABLE = 0, CLOSED = 1
                 } __write_state;
 
+                typedef enum __record_state__ {
+                    R_FREE = 0, R_READABLE = 1, R_DELETED = 2, R_DIRTY = 3
+                } __record_state;
+
                 typedef struct __record_header__ {
                     uint32_t index = 0;
+                    __record_state state = __record_state::R_FREE;
                     uint32_t data_size = 0;
                     uint32_t uncompressed_size = 0;
                     uint64_t timestamp = 0;
@@ -98,7 +103,8 @@ namespace com {
                 } __record_index;
 
                 typedef struct __rollback_info__ {
-                    string transaction_id;
+                    bool in_transaction = false;
+                    string *transaction_id;
                     uint64_t write_offset = 0; // Write-offset of the last committed write.
                     uint32_t used_bytes = 0;
                     uint64_t last_index = 0;
