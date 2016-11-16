@@ -26,7 +26,7 @@ if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_LIBRARIES "pthread uuid rt")
+    set(RFS_LIBRARIES "-lpthread -luuid -lrt")
 endif ()
 
 MESSAGE("Using libraries : [" ${RFS_LIBRARIES} "]")

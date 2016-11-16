@@ -327,10 +327,7 @@ namespace com {
                         vector<string> parts = common_utils::split(*path, '/');
                         if (parts.size() > 1) {
                             string ss = string();
-                            uint32_t si = 0;
-                            if (IS_EMPTY(parts[0])) {
-                                si = 1;
-                            } else {
+                            if (!IS_EMPTY(parts[0])) {
                                 ss.append(parts[0]);
                             }
                             for (uint32_t ii = 1; ii < parts.size() - 1; ii++) {

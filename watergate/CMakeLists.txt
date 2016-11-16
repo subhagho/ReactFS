@@ -33,7 +33,7 @@ if (${APPLE})
     set(WG_LIBRARIES reactfs-common)
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(WG_LIBRARIES "reactfs-common" "pthread" "uuid" "rt")
+    set(WG_LIBRARIES "-lreactfs-common" "-lpthread" "-luuid" "-lrt")
 endif ()
 
 

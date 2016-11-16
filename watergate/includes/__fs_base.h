@@ -108,7 +108,7 @@ namespace com {
                         fpos_t get_position() {
                             CHECK_STATE_AVAILABLE(state);
 
-                            fpos_t pos = 0;
+                            fpos_t pos = (fpos_t)0;
                             if (fgetpos(f_ptr, &pos) != 0) {
                                 throw BASE_ERROR("Error getting file position. [file=%s][error=%s]",
                                                  path->get_path().c_str(), strerror(errno));
@@ -137,7 +137,7 @@ namespace com {
                         void rewind() {
                             CHECK_STATE_AVAILABLE(state);
 
-                            set_position(0);
+                            set_position((fpos_t) 0);
                         }
 
                         long get_file_size() {
