@@ -163,16 +163,6 @@ namespace com {
                     }
 
                     /*!
-                    * Remove a registered instance of a signal handler callback.
-                    *
-                    * @param signal - Signal constant
-                    * @param c - Registered callback.
-                    */
-                    static void remove_handler(int sigint, __callback c) {
-                        remove_handler(sigint, c.get_uuid());
-                    }
-
-                    /*!
                      * Dispose the signal handler singleton. This does not free the callback instances.
                      */
                     static void dispose() {
