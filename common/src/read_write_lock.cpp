@@ -78,7 +78,7 @@ void com::wookler::reactfs::common::shared_lock_table::create(uint32_t count) {
 
     table_lock->wait_lock();
     try {
-        shm_fd = shm_open(SHARED_LOCK_TABLE_NAME, O_RDWR);
+        shm_fd = shm_open(SHARED_LOCK_TABLE_NAME, O_RDWR, 0754);
         if (shm_fd < 0) {
             lock_error te = LOCK_ERROR(
                     "Error creating shared memory handle. [name=%s][error=%s]",
