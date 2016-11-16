@@ -8,6 +8,8 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     CMAKE="cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
 elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
     # Do something under Windows NT platform
+    echo "cmake not defined..."
+    exit -1
 fi
 
 
@@ -40,10 +42,12 @@ do
 	echo "Current directory $PWD..."
 	echo "Generating makefiles..."
 	$CMAKE -G"Unix Makefiles" ..
+    rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 
 	echo "Building $PWD..."
 	make -f Makefile
-
+    rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
+    
     cd $ROOTDIR
 done
 
