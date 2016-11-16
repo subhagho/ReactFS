@@ -273,7 +273,7 @@ namespace com {
                             index_ptr = ptr;
                         } else {
                             uint32_t offset = (ptr->index - header->start_index);
-                            __record_index *last = (index_ptr + offset);
+                            __record_index *last = get_index_ptr_at(offset);
                             CHECK_NOT_NULL(last);
                             last->next = ptr;
                         }
