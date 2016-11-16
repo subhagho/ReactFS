@@ -101,7 +101,7 @@ namespace com {
                                 signal_map[sigint] = next;
                             }
                         } else {
-                            signal(sigint, &__signals::signal_handler);
+                            signal(sigint, __signals::signal_handler);
 
                             __callback_chain *next = new __callback_chain();
                             next->callback = c;
