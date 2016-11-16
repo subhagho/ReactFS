@@ -272,9 +272,11 @@ namespace com {
                         if (IS_NULL(index_ptr)) {
                             index_ptr = ptr;
                         } else {
-                            uint32_t offset = (ptr->index - header->start_index);
+                            uint32_t offset = (ptr->index - header->start_index - 1);
                             __record_index *last = get_index_ptr_at(offset);
                             CHECK_NOT_NULL(last);
+                            POSTCONDITION(IS_NULL(last->next));
+
                             last->next = ptr;
                         }
 
