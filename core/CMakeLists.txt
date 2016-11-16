@@ -10,7 +10,7 @@ endif ()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-INCLUDE(../cmake/CMakeInclude.txt)
+INCLUDE(../makefiles/CMakeInclude.txt)
 
 LINK_DIRECTORIES(/usr/lib ../common/cmake ../watergate/cmake)
 

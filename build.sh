@@ -13,7 +13,7 @@ elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
 fi
 
 
-echo "Using cmake [$CMAKE]..."
+echo "Using makefiles [$CMAKE]..."
 
 DIRS="common watergate core"
 DIRS_TO_BUILD=""
@@ -47,7 +47,7 @@ do
 	echo "Building $PWD..."
 	make -f Makefile
     rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
-    
+
     cd $ROOTDIR
 done
 

@@ -7,7 +7,7 @@ project(reactfs-common VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-INCLUDE(../cmake/CMakeInclude.txt)
+INCLUDE(../makefiles/CMakeInclude.txt)
 
 set(COMMON_LIB_NAME ${PROJECT_NAME})
 
