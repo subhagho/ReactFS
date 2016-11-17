@@ -118,7 +118,7 @@ namespace com {
                         CHECK_STATE_AVAILABLE(state);
                         WAIT_LOCK_P(lock);
                         bit_index->clear();
-                        for (int ii = 0; ii < header_ptr->max_records; ii++) {
+                        for (uint32_t ii = 0; ii < header_ptr->max_records; ii++) {
                             __lock_record *ptr = (record_ptr + ii);
                             memset(ptr, 0, sizeof(__lock_record));
                         }
@@ -129,7 +129,7 @@ namespace com {
                     void __check_expired_locks(uint32_t index, uint64_t expiry_time, uint32_t *counts) {
                         __lock_record *record = get_record(index);
                         if (record->used) {
-                            for (int jj = 0; jj < MAX_PRIORITY_ALLOWED; jj++) {
+                            for (uint32_t jj = 0; jj < MAX_PRIORITY_ALLOWED; jj++) {
                                 if (record->lock.locks[jj].state == __lock_state::Locked) {
                                     uint64_t at = record->lock.locks[jj].acquired_time + header_ptr->lock_lease_time;
                                     uint64_t now = time_utils::now();
@@ -240,7 +240,7 @@ namespace com {
                     void reset_expired_records(uint64_t expiry_time) {
                         CHECK_STATE_AVAILABLE(state);
 
-                        for (int ii = 0; ii < header_ptr->max_records; ii++) {
+                        for (uint32_t ii = 0; ii < header_ptr->max_records; ii++) {
                             __lock_record *record = get_record(ii);
                             if (record->used) {
                                 uint64_t ut = record->app.last_active_ts;

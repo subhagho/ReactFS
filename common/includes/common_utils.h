@@ -383,6 +383,8 @@ namespace com {
                     uint32_t read(void *dest, uint32_t size) {
                         if (NOT_NULL(buffer)) {
                             uint32_t c_size = (size > this->size ? this->size : size);
+                            memcpy(dest, buffer, c_size);
+                            return c_size;
                         }
                         return 0;
                     }
