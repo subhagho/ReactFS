@@ -20,6 +20,7 @@ MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
 add_library(${COMMON_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
 
+
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
 elseif (${UNIX})

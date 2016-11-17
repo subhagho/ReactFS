@@ -34,6 +34,8 @@
 #include "__alarm.h"
 #include "process_utils.h"
 #include "unordered_map"
+#include "fmstream.h"
+#include "__bitset.h"
 
 #define DEFAULT_RW_LOCK_RETRY 10
 #define SIZE_LOCK_NAME 32
@@ -45,7 +47,8 @@
 #define DEFAULT_WRITE_LOCK_TIMEOUT  60 * 1000
 #define DEFAULT_RW_LOCK_EXPIRY 10 * 60 * 1000
 
-#define SHARED_LOCK_TABLE_NAME "sharedLockTable"
+#define SHARED_LOCK_DIR "locks"
+#define SHARED_LOCK_TABLE_NAME "sharedLockTable.bin"
 #define SHARED_LOCK_NAME "_lock_sharedLockTable"
 
 namespace com {
@@ -85,22 +88,30 @@ namespace com {
 
                 class shared_lock_table {
                 private:
-                    __lock_struct *locks = nullptr;
+                    /// Memory-mapped file handle.
+                    fmstream *stream = nullptr;
+
+                    /// Base pointer for the mapped data.
+                    void *base_ptr = nullptr;
+
                     exclusive_lock *table_lock = nullptr;
-                    int shm_fd = -1;
-                    void *mem_ptr = nullptr;
+                    __lock_struct *locks = nullptr;
                     __shared_lock_data *header_ptr = nullptr;
+
+                    void __create(mode_t mode, uint32_t count, bool overwrite = false);
 
                 public:
                     ~shared_lock_table() {
                         CHECK_AND_FREE(table_lock);
-                        if (shm_fd >= 0 && NOT_NULL(mem_ptr)) {
-                            shm_unlink(SHARED_LOCK_TABLE_NAME);
+                        if (NOT_NULL(stream)) {
+                            if (stream->is_open()) {
+                                stream->close();
+                            }
+                            delete (stream);
+                            stream = nullptr;
                         }
                         locks = nullptr;
-                        mem_ptr = nullptr;
                         header_ptr = nullptr;
-                        shm_fd = -1;
                     }
 
                     uint32_t get_max_size() {
@@ -125,9 +136,13 @@ namespace com {
                         return nullptr;
                     }
 
-                    void create(mode_t mode, uint32_t count);
+                    void create(mode_t mode, uint32_t count, bool overwrite = false) {
+                        __create(mode, count, overwrite);
+                    }
 
-                    void create(uint32_t count);
+                    void create(uint32_t count) {
+                        __create(0, count);
+                    }
 
                     __lock_struct *add_lock(string name);
 
@@ -466,7 +481,7 @@ namespace com {
                     shared_lock_table *table = nullptr;
                     unordered_map<string, read_write_lock *> locks;
 
-                    void create(mode_t mode, uint32_t count);
+                    void create(mode_t mode, uint32_t count, bool overwrite = false);
 
                 public:
                     ~lock_env() {
@@ -515,7 +530,7 @@ namespace com {
                         }
                     }
 
-                    void init(mode_t mode, uint32_t count);
+                    void init(mode_t mode, uint32_t count, bool overwrite = false);
 
                     void reset();
                 };
@@ -526,7 +541,7 @@ namespace com {
                     static bool is_manager;
                     static lock_env *env;
                 public:
-                    static lock_env *create_manager(mode_t mode, uint32_t max_lock_count) {
+                    static lock_env *create_manager(mode_t mode, uint32_t max_lock_count, bool overwrite) {
                         std::lock_guard<std::mutex> guard(env_mutex);
                         if (NOT_NULL(env) && !is_manager) {
                             throw LOCK_ERROR("Lock environment already initialized in client mode.");
@@ -537,7 +552,7 @@ namespace com {
                         is_manager = true;
 
                         lock_manager *manager = new lock_manager();
-                        manager->init(mode, max_lock_count);
+                        manager->init(mode, max_lock_count, overwrite);
 
                         env = manager;
                         return env;

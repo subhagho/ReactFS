@@ -32,7 +32,7 @@
 #include "common/includes/__alarm.h"
 #include "common/includes/read_write_lock.h"
 
-#include "fmstream.h"
+#include "common/includes/fmstream.h"
 #include "common_structs.h"
 #include "fs_error_base.h"
 
@@ -100,25 +100,12 @@ namespace com {
                     void close();
 
                     /*!
-                     * Increment the void pointer by the specified number of bytes.
-                     *
-                     * @param ptr - Void pointer address.
-                     * @param offset - Byte offset to increment by.
-                     * @return - Incremented pointer.
-                     */
-                    void *increment_data_ptr(void *ptr, uint32_t offset) {
-                        BYTE_PTR cptr = static_cast<BYTE_PTR>(ptr);
-                        return (cptr + offset);
-                    }
-
-                    /*!
                      * Get the base address pointing to where the block data starts.
                      *
                      * @return - Base data address
                      */
                     void *get_data_ptr() {
-                        BYTE_PTR cptr = static_cast<BYTE_PTR>(base_ptr);
-                        return (cptr + sizeof(__record_index_header));
+                        return common_utils::increment_data_ptr(base_ptr, sizeof(__record_index_header));
                     }
                 };
             }

@@ -216,6 +216,21 @@ namespace com {
                         return -1;
                     }
 
+                    /*!
+                     * Increment the void pointer by the specified number of bytes.
+                     *
+                     * @param ptr - Void pointer address.
+                     * @param offset - Byte offset to increment by.
+                     * @return - Incremented pointer.
+                     */
+                    static inline void *increment_data_ptr(void *source, uint64_t offset) {
+                        if (NOT_NULL(source)) {
+                            BYTE_PTR cptr = static_cast<BYTE_PTR>(source);
+                            return (cptr + offset);
+                        }
+                        return nullptr;
+                    }
+
                     static time_t get_time(const string time) {
                         return get_time(time, DEFAULT_DATETIME_FORMAT);
                     }

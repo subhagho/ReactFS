@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
         string configf(cf);
         env_utils::create_env(configf);
 
-        lock_env_utils::create_manager(0755, CONFIG_LOCK_COUNT);
+        lock_env_utils::create_manager(0755, CONFIG_LOCK_COUNT, false);
         lock_env *manager = lock_env_utils::get_manager();
         CHECK_NOT_NULL(manager);
 

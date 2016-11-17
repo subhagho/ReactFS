@@ -31,7 +31,7 @@
 #include "common/includes/__alarm.h"
 #include "common/includes/read_write_lock.h"
 
-#include "fmstream.h"
+#include "common/includes/fmstream.h"
 #include "common_structs.h"
 #include "fs_error_base.h"
 #include "compression.h"
@@ -140,25 +140,12 @@ namespace com {
                     void close();
 
                     /*!
-                     * Increment the void pointer by the specified number of bytes.
-                     *
-                     * @param ptr - Void pointer address.
-                     * @param offset - Byte offset to increment by.
-                     * @return - Incremented pointer.
-                     */
-                    void *increment_data_ptr(void *ptr, uint32_t offset) {
-                        BYTE_PTR cptr = static_cast<BYTE_PTR>(ptr);
-                        return (cptr + offset);
-                    }
-
-                    /*!
                      * Get the base address pointing to where the block data starts.
                      *
                      * @return - Base data address
                      */
                     void *get_data_ptr() {
-                        BYTE_PTR cptr = static_cast<BYTE_PTR>(base_ptr);
-                        return (cptr + sizeof(__block_header));
+                        return common_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
                     }
 
                     /*!
@@ -782,7 +769,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t s
     record->header->uncompressed_size = uncompressed_size;
     record->header->state = __record_state::R_DIRTY;
 
-    w_ptr = increment_data_ptr(w_ptr, sizeof(__record_header));
+    w_ptr = common_utils::increment_data_ptr(w_ptr, sizeof(__record_header));
     record->data_ptr = w_ptr;
 
     memcpy(record->data_ptr, source, size);
@@ -976,7 +963,7 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
     CHECK_NOT_NULL(bptr);
 
     if (header->write_state == __write_state::WRITABLE) {
-        write_ptr = increment_data_ptr(bptr, header->write_offset);
+        write_ptr = common_utils::increment_data_ptr(bptr, header->write_offset);
     } else {
         write_ptr = nullptr;
     }
@@ -985,7 +972,7 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
     uint64_t offset = 0;
     __record_index *i_ptr = nullptr;
     while (count > 0) {
-        void *rptr = increment_data_ptr(bptr, offset);
+        void *rptr = common_utils::increment_data_ptr(bptr, offset);
         __record_header *hptr = reinterpret_cast<__record_header *>(rptr);
         if (hptr->state != __record_state::R_READABLE) {
             offset += sizeof(__record_header) + hptr->data_size;
@@ -994,7 +981,7 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
         __record *record = (__record *) malloc(sizeof(__record));
         CHECK_NOT_NULL(record);
         record->header = hptr;
-        rptr = increment_data_ptr(rptr, sizeof(__record_header));
+        rptr = common_utils::increment_data_ptr(rptr, sizeof(__record_header));
         record->data_ptr = rptr;
         if (IS_NULL(i_ptr)) {
             i_ptr = (__record_index *) malloc(sizeof(__record_index));

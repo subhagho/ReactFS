@@ -19,97 +19,60 @@
 //
 
 #include "common/includes/read_write_lock.h"
+#include "common/includes/__env.h"
+#include "common/includes/init_utils.h"
 
 using namespace com::wookler::reactfs::common;
 
-void com::wookler::reactfs::common::shared_lock_table::create(mode_t mode, uint32_t count) {
+void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, uint32_t count, bool overwrite) {
     LOG_DEBUG("Creating shared memory. [name=%s]", SHARED_LOCK_NAME);
 
     string name_l(SHARED_LOCK_NAME);
-    table_lock = new exclusive_lock(&name_l, mode);
-    table_lock->create();
-    table_lock->reset();
-
-    shm_fd = shm_open(SHARED_LOCK_TABLE_NAME, O_CREAT | O_RDWR, mode);
-    if (shm_fd < 0) {
-        lock_error te = LOCK_ERROR(
-                "Error creating shared memory handle. [name=%s][error=%s]",
-                SHARED_LOCK_TABLE_NAME, strerror(errno));
-        LOG_ERROR(te.what());
-        throw te;
+    if (mode > 0) {
+        table_lock = new exclusive_lock(&name_l, mode);
+    } else {
+        table_lock = new exclusive_lock(&name_l);
     }
-
-    uint32_t m_count = (count > 0 ? count : MAX_SHARED_LOCKS);
-    uint32_t size = sizeof(__shared_lock_data) + (m_count * sizeof(__lock_struct));
-
-    ftruncate(shm_fd, size);
-    LOG_DEBUG("Sizing shared memory segment. [size=%d]", size);
-
-    /* now map the shared memory segment in the address space of the process */
-    mem_ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (mem_ptr == MAP_FAILED) {
-        lock_error te = LOCK_ERROR(
-                "Error mapping shared memory segment. [name=%s][error=%s]",
-                SHARED_LOCK_TABLE_NAME, strerror(errno));
-        LOG_ERROR(te.what());
-        throw te;
-    }
-
-    header_ptr = static_cast<__shared_lock_data *>(mem_ptr);
-    POSTCONDITION(NOT_NULL(header_ptr));
-    header_ptr->max_count = m_count;
-    header_ptr->used_count = 0;
-
-    BYTE_PTR ptr = static_cast<BYTE_PTR >(mem_ptr);
-    ptr += sizeof(__shared_lock_data);
-
-    locks = reinterpret_cast<__lock_struct *>(ptr);
-    POSTCONDITION(NOT_NULL(locks));
-
-    LOG_DEBUG("Initialized shared lock table.");
-}
-
-void com::wookler::reactfs::common::shared_lock_table::create(uint32_t count) {
-    LOG_DEBUG("Creating shared memory. [name=%s]", SHARED_LOCK_NAME);
-
-    string name_l(SHARED_LOCK_NAME);
-    table_lock = new exclusive_lock(&name_l);
     table_lock->create();
+    if (mode > 0)
+        table_lock->reset();
 
     table_lock->wait_lock();
     try {
-        shm_fd = shm_open(SHARED_LOCK_TABLE_NAME, O_RDWR, 0754);
-        if (shm_fd < 0) {
-            lock_error te = LOCK_ERROR(
-                    "Error creating shared memory handle. [name=%s][error=%s]",
-                    SHARED_LOCK_TABLE_NAME, strerror(errno));
-            LOG_ERROR(te.what());
-            throw te;
+        const __env *env = env_utils::get_env();
+        CHECK_NOT_NULL(env);
+
+        const Path *p = env->get_work_dir();
+        Path np(p->get_path());
+        np.append(SHARED_LOCK_DIR);
+        if (!np.exists()) {
+            np.create(0755);
+        }
+        np.append(SHARED_LOCK_TABLE_NAME);
+        if (overwrite) {
+            if (np.exists()) {
+                np.remove();
+            }
         }
 
-        uint32_t m_count = (count > 0 ? count : MAX_SHARED_LOCKS);
-        uint32_t size = sizeof(__shared_lock_data) + (m_count * sizeof(__lock_struct));
+        uint64_t l_size = count * sizeof(__lock_struct);
+        uint64_t h_size = sizeof(__shared_lock_data);
+        uint64_t t_size = (l_size + h_size);
+        LOG_DEBUG("Creating index file with size = %lu. [file=%s]", t_size, np.get_path().c_str());
+        stream = new fmstream();
+        stream->open(np.get_path().c_str(), t_size);
 
-        ftruncate(shm_fd, size);
-        LOG_DEBUG("Sizing shared memory segment. [size=%d]", size);
+        CHECK_NOT_NULL(stream);
+        base_ptr = stream->data();
 
-        /* now map the shared memory segment in the address space of the process */
-        mem_ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-        if (mem_ptr == MAP_FAILED) {
-            lock_error te = LOCK_ERROR(
-                    "Error mapping shared memory segment. [name=%s][error=%s]",
-                    SHARED_LOCK_TABLE_NAME, strerror(errno));
-            LOG_ERROR(te.what());
-            throw te;
-        }
+        if (overwrite)
+            memset(base_ptr, 0, t_size);
 
-        header_ptr = static_cast<__shared_lock_data *>(mem_ptr);
-        POSTCONDITION(NOT_NULL(header_ptr));
-        header_ptr->max_count = m_count;
+        header_ptr = reinterpret_cast<__shared_lock_data *>(base_ptr);
+        header_ptr->max_count = count;
         header_ptr->used_count = 0;
 
-        BYTE_PTR ptr = static_cast<BYTE_PTR >(mem_ptr);
-        ptr += sizeof(__shared_lock_data);
+        void *ptr = common_utils::increment_data_ptr(base_ptr, h_size);
 
         locks = reinterpret_cast<__lock_struct *>(ptr);
         POSTCONDITION(NOT_NULL(locks));
@@ -225,10 +188,10 @@ bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) 
     return ret;
 }
 
-void com::wookler::reactfs::common::lock_env::create(mode_t mode, uint32_t count) {
+void com::wookler::reactfs::common::lock_env::create(mode_t mode, uint32_t count, bool overwrite) {
     try {
         table = new shared_lock_table();
-        table->create(mode, count);
+        table->create(mode, count, overwrite);
 
         state.set_state(__state_enum::Available);
 
@@ -262,9 +225,9 @@ void com::wookler::reactfs::common::lock_env::create(uint32_t count) {
     }
 }
 
-void com::wookler::reactfs::common::lock_manager::init(mode_t mode, uint32_t count) {
+void com::wookler::reactfs::common::lock_manager::init(mode_t mode, uint32_t count, bool overwrite) {
     try {
-        create(mode, count);
+        create(mode, count, overwrite);
         reset();
 
         manager_thread = new thread(lock_manager::run, this);
