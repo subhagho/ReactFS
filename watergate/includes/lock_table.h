@@ -41,7 +41,7 @@
 
 #define CONST_LOCKT_ERROR_PREFIX "Lock Table Error : "
 #define WG_LOCK_TABLE_LOCK_PREFIX "t_lock_"
-#define WG_LOCK_TABLE_EXT ".lock"
+#define WG_LOCK_TABLE_EXT "lock"
 #define WG_LOCK_TABLE_DIR "locks"
 
 #define LOCK_TABLE_ERROR(fmt, ...) lock_table_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))

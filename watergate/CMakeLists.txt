@@ -18,7 +18,7 @@ file(GLOB_RECURSE WG_INCLUDES "src/*.h")
 file(GLOB_RECURSE WG_EXT_INCLUDES "includes/*.h")
 
 list(REMOVE_DUPLICATES WG_SOURCES)
-list(REMOVE_ITEM WG_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main_sems.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main_fs.cpp)
+list(REMOVE_ITEM WG_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main_sems.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main_lock_table.cpp)
 
 MESSAGE("SOURCE FILES : [" ${WG_SOURCES} "]")
 

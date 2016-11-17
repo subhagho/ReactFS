@@ -12,6 +12,7 @@
 #define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
 #define BITSET_INDEX(o) (o / 32)
 #define BIT_INDEX(o) (o % 32)
+#define ARRAY_SIZE(s) (s / sizeof(uint32_t))
 
 namespace com {
     namespace wookler {
@@ -178,9 +179,9 @@ namespace com {
                      */
                     bool any() {
                         CHECK_NOT_NULL(this->_data);
-                        uint16_t index = 0;
-                        while (index < this->max_offset) {
-                            if (check(index)) {
+                        uint16_t array_s = ARRAY_SIZE(this->_size);
+                        for (uint16_t ii = 0; ii < array_s; ii++) {
+                            if (_data[ii] > 0) {
                                 return true;
                             }
                         }
@@ -194,9 +195,9 @@ namespace com {
                      */
                     bool none() {
                         CHECK_NOT_NULL(this->_data);
-                        uint16_t index = 0;
-                        while (index < this->max_offset) {
-                            if (check(index)) {
+                        uint16_t array_s = ARRAY_SIZE(this->_size);
+                        for (uint16_t ii = 0; ii < array_s; ii++) {
+                            if (_data[ii] > 0) {
                                 return false;
                             }
                         }
@@ -210,9 +211,9 @@ namespace com {
                      */
                     bool all() {
                         CHECK_NOT_NULL(this->_data);
-                        uint16_t index = 0;
-                        while (index < this->max_offset) {
-                            if (!check(index)) {
+                        uint16_t array_s = ARRAY_SIZE(this->_size);
+                        for (uint16_t ii = 0; ii < array_s; ii++) {
+                            if (_data[ii] == 0) {
                                 return false;
                             }
                         }
@@ -226,7 +227,15 @@ namespace com {
                      */
                     int get_free_bit() {
                         CHECK_NOT_NULL(this->_data);
+                        uint64_t m_value = UINT_MAX;
                         uint16_t index = 0;
+                        uint16_t array_s = ARRAY_SIZE(this->_size);
+                        for (uint16_t ii = 0; ii < array_s; ii++) {
+                            if (_data[ii] < m_value) {
+                                break;
+                            }
+                            index += 32;
+                        }
                         while (index < this->max_offset) {
                             if (check_and_set(index)) {
                                 return index;
