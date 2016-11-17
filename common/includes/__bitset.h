@@ -10,8 +10,8 @@
 #include "base_error.h"
 
 #define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
-#define BITSET_INDEX(o) (o / 64)
-#define BIT_INDEX(o) (o % 64)
+#define BITSET_INDEX(o) (o / 32)
+#define BIT_INDEX(o) (o % 32)
 
 namespace com {
     namespace wookler {
@@ -29,26 +29,29 @@ namespace com {
                 class __bitset {
                 private:
                     /// Number of available bits.
-                    uint16_t _size = 0;
+                    uint32_t _size = 0;
                     /// Bitset storage pointer. (assumed to be contigeous uint64_t pointer).
-                    uint64_t *_data = nullptr;
+                    uint32_t *_data = nullptr;
                     /// Is the storage mapped to an external memory segment.
                     bool mapped = false;
-
+                    /// Max bitmap index offset
+                    uint16_t max_offset = 0;
                 public:
                     /*!< constructor
                      *
                      * Default constructor which will allocate memory for the bitset storage.
                      *
-                     * @param size - Number of bits in the bitset.
+                     * @param count - Number of bits in the bitset.
                      * @return
                      */
-                    __bitset(uint16_t size) {
-                        PRECONDITION(size > 0);
-                        this->_size = size;
+                    __bitset(uint16_t count) {
+                        PRECONDITION(count > 0);
+                        this->max_offset = count;
+                        this->_size = get_byte_size(count);
 
-                        this->_data = (uint64_t *) malloc(get_byte_size(this->_size));
+                        this->_data = (uint32_t *) malloc(this->_size);
                         CHECK_NOT_NULL(this->_data);
+
                         mapped = false;
                     }
 
@@ -61,10 +64,13 @@ namespace com {
                      * @param size - Number of bits in the bitset.
                      * @return
                      */
-                    __bitset(uint64_t *ptr, uint16_t size) {
+                    __bitset(uint32_t *ptr, uint32_t size) {
                         CHECK_NOT_NULL(ptr);
                         PRECONDITION(size > 0);
+
                         this->_size = size;
+                        this->max_offset = get_max_offset(size);
+
                         this->_data = ptr;
 
                         mapped = true;
@@ -87,7 +93,7 @@ namespace com {
                      * @return - # of bits
                      */
                     uint16_t get_size() {
-                        return this->_size;
+                        return this->max_offset;
                     }
 
                     /*!
@@ -95,12 +101,8 @@ namespace com {
                      *
                      * @return - Storage byte size.
                      */
-                    uint16_t get_byte_size() {
-                        uint16_t s = this->_size / 64;
-                        if (this->_size % 64 > 0) {
-                            s += 1;
-                        }
-                        return (s * sizeof(uint64_t));
+                    uint32_t get_byte_size() {
+                        return this->_size;
                     }
 
                     /*!
@@ -124,15 +126,14 @@ namespace com {
                      * @param offset - Bit to check.
                      * @return - Is bit set?
                      */
-                    bool check(uint32_t offset) {
+                    bool check(uint16_t offset) {
                         CHECK_NOT_NULL(this->_data);
-                        PRECONDITION(offset <= this->_size);
+                        PRECONDITION(offset < this->max_offset);
 
                         uint16_t index = BITSET_INDEX(offset);
                         uint16_t part = BIT_INDEX(offset);
-                        uint64_t set = _data[index];
 
-                        if (CHECK_BIT(set, part) == 0) {
+                        if (CHECK_BIT(_data[index], part) == 0) {
                             return false;
                         } else {
                             return true;
@@ -145,15 +146,14 @@ namespace com {
                      *
                      * @param offset - Bit to set
                      */
-                    void set(uint32_t offset) {
+                    void set(uint16_t offset) {
                         CHECK_NOT_NULL(this->_data);
-                        PRECONDITION(offset <= this->_size);
+                        PRECONDITION(offset < this->max_offset);
 
                         uint16_t index = BITSET_INDEX(offset);
                         uint16_t part = BIT_INDEX(offset);
-                        uint64_t set = _data[index];
 
-                        set |= 1 << part;
+                        _data[index] |= (1 << part);
                     }
 
                     /*!
@@ -161,15 +161,14 @@ namespace com {
                      *
                      * @param offset - Bit to clear.
                      */
-                    void clear(uint32_t offset) {
+                    void clear(uint16_t offset) {
                         CHECK_NOT_NULL(this->_data);
-                        PRECONDITION(offset <= this->_size);
+                        PRECONDITION(offset < this->max_offset);
 
                         uint16_t index = BITSET_INDEX(offset);
                         uint16_t part = BIT_INDEX(offset);
-                        uint64_t set = _data[index];
 
-                        set &= ~(1 << part);
+                        _data[index] &= ~(1 << part);
                     }
 
                     /*!
@@ -180,7 +179,7 @@ namespace com {
                     bool any() {
                         CHECK_NOT_NULL(this->_data);
                         uint16_t index = 0;
-                        while (index < this->_size) {
+                        while (index < this->max_offset) {
                             if (check(index)) {
                                 return true;
                             }
@@ -196,7 +195,7 @@ namespace com {
                     bool none() {
                         CHECK_NOT_NULL(this->_data);
                         uint16_t index = 0;
-                        while (index < this->_size) {
+                        while (index < this->max_offset) {
                             if (check(index)) {
                                 return false;
                             }
@@ -212,7 +211,7 @@ namespace com {
                     bool all() {
                         CHECK_NOT_NULL(this->_data);
                         uint16_t index = 0;
-                        while (index < this->_size) {
+                        while (index < this->max_offset) {
                             if (!check(index)) {
                                 return false;
                             }
@@ -228,7 +227,7 @@ namespace com {
                     int get_free_bit() {
                         CHECK_NOT_NULL(this->_data);
                         uint16_t index = 0;
-                        while (index < this->_size) {
+                        while (index < this->max_offset) {
                             if (check_and_set(index)) {
                                 return index;
                             }
@@ -242,23 +241,39 @@ namespace com {
                      *
                      */
                     void clear() {
-                        memset(this->_data, 0, this->_size * sizeof(uint64_t));
+                        memset(this->_data, 0, this->_size);
                     }
 
                     /*!
                      * Static method to get the storage size required for the specfied number of bits.
                      *
-                     * @param size - Number of bits.
+                     * @param count - Number of bits.
                      * @return - Storage size in bytes.
                      */
-                    static uint16_t get_byte_size(uint16_t size) {
-                        uint16_t s = size / 64;
-                        if (size % 64 > 0) {
-                            s += 1;
+                    static uint32_t get_byte_size(uint16_t count) {
+                        if (count > 0) {
+                            uint16_t s = count / 32;
+                            if (count % 32 > 0) {
+                                s += 1;
+                            }
+                            return (s * sizeof(uint32_t));
                         }
-                        return (s * sizeof(uint64_t));
+                        return 0;
                     }
 
+                    /*!
+                     * Get the max bit offset supported based on the specified data size.
+                     *
+                     * @param size - Data size in bytes
+                     * @return - Max bit offset supported
+                     */
+                    static uint16_t get_max_offset(uint32_t size) {
+                        if (size > 0) {
+                            uint32_t c = size / sizeof(uint32_t);
+                            return c * 32;
+                        }
+                        return 0;
+                    }
                 };
             }
         }

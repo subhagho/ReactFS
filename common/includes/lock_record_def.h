@@ -72,14 +72,14 @@ typedef struct __priority_lock__ {
 } __priority_lock;
 
 typedef struct __lock_handle__ {
-    __priority_lock locks[MAX_PRIORITY_ALLOWED];
     double quota_used;
     double quota_total;
+    __priority_lock locks[MAX_PRIORITY_ALLOWED];
 } __lock_handle;
 
 typedef struct __lock_record__ {
     bool used = false;
-    int index = -1;
+    uint32_t index = 0;
     __app_handle app;
     __lock_handle lock;
 } __lock_record;

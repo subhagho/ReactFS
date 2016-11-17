@@ -48,3 +48,5 @@ target_link_libraries(main watergate ${WG_LIBRARIES})
 add_executable(main_sems src/test/main_sems.cpp)
 target_link_libraries(main_sems watergate ${WG_LIBRARIES})
 
+add_executable(main_lock_table src/test/main_lock_table.cpp)
+target_link_libraries(main_lock_table watergate ${WG_LIBRARIES})

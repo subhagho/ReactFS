@@ -53,12 +53,12 @@ void com::wookler::watergate::core::_semaphore::create(const __app *app, const C
     if (IS_NULL(v_prior)) {
         throw CONFIG_ERROR("Required configuration node not found. [node=%s]", CONST_SEM_CONFIG_NODE_PRIORITIES);
     }
-    this->priorities = v_prior->get_int_value(this->priorities);
+    this->priorities = (uint8_t) v_prior->get_short_value(this->priorities);
     if (this->priorities > MAX_PRIORITY_ALLOWED) {
         throw CONFIG_ERROR("Invalid configuration value. [%s=%d][MAX=%d]", CONST_SEM_CONFIG_NODE_PRIORITIES,
                            this->priorities, MAX_PRIORITY_ALLOWED);
     }
-    this->max_concurrent = this->resource->get_control_size();
+    this->max_concurrent = (uint16_t) this->resource->get_control_size();
     if (this->max_concurrent > SEM_VALUE_MAX) {
         throw CONFIG_ERROR("Invalid configuration value. [Max Concurrency=%d][MAX=%d]",
                            this->max_concurrent, SEM_VALUE_MAX);
@@ -67,6 +67,12 @@ void com::wookler::watergate::core::_semaphore::create(const __app *app, const C
     if (NOT_NULL(v_mode)) {
         this->mode = v_mode->get_short_value(DEFAULT_SEM_MODE);
     }
+
+    const BasicConfigValue *v_c_size = Config::get_value(CONST_SEM_CONFIG_NODE_CLIENTS, config);
+    if (IS_NULL(v_c_size)) {
+        throw CONFIG_ERROR("Required configuration node not found. [node=%s]", CONST_SEM_CONFIG_NODE_PRIORITIES);
+    }
+    this->max_lock_clients = (uint16_t) v_c_size->get_int_value(DEFAULT_MAX_CONTROL_CLIENTS);
 
     semaphores = (sem_t **) malloc(this->priorities * sizeof(sem_t *));
     memset(semaphores, 0, this->priorities * sizeof(sem_t *));
@@ -215,7 +221,8 @@ com::wookler::watergate::core::_semaphore_client::try_lock(int priority, double 
                         priority);
 }
 
-__lock_state com::wookler::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
+__lock_state
+com::wookler::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
     ASSERT(NOT_NULL(semaphores));

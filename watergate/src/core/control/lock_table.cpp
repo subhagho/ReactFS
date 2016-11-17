@@ -25,7 +25,7 @@
 
 void
 com::wookler::watergate::core::lock_table::create(string name, resource_def *resource, uint32_t count, bool server,
-                                                  bool overwite) {
+                                                  bool overwrite) {
     try {
         PRECONDITION(!IS_EMPTY(name));
 
@@ -38,8 +38,10 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
 
         lock = new exclusive_lock(&l_name);
         lock->create();
-
-        lock->wait_lock();
+        if (overwrite) {
+            lock->reset();
+        }
+        WAIT_LOCK_P(lock);
         try {
             const __env *env = env_utils::get_env();
             CHECK_NOT_NULL(env);
@@ -53,11 +55,14 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
             string filename = common_utils::format("%s.%s", this->name.c_str(), WG_LOCK_TABLE_EXT);
             np.append(filename);
             if (np.exists()) {
-                if (overwite) {
+                if (server && overwrite) {
                     np.remove();
                 }
             } else {
-                overwite = true;
+                if (!server) {
+                    throw LOCK_ERROR("Lock client cannot create mapped file. [path=%s]", np.get_path().c_str());
+                }
+                overwrite = true;
             }
 
             uint64_t h_size = sizeof(__lock_table_header);
@@ -71,28 +76,29 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
 
             CHECK_NOT_NULL(stream);
             base_ptr = stream->data();
-            if (overwite) {
+            if (server && overwrite) {
                 memset(base_ptr, 0, t_size);
             }
             header_ptr = reinterpret_cast<__lock_table_header *>(base_ptr);
-            if (overwite) {
+            if (server && overwrite) {
                 header_ptr->max_records = count;
                 header_ptr->used_record = 0;
             }
 
             void *ptr = common_utils::increment_data_ptr(base_ptr, h_size);
-            uint64_t *iptr = reinterpret_cast<uint64_t *>(ptr);
+            uint32_t *iptr = reinterpret_cast<uint32_t *>(ptr);
             bit_index = new com::wookler::reactfs::common::__bitset(iptr, b_size);
             CHECK_NOT_NULL(bit_index);
 
             ptr = common_utils::increment_data_ptr(ptr, b_size);
             record_ptr = reinterpret_cast<__lock_record *>(ptr);
 
+            RELEASE_LOCK_P(lock);
         } catch (const exception &ei) {
-            lock->release_lock();
+            RELEASE_LOCK_P(lock);
             throw LOCK_TABLE_ERROR("ERROR : %s", ei.what());
         } catch (...) {
-            lock->release_lock();
+            RELEASE_LOCK_P(lock);
             throw LOCK_TABLE_ERROR("Un-typed exception triggered.");
         }
         state.set_state(Available);
@@ -115,7 +121,7 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
 
 void com::wookler::watergate::core::lock_table::remove_record(uint32_t index) {
 
-    PRECONDITION(index >= 0 && index < DEFAULT_MAX_RECORDS);
+    PRECONDITION(index >= 0 && index < header_ptr->max_records);
     PRECONDITION(bit_index->check(index));
 
     WAIT_LOCK_P(lock);
@@ -123,6 +129,8 @@ void com::wookler::watergate::core::lock_table::remove_record(uint32_t index) {
     __lock_record *rec = (record_ptr + index);
     RESET_RECORD(rec);
     header_ptr->used_record--;
+    bit_index->clear(index);
+
     RELEASE_LOCK_P(lock);
 }
 
@@ -132,7 +140,8 @@ __lock_record *com::wookler::watergate::core::lock_table::create_new_record(stri
     }
     WAIT_LOCK_P(lock);
     int index = bit_index->get_free_bit();
-    header_ptr->used_record++;
+    if (index >= 0)
+        header_ptr->used_record++;
     RELEASE_LOCK_P(lock);
 
     if (index < 0) {
@@ -151,6 +160,7 @@ __lock_record *com::wookler::watergate::core::lock_table::create_new_record(stri
     RESET_RECORD(rec);
 
     rec->used = true;
+    rec->index = index;
     sprintf(rec->app.app_id, "%s", app_id.c_str());
     sprintf(rec->app.app_name, "%s", app_name.c_str());
     rec->app.proc_id = pid;

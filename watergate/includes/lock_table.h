@@ -99,8 +99,7 @@ namespace com {
                      * @param server - Is in server mode?
                      * @param overwrite - Overwrite and reset all existing data.
                      */
-                    void create(string name, resource_def *resource, uint32_t count, bool server = false,
-                                bool overwrite = false);
+                    void create(string name, resource_def *resource, uint32_t count, bool server, bool overwrite);
 
 
                     __lock_record *get_record(uint32_t index) {
@@ -114,14 +113,20 @@ namespace com {
 
                     __lock_record *create_new_record(string app_name, string app_id, pid_t pid);
 
+
+                    void reset_all_records() {
+                        CHECK_STATE_AVAILABLE(state);
+                        for (uint32_t ii = 0; ii < header_ptr->max_records; ii++) {
+                            __lock_record *record = get_record(ii);
+                            RESET_RECORD(record);
+                        }
+                    }
+
                     void reset() {
                         CHECK_STATE_AVAILABLE(state);
                         WAIT_LOCK_P(lock);
                         bit_index->clear();
-                        for (uint32_t ii = 0; ii < header_ptr->max_records; ii++) {
-                            __lock_record *ptr = (record_ptr + ii);
-                            memset(ptr, 0, sizeof(__lock_record));
-                        }
+                        reset_all_records();
                         header_ptr->used_record = 0;
                         RELEASE_LOCK_P(lock);
                     }
@@ -194,6 +199,11 @@ namespace com {
                         CHECK_STATE_AVAILABLE(state);
                         header_ptr->lock_lease_time = lease_time;
                     }
+
+                    uint32_t get_table_size() {
+                        CHECK_STATE_AVAILABLE(state);
+                        return header_ptr->max_records;
+                    }
                 };
 
                 class lock_table_manager : public lock_table {
@@ -205,8 +215,8 @@ namespace com {
                         }
                     }
 
-                    void init(string name, resource_def *resource, bool overwrite = false) {
-                        create(name, resource, true, overwrite);
+                    void init(string name, resource_def *resource, uint32_t count, bool overwrite) {
+                        create(name, resource, count, true, overwrite);
 
                         if (overwrite) {
                             lock->reset();
@@ -255,6 +265,7 @@ namespace com {
                             }
                         }
                     }
+
                 };
 
                 class lock_table_client : public lock_table {
@@ -298,7 +309,7 @@ namespace com {
                                                            lock_record->app.proc_id);
                             }
                         }
-                        create(name, resrouce, count);
+                        create(name, resrouce, count, false, false);
                         pid_t pid = getpid();
 
                         lock_record = create_new_record(app->get_name(), app->get_id(), pid);

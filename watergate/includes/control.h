@@ -41,9 +41,10 @@
 #define CONST_SEM_CONFIG_PARAM_RESOURCE_NAME "name"
 #define CONST_SEM_CONFIG_PARAM_RESOURCE_CLASS "class"
 #define CONST_SEM_CONFIG_NODE_PRIORITIES "priorities"
+#define CONST_SEM_CONFIG_NODE_CLIENTS "maxClients"
 #define CONST_SEM_CONFIG_NODE_MODE "mode"
 
-
+#define DEFAULT_MAX_CONTROL_CLIENTS 1024
 #define CONST_CONTROL_ERROR_PREFIX "Control Object Error : "
 
 #define CONTROL_ERROR(fmt, ...) control_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
@@ -84,12 +85,14 @@ namespace com {
 
 
                 protected:
-                    string *name;
-                    int priorities;
-                    int max_concurrent;
-                    sem_t **semaphores;
-                    resource_def *resource;
-                    lock_table *table;
+                    string *name = nullptr;
+                    uint8_t priorities = 0;
+                    uint16_t max_concurrent = 0;
+                    uint16_t max_lock_clients = 0;
+
+                    sem_t **semaphores = nullptr;
+                    resource_def *resource = nullptr;
+                    lock_table *table = nullptr;
                     bool owner = false;
 
                     void delete_sem(int index);
@@ -125,7 +128,7 @@ namespace com {
                         return false;
                     }
 
-                    virtual void init(const __app *app, const ConfigValue *config) = 0;
+                    virtual void init(const __app *app, const ConfigValue *config, bool overwrite = false) = 0;
                 };
 
                 class _semaphore_owner : public _semaphore {
@@ -154,12 +157,12 @@ namespace com {
                     }
 
 
-                    void init(const __app *app, const ConfigValue *config) override {
+                    void init(const __app *app, const ConfigValue *config, bool overwrite = false) override {
                         create(app, config, true);
 
                         table = new lock_table_manager();
                         manager = get_table_manager();
-                        manager->init(*name, resource);
+                        manager->init(*name, resource, max_lock_clients, overwrite);
 
                         reset();
                     }
@@ -271,12 +274,12 @@ namespace com {
                         }
                     }
 
-                    void init(const __app *app, const ConfigValue *config) override {
+                    void init(const __app *app, const ConfigValue *config, bool overwrite = false) override {
                         create(app, config, false);
 
                         table = new lock_table_client();
                         client = get_table_client();
-                        client->init(app, *name, resource, max_concurrent);
+                        client->init(app, *name, resource, max_lock_clients);
 
                         for (int ii = 0; ii < priorities; ii++) {
                             _struct_priority_record *lc = new _struct_priority_record();
