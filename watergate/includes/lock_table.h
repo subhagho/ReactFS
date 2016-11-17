@@ -200,7 +200,7 @@ namespace com {
                         header_ptr->lock_lease_time = lease_time;
                     }
 
-                    uint32_t get_table_size() {
+                    uint16_t get_table_size() {
                         CHECK_STATE_AVAILABLE(state);
                         return header_ptr->max_records;
                     }
@@ -242,7 +242,7 @@ namespace com {
                         CHECK_STATE_AVAILABLE(state);
                         CHECK_NOT_NULL(counts);
 
-                        for (int ii = 0; ii < header_ptr->max_records; ii++) {
+                        for (uint16_t ii = 0; ii < header_ptr->max_records; ii++) {
                             __check_expired_locks(ii, expiry_time, counts);
                         }
                     }

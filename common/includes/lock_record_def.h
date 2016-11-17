@@ -87,8 +87,8 @@ typedef struct __lock_record__ {
 typedef struct __lock_table_header__ {
     uint64_t lock_lease_time;
     double quota = 0;
-    uint32_t used_record = 0;
-    uint32_t max_records = 0;
+    uint16_t used_record = 0;
+    uint16_t max_records = 0;
 } __lock_table_header;
 
 typedef struct __lock_metrics__ {

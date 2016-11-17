@@ -45,11 +45,11 @@ TEST_CASE("Test SHM based lock table.", "[com::watergate::core::lock_table]") {
         t->init(LOCK_TABLE_NAME, resource, LOCK_TABLE_SIZE, true);
 
 
-        uint32_t table_size = t->get_table_size();
+        uint16_t table_size = t->get_table_size();
         lock_table_client *records[table_size];
 
         int count = 0;
-        for (int ii = 0; ii < table_size; ii++) {
+        for (uint16_t ii = 0; ii < table_size; ii++) {
             string app_name("LOCK_TABLE_TEST_");
             app_name.append(to_string(ii));
             pid_t pid = 1000 + ii;
@@ -71,7 +71,7 @@ TEST_CASE("Test SHM based lock table.", "[com::watergate::core::lock_table]") {
 
         LOG_DEBUG("Created [%d] lock records.", count);
 
-        for (int ii = 0; ii < table_size; ii++) {
+        for (uint16_t ii = 0; ii < table_size; ii++) {
             lock_table_client *c = records[ii];
             CHECK_NOT_NULL(c);
             CHECK_AND_FREE(c);
