@@ -631,7 +631,9 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
                 }
             }
         }
-        uint64_t ts = sizeof(__block_header) + block_size;
+        uint64_t b_size = (block_size * 110) / 100;
+
+        uint64_t ts = sizeof(__block_header) + b_size;
 
         stream = new fmstream(filename.c_str(), ts);
         CHECK_NOT_NULL(stream);
@@ -748,6 +750,7 @@ void com::wookler::reactfs::core::base_block::close() {
         CHECK_AND_FREE(rollback_info->transaction_id);
         FREE_PTR(rollback_info);
     }
+    rollback_info = nullptr;
     header = nullptr;
     write_ptr = nullptr;
     base_ptr = nullptr;
