@@ -88,7 +88,7 @@ com::wookler::watergate::core::control_def::~control_def() {
     }
 }
 
-_lock_state
+__lock_state
 com::wookler::watergate::core::control_client::try_lock(string name, int priority, int base_priority, double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
@@ -98,7 +98,7 @@ com::wookler::watergate::core::control_client::try_lock(string name, int priorit
     }
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
-    _lock_state r = _lock_state::None;
+    __lock_state r = __lock_state::None;
 
     if (IS_BASE_PRIORITY(priority)) {
         r = sem_c->try_lock_base(quota, base_priority, false);
@@ -111,7 +111,7 @@ com::wookler::watergate::core::control_client::try_lock(string name, int priorit
     return r;
 }
 
-_lock_state
+__lock_state
 com::wookler::watergate::core::control_client::wait_lock(string name, int priority, int base_priority, double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
@@ -122,7 +122,7 @@ com::wookler::watergate::core::control_client::wait_lock(string name, int priori
 
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
-    _lock_state r = _lock_state::None;
+    __lock_state r = __lock_state::None;
 
     if (IS_BASE_PRIORITY(priority)) {
         r = sem_c->try_lock_base(quota, base_priority, true);
@@ -162,7 +162,7 @@ bool com::wookler::watergate::core::control_client::has_valid_lock(string name, 
     return sem_c->has_valid_lock(priority);
 }
 
-_lock_state
+__lock_state
 com::wookler::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout, int *err) const {
 
     timer t;
@@ -171,7 +171,7 @@ com::wookler::watergate::core::control_client::lock_get(string name, int priorit
     pid_t pid = getpid();
     string thread_id = thread_utils::get_current_thread();
 
-    _lock_state ret = wait_lock(name, priority, priority, quota);
+    __lock_state ret = wait_lock(name, priority, priority, quota);
     if (ret == Error) {
         throw CONTROL_ERROR("Error acquiring base lock. [name=%s]", name.c_str());
     } else if (ret == Locked) {

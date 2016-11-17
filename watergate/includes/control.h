@@ -201,7 +201,7 @@ namespace com {
                     vector<_struct_priority_record *> counts;
                     unordered_map<string, thread_lock_record *> threads;
 
-                    void reset_locks(int priority, _lock_state state) {
+                    void reset_locks(int priority, __lock_state state) {
                         counts[priority]->count = 0;
 
                         reset_thread_locks(priority);
@@ -276,7 +276,7 @@ namespace com {
 
                         table = new lock_table_client();
                         client = get_table_client();
-                        client->init(app, *name, resource);
+                        client->init(app, *name, resource, max_concurrent);
 
                         for (int ii = 0; ii < priorities; ii++) {
                             _struct_priority_record *lc = new _struct_priority_record();
@@ -326,13 +326,13 @@ namespace com {
                     }
 
                     bool has_valid_lock(int priority) {
-                        _lock_state state = client->has_valid_lock(priority, 0);
+                        __lock_state state = client->has_valid_lock(priority, 0);
                         return (state == Locked);
                     }
 
-                    _lock_state try_lock(int priority, double quota, int base_priority, bool wait);
+                    __lock_state try_lock(int priority, double quota, int base_priority, bool wait);
 
-                    _lock_state try_lock_base(double quota, int base_priority, bool wait);
+                    __lock_state try_lock_base(double quota, int base_priority, bool wait);
 
                     bool release_lock(int priority, int base_priority);
 

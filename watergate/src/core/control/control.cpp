@@ -121,7 +121,7 @@ com::wookler::watergate::core::_semaphore::~_semaphore() {
     CHECK_AND_FREE(table);
 }
 
-_lock_state
+__lock_state
 com::wookler::watergate::core::_semaphore_client::try_lock(int priority, double quota, int base_priority, bool wait) {
     PRECONDITION(priority >= 0 && priority < priorities);
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
@@ -146,7 +146,7 @@ com::wookler::watergate::core::_semaphore_client::try_lock(int priority, double 
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    _lock_state ls = client->has_valid_lock(priority, quota);
+    __lock_state ls = client->has_valid_lock(priority, quota);
     if (ls == Locked) {
         counts[priority]->count++;
         t_rec->increment(priority);
@@ -215,7 +215,7 @@ com::wookler::watergate::core::_semaphore_client::try_lock(int priority, double 
                         priority);
 }
 
-_lock_state com::wookler::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
+__lock_state com::wookler::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
     ASSERT(NOT_NULL(semaphores));
@@ -238,7 +238,7 @@ _lock_state com::wookler::watergate::core::_semaphore_client::try_lock_base(doub
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    _lock_state ls = client->check_and_lock(quota);
+    __lock_state ls = client->check_and_lock(quota);
     if (ls == Locked) {
         counts[BASE_PRIORITY]->count++;
         t_rec->increment(BASE_PRIORITY);
@@ -342,7 +342,7 @@ bool com::wookler::watergate::core::_semaphore_client::release_lock_base(int bas
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    _lock_state ls = client->has_valid_lock(BASE_PRIORITY, 0);
+    __lock_state ls = client->has_valid_lock(BASE_PRIORITY, 0);
     if (ls == Locked) {
         counts[BASE_PRIORITY]->count--;
         t_rec->decremet(BASE_PRIORITY);
@@ -432,7 +432,7 @@ bool com::wookler::watergate::core::_semaphore_client::release_lock(int priority
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    _lock_state ls = client->has_valid_lock(priority, 0);
+    __lock_state ls = client->has_valid_lock(priority, 0);
     if (ls == Locked) {
         counts[priority]->count--;
         t_rec->decremet(priority);

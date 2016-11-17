@@ -56,53 +56,53 @@ typedef enum {
     QuotaAvailable = 7,
     ReleaseLock = 8,
     Retry = 9
-} _lock_state;
+} __lock_state;
 
-typedef struct {
+typedef struct __app_handle__ {
     char app_name[MAX_STRING_SIZE];
     char app_id[MAX_STRING_SIZE];
     pid_t proc_id;
     uint64_t register_time = 0;
     uint64_t last_active_ts = 0;
-} _app_handle;
+} __app_handle;
 
-typedef struct {
-    _lock_state state = _lock_state::None;
+typedef struct __priority_lock__ {
+    __lock_state state = __lock_state::None;
     uint64_t acquired_time = 0;
-} _priority_lock;
+} __priority_lock;
 
-typedef struct {
-    _priority_lock locks[MAX_PRIORITY_ALLOWED];
+typedef struct __lock_handle__ {
+    __priority_lock locks[MAX_PRIORITY_ALLOWED];
     double quota_used;
     double quota_total;
-} _lock_handle;
+} __lock_handle;
 
-typedef struct {
+typedef struct __lock_record__ {
     bool used = false;
     int index = -1;
-    _app_handle app;
-    _lock_handle lock;
-} _lock_record;
+    __app_handle app;
+    __lock_handle lock;
+} __lock_record;
 
-
-typedef struct {
+typedef struct __lock_table_header__ {
     uint64_t lock_lease_time;
-    double quota = -1;
-    int free_indexes[DEFAULT_MAX_RECORDS];
-    _lock_record records[DEFAULT_MAX_RECORDS];
-} _lock_table;
+    double quota = 0;
+    uint32_t used_record = 0;
+    uint32_t max_records = 0;
+} __lock_table_header;
 
-typedef struct {
+typedef struct __lock_metrics__ {
     int base_priority = -1;
     uint64_t total_wait_time = 0;
     uint64_t max_wait_time = 0;
     uint64_t tries = 0;
-} _lock_metrics;
+} __lock_metrics;
 
-typedef struct {
+typedef struct __lock_id__ {
     uint64_t id = -1;
     uint64_t acquired_time = 0;
-} _lock_id;
+} __lock_id;
+
 using namespace std;
 
 
@@ -113,9 +113,9 @@ namespace com {
 
                 struct thread_lock_ptr {
                     string thread_id;
-                    _lock_id **priority_lock_index = nullptr;
+                    __lock_id **priority_lock_index = nullptr;
                     int lock_priority = -1;
-                    _lock_metrics metrics;
+                    __lock_metrics metrics;
                 };
 
                 class thread_lock_record {
@@ -221,9 +221,9 @@ namespace com {
                     static thread_lock_ptr *create_new_ptr(int max_priority) {
                         thread_lock_ptr *ptr = new thread_lock_ptr();
                         ptr->thread_id = thread_utils::get_current_thread();
-                        ptr->priority_lock_index = (_lock_id **) malloc(max_priority * sizeof(_lock_id *));
+                        ptr->priority_lock_index = (__lock_id **) malloc(max_priority * sizeof(__lock_id *));
                         for (int ii = 0; ii < max_priority; ii++) {
-                            ptr->priority_lock_index[ii] = (_lock_id *) malloc(sizeof(_lock_id));
+                            ptr->priority_lock_index[ii] = (__lock_id *) malloc(sizeof(__lock_id));
                             ptr->priority_lock_index[ii]->acquired_time = 0;
                             ptr->priority_lock_index[ii]->id = -1;
                         }
@@ -233,61 +233,61 @@ namespace com {
 
                 class record_utils {
                 public:
-                    static string get_lock_acquire_enum_string(_lock_state value) {
+                    static string get_lock_acquire_enum_string(__lock_state value) {
                         switch (value) {
-                            case _lock_state::Locked:
+                            case __lock_state::Locked:
                                 return string("LOCKED");
-                            case _lock_state::None:
+                            case __lock_state::None:
                                 return string("NONE");
-                            case _lock_state::Error:
+                            case __lock_state::Error:
                                 return string("ERROR");
-                            case _lock_state::Expired:
+                            case __lock_state::Expired:
                                 return string("EXPIRED");
-                            case _lock_state::QuotaReached:
+                            case __lock_state::QuotaReached:
                                 return string("QUOTA REACHED");
-                            case _lock_state::Timeout:
+                            case __lock_state::Timeout:
                                 return string("TIMEOUT");
-                            case _lock_state::ForceReleased:
+                            case __lock_state::ForceReleased:
                                 return string("FORCE RELEASED");
-                            case _lock_state::QuotaAvailable:
+                            case __lock_state::QuotaAvailable:
                                 return string("QUOTA AVAILABLE");
-                            case _lock_state::ReleaseLock:
+                            case __lock_state::ReleaseLock:
                                 return string("RELEASE LOCK");
-                            case _lock_state::Retry:
+                            case __lock_state::Retry:
                                 return string("RETRY");
                             default:
                                 return string("UNKNOWN");
                         }
                     }
 
-                    static int get_lock_acquire_enum_int(_lock_state value) {
+                    static int get_lock_acquire_enum_int(__lock_state value) {
                         switch (value) {
-                            case _lock_state::Locked:
+                            case __lock_state::Locked:
                                 return 0;
-                            case _lock_state::None:
+                            case __lock_state::None:
                                 return 4;
-                            case _lock_state::Error:
+                            case __lock_state::Error:
                                 return 5;
-                            case _lock_state::Expired:
+                            case __lock_state::Expired:
                                 return 3;
-                            case _lock_state::QuotaReached:
+                            case __lock_state::QuotaReached:
                                 return 1;
-                            case _lock_state::QuotaAvailable:
+                            case __lock_state::QuotaAvailable:
                                 return 7;
-                            case _lock_state::Timeout:
+                            case __lock_state::Timeout:
                                 return 6;
-                            case _lock_state::ForceReleased:
+                            case __lock_state::ForceReleased:
                                 return 2;
-                            case _lock_state::ReleaseLock:
+                            case __lock_state::ReleaseLock:
                                 return 8;
-                            case _lock_state::Retry:
+                            case __lock_state::Retry:
                                 return 9;
                             default:
                                 return 4;
                         }
                     }
 
-                    static void reset_record(_lock_record *record) {
+                    static void reset_record(__lock_record *record) {
                         PRECONDITION(NOT_NULL(record));
 
                         record->used = false;
@@ -305,7 +305,7 @@ namespace com {
 
                         for (int ii = 0; ii < MAX_PRIORITY_ALLOWED; ii++) {
                             record->lock.locks[ii].acquired_time = 0;
-                            record->lock.locks[ii].state = _lock_state::None;
+                            record->lock.locks[ii].state = __lock_state::None;
                         }
                     }
                 };

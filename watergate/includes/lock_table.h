@@ -35,17 +35,21 @@
 #include "common/includes/log_utils.h"
 #include "common/includes/lock_record_def.h"
 #include "common/includes/exclusive_lock.h"
+#include "common/includes/fmstream.h"
+#include "common/includes/__bitset.h"
 #include "resource_def.h"
 
 #define CONST_LOCKT_ERROR_PREFIX "Lock Table Error : "
-#define LOCK_TABLE_LOCK_PREFIX "t_lock_"
+#define WG_LOCK_TABLE_LOCK_PREFIX "t_lock_"
+#define WG_LOCK_TABLE_EXT ".lock"
+#define WG_LOCK_TABLE_DIR "locks"
 
 #define LOCK_TABLE_ERROR(fmt, ...) lock_table_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define LOCK_TABLE_ERROR_PTR(fmt, ...) new lock_table_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
 #define RELEASE_LOCK_RECORD(rec, priority) do {\
     LOG_DEBUG("[priority=%d] Resetting lock record...", priority); \
-    rec->lock.locks[priority].state = _lock_state::None; \
+    rec->lock.locks[priority].state = __lock_state::None; \
     rec->lock.locks[priority].acquired_time = 0; \
     if (IS_BASE_PRIORITY(priority)) rec->lock.quota_used = 0; \
 }while(0)
@@ -68,29 +72,76 @@ namespace com {
 
                 class lock_table {
                 protected:
+                    /// Table instance name. Should be unique for a machine.
                     string name;
-                    int shm_fd = -1;
-                    void *mem_ptr = nullptr;
                     exclusive_lock *lock = nullptr;
+                    /// Memory-mapped file handle.
+                    fmstream *stream = nullptr;
+                    /// Bitset based index to manage free/used records.
+                    com::wookler::reactfs::common::__bitset *bit_index = nullptr;
+                    /// Base pointer for the mapped data.
+                    void *base_ptr = nullptr;
+                    /// Header pointer, pointing to the header in the mapped memory
+                    __lock_table_header *header_ptr = nullptr;
+                    /// Base lock record pointer.
+                    __lock_record *record_ptr = nullptr;
 
                 protected:
+                    /// State of this instance of the lock table.
                     __state__ state;
 
-                    void create(string name, resource_def *resource, bool server);
+                    /*!
+                     * Create a new instance of the lock table. Can be created in server or client mode.
+                     *
+                     * @param name - Table name.
+                     * @param resource - Resouce to be controlled via this lock instance.
+                     * @param count - Number of concurrent lockers allowed.
+                     * @param server - Is in server mode?
+                     * @param overwrite - Overwrite and reset all existing data.
+                     */
+                    void create(string name, resource_def *resource, uint32_t count, bool server = false,
+                                bool overwrite = false);
 
 
-                    const _lock_record *get_record(int index) {
+                    __lock_record *get_record(uint32_t index) {
                         CHECK_STATE_AVAILABLE(state);
+                        PRECONDITION(index >= 0 && index < header_ptr->max_records);
 
-                        PRECONDITION(index >= 0 && index < DEFAULT_MAX_RECORDS);
-                        _lock_table *ptr = (_lock_table *) mem_ptr;
-
-                        return &ptr->records[index];
+                        return (record_ptr + index);
                     }
 
-                    void remove_record(int index);
+                    void remove_record(uint32_t index);
 
-                    _lock_record *create_new_record(string app_name, string app_id, pid_t pid);
+                    __lock_record *create_new_record(string app_name, string app_id, pid_t pid);
+
+                    void reset() {
+                        CHECK_STATE_AVAILABLE(state);
+                        WAIT_LOCK_P(lock);
+                        bit_index->clear();
+                        for (int ii = 0; ii < header_ptr->max_records; ii++) {
+                            __lock_record *ptr = (record_ptr + ii);
+                            memset(ptr, 0, sizeof(__lock_record));
+                        }
+                        header_ptr->used_record = 0;
+                        RELEASE_LOCK_P(lock);
+                    }
+
+                    void __check_expired_locks(uint32_t index, uint64_t expiry_time, uint32_t *counts) {
+                        __lock_record *record = get_record(index);
+                        if (record->used) {
+                            for (int jj = 0; jj < MAX_PRIORITY_ALLOWED; jj++) {
+                                if (record->lock.locks[jj].state == __lock_state::Locked) {
+                                    uint64_t at = record->lock.locks[jj].acquired_time + header_ptr->lock_lease_time;
+                                    uint64_t now = time_utils::now();
+                                    if ((at + expiry_time) <= now) {
+                                        counts[jj]++;
+                                        record->lock.locks[jj].state = __lock_state::ForceReleased;
+                                        record->lock.locks[jj].acquired_time = 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                 public:
                     lock_table() {
@@ -100,10 +151,14 @@ namespace com {
                     virtual ~lock_table() {
                         state.set_state(Disposed);
                         CHECK_AND_FREE(lock);
-                        if (shm_fd >= 0 && NOT_NULL(mem_ptr)) {
-                            shm_unlink(name.c_str());
+                        if (NOT_NULL(stream)) {
+                            if (stream->is_open()) {
+                                stream->close();
+                            }
+                            delete (stream);
+                            stream = nullptr;
                         }
-
+                        CHECK_AND_FREE(bit_index);
                     }
 
                     const string get_name() const {
@@ -115,37 +170,29 @@ namespace com {
                     }
 
 
-                    void remove_record(_lock_record *rec) {
+                    void remove_record(__lock_record *rec) {
                         PRECONDITION(NOT_NULL(rec));
                         remove_record(rec->index);
                     }
 
                     void set_quota(double quota) {
                         CHECK_STATE_AVAILABLE(state);
-                        _lock_table *ptr = (_lock_table *) mem_ptr;
-
-                        ptr->quota = quota;
+                        header_ptr->quota = quota;
                     }
 
                     double get_quota() {
                         CHECK_STATE_AVAILABLE(state);
-                        _lock_table *ptr = (_lock_table *) mem_ptr;
-
-                        return ptr->quota;
+                        return header_ptr->quota;
                     }
 
                     uint64_t get_lock_lease_time() {
                         CHECK_STATE_AVAILABLE(state);
-                        _lock_table *ptr = (_lock_table *) mem_ptr;
-
-                        return ptr->lock_lease_time;
+                        return header_ptr->lock_lease_time;
                     }
 
                     void set_lock_lease_time(long lease_time) {
                         CHECK_STATE_AVAILABLE(state);
-                        _lock_table *ptr = (_lock_table *) mem_ptr;
-
-                        ptr->lock_lease_time = lease_time;
+                        header_ptr->lock_lease_time = lease_time;
                     }
                 };
 
@@ -158,32 +205,26 @@ namespace com {
                         }
                     }
 
-                    void init(string name, resource_def *resource) {
-                        create(name, resource, true);
+                    void init(string name, resource_def *resource, bool overwrite = false) {
+                        create(name, resource, true, overwrite);
 
-                        lock->reset();
+                        if (overwrite) {
+                            lock->reset();
+                            reset();
 
-                        _lock_table *ptr = (_lock_table *) mem_ptr;
+                            long lt = resource->get_lease_time();
+                            if (lt > 0) {
+                                header_ptr->lock_lease_time = lt;
+                            } else {
+                                header_ptr->lock_lease_time = DEFAULT_LEASE_TIME;
+                            }
 
-                        for (int ii = 0; ii < DEFAULT_MAX_RECORDS; ii++) {
-                            ptr->free_indexes[ii] = ii;
-                            _lock_record *rec = &ptr->records[ii];
-                            RESET_RECORD(rec);
-                            rec->index = ii;
-                        }
-
-                        long lt = resource->get_lease_time();
-                        if (lt > 0) {
-                            ptr->lock_lease_time = lt;
-                        } else {
-                            ptr->lock_lease_time = DEFAULT_LEASE_TIME;
-                        }
-
-                        double quota = resource->get_resource_quota();
-                        if (quota > 0.0) {
-                            ptr->quota = quota;
-                        } else {
-                            ptr->quota = DEFAULT_QUOTA;
+                            double quota = resource->get_resource_quota();
+                            if (quota > 0.0) {
+                                header_ptr->quota = quota;
+                            } else {
+                                header_ptr->quota = DEFAULT_QUOTA;
+                            }
                         }
                     }
 
@@ -191,38 +232,23 @@ namespace com {
                         CHECK_STATE_AVAILABLE(state);
                         CHECK_NOT_NULL(counts);
 
-                        _lock_table *ptr = (_lock_table *) mem_ptr;
-                        for (int ii = 0; ii < DEFAULT_MAX_RECORDS; ii++) {
-                            _lock_record *rec = &ptr->records[ii];
-                            if (rec->used) {
-                                for (int jj = 0; jj < MAX_PRIORITY_ALLOWED; jj++) {
-                                    if (rec->lock.locks[jj].state == _lock_state::Locked) {
-                                        uint64_t at = rec->lock.locks[jj].acquired_time + ptr->lock_lease_time;
-                                        uint64_t now = time_utils::now();
-                                        if ((at + expiry_time) <= now) {
-                                            counts[jj]++;
-                                            rec->lock.locks[jj].state = _lock_state::ForceReleased;
-                                            rec->lock.locks[jj].acquired_time = 0;
-                                        }
-                                    }
-                                }
-                            }
+                        for (int ii = 0; ii < header_ptr->max_records; ii++) {
+                            __check_expired_locks(ii, expiry_time, counts);
                         }
                     }
 
                     void reset_expired_records(uint64_t expiry_time) {
                         CHECK_STATE_AVAILABLE(state);
 
-                        _lock_table *ptr = (_lock_table *) mem_ptr;
-                        for (int ii = 0; ii < DEFAULT_MAX_RECORDS; ii++) {
-                            _lock_record *rec = &ptr->records[ii];
-                            if (rec->used) {
-                                uint64_t ut = rec->app.last_active_ts;
+                        for (int ii = 0; ii < header_ptr->max_records; ii++) {
+                            __lock_record *record = get_record(ii);
+                            if (record->used) {
+                                uint64_t ut = record->app.last_active_ts;
                                 uint64_t now = time_utils::now();
                                 if ((ut + expiry_time) <= now) {
                                     LOG_WARN(
                                             "Resetting expired application record. [app name=%s][pid=%d][name=%s][last active=%s]",
-                                            rec->app.app_name, rec->app.proc_id, name.c_str(),
+                                            record->app.app_name, record->app.proc_id, name.c_str(),
                                             time_utils::get_time_string(ut).c_str());
                                     remove_record(ii);
                                 }
@@ -233,10 +259,10 @@ namespace com {
 
                 class lock_table_client : public lock_table {
                 private:
-                    _lock_record *lock_record;
+                    __lock_record *lock_record;
 
                     bool is_lock_active(int priority) {
-                        if (lock_record->lock.locks[priority].state == _lock_state::Locked) {
+                        if (lock_record->lock.locks[priority].state == __lock_state::Locked) {
                             uint64_t now = time_utils::now();
                             if (now < (lock_record->lock.locks[priority].acquired_time + get_lock_lease_time())) {
                                 return true;
@@ -262,10 +288,9 @@ namespace com {
                                 lock_record = nullptr;
                             }
                         }
-
                     }
 
-                    void init(const __app *app, string name, resource_def *resrouce) {
+                    void init(const __app *app, string name, resource_def *resrouce, uint32_t count) {
                         if (NOT_NULL(lock_record)) {
                             pid_t pid = getpid();
                             if (lock_record->app.proc_id != pid) {
@@ -273,14 +298,14 @@ namespace com {
                                                            lock_record->app.proc_id);
                             }
                         }
-                        create(name, resrouce, false);
+                        create(name, resrouce, count);
                         pid_t pid = getpid();
 
                         lock_record = create_new_record(app->get_name(), app->get_id(), pid);
-
+                        CHECK_NOT_NULL(lock_record);
                     }
 
-                    _lock_record *new_record(string app_name, string app_id, pid_t pid) {
+                    __lock_record *new_record(string app_name, string app_id, pid_t pid) {
                         CHECK_STATE_AVAILABLE(state);
 
                         if (NOT_NULL(lock_record)) {
@@ -296,17 +321,16 @@ namespace com {
                         return lock_record;
                     }
 
-                    _lock_record *new_record_test(string app_name, string app_id, pid_t pid) {
+                    __lock_record *new_record_test(string app_name, string app_id, pid_t pid) {
                         CHECK_STATE_AVAILABLE(state);
-
                         return create_new_record(app_name, app_id, pid);
                     }
 
-                    _lock_state has_valid_lock(int priority, double quota) {
+                    __lock_state has_valid_lock(int priority, double quota) {
                         CHECK_STATE_AVAILABLE(state);
 
 
-                        _lock_state r = None;
+                        __lock_state r = None;
                         pid_t pid = getpid();
                         if (lock_record->app.proc_id != pid) {
                             lock_table_error te = LOCK_TABLE_ERROR(
@@ -317,7 +341,7 @@ namespace com {
                         string thread_id = thread_utils::get_current_thread();
 
                         lock_record->app.last_active_ts = time_utils::now();
-                        if (lock_record->lock.locks[priority].state == _lock_state::Locked) {
+                        if (lock_record->lock.locks[priority].state == __lock_state::Locked) {
                             if (!is_lock_active(priority)) {
                                 TRACE("[pid=%d][thread=%s][name=%s][priority=%d][acquired=%lu][timeout=%lu] Lock has expired.",
                                       pid,
@@ -341,19 +365,19 @@ namespace com {
                             } else {
                                 r = Locked;
                             }
-                        } else if (lock_record->lock.locks[priority].state == _lock_state::ForceReleased) {
+                        } else if (lock_record->lock.locks[priority].state == __lock_state::ForceReleased) {
                             TRACE("[pid=%d][thread=%s][name=%s][priority=%d]  Lock force released by server.", pid,
                                   thread_id.c_str(),
                                   name.c_str(), priority);
-                            lock_record->lock.locks[priority].state = _lock_state::None;
+                            lock_record->lock.locks[priority].state = __lock_state::None;
                             r = ForceReleased;
-                        } else if (lock_record->lock.locks[priority].state == _lock_state::QuotaReached) {
+                        } else if (lock_record->lock.locks[priority].state == __lock_state::QuotaReached) {
                             uint64_t now = time_utils::now();
                             if (now > (lock_record->lock.locks[priority].acquired_time + get_lock_lease_time())) {
                                 TRACE("[pid=%d][thread=%s][name=%s][priority=%d]  Quota timeout reached.", pid,
                                       thread_id.c_str(),
                                       name.c_str(), priority);
-                                lock_record->lock.locks[priority].state = _lock_state::None;
+                                lock_record->lock.locks[priority].state = __lock_state::None;
                                 lock_record->lock.quota_used = 0;
                                 r = None;
                             } else {
@@ -372,10 +396,10 @@ namespace com {
                     }
 
 
-                    _lock_state check_and_lock(double quota) {
+                    __lock_state check_and_lock(double quota) {
                         CHECK_STATE_AVAILABLE(state);
 
-                        _lock_state ls = has_valid_lock(BASE_PRIORITY, quota);
+                        __lock_state ls = has_valid_lock(BASE_PRIORITY, quota);
                         if (ls == Expired) {
                             release_lock(ls, BASE_PRIORITY);
                         } else if (ls == Locked) {
@@ -385,7 +409,7 @@ namespace com {
                         return ls;
                     }
 
-                    _lock_state quota_available(double quota) {
+                    __lock_state quota_available(double quota) {
                         CHECK_STATE_AVAILABLE(state);
 
                         double q = get_quota();
@@ -403,7 +427,7 @@ namespace com {
                     void update_lock(int priority) {
                         CHECK_STATE_AVAILABLE(state);
 
-                        lock_record->lock.locks[priority].state = _lock_state::Locked;
+                        lock_record->lock.locks[priority].state = __lock_state::Locked;
                         lock_record->lock.locks[priority].acquired_time = time_utils::now();
                     }
 
@@ -420,14 +444,14 @@ namespace com {
                         lock_record->lock.quota_used = 0;
                     }
 
-                    void release_lock(_lock_state lock_state, int priority) {
+                    void release_lock(__lock_state lock_state, int priority) {
                         CHECK_STATE_AVAILABLE(state);
-                        if (lock_state == Expired || lock_state == Locked) {
-                            if (lock_record->lock.locks[priority].state == Locked) {
+                        if (lock_state == __lock_state::Expired || lock_state == __lock_state::Locked) {
+                            if (lock_record->lock.locks[priority].state == __lock_state::Locked) {
                                 RELEASE_LOCK_RECORD(lock_record, priority);
                             }
                         } else if (lock_state == ReleaseLock) {
-                            if (lock_record->lock.locks[priority].state == Locked) {
+                            if (lock_record->lock.locks[priority].state == __lock_state::Locked) {
                                 lock_record->lock.locks[priority].state = QuotaReached;
                             }
                         }

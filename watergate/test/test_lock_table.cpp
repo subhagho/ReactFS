@@ -26,6 +26,7 @@ using namespace com::wookler::reactfs::common;
 
 
 #define LOCK_TABLE_NAME "Test lock-table"
+#define LOCK_TABLE_SIZE 4096
 
 TEST_CASE("Test SHM based lock table.", "[com::watergate::core::lock_table]") {
     try {
@@ -44,9 +45,9 @@ TEST_CASE("Test SHM based lock table.", "[com::watergate::core::lock_table]") {
         t->init(LOCK_TABLE_NAME, resource);
 
         lock_table_client *c = new lock_table_client();
-        c->init(env->get_app(), LOCK_TABLE_NAME, resource);
+        c->init(env->get_app(), LOCK_TABLE_NAME, resource, LOCK_TABLE_SIZE);
 
-        _lock_record *records[DEFAULT_MAX_RECORDS - 1];
+        __lock_record *records[DEFAULT_MAX_RECORDS - 1];
 
         int count = 0;
         for (int ii = 0; ii < DEFAULT_MAX_RECORDS - 1; ii++) {
@@ -55,7 +56,7 @@ TEST_CASE("Test SHM based lock table.", "[com::watergate::core::lock_table]") {
             pid_t pid = 1000 + ii;
             string app_id = common_utils::uuid();
 
-            _lock_record *rec = c->new_record_test(app_name, app_id, pid);
+            __lock_record *rec = c->new_record_test(app_name, app_id, pid);
             if (IS_NULL(rec)) {
                 LOG_ERROR("Null record returned for index [%d]", ii);
             } else {
@@ -74,7 +75,7 @@ TEST_CASE("Test SHM based lock table.", "[com::watergate::core::lock_table]") {
 
         count = 0;
         for (int ii = 0; ii < DEFAULT_MAX_RECORDS - 1; ii++) {
-            _lock_record *rec = records[ii];
+            __lock_record *rec = records[ii];
 
             if (ii % 100 == 0) {
                 LOG_DEBUG("[index=%d][application name:%s id:%s pid:%d] Registered at [%lu]", ii, rec->app.app_name,

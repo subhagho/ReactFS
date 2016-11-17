@@ -63,7 +63,7 @@ void rund(const control_client *control, int priority, thread_record *record) {
                 START_TIMER(METRIC_LOCK_TIME);
                 tl.restart();
                 err = 0;
-                _lock_state r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
+                __lock_state r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
                 END_TIMER(METRIC_LOCK_TIME, METRIC_LOCK_TIME);
                 if (r == Locked && err == 0) {
@@ -124,7 +124,7 @@ void run(const control_client *control, int priority, thread_record *record) {
                 START_TIMER(METRIC_LOCK_TIME);
                 tl.restart();
                 err = 0;
-                _lock_state r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
+                __lock_state r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
                 END_TIMER(METRIC_LOCK_TIME, METRIC_LOCK_TIME);
 

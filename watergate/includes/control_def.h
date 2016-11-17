@@ -88,13 +88,13 @@ namespace com {
                 class control_client : public control_def {
                 private:
 
-                    _lock_state try_lock(string name, int priority, int base_priority, double quota) const;
+                    __lock_state try_lock(string name, int priority, int base_priority, double quota) const;
 
-                    _lock_state wait_lock(string name, int priority, int base_priority, double quota) const;
+                    __lock_state wait_lock(string name, int priority, int base_priority, double quota) const;
 
                     bool release_lock(string name, int priority, int base_priority) const;
 
-                    _lock_state lock_get(string name, int priority, double quota, long timeout, int *err) const;
+                    __lock_state lock_get(string name, int priority, double quota, long timeout, int *err) const;
 
                     bool has_valid_lock(string name, int priority) const;
 
@@ -136,11 +136,11 @@ namespace com {
                         return 0;
                     }
 
-                    _lock_state lock(string name, int priority, double quota, int *err) const {
+                    __lock_state lock(string name, int priority, double quota, int *err) const {
                         return lock(name, priority, quota, DEFAULT_MAX_TIMEOUT, err);
                     }
 
-                    _lock_state lock(string name, int priority, double quota, uint64_t timeout, int *err) const {
+                    __lock_state lock(string name, int priority, double quota, uint64_t timeout, int *err) const {
                         CHECK_STATE_AVAILABLE(state);
 
                         string m_name = get_metrics_name(METRIC_LOCK_PREFIX, name, priority);
@@ -149,7 +149,7 @@ namespace com {
                         timer t;
                         t.start();
 
-                        _lock_state ret;
+                        __lock_state ret;
                         __alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
                         while (true) {
                             err = 0;

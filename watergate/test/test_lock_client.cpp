@@ -93,7 +93,7 @@ void com::wookler::watergate::tests::common::basic_lock_client::run() {
                           FS_CONTROL_NAME, priority, count);
                 int err = 0;
                 t.restart();
-                _lock_state r = control->lock(FS_CONTROL_NAME, priority, 200, 5000, &err);
+                __lock_state r = control->lock(FS_CONTROL_NAME, priority, 200, 5000, &err);
                 t.pause();
                 LOG_DEBUG("[pid=%d][thread=%s][name=%s][priority=%d] Lock get count %d [response=%s]", pid, tid.c_str(),
                           FS_CONTROL_NAME, priority, count, record_utils::get_lock_acquire_enum_string(r).c_str());

@@ -18,16 +18,20 @@
 // Created by Subhabrata Ghosh on 23/09/16.
 //
 
+#include "common/includes/__env.h"
+#include "common/includes/init_utils.h"
 #include "common/includes/lock_record_def.h"
 #include "watergate/includes/lock_table.h"
 
-void com::wookler::watergate::core::lock_table::create(string name, resource_def *resource, bool server) {
+void
+com::wookler::watergate::core::lock_table::create(string name, resource_def *resource, uint32_t count, bool server,
+                                                  bool overwite) {
     try {
         PRECONDITION(!IS_EMPTY(name));
 
         this->name = common_utils::get_normalized_name(name);
 
-        string l_name(LOCK_TABLE_LOCK_PREFIX);
+        string l_name(WG_LOCK_TABLE_LOCK_PREFIX);
         l_name.append(this->name);
 
         LOG_DEBUG("Creating shared memory. [name=%s]", this->name.c_str());
@@ -35,34 +39,62 @@ void com::wookler::watergate::core::lock_table::create(string name, resource_def
         lock = new exclusive_lock(&l_name);
         lock->create();
 
-        mode_t mode = O_CREAT | O_RDWR;
-        if (!server) {
-            mode = O_RDWR;
-        }
+        lock->wait_lock();
+        try {
+            const __env *env = env_utils::get_env();
+            CHECK_NOT_NULL(env);
 
-        shm_fd = shm_open(this->name.c_str(), mode, 0760);
-        if (shm_fd < 0) {
-            lock_table_error te = LOCK_TABLE_ERROR(
-                    "Error creating shared memory handle. [name=%s][error=%s]",
-                    this->name.c_str(), strerror(errno));
-            LOG_ERROR(te.what());
-            throw te;
-        }
-        /* configure the size of the shared memory segment */
-        int size = sizeof(_lock_table);
-        ftruncate(shm_fd, size);
-        LOG_DEBUG("Sizing shared memory segment. [size=%d]", size);
+            const Path *p = env->get_work_dir();
+            Path np(p->get_path());
+            np.append(WG_LOCK_TABLE_DIR);
+            if (!np.exists()) {
+                np.create(0755);
+            }
+            string filename = common_utils::format("%s.%s", this->name.c_str(), WG_LOCK_TABLE_EXT);
+            np.append(filename);
+            if (np.exists()) {
+                if (overwite) {
+                    np.remove();
+                }
+            } else {
+                overwite = true;
+            }
 
-        /* now map the shared memory segment in the address space of the process */
-        mem_ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-        if (mem_ptr == MAP_FAILED) {
-            lock_table_error te = LOCK_TABLE_ERROR(
-                    "Error mapping shared memory segment. [name=%s][error=%s]",
-                    this->name.c_str(), strerror(errno));
-            LOG_ERROR(te.what());
-            throw te;
-        }
+            uint64_t h_size = sizeof(__lock_table_header);
+            uint64_t b_size = com::wookler::reactfs::common::__bitset::get_byte_size(count);
+            uint64_t r_size = count * sizeof(__lock_record);
+            uint64_t t_size = (h_size + b_size + r_size);
 
+            LOG_DEBUG("Creating index file with size = %lu. [file=%s]", t_size, np.get_path().c_str());
+            stream = new fmstream();
+            stream->open(np.get_path().c_str(), t_size);
+
+            CHECK_NOT_NULL(stream);
+            base_ptr = stream->data();
+            if (overwite) {
+                memset(base_ptr, 0, t_size);
+            }
+            header_ptr = reinterpret_cast<__lock_table_header *>(base_ptr);
+            if (overwite) {
+                header_ptr->max_records = count;
+                header_ptr->used_record = 0;
+            }
+
+            void *ptr = common_utils::increment_data_ptr(base_ptr, h_size);
+            uint64_t *iptr = reinterpret_cast<uint64_t *>(ptr);
+            bit_index = new com::wookler::reactfs::common::__bitset(iptr, b_size);
+            CHECK_NOT_NULL(bit_index);
+
+            ptr = common_utils::increment_data_ptr(ptr, b_size);
+            record_ptr = reinterpret_cast<__lock_record *>(ptr);
+
+        } catch (const exception &ei) {
+            lock->release_lock();
+            throw LOCK_TABLE_ERROR("ERROR : %s", ei.what());
+        } catch (...) {
+            lock->release_lock();
+            throw LOCK_TABLE_ERROR("Un-typed exception triggered.");
+        }
         state.set_state(Available);
     } catch (const exception &e) {
         lock_table_error lte = LOCK_TABLE_ERROR("Error creating Lock Table. [name=%s][error=%s]",
@@ -81,83 +113,33 @@ void com::wookler::watergate::core::lock_table::create(string name, resource_def
     }
 }
 
-void com::wookler::watergate::core::lock_table::remove_record(int index) {
+void com::wookler::watergate::core::lock_table::remove_record(uint32_t index) {
 
     PRECONDITION(index >= 0 && index < DEFAULT_MAX_RECORDS);
+    PRECONDITION(bit_index->check(index));
 
-    _lock_table *ptr = (_lock_table *) mem_ptr;
-    _lock_record *rec = &ptr->records[index];
+    WAIT_LOCK_P(lock);
 
-    if (!lock->wait_lock()) {
-        lock_table_error te = LOCK_TABLE_ERROR("Error getting lock to update table. [name=%s][error=%s]", name.c_str(),
-                                               strerror(errno));
-        LOG_CRITICAL(te.what());
-        state.set_error(&te);
-
-        throw te;
-    }
-    if (!rec->used) {
-        lock_table_error te = LOCK_TABLE_ERROR("Table index corrupted. Returned record is being used. [index=%d]",
-                                               index);
-        LOG_CRITICAL(te.what());
-        state.set_error(&te);
-
-        throw te;
-    }
-    for (int ii = 0; ii < DEFAULT_MAX_RECORDS; ii++) {
-        if (ptr->free_indexes[ii] < 0) {
-            ptr->free_indexes[ii] = index;
-            break;
-        }
-    }
-
+    __lock_record *rec = (record_ptr + index);
     RESET_RECORD(rec);
-
-    if (!lock->release_lock()) {
-        lock_table_error te = LOCK_TABLE_ERROR("Error releasing lock for update table. [name=%s][error=%s]",
-                                               name.c_str(),
-                                               strerror(errno));
-        LOG_CRITICAL(te.what());
-        state.set_error(&te);
-
-        throw te;
-    }
+    header_ptr->used_record--;
+    RELEASE_LOCK_P(lock);
 }
 
-_lock_record *com::wookler::watergate::core::lock_table::create_new_record(string app_name, string app_id, pid_t pid) {
-
-    _lock_table *ptr = (_lock_table *) mem_ptr;
-    if (!lock->wait_lock()) {
-        lock_table_error te = LOCK_TABLE_ERROR("Error getting lock to update table. [name=%s][error=%s]", name.c_str(),
-                                               strerror(errno));
-        LOG_CRITICAL(te.what());
-        state.set_error(&te);
-
-        throw te;
+__lock_record *com::wookler::watergate::core::lock_table::create_new_record(string app_name, string app_id, pid_t pid) {
+    if (header_ptr->used_record >= header_ptr->max_records) {
+        return nullptr;
     }
-    int index = -1;
-    for (int ii = 0; ii < DEFAULT_MAX_RECORDS; ii++) {
-        if (ptr->free_indexes[ii] >= 0) {
-            index = ptr->free_indexes[ii];
-            ptr->free_indexes[ii] = FREE_INDEX_USED;
-            break;
-        }
-    }
-    if (!lock->release_lock()) {
-        lock_table_error te = LOCK_TABLE_ERROR("Error releasing lock for update table. [name=%s][error=%s]",
-                                               name.c_str(),
-                                               strerror(errno));
-        LOG_CRITICAL(te.what());
-        state.set_error(&te);
-
-        throw te;
-    }
+    WAIT_LOCK_P(lock);
+    int index = bit_index->get_free_bit();
+    header_ptr->used_record++;
+    RELEASE_LOCK_P(lock);
 
     if (index < 0) {
         return nullptr;
     }
-
-    _lock_record *rec = &ptr->records[index];
+    __lock_record *rec = (record_ptr + index);
+    CHECK_NOT_NULL(rec);
     if (rec->used) {
         lock_table_error te = LOCK_TABLE_ERROR("Table index corrupted. Returned record is being used. [index=%d]",
                                                index);

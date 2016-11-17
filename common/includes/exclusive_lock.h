@@ -40,7 +40,39 @@
     if (IS_NULL(s) || s == SEM_FAILED) { \
         throw LOCK_ERROR("Semaphore is not valid. [name=%s]", name->c_str()); \
     } \
-} while(0)
+} while(0);
+
+#define WAIT_LOCK_P(lock) do { \
+    if (!lock->wait_lock()) { \
+        lock_error te = LOCK_ERROR("Error getting lock to update. [name=%s][error=%s]", name.c_str(), strerror(errno)); \
+        LOG_CRITICAL(te.what()); \
+        throw te; \
+    } \
+} while(0);
+
+#define WAIT_LOCK(lock) do { \
+    if (!lock.wait_lock()) { \
+        lock_error te = LOCK_ERROR("Error getting lock to update. [name=%s][error=%s]", name.c_str(), strerror(errno)); \
+        LOG_CRITICAL(te.what()); \
+        throw te; \
+    } \
+} while(0);
+
+#define RELEASE_LOCK_P(lock) do { \
+    if (!lock->release_lock()) { \
+        lock_error te = LOCK_ERROR("Error releasing lock. [name=%s][error=%s]", name.c_str(), strerror(errno)); \
+        LOG_CRITICAL(te.what()); \
+        throw te; \
+    } \
+} while(0);
+
+#define RELEASE_LOCK(lock) do { \
+    if (!lock.release_lock()) { \
+        lock_error te = LOCK_ERROR("Error releasing lock. [name=%s][error=%s]", name.c_str(), strerror(errno)); \
+        LOG_CRITICAL(te.what()); \
+        throw te; \
+    } \
+} while(0);
 
 namespace com {
     namespace wookler {

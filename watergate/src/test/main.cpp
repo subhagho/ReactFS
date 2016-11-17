@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
         string tid = tptr->thread_id;
 
         int err = 0;
-        _lock_state r = control->lock(CONTROL_NAME, 0, 500, &err);
+        __lock_state r = control->lock(CONTROL_NAME, 0, 500, &err);
         REQUIRE(err == 0);
         REQUIRE(r == Locked);
         LOG_INFO("Successfully acquired lock [name=%s][priority=%d]", CONTROL_NAME, 0);
