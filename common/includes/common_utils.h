@@ -376,13 +376,14 @@ namespace com {
                         if (NOT_NULL(buffer)) {
                             memcpy(buffer, source, (size_t) size);
                             this->used_size = size;
+                            return size;
                         }
                         return 0;
                     }
 
                     uint32_t read(void *dest, uint32_t size) {
                         if (NOT_NULL(buffer)) {
-                            uint32_t c_size = (size > this->size ? this->size : size);
+                            uint32_t c_size = (size > this->used_size ? this->used_size : size);
                             memcpy(dest, buffer, c_size);
                             return c_size;
                         }
