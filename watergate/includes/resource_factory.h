@@ -35,6 +35,9 @@ namespace com {
             namespace core {
                 class resource_factory {
                 private:
+                    static __registry<string, resource_creator> resources;
+                    static const ConfigValue *config;
+
                     static const ConfigValue *find(string name) {
                         CHECK_NOT_NULL(config);
                         if (config->get_type() == ConfigValueTypeEnum::List) {
@@ -63,10 +66,6 @@ namespace com {
                     }
 
                 public:
-                    static __registry<string, resource_creator> resources;
-                    static const ConfigValue *config;
-
-
                     static resource_def *get_resource(string name) {
                         PRECONDITION(!IS_EMPTY(name));
                         const ConfigValue *node = find(name);
@@ -82,15 +81,15 @@ namespace com {
                         return rd;
                     }
 
-                    static void configure(const ConfigValue *config) {
-                        CHECK_NOT_NULL(config);
-                        const ConfigValue *node = config->find(CONFIG_NODE_RESOUCEF);
+                    static void configure(const ConfigValue *config_node) {
+                        CHECK_NOT_NULL(config_node);
+                        const ConfigValue *node = config_node->find(CONFIG_NODE_RESOUCEF);
                         CHECK_NOT_NULL(node);
-                        resources.set_config(node);
+                        config = node;
                     }
 
                     static void add_resource(string classname, resource_creator *resource) {
-                        resources.add(classname, resource, true);
+                        resources.add(classname, resource);
                     }
 
                     static void dispose() {

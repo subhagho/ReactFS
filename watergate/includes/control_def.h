@@ -142,6 +142,7 @@ namespace com {
 
                     __lock_state lock(string name, int priority, double quota, uint64_t timeout, int *err) const {
                         CHECK_STATE_AVAILABLE(state);
+                        CHECK_NOT_NULL(err);
 
                         string m_name = get_metrics_name(METRIC_LOCK_PREFIX, name, priority);
                         START_TIMER(m_name);

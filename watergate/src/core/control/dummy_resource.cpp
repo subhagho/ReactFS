@@ -25,13 +25,13 @@
 const string com::wookler::watergate::core::dummy_resource::DUMMY_RESOURCE_CLASS = "com::wookler::watergate::core::dummy_resource";
 
 void com::wookler::watergate::core::dummy_resource::setup() {
-    const BasicConfigValue *nn = Config::get_value(CONST_SEM_CONFIG_PARAM_RESOURCE_NAME, config);
+    const BasicConfigValue *nn = Config::get_value(CONFIG_NODE_RESOURCE_NAME, config);
     if (IS_NULL(nn)) {
-        throw ERROR_MISSING_CONFIG_NODE(CONST_SEM_CONFIG_PARAM_RESOURCE_NAME);
+        throw ERROR_MISSING_CONFIG_NODE(CONFIG_NODE_RESOURCE_NAME);
     }
     const string name = nn->get_value();
     if (IS_EMPTY(name)) {
-        throw CONFIG_ERROR("NULL/Empty string value. [name=%s]", CONST_SEM_CONFIG_PARAM_RESOURCE_NAME);
+        throw CONFIG_ERROR("NULL/Empty string value. [name=%s]", CONFIG_NODE_RESOURCE_NAME);
     }
     this->name = new string(name);
 
