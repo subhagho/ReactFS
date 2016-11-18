@@ -96,7 +96,7 @@ namespace com {
 
 
                 typedef struct __record_index__ {
-                    uint32_t index = 0;
+                    uint64_t index = 0;
                     bool readable = false;
                     __record *read_ptr;
                     __record_index__ *next = nullptr;
@@ -105,23 +105,27 @@ namespace com {
                 typedef struct __record_index_header__ {
                     uint64_t block_id;
                     char block_uid[SIZE_UUID];
+                    __write_state write_state = __write_state::WRITABLE;
                     uint64_t create_time;
                     uint64_t update_time;
                     uint64_t start_index = 0;
                     uint64_t last_index = 0;
                     uint32_t total_size = 0;
                     uint32_t used_size = 0;
+                    uint32_t write_offset = 0;
                 } __record_index_header;
 
                 typedef struct __record_index_ptr__ {
-                    uint32_t index = 0;
+                    uint64_t index = 0;
                     bool readable = false;
                     uint32_t offset = 0;
+                    uint32_t size = 0;
                 } __record_index_ptr;
 
                 typedef struct __rollback_info__ {
                     bool in_transaction = false;
                     string *transaction_id;
+                    uint64_t start_offset = 0;
                     uint64_t write_offset = 0; // Write-offset of the last committed write.
                     uint32_t used_bytes = 0;
                     uint64_t last_index = 0;

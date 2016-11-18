@@ -92,7 +92,7 @@ namespace com {
                      * @param filename - Backing filename for this data block.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    void *__open_block(uint64_t block_id, string block_uuid, string filename);
+                    void *__open_index(uint64_t block_id, string block_uuid, string filename);
 
                     /*!
                      * Close this instance of the block index.
@@ -107,104 +107,271 @@ namespace com {
                     void *get_data_ptr() {
                         return common_utils::increment_data_ptr(base_ptr, sizeof(__record_index_header));
                     }
+
+                    /*!
+                     * Setup a new transaction context.
+                     *
+                     * @param txid - Transaction ID of the current transaction.
+                     * @return - New transaction ID.
+                     */
+                    string setup_transaction(string txid) {
+                        if (IS_NULL(rollback_info)) {
+                            rollback_info = (__rollback_info *) malloc(sizeof(__rollback_info));
+                            rollback_info->transaction_id = new string();
+                        }
+                        CHECK_NOT_NULL(rollback_info);
+
+                        rollback_info->in_transaction = true;
+                        rollback_info->last_index = header->last_index;
+                        rollback_info->start_time = time_utils::now();
+                        rollback_info->transaction_id->assign(txid);
+                        rollback_info->write_offset = header->write_offset;
+                        rollback_info->start_offset = header->write_offset;
+                        rollback_info->start_index = nullptr;
+                        rollback_info->used_bytes = 0;
+
+                        return *rollback_info->transaction_id;
+                    }
+
+                    /*!
+                     * End the currently active transaction session.
+                     *
+                     */
+                    void end_transaction() {
+                        string thread_id = thread_utils::get_current_thread();
+
+                        CHECK_NOT_NULL(rollback_info);
+
+                        rollback_info->in_transaction = false;
+                        rollback_info->last_index = 0;
+                        rollback_info->start_time = 0;
+                        rollback_info->transaction_id->assign(EMPTY_STRING);
+                        rollback_info->write_offset = 0;
+                        rollback_info->start_offset = 0;
+                        rollback_info->start_index = nullptr;
+                        rollback_info->used_bytes = 0;
+                    }
+
+                    /*!
+                     * Check if there is a write transaction in progress.
+                     *
+                     * @return - Is transaction in progress?
+                     */
+                    bool in_transaction() const {
+                        if (NOT_NULL(rollback_info)) {
+                            return rollback_info->in_transaction;
+                        }
+                        return false;
+                    }
+
+                    /*!
+                     * Get the write pointer from where the next record should be writter.
+                     *
+                     * @return - Write pointer.
+                     */
+                    void *get_write_ptr() {
+                        if (in_transaction()) {
+                            return common_utils::increment_data_ptr(write_ptr, rollback_info->write_offset);
+                        } else {
+                            return common_utils::increment_data_ptr(write_ptr, header->write_offset);
+                        }
+                    }
+
+                    /*!
+                     * Get the last index for which a record has been written.
+                     *
+                     * @return - Last written index.
+                     */
+                    uint64_t get_last_index() {
+                        if (in_transaction()) {
+                            return rollback_info->last_index;
+                        } else {
+                            return header->last_index;
+                        }
+                    }
+
+                    /*!
+                     * Check if there is space available to write a data record of the size specified.
+                     *
+                     * @param size - Data record size required.
+                     * @return - Is space available?
+                     */
+                    bool has_space(uint32_t size) {
+                        uint32_t free_space = get_free_space();
+                        return (free_space >= size);
+                    }
+
+                    /*!
+                     * Create a new index record for the specified index and offset.
+                     *
+                     * @param index - Record sequence index.
+                     * @param offset - Read offset in the data file.
+                     * @param size - Size of the data record in bytes.
+                     * @param transaction_id - Current transaction ID.
+                     * @return - Created index pointer.
+                     */
+                    __record_index_ptr *
+                    __write_index(uint64_t index, uint32_t offset, uint32_t size, string transaction_id);
+
+                    /*!
+                     * Read the index record for the specified index.
+                     *
+                     * @param index - Data record index.
+                     * @return - Index record pointer.
+                     */
+                    __record_index_ptr *__read_index(uint64_t index);
+
+                public:
+                    /*!
+                     * Create a new file backed data block index.
+                     *
+                     * @param block_id - Unique block id for this data block.
+                     * @param block_uuid - UUID of the data block.
+                     * @param filename - Backing filename for this data block.
+                     * @param estimated_records - Estimated number of records the data file is expected to have.
+                     * @param start_index - Starting record index for this block.
+                     * @param overwrite - Overwrite if data block file already exists?
+                     * @return - Filename of the index file created.
+                     */
+                    virtual string
+                    create_index(uint64_t block_id, string block_uuid, string filename, uint32_t estimated_records,
+                                 uint64_t start_index,
+                                 bool overwrite) {
+                        string path = __create_index(block_id, block_uuid, filename, estimated_records, start_index,
+                                                     overwrite);
+                        close();
+
+                        return string(path);
+                    }
+
+                    /*!
+                     * Open a new instance of the specified data block index.
+                     *
+                     * @param block_id - Unique block id for this data block.
+                     * @param block_uuid - UUID of the data block.
+                     * @param filename - Backing filename for this data block.
+                     * @return - Base pointer of the memory-mapped buffer.
+                     */
+                    void open_index(uint64_t block_id, string block_uuid, string filename);
+
+                    /*!
+                     * Close this block index from further writes.
+                     */
+                    void finish() {
+                        header->write_state = __write_state::CLOSED;
+                    }
+
+                    /*!
+                     * Start a new write transaction on this block index. The block index does not provide any
+                     * locked isolation and assumes the attached block is managing concurrency control.
+                     *
+                     * @param txid - Transaction ID of the transaction started by the attached block.
+                     */
+                    void start_transaction(string txid) {
+                        setup_transaction(txid);
+                    }
+
+                    /*!
+                     * Commit the current transcation.
+                     *
+                     * @param transaction_id - Transaction ID obtained via a start_transaction call.
+                     */
+                    void commit(string txid) {
+                        PRECONDITION(in_transaction());
+                        PRECONDITION(*rollback_info->transaction_id == txid);
+
+                        uint64_t offset = rollback_info->start_offset;
+                        while (offset < rollback_info->write_offset) {
+                            void *ptr = common_utils::increment_data_ptr(write_ptr, offset);
+                            __record_index_ptr *iptr = reinterpret_cast<__record_index_ptr *>(ptr);
+                            PRECONDITION(!iptr->readable);
+                            PRECONDITION(iptr->index > header->last_index);
+                            iptr->readable = true;
+                            offset += sizeof(__record_index_ptr);
+                        }
+                        header->last_index = rollback_info->last_index;
+                        header->used_size += rollback_info->used_bytes;
+                        header->write_offset = rollback_info->write_offset;
+
+                        end_transaction();
+                    }
+
+                    /*!
+                     * Rollback the current transcation.
+                     *
+                     * @param transaction_id - Transaction ID obtained via a start_transaction call.
+                     */
+                    void rollback(string txid) {
+                        PRECONDITION(in_transaction());
+                        PRECONDITION(*rollback_info->transaction_id == txid);
+
+                        force_rollback();
+                    }
+
+                    /*!
+                     * Force a transaction rollback.
+                     *
+                     * Should be used only in exception cases, such as transaction timeout.
+                     */
+                    void force_rollback() {
+                        end_transaction();
+                    }
+
+                    /*!
+                     * Get the available free space that this block has.
+                     *
+                     * @return - Space available (in bytes).
+                     */
+                    uint32_t get_free_space() const {
+                        CHECK_STATE_AVAILABLE(state);
+                        if (in_transaction()) {
+                            return (header->total_size -
+                                    (header->used_size + rollback_info->used_bytes + sizeof(__record_index_header)));
+                        }
+                        return (header->total_size - (header->used_size + sizeof(__record_index_header)));
+                    }
+
+                    /*!
+                     * Get the space currently used by this block.
+                     *
+                     * @return - Space used (in bytes).
+                     */
+                    uint32_t get_used_space() const {
+                        CHECK_STATE_AVAILABLE(state);
+                        if (in_transaction()) {
+                            return (header->used_size + rollback_info->used_bytes);
+                        }
+                        return header->used_size;
+                    }
+
+                    /*!
+                     * Create a new index record for the specified index and offset.
+                     *
+                     * @param index - Record sequence index.
+                     * @param offset - Read offset in the data file.
+                     * @param size - Size of the data record in bytes.
+                     * @param transaction_id - Current transaction ID.
+                     * @return - Created index pointer.
+                     */
+                    __record_index_ptr *
+                    write_index(uint64_t index, uint32_t offset, uint32_t size, string transaction_id) {
+                        return __write_index(index, offset, size, transaction_id);
+                    }
+
+                    /*!
+                     * Read the index record for the specified index.
+                     *
+                     * @param index - Data record index.
+                     * @return - Index record pointer.
+                     */
+                    __record_index_ptr *read_index(uint64_t index) {
+                        return __read_index(index);
+                    }
                 };
             }
         }
     }
 }
 
-string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t block_id, string block_uuid,
-                                                                     string filename, uint32_t estimated_records,
-                                                                     uint64_t start_index, bool overwrite) {
-    try {
-        Path pp(filename);
-        string fname = string(pp.get_filename());
-        fname.append(".index");
-
-        Path p(pp.get_parent_dir());
-        p.append(fname);
-        LOG_DEBUG("Creating new index file. [file=%s]", p.get_path().c_str());
-        if (p.exists()) {
-            if (!overwrite) {
-                throw FS_BASE_ERROR("File with specified path already exists. [path=%s]", filename.c_str());
-            } else {
-                if (!p.remove()) {
-                    throw FS_BASE_ERROR("Error deleting existing file. [file=%s]", filename.c_str());
-                }
-            }
-        }
-        uint64_t r_size = (estimated_records * sizeof(__record_index_ptr) * DEFAULT_BLOAT_FACTOR);
-        uint64_t ifile_size =
-                sizeof(__record_index_header) + r_size;
-        LOG_DEBUG("Creating index file with size = %lu", ifile_size);
-        stream = new fmstream(p.get_path().c_str(), ifile_size);
-        CHECK_NOT_NULL(stream);
-        base_ptr = stream->data();
-
-        memset(base_ptr, 0, ifile_size);
-
-        header = reinterpret_cast<__record_index_header *>(base_ptr);
-        header->block_id = block_id;
-        memcpy(header->block_uid, block_uuid.c_str(), block_uuid.length());
-        header->create_time = time_utils::now();
-        header->update_time = header->create_time;
-        header->start_index = start_index;
-        header->last_index = header->start_index;
-        header->total_size = r_size;
-        header->used_size = 0;
-
-        state.set_state(__state_enum::Available);
-
-        return string(p.get_path());
-    } catch (const exception &e) {
-        fs_error_base err = FS_BASE_ERROR("Error creating block index. [block id=%lu][filename=%s][error=%s]", block_id,
-                                          filename.c_str(), e.what());
-        state.set_error(&err);
-        throw err;
-    } catch (...) {
-        fs_error_base err = FS_BASE_ERROR("Error creating block index. [block id=%lu][filename=%s][error=%s]", block_id,
-                                          filename.c_str(), "UNKNOWN ERROR");
-        state.set_error(&err);
-        throw err;
-    }
-}
-
-void *com::wookler::reactfs::core::base_block_index::__open_block(uint64_t block_id, string block_uuid,
-                                                                  string filename) {
-    try {
-        Path pp(filename);
-        string fname = string(pp.get_filename());
-        fname.append(".index");
-
-        Path p(pp.get_parent_dir());
-        p.append(fname);
-        LOG_DEBUG("Creating new index file. [file=%s]", p.get_path().c_str());
-
-        if (!p.exists()) {
-            throw FS_BASE_ERROR("File not found. [path=%s]", filename.c_str());
-        }
-        stream = new fmstream(filename.c_str());
-        CHECK_NOT_NULL(stream);
-        base_ptr = stream->data();
-
-        header = reinterpret_cast<__record_index_header *>(base_ptr);
-        POSTCONDITION(header->block_id == block_id);
-        POSTCONDITION(strncmp(header->block_uid, block_uuid.c_str(), block_uuid.length()));
-
-        this->filename = string(p.get_path());
-
-        return base_ptr;
-    } catch (const exception &e) {
-        fs_error_base err = FS_BASE_ERROR("Error opening block index. [block id=%lu][filename=%s][error=%s]", block_id,
-                                          filename.c_str(), e.what());
-        state.set_error(&err);
-        throw err;
-    } catch (...) {
-        fs_error_base err = FS_BASE_ERROR("Error opening block index. [block id=%lu][filename=%s][error=%s]", block_id,
-                                          filename.c_str(), "UNKNOWN ERROR");
-        state.set_error(&err);
-        throw err;
-    }
-}
 
 #endif //REACTFS_BASE_BLOCK_INDEX_H

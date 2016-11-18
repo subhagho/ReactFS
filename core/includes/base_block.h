@@ -211,11 +211,10 @@ namespace com {
                      * @return - Write pointer.
                      */
                     void *get_write_ptr() {
-                        BYTE_PTR wptr = static_cast<BYTE_PTR >(write_ptr);
                         if (in_transaction()) {
-                            return (wptr + rollback_info->write_offset);
+                            return common_utils::increment_data_ptr(write_ptr, rollback_info->write_offset);
                         } else {
-                            return (wptr + header->write_offset);
+                            return common_utils::increment_data_ptr(write_ptr, header->write_offset);
                         }
                     }
 
@@ -922,7 +921,7 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
 
     header->last_index = rollback_info->last_index;
     header->used_bytes += rollback_info->used_bytes;
-    header->write_offset += rollback_info->write_offset;
+    header->write_offset = rollback_info->write_offset;
 
     __record_index *iptr = rollback_info->start_index;
     while (NOT_NULL(iptr)) {
@@ -963,7 +962,7 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
     CHECK_NOT_NULL(bptr);
 
     if (header->write_state == __write_state::WRITABLE) {
-        write_ptr = common_utils::increment_data_ptr(bptr, header->write_offset);
+        write_ptr = bptr;
     } else {
         write_ptr = nullptr;
     }
