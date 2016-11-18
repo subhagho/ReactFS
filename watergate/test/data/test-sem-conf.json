@@ -2,7 +2,8 @@
   "configuration": {
     "env": {
       "params": {
-        "app.name": "test-sem-app"
+        "app.name": "test-sem-app",
+        "env.config.workdir": "/tmp/watergate/test_sem_work"
       },
       "logging": {
         "level": "trace",
@@ -45,7 +46,7 @@
       }
     },
     "test-lock-client": {
-      "process": "/work/dev/wookler/watergate/test/cmake/test_lock_client",
+      "process": "/work/dev/wookler/ReactFS/watergate/test/cmake/test_lock_client",
       "process.count": "12",
       "sleep.time": "30",
       "lock.tries": "100"

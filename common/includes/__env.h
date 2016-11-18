@@ -56,8 +56,8 @@ namespace com {
                     Config *config;
                     __app *app;
 
-                    Path *work_dir;
-                    Path *temp_dir;
+                    Path *work_dir = nullptr;
+                    Path *temp_dir = nullptr;
 
                     void setup_defaults() {
                         this->app = new __app(CONST_CONFIG_ENV_PARAM_APPNAME);
