@@ -742,6 +742,35 @@ namespace com {
                     }
                 };
 
+                class __configurable {
+                protected:
+                    const ConfigValue *config = nullptr;
+                    __state__ state;
+
+                    virtual void setup() = 0;
+
+                public:
+                    virtual ~__configurable() {
+                        CHECK_AND_DISPOSE(state);
+                        config = nullptr;
+                    }
+
+                    void configure(const ConfigValue *config) {
+                        this->config = config;
+                        try {
+                            this->setup();
+                            state.set_state(__state_enum::Available);
+                        } catch (const exception &e) {
+                            config_error ce = CONFIG_ERROR("%s", e.what());
+                            state.set_error(&ce);
+                            throw ce;
+                        } catch (...) {
+                            config_error ce = CONFIG_ERROR("Un-typed exception caught.");
+                            state.set_error(&ce);
+                            throw ce;
+                        }
+                    }
+                };
             }
         }
     }

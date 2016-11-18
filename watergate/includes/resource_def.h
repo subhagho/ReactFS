@@ -26,6 +26,9 @@
 
 #include "common/includes/config.h"
 
+#define CONFIG_NODE_RESOURCE_NAME "name"
+#define CONFIG_NODE_RESOURCE_CLASS "class"
+
 #define DEFAULT_LEASE_TIME 1000
 #define DEFAULT_QUOTA -1.00
 
@@ -40,7 +43,7 @@ namespace com {
                     UNKNOWN = 0, IO, NET, FS
                 };
 
-                class resource_def {
+                class resource_def : public __configurable {
                 private:
                     resource_type_enum type = resource_type_enum::UNKNOWN;
 
@@ -48,14 +51,14 @@ namespace com {
                     long lease_time = DEFAULT_LEASE_TIME;
                     double resource_quota = DEFAULT_QUOTA;
 
+                    virtual void setup() override = 0;
+
                 public:
                     resource_def(resource_type_enum type);
 
                     virtual ~resource_def() {}
 
                     resource_type_enum get_type();
-
-                    virtual void init(const ConfigValue *config) = 0;
 
                     virtual int get_control_size() = 0;
 

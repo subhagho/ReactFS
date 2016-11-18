@@ -24,8 +24,10 @@ const string com::wookler::watergate::core::io::fs_driver_constants::CONFIG_PARA
 const string com::wookler::watergate::core::io::fs_driver_constants::CONFIG_PARAM_QUOTA_BYTES = "fs.quota.bytes";
 const string com::wookler::watergate::core::io::fs_driver_constants::CONFIG_PARAM_QUOTA_LEASE_TIME = "fs.quota.lease.time";
 const string com::wookler::watergate::core::io::fs_driver_constants::CONFIG_PARAM_MAX_CONCURRENCY = "fs.concurrency.max";
+const string com::wookler::watergate::core::io::fs_driver_constants::FS_RESOURCE_CLASS = "com::wookler::watergate::core::io::filesystem_driver";
 
-void com::wookler::watergate::core::io::filesystem_driver::init(const ConfigValue *config) {
+void com::wookler::watergate::core::io::filesystem_driver::setup() {
+
     const ParamConfigValue *params = Config::get_params(config);
     if (IS_NULL(params)) {
         throw CONFIG_ERROR("Cannot find configuration parameters. [node=%s]", config->get_key().c_str());

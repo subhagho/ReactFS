@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <unordered_map>
 
+#include "resource_creator.h"
+
 #ifdef __APPLE__
 
 #include <sys/syslimits.h>
@@ -49,6 +51,7 @@ namespace com {
                         static const string CONFIG_PARAM_QUOTA_BYTES;
                         static const string CONFIG_PARAM_QUOTA_LEASE_TIME;
                         static const string CONFIG_PARAM_MAX_CONCURRENCY;
+                        static const string FS_RESOURCE_CLASS;
                     };
 
                     class filesystem_driver : public resource_def {
@@ -56,14 +59,15 @@ namespace com {
                         Path *root_path;
                         int concurrency;
 
+                    protected:
+                        void setup() override;
+
                     public:
                         filesystem_driver() : resource_def(FS) {}
 
                         ~filesystem_driver() {
                             CHECK_AND_FREE(root_path);
                         }
-
-                        void init(const ConfigValue *config) override;
 
                         int get_control_size() override {
                             return concurrency;
@@ -88,6 +92,21 @@ namespace com {
                                 }
                             }
                             return false;
+                        }
+                    };
+
+                    class filesystem_driver_creator : public resource_creator {
+                    public:
+                        resource_def *create(string name, const ConfigValue *node) override {
+                            CHECK_NOT_NULL(node);
+                            const BasicConfigValue *cn = Config::get_value(CONFIG_NODE_RESOURCE_CLASS, node);
+                            CHECK_NOT_NULL(cn);
+                            POSTCONDITION(cn->get_value() == fs_driver_constants::FS_RESOURCE_CLASS);
+
+                            filesystem_driver *resource = new filesystem_driver();
+                            resource->configure(node);
+
+                            return resource;
                         }
                     };
                 }

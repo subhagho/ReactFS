@@ -22,7 +22,9 @@
 #include "dummy_resource.h"
 #include "watergate/includes/control.h"
 
-void com::wookler::watergate::core::dummy_resource::init(const ConfigValue *config) {
+const string com::wookler::watergate::core::dummy_resource::DUMMY_RESOURCE_CLASS = "com::wookler::watergate::core::dummy_resource";
+
+void com::wookler::watergate::core::dummy_resource::setup() {
     const BasicConfigValue *nn = Config::get_value(CONST_SEM_CONFIG_PARAM_RESOURCE_NAME, config);
     if (IS_NULL(nn)) {
         throw ERROR_MISSING_CONFIG_NODE(CONST_SEM_CONFIG_PARAM_RESOURCE_NAME);

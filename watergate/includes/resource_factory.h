@@ -21,35 +21,80 @@
 #ifndef WATERGATE_RESOURCE_FACTORY_H
 #define WATERGATE_RESOURCE_FACTORY_H
 
-#include "watergate/src/core/control/dummy_resource.h"
-#include "filesystem_driver.h"
+#include "common/includes/__registry.h"
+#include "resource_creator.h"
+#include "resource_def.h"
 
-using namespace com::wookler::watergate::core::io;
+#define CONFIG_NODE_RESOUCEF "resources"
+
+using namespace com::wookler::watergate::core;
 
 namespace com {
     namespace wookler {
         namespace watergate {
             namespace core {
                 class resource_factory {
-                public:
-                    static const string DUMMY_RESOURCE_CLASS;
-                    static const string FS_RESOURCE_CLASS;
-
-                    static resource_def *get_resource(string classname, const ConfigValue *config) {
-                        assert(!IS_EMPTY(classname));
-
-                        if (classname == DUMMY_RESOURCE_CLASS) {
-                            dummy_resource *r = new dummy_resource();
-                            r->init(config);
-
-                            return r;
-                        } else if (classname == FS_RESOURCE_CLASS) {
-                            filesystem_driver *r = new filesystem_driver();
-                            r->init(config);
-
-                            return r;
+                private:
+                    static const ConfigValue *find(string name) {
+                        CHECK_NOT_NULL(config);
+                        if (config->get_type() == ConfigValueTypeEnum::List) {
+                            const ListConfigValue *list = dynamic_cast<const ListConfigValue * >(config);
+                            const vector<ConfigValue *> values = list->get_values();
+                            if (!IS_EMPTY(values)) {
+                                for (ConfigValue *c : values) {
+                                    const BasicConfigValue *nn = Config::get_value(CONFIG_NODE_RESOURCE_NAME, c);
+                                    CHECK_NOT_NULL(nn);
+                                    const string nname = nn->get_value();
+                                    if (name == nname) {
+                                        return c;
+                                    }
+                                }
+                            }
+                        } else if (config->get_type() == ConfigValueTypeEnum::Node) {
+                            const BasicConfigValue *c = dynamic_cast<const BasicConfigValue *>(config);
+                            const BasicConfigValue *nn = Config::get_value(CONFIG_NODE_RESOURCE_NAME, c);
+                            CHECK_NOT_NULL(nn);
+                            const string nname = nn->get_value();
+                            if (name == nname) {
+                                return c;
+                            }
                         }
-                        throw BASE_ERROR("No registered resource class found. [class=%s]", classname.c_str());
+                        return nullptr;
+                    }
+
+                public:
+                    static __registry<string, resource_creator> resources;
+                    static const ConfigValue *config;
+
+
+                    static resource_def *get_resource(string name) {
+                        PRECONDITION(!IS_EMPTY(name));
+                        const ConfigValue *node = find(name);
+                        CHECK_NOT_NULL(node);
+                        const BasicConfigValue *c = Config::get_value(CONFIG_NODE_RESOURCE_CLASS, node);
+                        CHECK_NOT_NULL(c);
+                        const string classname = c->get_value();
+                        resource_creator *r = resources.get(classname);
+                        if (IS_NULL(r))
+                            throw BASE_ERROR("No registered resource class found. [class=%s]", classname.c_str());
+
+                        resource_def *rd = r->create(name, node);
+                        return rd;
+                    }
+
+                    static void configure(const ConfigValue *config) {
+                        CHECK_NOT_NULL(config);
+                        const ConfigValue *node = config->find(CONFIG_NODE_RESOUCEF);
+                        CHECK_NOT_NULL(node);
+                        resources.set_config(node);
+                    }
+
+                    static void add_resource(string classname, resource_creator *resource) {
+                        resources.add(classname, resource, true);
+                    }
+
+                    static void dispose() {
+                        resources.clear();
                     }
                 };
             }

@@ -20,5 +20,5 @@
 
 #include "watergate/includes/resource_factory.h"
 
-const string com::wookler::watergate::core::resource_factory::DUMMY_RESOURCE_CLASS = "com::wookler::watergate::core::dummy_resource";
-const string com::wookler::watergate::core::resource_factory::FS_RESOURCE_CLASS = "com::wookler::watergate::core::io::filesystem_driver";
+__registry<string, resource_creator> com::wookler::watergate::core::resource_factory::resources;
+const ConfigValue *com::wookler::watergate::core::resource_factory::config = nullptr;

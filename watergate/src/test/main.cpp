@@ -29,6 +29,7 @@
 
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
 #define CONTROL_CONFIG_PATH "/configuration/control"
+#define RESOURCE_CONFIG_PATH "/configuration/resources"
 
 using namespace com::wookler::watergate::core;
 
@@ -47,6 +48,8 @@ int main(int argc, char *argv[]) {
 
         const Config *config = init_utils::get_config();
         REQUIRE(NOT_NULL(config));
+
+        init_utils::init_resource_factory(env, RESOURCE_CONFIG_PATH);
 
         control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
         REQUIRE(NOT_NULL(manager));

@@ -25,9 +25,12 @@
 #include "common/includes/init_utils.h"
 #include "control_def.h"
 #include "control_manager.h"
+#include "resource_factory.h"
+#include "watergate/src/core/ext/resource_helper.h"
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::watergate::core;
+using namespace com::wookler::watergate::core::ext;
 
 namespace com {
     namespace wookler {
@@ -38,6 +41,21 @@ namespace com {
                     static control_client *client;
 
                 public:
+                    static void init_resource_factory(const __env *env, const string path) {
+                        CHECK_NOT_NULL(env);
+                        CHECK_NOT_EMPTY(path);
+
+                        const Config *config = env->get_config();
+                        CHECK_NOT_NULL(config);
+
+                        const ConfigValue *m_config = config->find(path);
+                        CHECK_NOT_NULL(m_config);
+
+                        resource_factory::configure(m_config);
+
+                        resource_helper::register_creators();
+                    }
+
                     static control_manager *init_control_manager(const __env *env, const string path) {
                         CHECK_NOT_NULL(env);
                         CHECK_NOT_EMPTY(path);

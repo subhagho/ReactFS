@@ -28,22 +28,16 @@ void com::wookler::watergate::core::_semaphore::create(const __app *app, const C
     CHECK_NOT_NULL(app);
     CHECK_NOT_NULL(config);
 
-    const ConfigValue *r_node = config->find(CONST_SEM_CONFIG_NODE_RESOURCE);
-    if (IS_NULL(r_node)) {
-        throw CONFIG_ERROR("Required configuration node not found. [node=%s]", CONST_SEM_CONFIG_NODE_RESOURCE);
-    }
-
-    const BasicConfigValue *cn = Config::get_value(CONST_SEM_CONFIG_PARAM_RESOURCE_CLASS, r_node);
+    const BasicConfigValue *cn = Config::get_value(CONST_SEM_CONFIG_PARAM_RESOURCE_NAME, config);
     if (IS_NULL(cn)) {
-        throw ERROR_MISSING_CONFIG(CONST_SEM_CONFIG_PARAM_RESOURCE_CLASS);
+        throw ERROR_MISSING_CONFIG(CONST_SEM_CONFIG_PARAM_RESOURCE_NAME);
     }
-    const string r_class = cn->get_value();
-    if (IS_EMPTY(r_class)) {
-        throw CONFIG_ERROR("NULL/Empty configuration value for node. [node=%s]", CONST_SEM_CONFIG_PARAM_RESOURCE_CLASS);
+    const string r_name = cn->get_value();
+    if (IS_EMPTY(r_name)) {
+        throw CONFIG_ERROR("NULL/Empty configuration value for node. [node=%s]", CONST_SEM_CONFIG_PARAM_RESOURCE_NAME);
     }
 
-
-    this->resource = resource_factory::get_resource(r_class, r_node);
+    this->resource = resource_factory::get_resource(r_name);
 
     this->name = new string(*this->resource->get_resource_name());
 
@@ -69,10 +63,12 @@ void com::wookler::watergate::core::_semaphore::create(const __app *app, const C
     }
 
     const BasicConfigValue *v_c_size = Config::get_value(CONST_SEM_CONFIG_NODE_CLIENTS, config);
-    if (IS_NULL(v_c_size)) {
-        throw CONFIG_ERROR("Required configuration node not found. [node=%s]", CONST_SEM_CONFIG_NODE_PRIORITIES);
+    if (NOT_NULL(v_c_size)) {
+        this->max_lock_clients = (uint16_t) v_c_size->get_int_value(DEFAULT_MAX_CONTROL_CLIENTS);
+    } else {
+        this->max_lock_clients = (uint16_t) DEFAULT_MAX_CONTROL_CLIENTS;
     }
-    this->max_lock_clients = (uint16_t) v_c_size->get_int_value(DEFAULT_MAX_CONTROL_CLIENTS);
+
 
     semaphores = (sem_t **) malloc(this->priorities * sizeof(sem_t *));
     memset(semaphores, 0, this->priorities * sizeof(sem_t *));

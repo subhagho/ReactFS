@@ -21,8 +21,9 @@
 #ifndef WATERGATE_DUMMY_RESOURCE_H
 #define WATERGATE_DUMMY_RESOURCE_H
 
-#include "watergate/includes/resource_def.h"
 #include "common/includes/common_utils.h"
+#include "watergate/includes/resource_def.h"
+#include "watergate/includes/resource_creator.h"
 
 #define CONST_DR_CONFIG_PARAM_SIZE "max_concurrency"
 
@@ -35,7 +36,12 @@ namespace com {
                     int size = 2048;
                     string *name;
 
+                protected:
+                    virtual void setup() override;
+
                 public:
+                    static const string DUMMY_RESOURCE_CLASS;
+
                     dummy_resource() : resource_def(resource_type_enum::IO) {
                         this->name = new string(common_utils::uuid());
                     }
@@ -46,14 +52,26 @@ namespace com {
                         }
                     }
 
-                    void init(const ConfigValue *config) override;
-
                     int get_control_size() override;
 
                     const string *get_resource_name() override;
 
                     bool accept(const string name) override {
                         return false;
+                    }
+                };
+
+                class dummy_resource_creator : public resource_creator {
+                public:
+                    resource_def *create(string name, const ConfigValue *node) override {
+                        const BasicConfigValue *cn = Config::get_value(CONFIG_NODE_RESOURCE_CLASS, node);
+                        CHECK_NOT_NULL(cn);
+                        POSTCONDITION(cn->get_value() == dummy_resource::DUMMY_RESOURCE_CLASS);
+
+                        dummy_resource *resource = new dummy_resource();
+                        resource->configure(node);
+
+                        return resource;
                     }
                 };
             }

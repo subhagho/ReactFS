@@ -28,6 +28,7 @@
 
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
 #define CONTROL_CONFIG_PATH "/configuration/control"
+#define RESOURCE_CONFIG_PATH "/configuration/resources"
 
 
 using namespace com::wookler::watergate::core;
@@ -170,7 +171,7 @@ void run(const control_client *control, int priority, thread_record *record) {
 int main(int argc, char *argv[]) {
 
     try {
-        if (argc < 1) {
+        if (argc < 2) {
             throw BASE_ERROR("Missing required argument. <config file>");
         }
         string cf(argv[1]);
@@ -182,6 +183,8 @@ int main(int argc, char *argv[]) {
 
         const Config *config = init_utils::get_config();
         REQUIRE(NOT_NULL(config));
+
+        init_utils::init_resource_factory(env, RESOURCE_CONFIG_PATH);
 
         control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
         REQUIRE(NOT_NULL(manager));

@@ -25,9 +25,9 @@ void com::wookler::watergate::core::control_def::create(const __app *app, const 
         CHECK_NOT_NULL(app);
         CHECK_NOT_NULL(config);
 
-        if (config->get_type() == Node) {
+        if (config->get_type() == ConfigValueTypeEnum::Node) {
             add_resource_lock(app, config, server);
-        } else if (config->get_type() == List) {
+        } else if (config->get_type() == ConfigValueTypeEnum::List) {
             const ListConfigValue *list = static_cast<const ListConfigValue *>(config);
             const vector<ConfigValue *> values = list->get_values();
             if (!IS_EMPTY(values)) {
@@ -44,7 +44,8 @@ void com::wookler::watergate::core::control_def::create(const __app *app, const 
     }
 }
 
-void com::wookler::watergate::core::control_def::add_resource_lock(const __app *app, const ConfigValue *config, bool server) {
+void com::wookler::watergate::core::control_def::add_resource_lock(const __app *app, const ConfigValue *config,
+                                                                   bool server) {
     _semaphore *sem = nullptr;
     if (server) {
         sem = new _semaphore_owner();
@@ -89,7 +90,8 @@ com::wookler::watergate::core::control_def::~control_def() {
 }
 
 __lock_state
-com::wookler::watergate::core::control_client::try_lock(string name, int priority, int base_priority, double quota) const {
+com::wookler::watergate::core::control_client::try_lock(string name, int priority, int base_priority,
+                                                        double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -112,7 +114,8 @@ com::wookler::watergate::core::control_client::try_lock(string name, int priorit
 }
 
 __lock_state
-com::wookler::watergate::core::control_client::wait_lock(string name, int priority, int base_priority, double quota) const {
+com::wookler::watergate::core::control_client::wait_lock(string name, int priority, int base_priority,
+                                                         double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -163,7 +166,8 @@ bool com::wookler::watergate::core::control_client::has_valid_lock(string name, 
 }
 
 __lock_state
-com::wookler::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout, int *err) const {
+com::wookler::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout,
+                                                        int *err) const {
 
     timer t;
     t.start();
