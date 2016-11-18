@@ -37,7 +37,7 @@ TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
 
     config->print();
 
-    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, true);
     REQUIRE(NOT_NULL(manager));
 
     const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
@@ -58,7 +58,7 @@ TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
         REQUIRE(NOT_NULL(config));
 
         LOG_DEBUG("Creating Control Manager...");
-        control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+        control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, true);
         REQUIRE(NOT_NULL(manager));
 
         LOG_DEBUG("Creating Control Client...");
@@ -118,7 +118,7 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
     REQUIRE(NOT_NULL(c_config));
 
     LOG_DEBUG("Creating Control Manager...");
-    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, true);
     REQUIRE(NOT_NULL(manager));
 
     LOG_DEBUG("Creating Control Client...");
@@ -170,7 +170,7 @@ TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]")
     REQUIRE(NOT_NULL(c_config));
 
     LOG_DEBUG("Creating Control Manager...");
-    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, true);
     REQUIRE(NOT_NULL(manager));
 
     LOG_DEBUG("Creating Control Client...");
@@ -226,7 +226,7 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
     REQUIRE(NOT_NULL(config));
 
     LOG_DEBUG("Creating Control Manager...");
-    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, true);
     REQUIRE(NOT_NULL(manager));
 
     const ConfigValue *p_config = config->find(TLC_CONFIG_NODE);

@@ -42,7 +42,7 @@ namespace com {
                     uint64_t lock_timeout;
                     uint64_t record_timeout;
                     thread *control_thread;
-
+                    bool reset_lock_table = false;
 
                     void start() {
                         control_thread = new thread(control_manager::run, this);
@@ -59,6 +59,10 @@ namespace com {
                     static void run(control_manager *owner);
 
                 public:
+                    control_manager(bool reset_lock_table = false) {
+                        this->reset_lock_table = reset_lock_table;
+                    }
+
                     ~control_manager() override {
                         state.set_state(Disposed);
                         LOG_INFO("Disposing control manager. [state=%s]", state.get_state_string().c_str());

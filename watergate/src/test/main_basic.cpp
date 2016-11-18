@@ -51,8 +51,9 @@ int main(int argc, char *argv[]) {
 
         init_utils::init_resource_factory(env, RESOURCE_CONFIG_PATH);
 
-        control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+        control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, true);
         REQUIRE(NOT_NULL(manager));
+        manager->clear_locks();
 
         const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
         REQUIRE(NOT_NULL(control));
@@ -73,7 +74,7 @@ int main(int argc, char *argv[]) {
         REQUIRE(b);
         LOG_INFO("Successfully released lock [name=%s][priority=%d]", CONTROL_NAME, 0);
 
-        r = control->lock(CONTROL_NAME, 1, 500, &err);
+        r = control->lock(CONTROL_NAME, 1, 500, 60000 * 5, &err);
         REQUIRE(err == 0);
         REQUIRE(r == Locked);
         LOG_INFO("Successfully acquired lock [name=%s][priority=%d]", CONTROL_NAME, 1);

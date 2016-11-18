@@ -98,8 +98,10 @@ namespace com {
                      * @param count - Number of concurrent lockers allowed.
                      * @param server - Is in server mode?
                      * @param overwrite - Overwrite and reset all existing data.
+                     *
+                     * @return - Overwrite, if a new file was used.
                      */
-                    void create(string name, resource_def *resource, uint32_t count, bool server, bool overwrite);
+                    bool create(string name, resource_def *resource, uint32_t count, bool server, bool overwrite);
 
 
                     __lock_record *get_record(uint32_t index) {
@@ -216,7 +218,7 @@ namespace com {
                     }
 
                     void init(string name, resource_def *resource, uint32_t count, bool overwrite) {
-                        create(name, resource, count, true, overwrite);
+                        overwrite = create(name, resource, count, true, overwrite);
 
                         if (overwrite) {
                             lock->reset();

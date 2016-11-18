@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_com_watergate_library_LockControlManager_create
         string cpath = string(c_fname);
         CHECK_NOT_EMPTY(cpath);
 
-        control_manager_inst = init_utils::init_control_manager(env, cpath);
+        control_manager_inst = init_utils::init_control_manager(env, cpath, false);
         CHECK_NOT_NULL(control_manager_inst);
         CHECK_STATE_AVAILABLE(control_manager_inst->get_state());
 

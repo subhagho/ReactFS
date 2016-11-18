@@ -52,7 +52,7 @@ namespace com {
                     __state__ state;
                     unordered_map<string, _semaphore *> semaphores;
 
-                    void add_resource_lock(const __app *app, const ConfigValue *config, bool server);
+                    void add_resource_lock(const __app *app, const ConfigValue *config, bool server, bool overwrite);
 
                     _semaphore *get_lock(string name) const {
                         CHECK_STATE_AVAILABLE(state);
@@ -65,7 +65,7 @@ namespace com {
                         return nullptr;
                     }
 
-                    void create(const __app *app, const ConfigValue *config, bool server);
+                    void create(const __app *app, const ConfigValue *config, bool server, bool overwrite);
 
                 public:
 
@@ -104,7 +104,7 @@ namespace com {
                     }
 
                     void init(const __app *app, const ConfigValue *config) override {
-                        create(app, config, false);
+                        create(app, config, false, false);
                     }
 
                     const string find_lock(const string name, resource_type_enum type) const {
@@ -153,7 +153,7 @@ namespace com {
                         __lock_state ret;
                         __alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
                         while (true) {
-                            err = 0;
+                            *err = 0;
                             ret = lock_get(name, priority, quota, timeout, err);
                             if (ret != QuotaReached && ret != Retry) {
                                 break;

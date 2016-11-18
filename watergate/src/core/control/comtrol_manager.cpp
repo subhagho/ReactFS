@@ -58,7 +58,7 @@ void com::wookler::watergate::core::control_manager::init(const __app *app, cons
     const ConfigValue *dn = config->find(CONFIG_DEF_NODE_PATH);
     CHECK_NOT_NULL(dn);
 
-    create(app, dn, true);
+    create(app, dn, true, reset_lock_table);
 
     clear_locks();
 

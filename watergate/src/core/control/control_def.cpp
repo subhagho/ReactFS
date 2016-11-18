@@ -20,19 +20,20 @@
 
 #include "watergate/includes/control_def.h"
 
-void com::wookler::watergate::core::control_def::create(const __app *app, const ConfigValue *config, bool server) {
+void com::wookler::watergate::core::control_def::create(const __app *app, const ConfigValue *config, bool server,
+                                                        bool overwrite) {
     try {
         CHECK_NOT_NULL(app);
         CHECK_NOT_NULL(config);
 
         if (config->get_type() == ConfigValueTypeEnum::Node) {
-            add_resource_lock(app, config, server);
+            add_resource_lock(app, config, server, overwrite);
         } else if (config->get_type() == ConfigValueTypeEnum::List) {
             const ListConfigValue *list = static_cast<const ListConfigValue *>(config);
             const vector<ConfigValue *> values = list->get_values();
             if (!IS_EMPTY(values)) {
                 for (auto v : values) {
-                    add_resource_lock(app, v, server);
+                    add_resource_lock(app, v, server, overwrite);
                 }
             }
         }
@@ -45,14 +46,14 @@ void com::wookler::watergate::core::control_def::create(const __app *app, const 
 }
 
 void com::wookler::watergate::core::control_def::add_resource_lock(const __app *app, const ConfigValue *config,
-                                                                   bool server) {
+                                                                   bool server, bool overwrite) {
     _semaphore *sem = nullptr;
     if (server) {
         sem = new _semaphore_owner();
     } else {
         sem = new _semaphore_client();
     }
-    sem->init(app, config);
+    sem->init(app, config, (server && overwrite));
 
     semaphores.insert(make_pair(*sem->get_name(), sem));
 
@@ -168,7 +169,7 @@ bool com::wookler::watergate::core::control_client::has_valid_lock(string name, 
 __lock_state
 com::wookler::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout,
                                                         int *err) const {
-
+    CHECK_NOT_NULL(err);
     timer t;
     t.start();
 

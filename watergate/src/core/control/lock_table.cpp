@@ -23,7 +23,7 @@
 #include "common/includes/lock_record_def.h"
 #include "watergate/includes/lock_table.h"
 
-void
+bool
 com::wookler::watergate::core::lock_table::create(string name, resource_def *resource, uint32_t count, bool server,
                                                   bool overwrite) {
     try {
@@ -94,6 +94,7 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
             record_ptr = reinterpret_cast<__lock_record *>(ptr);
 
             RELEASE_LOCK_P(lock);
+
         } catch (const exception &ei) {
             RELEASE_LOCK_P(lock);
             throw LOCK_TABLE_ERROR("ERROR : %s", ei.what());
@@ -102,6 +103,7 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
             throw LOCK_TABLE_ERROR("Un-typed exception triggered.");
         }
         state.set_state(Available);
+        return overwrite;
     } catch (const exception &e) {
         lock_table_error lte = LOCK_TABLE_ERROR("Error creating Lock Table. [name=%s][error=%s]",
                                                 name.c_str(),

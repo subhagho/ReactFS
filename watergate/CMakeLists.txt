@@ -18,7 +18,7 @@ file(GLOB_RECURSE WG_INCLUDES "src/*.h")
 file(GLOB_RECURSE WG_EXT_INCLUDES "includes/*.h")
 
 list(REMOVE_DUPLICATES WG_SOURCES)
-list(REMOVE_ITEM WG_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main_sems.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main_lock_table.cpp)
+list(REMOVE_ITEM WG_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main_basic.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main_sems.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/test/main_lock_table.cpp)
 
 MESSAGE("SOURCE FILES : [" ${WG_SOURCES} "]")
 
@@ -42,8 +42,8 @@ MESSAGE("Using libraries : #" ${WG_LIBRARIES} "#")
 
 target_link_libraries(${WATERGATE_LIB_NAME} ${WG_LIBRARIES})
 
-add_executable(main src/test/main.cpp)
-target_link_libraries(main watergate ${WG_LIBRARIES})
+add_executable(main_basic src/test/main_basic.cpp)
+target_link_libraries(main_basic watergate ${WG_LIBRARIES})
 
 add_executable(main_sems src/test/main_sems.cpp)
 target_link_libraries(main_sems watergate ${WG_LIBRARIES})

@@ -56,7 +56,7 @@ namespace com {
                         resource_helper::register_creators();
                     }
 
-                    static control_manager *init_control_manager(const __env *env, const string path) {
+                    static control_manager *init_control_manager(const __env *env, const string path, bool reset) {
                         CHECK_NOT_NULL(env);
                         CHECK_NOT_EMPTY(path);
 
@@ -66,7 +66,7 @@ namespace com {
                         const ConfigValue *m_config = config->find(path);
                         CHECK_NOT_NULL(m_config);
 
-                        control_manager *manager = new control_manager();
+                        control_manager *manager = new control_manager(reset);
                         manager->init(env->get_app(), m_config);
 
                         return manager;
