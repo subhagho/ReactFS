@@ -30,7 +30,7 @@
 #include "include/options_args.h"
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
-#define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
+#define CONTROL_DEF_CONFIG_PATH "/configuration/control"
 #define CONTROL_CONFIG_PATH "/configuration/control"
 
 

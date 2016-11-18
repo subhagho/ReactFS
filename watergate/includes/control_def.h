@@ -34,6 +34,8 @@
 #include "control.h"
 #include "control_errors.h"
 
+
+#define CONFIG_DEF_NODE_PATH "./def"
 #define DEFAULT_MAX_TIMEOUT 30 * 1000
 #define DEFAULT_LOCK_LOOP_SLEEP_TIME 10
 #define METRIC_LOCK_PREFIX "metrics.lock.time"

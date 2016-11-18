@@ -27,9 +27,7 @@
 #include "watergate/src/core/control/dummy_resource.h"
 #include "watergate/includes/init_utils.h"
 
-#define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
 #define CONTROL_CONFIG_PATH "/configuration/control"
-#define RESOURCE_CONFIG_PATH "/configuration/resources"
 
 using namespace com::wookler::watergate::core;
 
@@ -49,13 +47,11 @@ int main(int argc, char *argv[]) {
         const Config *config = init_utils::get_config();
         REQUIRE(NOT_NULL(config));
 
-        init_utils::init_resource_factory(env, RESOURCE_CONFIG_PATH);
-
         control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, true);
         REQUIRE(NOT_NULL(manager));
         manager->clear_locks();
 
-        const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+        const control_client *control = init_utils::init_control_client(env, CONTROL_CONFIG_PATH);
         REQUIRE(NOT_NULL(control));
 
         thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);

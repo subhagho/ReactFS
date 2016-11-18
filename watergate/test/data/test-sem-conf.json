@@ -11,24 +11,24 @@
         "console": "true"
       }
     },
-    "resources": [
-      {
-        "name": "dummy-resource-1",
-        "class": "com::wookler::watergate::core::dummy_resource",
-        "max_concurrency": "8"
-      },
-      {
-        "name": "fs-resource-0",
-        "class": "com::wookler::watergate::core::io::filesystem_driver",
-        "params": {
-          "fs.path.root": "/private/tmp",
-          "fs.quota.bytes": "2000",
-          "fs.quota.lease.time": "200",
-          "fs.concurrency.max": "8"
-        }
-      }
-    ],
     "control": {
+      "resources": [
+        {
+          "name": "dummy-resource-1",
+          "class": "com::wookler::watergate::core::dummy_resource",
+          "max_concurrency": "8"
+        },
+        {
+          "name": "fs-resource-0",
+          "class": "com::wookler::watergate::core::io::filesystem_driver",
+          "params": {
+            "fs.path.root": "/private/tmp",
+            "fs.quota.bytes": "2000",
+            "fs.quota.lease.time": "200",
+            "fs.concurrency.max": "8"
+          }
+        }
+      ],
       "def": [
         {
           "resource": "dummy-resource-1",

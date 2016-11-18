@@ -20,7 +20,6 @@
 
 #include "watergate/includes/control_manager.h"
 
-#define CONFIG_DEF_NODE_PATH "./def"
 #define CONFIG_MANAGER_NODE_PATH "./manager"
 
 void com::wookler::watergate::core::control_manager::run(control_manager *owner) {

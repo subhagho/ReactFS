@@ -41,17 +41,10 @@ namespace com {
                     static control_client *client;
 
                 public:
-                    static void init_resource_factory(const __env *env, const string path) {
-                        CHECK_NOT_NULL(env);
-                        CHECK_NOT_EMPTY(path);
-
-                        const Config *config = env->get_config();
+                    static void init_resource_factory(const ConfigValue *config) {
                         CHECK_NOT_NULL(config);
 
-                        const ConfigValue *m_config = config->find(path);
-                        CHECK_NOT_NULL(m_config);
-
-                        resource_factory::configure(m_config);
+                        resource_factory::configure(config);
 
                         resource_helper::register_creators();
                     }
@@ -65,6 +58,8 @@ namespace com {
 
                         const ConfigValue *m_config = config->find(path);
                         CHECK_NOT_NULL(m_config);
+
+                        init_resource_factory(m_config);
 
                         control_manager *manager = new control_manager(reset);
                         manager->init(env->get_app(), m_config);
@@ -81,9 +76,13 @@ namespace com {
 
                         const ConfigValue *c_config = config->find(path);
                         CHECK_NOT_NULL(c_config);
+                        init_resource_factory(c_config);
+
+                        const ConfigValue *dn = c_config->find(CONFIG_DEF_NODE_PATH);
+                        CHECK_NOT_NULL(dn);
 
                         control_client *control = new control_client();
-                        control->init(env->get_app(), c_config);
+                        control->init(env->get_app(), dn);
 
                         set_client(control);
 
@@ -104,12 +103,12 @@ namespace com {
                     }
 
                     static void dispose() {
+                        env_utils::dispose();
+
                         LOG_DEBUG("[pid=%d] Releasing control client...", getpid());
                         CHECK_AND_FREE(client);
 
                         client = nullptr;
-
-
                     }
                 };
             }
