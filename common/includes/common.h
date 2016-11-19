@@ -58,11 +58,14 @@
 
 #define DEFAULT_DATETIME_BUFFSIZE 32
 
-#define SIZE_UUID 128
+#define SIZE_UUID 36
 #define SIZE_USER_NAME 64
 
 typedef uint8_t BYTE;
 typedef uint8_t *BYTE_PTR;
+
+#define PADCHAR(i, s) char __padchar_##i[s]
+#define PADINT(i) uint32_t __padint_##i
 
 using namespace std;
 

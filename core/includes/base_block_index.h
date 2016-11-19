@@ -69,6 +69,23 @@ namespace com {
                     __rollback_info *rollback_info = nullptr;
 
                     /*!
+                     * Get the index filename for the specified block file.
+                     *
+                     * @param filename - Block filename.
+                     * @return - Index file path.
+                     */
+                    Path *get_index_file(string filename) {
+                        Path pp(filename);
+                        string fname = string(pp.get_filename());
+                        fname.append(".index");
+
+                        Path *p = new Path(pp.get_parent_dir());
+                        p->append(fname);
+
+                        return p;
+                    }
+
+                    /*!
                      * Create a new file backed data block index.
                      *
                      * @param block_id - Unique block id for this data block.
@@ -291,7 +308,6 @@ namespace com {
                             void *ptr = common_utils::increment_data_ptr(write_ptr, offset);
                             __record_index_ptr *iptr = reinterpret_cast<__record_index_ptr *>(ptr);
                             PRECONDITION(!iptr->readable);
-                            PRECONDITION(iptr->index > header->last_index);
                             iptr->readable = true;
                             offset += sizeof(__record_index_ptr);
                         }

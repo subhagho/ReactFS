@@ -74,7 +74,7 @@ namespace com {
                 } __block_state;
 
                 typedef enum __write_state__ {
-                    WRITABLE = 0, CLOSED = 1
+                    WRITABLE = 1, CLOSED = 2
                 } __write_state;
 
                 typedef enum __record_state__ {
@@ -87,6 +87,7 @@ namespace com {
                     __record_state state = __record_state::R_FREE;
                     uint32_t data_size = 0;
                     uint32_t uncompressed_size = 0;
+                    PADCHAR(0, 4);
                     uint64_t timestamp = 0;
                 } __record_header;
 
@@ -97,13 +98,13 @@ namespace com {
 
 
                 typedef struct __record_index_header__ {
-                    uint64_t block_id;
                     char block_uid[SIZE_UUID];
-                    __write_state write_state = __write_state::WRITABLE;
+                    uint64_t block_id;
                     uint64_t create_time = 0;
                     uint64_t update_time = 0;
                     uint64_t start_index = 0;
                     uint64_t last_index = 0;
+                    __write_state write_state = __write_state::WRITABLE;
                     uint32_t total_size = 0;
                     uint32_t used_size = 0;
                     uint32_t write_offset = 0;
@@ -128,20 +129,20 @@ namespace com {
                 } __rollback_info;
 
                 typedef struct {
-                    uint64_t block_id;
                     char block_uid[SIZE_UUID];
                     __block_type block_type = __block_type::PRIMARY;
                     __block_record_type record_type = __block_record_type::RAW;
                     __block_state state = __block_state::AVAILABLE;
                     __write_state write_state = __write_state::WRITABLE;
+                    uint64_t block_id;
                     uint64_t create_time;
                     uint64_t update_time;
                     uint64_t start_index = 0;
                     uint64_t last_index = 0;
+                    uint64_t block_ttl = 0;
                     uint32_t block_size;
                     uint32_t write_offset;
                     uint32_t used_bytes = 0;
-                    uint64_t block_ttl = 0;
                     __compression compression;
                     __encryption encryption;
                 } __block_header;

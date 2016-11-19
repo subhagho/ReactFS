@@ -4,10 +4,9 @@
 
 #include <iostream>
 
+typedef enum __test__ {
+    ONE, TWO, THREE
+} __test;
 int main(int argc, char *argv[]) {
-    uint32_t data = 0;
-    for (int ii = 0; ii < 32; ii++) {
-        data |= (1 << ii);
-        std::cout << "Index=" << ii << " : " << data << "\n";
-    }
+    std::cout << "ENUM SIZE=" << sizeof(__test) << "\n";
 }

@@ -9,19 +9,15 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
                                                                      string filename, uint32_t estimated_records,
                                                                      uint64_t start_index, bool overwrite) {
     try {
-        Path pp(filename);
-        string fname = string(pp.get_filename());
-        fname.append(".index");
+        Path *p = get_index_file(filename);
 
-        Path p(pp.get_parent_dir());
-        p.append(fname);
-        LOG_DEBUG("Creating new index file. [file=%s]", p.get_path().c_str());
-        if (p.exists()) {
+        LOG_DEBUG("Creating new index file. [file=%s]", p->get_path().c_str());
+        if (p->exists()) {
             if (!overwrite) {
-                throw FS_BASE_ERROR("File with specified path already exists. [path=%s]", filename.c_str());
+                throw FS_BASE_ERROR("File with specified path already exists. [path=%s]", p->get_path().c_str());
             } else {
-                if (!p.remove()) {
-                    throw FS_BASE_ERROR("Error deleting existing file. [file=%s]", filename.c_str());
+                if (!p->remove()) {
+                    throw FS_BASE_ERROR("Error deleting existing file. [file=%s]", p->get_path().c_str());
                 }
             }
         }
@@ -29,14 +25,15 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
         uint64_t ifile_size =
                 sizeof(__record_index_header) + r_size;
         LOG_DEBUG("Creating index file with size = %lu", ifile_size);
-        stream = new fmstream(p.get_path().c_str(), ifile_size);
+        stream = new fmstream(p->get_path().c_str(), ifile_size);
         CHECK_NOT_NULL(stream);
         base_ptr = stream->data();
 
         memset(base_ptr, 0, ifile_size);
 
-        header = reinterpret_cast<__record_index_header *>(base_ptr);
+        header = static_cast<__record_index_header *>(base_ptr);
         header->block_id = block_id;
+        memset(header->block_uid, 0, SIZE_UUID);
         memcpy(header->block_uid, block_uuid.c_str(), block_uuid.length());
         header->create_time = time_utils::now();
         header->update_time = header->create_time;
@@ -51,7 +48,11 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
 
         stream->flush();
 
-        return string(p.get_path());
+        string ps = string(p->get_path());
+        this->filename = string(ps);
+        CHECK_AND_FREE(p);
+
+        return ps;
     } catch (const exception &e) {
         fs_error_base err = FS_BASE_ERROR("Error creating block index. [block id=%lu][filename=%s][error=%s]", block_id,
                                           filename.c_str(), e.what());
@@ -68,26 +69,22 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
 void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block_id, string block_uuid,
                                                                   string filename) {
     try {
-        Path pp(filename);
-        string fname = string(pp.get_filename());
-        fname.append(".index");
+        Path *p = get_index_file(filename);
 
-        Path p(pp.get_parent_dir());
-        p.append(fname);
-        LOG_DEBUG("Creating new index file. [file=%s]", p.get_path().c_str());
+        LOG_DEBUG("Opening new index file. [file=%s]", p->get_path().c_str());
 
-        if (!p.exists()) {
-            throw FS_BASE_ERROR("File not found. [path=%s]", filename.c_str());
+        if (!p->exists()) {
+            throw FS_BASE_ERROR("File not found. [path=%s]", p->get_path().c_str());
         }
-        stream = new fmstream(filename.c_str());
+        stream = new fmstream(p->get_path().c_str());
         CHECK_NOT_NULL(stream);
         base_ptr = stream->data();
 
-        header = reinterpret_cast<__record_index_header *>(base_ptr);
+        header = static_cast<__record_index_header *>(base_ptr);
         POSTCONDITION(header->block_id == block_id);
         POSTCONDITION(strncmp(header->block_uid, block_uuid.c_str(), block_uuid.length()) == 0);
 
-        this->filename = string(p.get_path());
+        this->filename = string(p->get_path());
 
         return base_ptr;
     } catch (const exception &e) {
@@ -148,7 +145,7 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
     uint32_t last_index = get_last_index();
     PRECONDITION((index == header->start_index) || (index == last_index + 1));
-    PRECONDITION(offset > 0);
+    PRECONDITION(offset >= 0);
 
     void *wptr = get_write_ptr();
     __record_index_ptr *iptr = reinterpret_cast<__record_index_ptr *>(wptr);
@@ -157,6 +154,10 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     iptr->offset = offset;
     iptr->size = size;
     iptr->readable = false;
+
+    rollback_info->last_index = iptr->index;
+    rollback_info->used_bytes += sizeof(__record_index_ptr);
+    rollback_info->write_offset += sizeof(__record_index_ptr);
 
     return iptr;
 }

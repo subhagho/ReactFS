@@ -42,3 +42,6 @@ target_link_libraries(main_fsb reactfs-core ${RFS_C_LIBRARIES})
 
 add_executable(main_compress adhoc/main_compress.cpp)
 target_link_libraries(main_compress reactfs-core ${RFS_C_LIBRARIES})
+
+add_executable(core_adhoc adhoc/core_adhoc.cpp)
+target_link_libraries(core_adhoc reactfs-core ${RFS_C_LIBRARIES})

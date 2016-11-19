@@ -751,9 +751,13 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint32_t 
     PRECONDITION(index >= header->start_index && index <= header->last_index);
 
     void *ptr = get_data_ptr();
-    ptr = common_utils::increment_data_ptr(ptr, offset);
-    __record *record = reinterpret_cast<__record *>(ptr);
+    void *rptr = common_utils::increment_data_ptr(ptr, offset);
+    __record *record = (__record *) malloc(sizeof(__record));
     CHECK_NOT_NULL(record);
+    record->header = reinterpret_cast<__record_header *>(rptr);
+    rptr = common_utils::increment_data_ptr(rptr, sizeof(__record_header));
+    record->data_ptr = rptr;
+
     POSTCONDITION(record->header->index == index);
     POSTCONDITION(record->header->offset == offset);
     POSTCONDITION(record->header->data_size == size);
@@ -822,7 +826,7 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
     temp_buffer *buffer = new temp_buffer();
     temp_buffer *writebuff = nullptr;
 
-    while (si <= header->last_index && c < count) {
+    while (si < header->last_index && c < count) {
         const __record_index_ptr *iptr = index_ptr->read_index(si);
         CHECK_NOT_NULL(iptr);
         __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
@@ -858,6 +862,8 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
 
             data->push_back(s_ptr);
         }
+        si++;
+        c++;
     }
 
     return data->size();
@@ -871,9 +877,18 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     index_ptr->commit(transaction_id);
     stream->flush();
 
+    void *d_ptr = get_data_ptr();
+    uint32_t offset = header->write_offset;
+    while (offset <= rollback_info->write_offset) {
+        void *ptr = common_utils::increment_data_ptr(d_ptr, offset);
+        __record_header *header = static_cast<__record_header *>(ptr);
+        header->state = __record_state::R_READABLE;
+        offset += (sizeof(__record_header) + header->data_size);
+    }
     header->last_index = rollback_info->last_index;
     header->used_bytes += rollback_info->used_bytes;
     header->write_offset = rollback_info->write_offset;
+
 
     end_transaction();
 }
