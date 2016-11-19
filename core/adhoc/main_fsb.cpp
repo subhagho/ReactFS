@@ -30,6 +30,7 @@ typedef struct {
 void test_raw() {
     base_block *block = new base_block();
     block->create(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY, DEFAULT_BLOCK_SIZE, RECORD_START_INDEX,
+                  sizeof(_test_typed),
                   true);
     CHECK_AND_FREE(block);
 

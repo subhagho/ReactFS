@@ -36,6 +36,7 @@
 #include "fs_error_base.h"
 #include "compression.h"
 #include "compression_factory.h"
+#include "base_block_index.h"
 
 #define DEFAULT_LOCK_RETRY_INTERVAL 30
 
@@ -83,7 +84,7 @@ namespace com {
                     __rollback_info *rollback_info = nullptr;
 
                     /// Index pointer to load the data record
-                    __record_index *index_ptr = nullptr;
+                    base_block_index *index_ptr = nullptr;
 
                     /// Compression handler instance (in case compression is turned on)
                     compression_handler *compression = nullptr;
@@ -114,14 +115,14 @@ namespace com {
                     void *__open_block(uint64_t block_id, string filename);
 
                     /*!
-                     * Read (N) records from this block.
+                     * Read a record from this block at the specified index.
                      *
                      * @param index - Start index of the record.
-                     * @param count - Number of records to read.
-                     * @param data - Record vector to copy the results into.
-                     * @return - Vector of record pointers.
+                     * @param offset - Data file offset, read from the index.
+                     * @param size - Size of the data record, read from the index.
+                     * @return - Fetched record.
                      */
-                    uint32_t __read_records(uint64_t index, uint32_t count, vector<__record *> *data);
+                    __record *__read_record(uint64_t index, uint32_t offset, uint32_t size);
 
                     /*!
                      * Create a new data record and save it to the backing file.
@@ -211,11 +212,13 @@ namespace com {
                      * @return - Write pointer.
                      */
                     void *get_write_ptr() {
-                        if (in_transaction()) {
-                            return common_utils::increment_data_ptr(write_ptr, rollback_info->write_offset);
-                        } else {
-                            return common_utils::increment_data_ptr(write_ptr, header->write_offset);
-                        }
+                        PRECONDITION(in_transaction());
+                        return common_utils::increment_data_ptr(write_ptr, rollback_info->write_offset);
+                    }
+
+                    uint32_t get_write_offset() {
+                        PRECONDITION(in_transaction());
+                        return (uint32_t) rollback_info->write_offset;
                     }
 
                     /*!
@@ -235,56 +238,8 @@ namespace com {
                      * @return - Next record index.
                      */
                     uint64_t get_next_index() {
-                        if (in_transaction()) {
-                            return rollback_info->last_index++;
-                        }
-                        return header->last_index++;
-                    }
-
-                    /*!
-                     * Allocate an index pointer for a new record being written.
-                     *
-                     * @return - New index pointer.
-                     */
-                    __record_index *get_next_index_ptr() {
-                        __record_index *ptr = (__record_index *) malloc(sizeof(__record_index));
-                        CHECK_NOT_NULL(ptr);
-
-                        ptr->index = get_next_index();
-                        ptr->readable = false;
-                        ptr->next = nullptr;
-                        ptr->read_ptr = nullptr;
-
-                        if (IS_NULL(index_ptr)) {
-                            index_ptr = ptr;
-                        } else {
-                            uint32_t offset = (ptr->index - header->start_index - 1);
-                            __record_index *last = get_index_ptr_at(offset);
-                            CHECK_NOT_NULL(last);
-                            POSTCONDITION(IS_NULL(last->next));
-
-                            last->next = ptr;
-                        }
-
-                        return ptr;
-                    }
-
-                    /*!
-                     * Get the index pointer at the specified index offset. Offset is specified as a delta from the
-                     * start index and not the absolute index value.
-                     *
-                     * @param offset - Index offset.
-                     * @return - Index pointer.
-                     */
-                    __record_index *get_index_ptr_at(uint32_t offset) {
-                        CHECK_NOT_NULL(index_ptr);
-                        __record_index *ptr = index_ptr;
-                        for (uint32_t ii = 0; ii < offset; ii++) {
-                            ptr = ptr->next;
-                            if (IS_NULL(ptr))
-                                break;
-                        }
-                        return ptr;
+                        PRECONDITION(in_transaction());
+                        return rollback_info->last_index++;
                     }
 
                 public:
@@ -541,9 +496,16 @@ namespace com {
                      * @return - UUID of the new block created.
                      */
                     string create(uint64_t block_id, string filename, __block_type block_type,
-                                  uint64_t block_size, uint64_t start_index, bool overwrite) {
+                                  uint64_t block_size, uint64_t start_index, uint32_t est_record_size, bool overwrite) {
                         string uuid = __create_block(block_id, filename, block_type, __block_record_type::RAW,
                                                      block_size, start_index, overwrite);
+                        uint32_t estimated_records = (block_size / est_record_size);
+
+                        index_ptr = new base_block_index();
+                        CHECK_NOT_NULL(index_ptr);
+
+                        index_ptr->create_index(header->block_id, header->block_uid, this->filename, estimated_records,
+                                                header->start_index, overwrite);
                         close();
 
                         POSTCONDITION(!IS_EMPTY(uuid));
@@ -653,6 +615,10 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
         CHECK_NOT_NULL(block_lock);
         block_lock->reset();
 
+        this->filename = string(filename);
+
+        stream->flush();
+
         state.set_state(__state_enum::Available);
 
         return uuid;
@@ -711,6 +677,7 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
 void com::wookler::reactfs::core::base_block::close() {
     CHECK_AND_DISPOSE(state);
 
+    CHECK_AND_FREE(index_ptr);
     if (NOT_NULL(stream)) {
         if (stream->is_open()) {
             stream->close();
@@ -755,14 +722,13 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t s
 
     void *w_ptr = get_write_ptr();
 
-    __record_index *i_ptr = get_next_index_ptr();
-    CHECK_NOT_NULL(i_ptr);
 
     __record *record = (__record *) malloc(sizeof(__record));
     CHECK_NOT_NULL(record);
 
     record->header = reinterpret_cast<__record_header *>(w_ptr);
-    record->header->index = i_ptr->index;
+    record->header->index = get_next_index();
+    record->header->offset = get_write_offset();
     record->header->data_size = size;
     record->header->timestamp = time_utils::now();
     record->header->uncompressed_size = uncompressed_size;
@@ -775,40 +741,24 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t s
 
     rollback_info->used_bytes += size;
     rollback_info->write_offset += (sizeof(__record_header) + size);
-    if (IS_NULL(rollback_info->start_index)) {
-        rollback_info->start_index = i_ptr;
-    }
 
-    i_ptr->read_ptr = record;
-
-    return i_ptr->read_ptr;
+    return record;
 }
 
-uint32_t
-com::wookler::reactfs::core::base_block::__read_records(uint64_t index, uint32_t count, vector<__record *> *data) {
+__record *
+com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint32_t offset, uint32_t size) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
 
-    uint32_t offset = (index - header->start_index);
-    uint32_t available = (header->last_index - header->start_index);
-    uint32_t added = 0;
-    for (int ii = 0; ii < available; ii++) {
-        if ((header->start_index + offset + ii) >= header->last_index)
-            break;
-        __record_index *ptr = get_index_ptr_at(offset + ii);
-        CHECK_NOT_NULL(ptr);
-        if (!ptr->readable) {
-            continue;
-        }
-        if (ptr->read_ptr->header->state != __record_state::R_READABLE) {
-            continue;
-        }
-        data->push_back(ptr->read_ptr);
-        added++;
-        if (added == count)
-            break;
-    }
-    return data->size();
+    void *ptr = get_data_ptr();
+    ptr = common_utils::increment_data_ptr(ptr, offset);
+    __record *record = reinterpret_cast<__record *>(ptr);
+    CHECK_NOT_NULL(record);
+    POSTCONDITION(record->header->index == index);
+    POSTCONDITION(record->header->offset == offset);
+    POSTCONDITION(record->header->data_size == size);
+
+    return record;
 }
 
 string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeout) {
@@ -827,6 +777,8 @@ string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeo
     } else {
         throw FS_BASE_ERROR("Error getting wait lock. [lock=%s]", block_lock->get_name().c_str());
     }
+
+    index_ptr->start_transaction(txid);
 
     return txid;
 }
@@ -858,59 +810,56 @@ uint32_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t l
 
     __record *r_ptr = __write_record(data_ptr, size, transaction_id, uncompressed_size);
 
+    index_ptr->write_index(r_ptr->header->index, r_ptr->header->offset, r_ptr->header->data_size, transaction_id);
+
     return r_ptr->header->data_size;
 }
 
 uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data) {
     CHECK_STATE_AVAILABLE(state);
-    vector<__record *> r;
-    uint32_t r_count = __read_records(index, count, &r);
-    if (r_count > 0) {
+    uint64_t si = index;
+    uint32_t c = 0;
+    temp_buffer *buffer = new temp_buffer();
+    temp_buffer *writebuff = nullptr;
+
+    while (si <= header->last_index && c < count) {
+        const __record_index_ptr *iptr = index_ptr->read_index(si);
+        CHECK_NOT_NULL(iptr);
+        __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
+        CHECK_NOT_NULL(ptr);
         if (is_encrypted() || is_compressed()) {
-            temp_buffer *buffer = new temp_buffer();
-            temp_buffer *writebuff = nullptr;
-
-            if (r.size() > 0) {
-                for (int ii = 0; ii < r.size(); ii++) {
-                    __record *ptr = r[ii];
-                    bool use_buffer = false;
-                    CHECK_NOT_NULL(ptr);
-                    if (is_encrypted()) {
-                        use_buffer = true;
-                        // TODO : Implement encryption handlers.
-                    }
-                    if (is_compressed()) {
-                        CHECK_NOT_NULL(compression);
-
-                        void *data_ptr = (use_buffer ? buffer->get_ptr() : ptr->data_ptr);
-                        uint32_t data_size = (use_buffer ? buffer->get_used_size() : ptr->header->data_size);
-
-                        if (use_buffer && IS_NULL(writebuff)) {
-                            writebuff = new temp_buffer();
-                        }
-                        temp_buffer *buff = (use_buffer ? writebuff : buffer);
-                        int ret = compression->read_archive_data(data_ptr, ptr->header->uncompressed_size, buff);
-                        POSTCONDITION(ret > 0);
-
-                        shared_read_ptr s_ptr = make_shared<__read_ptr>(buff->get_used_size());
-                        (*s_ptr).copy(buff->get_ptr());
-
-                        data->push_back(s_ptr);
-                    }
-                }
+            bool use_buffer = false;
+            CHECK_NOT_NULL(ptr);
+            if (is_encrypted()) {
+                use_buffer = true;
+                // TODO : Implement encryption handlers.
             }
-            CHECK_AND_FREE(buffer);
-            CHECK_AND_FREE(writebuff);
-        } else if (r.size() > 0) {
-            for (int ii = 0; ii < r.size(); ii++) {
-                __record *ptr = r[ii];
-                shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);
-                (*s_ptr).set_data_ptr(ptr->data_ptr);
+            if (is_compressed()) {
+                CHECK_NOT_NULL(compression);
+
+                void *data_ptr = (use_buffer ? buffer->get_ptr() : ptr->data_ptr);
+                uint32_t data_size = (use_buffer ? buffer->get_used_size() : ptr->header->data_size);
+
+                if (use_buffer && IS_NULL(writebuff)) {
+                    writebuff = new temp_buffer();
+                }
+                temp_buffer *buff = (use_buffer ? writebuff : buffer);
+                int ret = compression->read_archive_data(data_ptr, ptr->header->uncompressed_size, buff);
+                POSTCONDITION(ret > 0);
+
+                shared_read_ptr s_ptr = make_shared<__read_ptr>(buff->get_used_size());
+                (*s_ptr).copy(buff->get_ptr());
 
                 data->push_back(s_ptr);
             }
+        } else {
+            shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);
+            (*s_ptr).set_data_ptr(ptr->data_ptr);
+
+            data->push_back(s_ptr);
         }
     }
+
     return data->size();
 }
 
@@ -919,16 +868,13 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
 
+    index_ptr->commit(transaction_id);
+    stream->flush();
+
     header->last_index = rollback_info->last_index;
     header->used_bytes += rollback_info->used_bytes;
     header->write_offset = rollback_info->write_offset;
 
-    __record_index *iptr = rollback_info->start_index;
-    while (NOT_NULL(iptr)) {
-        iptr->readable = true;
-        iptr->read_ptr->header->state = __record_state::R_READABLE;
-        iptr = iptr->next;
-    }
     end_transaction();
 }
 
@@ -936,6 +882,7 @@ void com::wookler::reactfs::core::base_block::rollback(string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
+    index_ptr->rollback(transaction_id);
 
     force_rollback();
 }
@@ -944,13 +891,6 @@ void com::wookler::reactfs::core::base_block::force_rollback() {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(in_transaction());
 
-    __record_index *iptr = rollback_info->start_index;
-    while (NOT_NULL(iptr)) {
-        iptr->read_ptr->header->state = __record_state::R_FREE;
-        __record_index *ptr = iptr;
-        iptr = iptr->next;
-        FREE_PTR(ptr);
-    }
     end_transaction();
 }
 
@@ -967,38 +907,10 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
         write_ptr = nullptr;
     }
 
-    uint32_t count = (header->last_index - header->start_index);
-    uint64_t offset = 0;
-    __record_index *i_ptr = nullptr;
-    while (count > 0) {
-        void *rptr = common_utils::increment_data_ptr(bptr, offset);
-        __record_header *hptr = reinterpret_cast<__record_header *>(rptr);
-        if (hptr->state != __record_state::R_READABLE) {
-            offset += sizeof(__record_header) + hptr->data_size;
-            continue;
-        }
-        __record *record = (__record *) malloc(sizeof(__record));
-        CHECK_NOT_NULL(record);
-        record->header = hptr;
-        rptr = common_utils::increment_data_ptr(rptr, sizeof(__record_header));
-        record->data_ptr = rptr;
-        if (IS_NULL(i_ptr)) {
-            i_ptr = (__record_index *) malloc(sizeof(__record_index));
-            CHECK_NOT_NULL(i_ptr);
-            index_ptr = i_ptr;
-        } else {
-            __record_index *next = (__record_index *) malloc(sizeof(__record_index));
-            CHECK_NOT_NULL(next);
-            i_ptr->next = next;
-            i_ptr = next;
-        }
+    index_ptr = new base_block_index();
+    CHECK_NOT_NULL(index_ptr);
+    index_ptr->open_index(header->block_id, header->block_uid, this->filename);
 
-        i_ptr->index = record->header->index;
-        i_ptr->read_ptr = record;
-        i_ptr->readable = true;
-        offset += sizeof(__record_header) + record->header->data_size;
-        count--;
-    }
     state.set_state(__state_enum::Available);
 }
 

@@ -222,6 +222,10 @@ namespace com {
                     __record_index_ptr *__read_index(uint64_t index);
 
                 public:
+                    ~base_block_index() {
+                        this->close();
+                    }
+
                     /*!
                      * Create a new file backed data block index.
                      *
@@ -280,6 +284,8 @@ namespace com {
                         PRECONDITION(in_transaction());
                         PRECONDITION(*rollback_info->transaction_id == txid);
 
+                        stream->flush();
+
                         uint64_t offset = rollback_info->start_offset;
                         while (offset < rollback_info->write_offset) {
                             void *ptr = common_utils::increment_data_ptr(write_ptr, offset);
@@ -322,7 +328,7 @@ namespace com {
                      *
                      * @return - Space available (in bytes).
                      */
-                    uint32_t get_free_space() const {
+                    const uint32_t get_free_space() const {
                         CHECK_STATE_AVAILABLE(state);
                         if (in_transaction()) {
                             return (header->total_size -
@@ -336,7 +342,7 @@ namespace com {
                      *
                      * @return - Space used (in bytes).
                      */
-                    uint32_t get_used_space() const {
+                    const uint32_t get_used_space() const {
                         CHECK_STATE_AVAILABLE(state);
                         if (in_transaction()) {
                             return (header->used_size + rollback_info->used_bytes);
@@ -353,7 +359,7 @@ namespace com {
                      * @param transaction_id - Current transaction ID.
                      * @return - Created index pointer.
                      */
-                    __record_index_ptr *
+                    const __record_index_ptr *
                     write_index(uint64_t index, uint32_t offset, uint32_t size, string transaction_id) {
                         return __write_index(index, offset, size, transaction_id);
                     }
@@ -364,7 +370,7 @@ namespace com {
                      * @param index - Data record index.
                      * @return - Index record pointer.
                      */
-                    __record_index_ptr *read_index(uint64_t index) {
+                    const __record_index_ptr *read_index(uint64_t index) {
                         return __read_index(index);
                     }
                 };

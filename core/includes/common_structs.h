@@ -83,6 +83,7 @@ namespace com {
 
                 typedef struct __record_header__ {
                     uint32_t index = 0;
+                    uint32_t offset = 0;
                     __record_state state = __record_state::R_FREE;
                     uint32_t data_size = 0;
                     uint32_t uncompressed_size = 0;
@@ -95,19 +96,12 @@ namespace com {
                 } __record;
 
 
-                typedef struct __record_index__ {
-                    uint64_t index = 0;
-                    bool readable = false;
-                    __record *read_ptr;
-                    __record_index__ *next = nullptr;
-                } __record_index;
-
                 typedef struct __record_index_header__ {
                     uint64_t block_id;
                     char block_uid[SIZE_UUID];
                     __write_state write_state = __write_state::WRITABLE;
-                    uint64_t create_time;
-                    uint64_t update_time;
+                    uint64_t create_time = 0;
+                    uint64_t update_time = 0;
                     uint64_t start_index = 0;
                     uint64_t last_index = 0;
                     uint32_t total_size = 0;
@@ -130,7 +124,7 @@ namespace com {
                     uint32_t used_bytes = 0;
                     uint64_t last_index = 0;
                     uint64_t start_time = 0;
-                    __record_index *start_index = nullptr;
+                    __record_index_ptr *start_index = nullptr;
                 } __rollback_info;
 
                 typedef struct {

@@ -49,6 +49,8 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
 
         state.set_state(__state_enum::Available);
 
+        stream->flush();
+
         return string(p.get_path());
     } catch (const exception &e) {
         fs_error_base err = FS_BASE_ERROR("Error creating block index. [block id=%lu][filename=%s][error=%s]", block_id,
@@ -83,7 +85,7 @@ void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block
 
         header = reinterpret_cast<__record_index_header *>(base_ptr);
         POSTCONDITION(header->block_id == block_id);
-        POSTCONDITION(strncmp(header->block_uid, block_uuid.c_str(), block_uuid.length()));
+        POSTCONDITION(strncmp(header->block_uid, block_uuid.c_str(), block_uuid.length()) == 0);
 
         this->filename = string(p.get_path());
 
@@ -145,7 +147,7 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
     uint32_t last_index = get_last_index();
-    PRECONDITION(index > last_index);
+    PRECONDITION((index == header->start_index) || (index == last_index + 1));
     PRECONDITION(offset > 0);
 
     void *wptr = get_write_ptr();
