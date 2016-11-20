@@ -133,7 +133,8 @@ namespace com {
                     }
 
                     const ConfigValue *find(string path) const {
-                        vector<string> parts = string_utils::split(path, '/');
+                        vector<string> parts;
+                        string_utils::split(path, '/', &parts);
                         if (!IS_EMPTY(parts)) {
                             int index = 0;
                             if (IS_EMPTY(parts[0])) {
@@ -250,7 +251,7 @@ namespace com {
                     }
 
                     const time_t get_time_value(string format, time_t def_value) const {
-                        assert(!IS_EMPTY(format));
+                        PRECONDITION(!IS_EMPTY(format));
 
                         if (NOT_EMPTY_P(value)) {
                             time_t t = common_utils::get_time(*value, format);
@@ -309,8 +310,8 @@ namespace com {
                     }
 
                     void put(string key, string value, ConfigValue *parent) {
-                        assert(!IS_EMPTY(key));
-                        assert(!IS_EMPTY(value));
+                        PRECONDITION(!IS_EMPTY(key));
+                        PRECONDITION(!IS_EMPTY(value));
 
                         BasicConfigValue *v = new BasicConfigValue(key, parent);
                         v->set_value(value);
@@ -319,14 +320,14 @@ namespace com {
                     }
 
                     void put(ConfigValue *value) {
-                        assert(!IS_NULL(value));
+                        PRECONDITION(!IS_NULL(value));
 
                         string key = value->get_key();
                         params.insert(make_pair(key, value));
                     }
 
                     const ConfigValue *get(string key) const {
-                        assert(!IS_EMPTY(key));
+                        PRECONDITION(!IS_EMPTY(key));
 
                         unordered_map<string, ConfigValue *>::const_iterator got = params.find(key);
                         if (got != params.end())
@@ -464,7 +465,7 @@ namespace com {
                     }
 
                     void add_value(ConfigValue *value) {
-                        assert(NOT_NULL(value));
+                        PRECONDITION(NOT_NULL(value));
 
                         values.push_back(value);
                     }
@@ -538,9 +539,9 @@ namespace com {
                     }
 
                     const ConfigValue *add_child(ConfigValue *child) {
-                        assert(!IS_NULL(child));
+                        PRECONDITION(!IS_NULL(child));
                         string key = child->get_key();
-                        assert(!IS_EMPTY(key));
+                        PRECONDITION(!IS_EMPTY(key));
 
                         children.insert(make_pair(key, child));
 
@@ -548,9 +549,9 @@ namespace com {
                     }
 
                     const ConfigValue *get_value(string key) {
-                        assert(!IS_EMPTY(key));
-
-                        vector<string> parts = string_utils::split(key, '/');
+                        PRECONDITION(!IS_EMPTY(key));
+                        vector<string> parts;
+                        string_utils::split(key, '/', &parts);
                         string k = parts[0];
                         if (k == ".") {
                             k = parts[1];

@@ -247,8 +247,9 @@ namespace com {
                         path = cannonical_path(path);
 
                         string s;
+                        vector<string> parts;
 
-                        vector<string> parts = string_utils::split(path, '/');
+                        string_utils::split(path, '/', &parts);
                         if (parts.size() > 0) {
                             if (parts.size() == 1) {
                                 string dir = parts[0];
@@ -354,7 +355,8 @@ namespace com {
                     }
 
                     const string get_parent_dir() const {
-                        vector<string> parts = string_utils::split(*path, '/');
+                        vector<string> parts;
+                        string_utils::split(*path, '/', &parts);
                         if (parts.size() > 1) {
                             string ss = string();
                             if (!IS_EMPTY(parts[0])) {
@@ -370,7 +372,8 @@ namespace com {
                     }
 
                     const string get_filename() const {
-                        vector<string> parts = string_utils::split(*path, '/');
+                        vector<string> parts;
+                        string_utils::split(*path, '/', &parts);
                         if (parts.size() > 0) {
                             return string(parts[parts.size() - 1]);
                         }
@@ -380,7 +383,8 @@ namespace com {
                     const string get_extension() const {
                         const string file = get_filename();
                         if (!IS_EMPTY(file)) {
-                            vector<string> parts = string_utils::split(file, '.');
+                            vector<string> parts;
+                            string_utils::split(file, '.', &parts);
                             if (parts.size() > 0) {
                                 return string(parts[parts.size() - 1]);
                             }
