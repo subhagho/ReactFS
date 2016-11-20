@@ -96,7 +96,7 @@ namespace com {
                     }
 
                     static bool remove_file(const string path, bool delete_self) {
-                        assert(!path.empty());
+                        PRECONDITION(!path.empty());
                         cout << "Deleting " << path << " ...\n";
                         if (!file_exists(path)) {
                             return false;
@@ -120,8 +120,38 @@ namespace com {
                         return true;
                     }
 
+                    static vector<string> get_dir_content(const string path) {
+                        vector<string> r;
+                        DIR *dir = opendir(path.c_str());
+                        struct dirent *dent;
+                        if (dir != NULL) {
+                            while ((dent = readdir(dir))) {
+                                SKIP_DOT_DIRS(dent->d_name);
+                                string rp = file_utils::concat_path(path, dent->d_name);
+                                r.push_back(rp);
+                            }
+                        }
+                        return r;
+                    }
+
+                    static bool is_dir_empty(const string path) {
+                        if (!is_dir(path.c_str())) {
+                            return false;
+                        }
+                        uint32_t count = 0;
+                        DIR *dir = opendir(path.c_str());
+                        struct dirent *dent;
+                        if (dir != NULL) {
+                            while ((dent = readdir(dir))) {
+                                SKIP_DOT_DIRS(dent->d_name);
+                                count++;
+                            }
+                        }
+                        return (count > 0);
+                    }
+
                     static string create_directory(const string path, mode_t mode, bool overwrite) {
-                        assert(!path.empty());
+                        PRECONDITION(!path.empty());
 
                         string p = cannonical_path(path);
 
@@ -144,7 +174,7 @@ namespace com {
                     }
 
                     static string create_temp_directory(const string name, mode_t mode, bool overwrite) {
-                        assert(!name.empty());
+                        PRECONDITION(!name.empty());
 
                         string tp = TEMP_DIR;
 
@@ -166,7 +196,7 @@ namespace com {
                     }
 
                     static string create_temp_file(string path, string ext, mode_t mode, bool overwrite) {
-                        assert(!path.empty());
+                        PRECONDITION(!path.empty());
 
                         if (path.front() == '/') {
                             path = create_directory(path, mode, false);
@@ -202,7 +232,7 @@ namespace com {
                     }
 
                     static bool clean_directory(string path) {
-                        assert(!path.empty());
+                        PRECONDITION(!path.empty());
 
                         if (is_dir(path.data())) {
                             remove_file(path, false);
@@ -211,14 +241,14 @@ namespace com {
                     }
 
                     static string create_dirs(string path, mode_t mode) {
-                        assert(!path.empty());
+                        PRECONDITION(!path.empty());
 
-                        path = common_utils::trim(path);
+                        path = string_utils::trim(path);
                         path = cannonical_path(path);
 
                         string s;
 
-                        vector<string> parts = common_utils::split(path, '/');
+                        vector<string> parts = string_utils::split(path, '/');
                         if (parts.size() > 0) {
                             if (parts.size() == 1) {
                                 string dir = parts[0];
@@ -258,7 +288,7 @@ namespace com {
                     }
 
                     static int create_dir(string path, mode_t mode) {
-                        assert(!path.empty());
+                        PRECONDITION(!path.empty());
 
                         struct stat st;
                         int status = 0;
@@ -324,7 +354,7 @@ namespace com {
                     }
 
                     const string get_parent_dir() const {
-                        vector<string> parts = common_utils::split(*path, '/');
+                        vector<string> parts = string_utils::split(*path, '/');
                         if (parts.size() > 1) {
                             string ss = string();
                             if (!IS_EMPTY(parts[0])) {
@@ -340,7 +370,7 @@ namespace com {
                     }
 
                     const string get_filename() const {
-                        vector<string> parts = common_utils::split(*path, '/');
+                        vector<string> parts = string_utils::split(*path, '/');
                         if (parts.size() > 0) {
                             return string(parts[parts.size() - 1]);
                         }
@@ -350,7 +380,7 @@ namespace com {
                     const string get_extension() const {
                         const string file = get_filename();
                         if (!IS_EMPTY(file)) {
-                            vector<string> parts = common_utils::split(file, '.');
+                            vector<string> parts = string_utils::split(file, '.');
                             if (parts.size() > 0) {
                                 return string(parts[parts.size() - 1]);
                             }
@@ -420,6 +450,26 @@ namespace com {
                             lines.push_back(line);
                         }
                         return lines;
+                    }
+                };
+
+                class file_helper {
+                public:
+                    static uint64_t readlines(ifstream *file, vector<string> *v, bool empty_lines = true) {
+                        if (!file->is_open()) {
+                            throw BASE_ERROR("Input stream is not open.");
+                        }
+                        string line;
+                        while (getline(*file, line)) {
+                            if (IS_EMPTY(line) && !empty_lines) {
+                                continue;
+                            }
+                            v->push_back(line);
+                        }
+                        if (file->bad()) {
+                            throw BASE_ERROR("Error while reading file.");
+                        }
+                        return v->size();
                     }
                 };
             }

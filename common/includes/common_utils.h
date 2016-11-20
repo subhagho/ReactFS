@@ -129,39 +129,6 @@ namespace com {
                         return -1;
                     }
 
-                    static inline std::string &ltrim(std::string &s) {
-                        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-                                                        std::not1(std::ptr_fun<int, int>(std::isspace))));
-                        return s;
-                    }
-
-// trim from end
-                    static inline std::string &rtrim(std::string &s) {
-                        s.erase(std::find_if(s.rbegin(), s.rend(),
-                                             std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-                        return s;
-                    }
-
-// trim from both ends
-                    static inline std::string &trim(std::string &s) {
-                        return ltrim(rtrim(s));
-                    }
-
-                    static void split(const string &s, char delim, vector<string> &elems) {
-                        stringstream ss;
-                        ss.str(s);
-                        string item;
-                        while (getline(ss, item, delim)) {
-                            elems.push_back(item);
-                        }
-                    }
-
-                    static vector<string> split(const string &s, char delim) {
-                        vector<string> elems;
-                        split(s, delim, elems);
-                        return elems;
-                    }
-
                     static std::string uuid() {
 #ifdef WIN32
                         UUID uuid;
@@ -388,6 +355,63 @@ namespace com {
                             return c_size;
                         }
                         return 0;
+                    }
+                };
+
+                class string_utils {
+                public:
+                    static bool starts_with(string *source, string prefix) {
+                        if (!IS_EMPTY_P(source) && !IS_EMPTY(prefix)) {
+                            std::size_t i = source->find(prefix);
+                            if (i != std::string::npos) {
+                                return (i == 0);
+                            }
+                        }
+                        return false;
+                    }
+
+                    static bool ends_with(string *source, string suffix) {
+                        if (!IS_EMPTY_P(source) && !IS_EMPTY(suffix)) {
+                            std::size_t i = source->rfind(suffix);
+                            if (i != std::string::npos) {
+                                i += suffix.length();
+                                return (i == (source->length() - 1));
+                            }
+                        }
+                        return false;
+                    }
+
+                    static inline std::string &ltrim(std::string &s) {
+                        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+                                                        std::not1(std::ptr_fun<int, int>(std::isspace))));
+                        return s;
+                    }
+
+// trim from end
+                    static inline std::string &rtrim(std::string &s) {
+                        s.erase(std::find_if(s.rbegin(), s.rend(),
+                                             std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+                        return s;
+                    }
+
+// trim from both ends
+                    static inline std::string &trim(std::string &s) {
+                        return ltrim(rtrim(s));
+                    }
+
+                    static void split(const string &s, char delim, vector<string> &elems) {
+                        stringstream ss;
+                        ss.str(s);
+                        string item;
+                        while (getline(ss, item, delim)) {
+                            elems.push_back(item);
+                        }
+                    }
+
+                    static vector<string> split(const string &s, char delim) {
+                        vector<string> elems;
+                        split(s, delim, elems);
+                        return elems;
                     }
                 };
             }

@@ -133,7 +133,7 @@ namespace com {
                     }
 
                     const ConfigValue *find(string path) const {
-                        vector<string> parts = common_utils::split(path, '/');
+                        vector<string> parts = string_utils::split(path, '/');
                         if (!IS_EMPTY(parts)) {
                             int index = 0;
                             if (IS_EMPTY(parts[0])) {
@@ -550,7 +550,7 @@ namespace com {
                     const ConfigValue *get_value(string key) {
                         assert(!IS_EMPTY(key));
 
-                        vector<string> parts = common_utils::split(key, '/');
+                        vector<string> parts = string_utils::split(key, '/');
                         string k = parts[0];
                         if (k == ".") {
                             k = parts[1];

@@ -148,7 +148,7 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     PRECONDITION(offset >= 0);
 
     void *wptr = get_write_ptr();
-    __record_index_ptr *iptr = reinterpret_cast<__record_index_ptr *>(wptr);
+    __record_index_ptr *iptr = static_cast<__record_index_ptr *>(wptr);
     memset(iptr, 0, sizeof(__record_index_ptr));
     iptr->index = index;
     iptr->offset = offset;
@@ -169,7 +169,7 @@ __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(
 
     void *ptr = get_data_ptr();
     void *rptr = common_utils::increment_data_ptr(ptr, offset);
-    __record_index_ptr *iptr = reinterpret_cast<__record_index_ptr *>(rptr);
+    __record_index_ptr *iptr = static_cast<__record_index_ptr *>(rptr);
     POSTCONDITION(iptr->index == index);
     POSTCONDITION(iptr->readable);
 

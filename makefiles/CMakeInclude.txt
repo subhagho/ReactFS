@@ -4,7 +4,9 @@ set(PROJECT_EXT_DIR ${PROJECT_ROOT_DIR}/ext)
 MESSAGE("Project root directory : " ${PROJECT_ROOT_DIR})
 MESSAGE("Project ext directory : " ${PROJECT_EXT_DIR})
 
-INCLUDE_DIRECTORIES(${PROJECT_ROOT_DIR} ${PROJECT_EXT_DIR})
+set(LOCAL_INCLUDES "/usr/local/include")
+
+INCLUDE_DIRECTORIES(${PROJECT_ROOT_DIR} ${PROJECT_EXT_DIR} ${LOCAL_INCLUDES})
 
 if (${APPLE})
     set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk)

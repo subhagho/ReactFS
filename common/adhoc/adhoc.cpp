@@ -4,9 +4,27 @@
 
 #include <iostream>
 
-typedef enum __test__ {
-    ONE, TWO, THREE
-} __test;
+#include "common/includes/common_utils.h"
+
+
+using namespace std;
+using namespace com::wookler::reactfs::common;
+
 int main(int argc, char *argv[]) {
-    std::cout << "ENUM SIZE=" << sizeof(__test) << "\n";
+    string s = "This is a new line";
+    if (string_utils::starts_with(&s, "This")) {
+        cout << "Find [This] succeeded...\n";
+    }
+
+    if (!string_utils::starts_with(&s, "is")) {
+        cout << "Find starts_with [is] failed...\n";
+    }
+
+    if (!string_utils::ends_with(&s, "is")) {
+        cout << "Find ends_with [is] failed...\n";
+    }
+
+    if (!string_utils::ends_with(&s, "line")) {
+        cout << "Find ends_with [line] succeeded...\n";
+    }
 }

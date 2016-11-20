@@ -38,7 +38,6 @@
 #include "compression_factory.h"
 #include "base_block_index.h"
 
-#define DEFAULT_LOCK_RETRY_INTERVAL 30
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
@@ -726,7 +725,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t s
     __record *record = (__record *) malloc(sizeof(__record));
     CHECK_NOT_NULL(record);
 
-    record->header = reinterpret_cast<__record_header *>(w_ptr);
+    record->header = static_cast<__record_header *>(w_ptr);
     record->header->index = get_next_index();
     record->header->offset = get_write_offset();
     record->header->data_size = size;
@@ -754,7 +753,7 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint32_t 
     void *rptr = common_utils::increment_data_ptr(ptr, offset);
     __record *record = (__record *) malloc(sizeof(__record));
     CHECK_NOT_NULL(record);
-    record->header = reinterpret_cast<__record_header *>(rptr);
+    record->header = static_cast<__record_header *>(rptr);
     rptr = common_utils::increment_data_ptr(rptr, sizeof(__record_header));
     record->data_ptr = rptr;
 
@@ -888,7 +887,6 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     header->last_index = rollback_info->last_index;
     header->used_bytes += rollback_info->used_bytes;
     header->write_offset = rollback_info->write_offset;
-
 
     end_transaction();
 }

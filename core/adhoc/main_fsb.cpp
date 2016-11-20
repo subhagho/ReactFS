@@ -6,6 +6,7 @@
 #include "common/includes/__env.h"
 #include "common/includes/init_utils.h"
 #include "core/includes/base_block.h"
+#include "core/includes/block_utils.h"
 
 #define REUSE_BLOCK_FILE "/tmp/block_reused.raw"
 #define REUSE_BLOCK_ID 1024
@@ -13,9 +14,9 @@
 #define REUSE_BLOCK_FILE_COMP "/tmp/block_reused.comp"
 #define REUSE_BLOCK_ID_COMP 1025
 
-#define DEFAULT_BLOCK_SIZE 1024 * 6
+#define DEFAULT_BLOCK_SIZE 1024 * 1024 * 32
 #define RECORD_START_INDEX 100000
-#define COUNT_RECORDS 50
+#define COUNT_RECORDS 500
 #define CONFIG_LOCK_COUNT 20
 
 using namespace com::wookler::reactfs::common;
@@ -28,13 +29,13 @@ typedef struct {
 } _test_typed;
 
 void test_raw() {
-    base_block *block = new base_block();
-    block->create(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY, DEFAULT_BLOCK_SIZE, RECORD_START_INDEX,
-                  sizeof(_test_typed),
-                  true);
-    CHECK_AND_FREE(block);
+    string uuid = block_utils::create_new_block(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY,
+                                                DEFAULT_BLOCK_SIZE,
+                                                RECORD_START_INDEX,
+                                                sizeof(_test_typed));
+    POSTCONDITION(!IS_EMPTY(uuid));
 
-    block = new base_block();
+    base_block *block = new base_block();
     block->open(REUSE_BLOCK_ID, REUSE_BLOCK_FILE);
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
@@ -69,7 +70,7 @@ void test_raw() {
             for (int ii = 0; ii < r.size(); ii++) {
                 void *ptr = r[ii].get()->get_data_ptr();
                 CHECK_NOT_NULL(ptr);
-                _test_typed *t = reinterpret_cast<_test_typed *>(ptr);
+                _test_typed *t = static_cast<_test_typed *>(ptr);
                 LOG_DEBUG("[index=%d][uuid=%s]", t->index, t->value);
             }
             fetched += r.size();
@@ -77,6 +78,7 @@ void test_raw() {
         } else
             break;
     }
+
     CHECK_AND_FREE(block);
 }
 
