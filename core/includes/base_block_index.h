@@ -39,7 +39,7 @@
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
 
-#define DEFAULT_BLOAT_FACTOR 1.5f
+#define DEFAULT_BLOAT_FACTOR (15 / 10)
 
 namespace com {
     namespace wookler {

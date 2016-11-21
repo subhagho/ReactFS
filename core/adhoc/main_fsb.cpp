@@ -17,7 +17,6 @@
 #define DEFAULT_BLOCK_SIZE 1024 * 1024 * 32
 #define RECORD_START_INDEX 100000
 #define COUNT_RECORDS 500
-#define CONFIG_LOCK_COUNT 20
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
@@ -29,10 +28,19 @@ typedef struct {
 } _test_typed;
 
 void test_raw() {
+    Path p(REUSE_BLOCK_FILE);
+    if (p.exists()) {
+        p.remove();
+    }
+    string ifile = common_utils::format("%s.index", REUSE_BLOCK_FILE);
+    Path ip(ifile);
+    if (ip.exists()) {
+        ip.remove();
+    }
+
     string uuid = block_utils::create_new_block(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY,
                                                 DEFAULT_BLOCK_SIZE,
-                                                RECORD_START_INDEX,
-                                                sizeof(_test_typed));
+                                                sizeof(_test_typed), RECORD_START_INDEX);
     POSTCONDITION(!IS_EMPTY(uuid));
 
     base_block *block = new base_block();
@@ -96,7 +104,7 @@ int main(int argc, char **argv) {
         string configf(cf);
         env_utils::create_env(configf);
 
-        lock_env_utils::create_manager(0755, CONFIG_LOCK_COUNT, false);
+        lock_env_utils::create_manager(0755);
         lock_env *manager = lock_env_utils::get_manager();
         CHECK_NOT_NULL(manager);
 

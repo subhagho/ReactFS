@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include "core/includes/common_structs.h"
-#include "core/includes/structs/mm_hash_table.h"
 
 using namespace com::wookler::reactfs::core;
 typedef struct __record_index_header__ {

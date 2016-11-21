@@ -139,6 +139,8 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     PRECONDITION((index == header->start_index) || (index == last_index + 1));
     PRECONDITION(offset >= 0);
 
+    TRACE("[index=%lu] Available index space = %lu", index, get_free_space());
+
     void *wptr = get_write_ptr();
     __record_index_ptr *iptr = static_cast<__record_index_ptr *>(wptr);
     memset(iptr, 0, sizeof(__record_index_ptr));

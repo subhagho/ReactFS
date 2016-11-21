@@ -614,7 +614,7 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
 
         this->filename = string(filename);
 
-        mapped_data->flush();
+        mm_data->flush();
 
         state.set_state(__state_enum::Available);
 
@@ -866,7 +866,7 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
 
     index_ptr->commit(transaction_id);
-    stream->flush();
+    mm_data->flush();
 
     void *d_ptr = get_data_ptr();
     uint32_t offset = header->write_offset;
