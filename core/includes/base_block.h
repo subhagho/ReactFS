@@ -30,8 +30,8 @@
 #include "common/includes/timer.h"
 #include "common/includes/__alarm.h"
 #include "common/includes/read_write_lock.h"
+#include "common/includes/mapped_data.h"
 
-#include "common/includes/fmstream.h"
 #include "common_structs.h"
 #include "fs_error_base.h"
 #include "compression.h"
@@ -68,7 +68,7 @@ namespace com {
                     read_write_lock *block_lock = nullptr;
 
                     /// Memory-mapped file handle.
-                    fmstream *stream = nullptr;
+                    file_mapped_data *mm_data = nullptr;
 
                     /// Block header pointer.
                     __block_header *header = nullptr;
@@ -582,11 +582,9 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
 
         uint64_t ts = sizeof(__block_header) + b_size;
 
-        stream = new fmstream(filename.c_str(), ts);
-        CHECK_NOT_NULL(stream);
-        base_ptr = stream->data();
-
-        memset(base_ptr, 0, ts);
+        mm_data = new file_mapped_data(p.get_path(), ts, overwrite);
+        CHECK_NOT_NULL(mm_data);
+        base_ptr = mm_data->get_base_ptr();
 
         header = static_cast<__block_header *>(base_ptr);
         header->block_id = block_id;
@@ -616,7 +614,7 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
 
         this->filename = string(filename);
 
-        stream->flush();
+        mapped_data->flush();
 
         state.set_state(__state_enum::Available);
 
@@ -640,9 +638,9 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
         if (!p.exists()) {
             throw FS_BASE_ERROR("File not found. [path=%s]", filename.c_str());
         }
-        stream = new fmstream(filename.c_str());
-        CHECK_NOT_NULL(stream);
-        base_ptr = stream->data();
+        mm_data = new file_mapped_data(p.get_path());
+        CHECK_NOT_NULL(mm_data);
+        base_ptr = mm_data->get_base_ptr();
 
         header = static_cast<__block_header *>(base_ptr);
         PRECONDITION(header->block_id == block_id);
@@ -653,7 +651,7 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
             block_lock = env->add_lock(lock_name);
             CHECK_NOT_NULL(block_lock);
         }
-        this->filename = string(filename);
+        this->filename = string(p.get_path());
 
         if (header->compression.compressed) {
             compression = compression_factory::get_compression_handler(header->compression.type);
@@ -677,13 +675,7 @@ void com::wookler::reactfs::core::base_block::close() {
     CHECK_AND_DISPOSE(state);
 
     CHECK_AND_FREE(index_ptr);
-    if (NOT_NULL(stream)) {
-        if (stream->is_open()) {
-            stream->close();
-        }
-        delete (stream);
-        stream = nullptr;
-    }
+    CHECK_AND_FREE(mm_data);
 
     if (NOT_NULL(block_lock)) {
         string thread_id = thread_utils::get_current_thread();

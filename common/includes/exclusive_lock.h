@@ -44,7 +44,7 @@
 
 #define WAIT_LOCK_P(lock) do { \
     if (!lock->wait_lock()) { \
-        lock_error te = LOCK_ERROR("Error getting lock to update. [name=%s][error=%s]", name.c_str(), strerror(errno)); \
+        lock_error te = LOCK_ERROR("Error getting lock to update. [name=%s][error=%s]", lock->get_name()->c_str(), strerror(errno)); \
         LOG_CRITICAL(te.what()); \
         throw te; \
     } \
@@ -52,7 +52,7 @@
 
 #define WAIT_LOCK(lock) do { \
     if (!lock.wait_lock()) { \
-        lock_error te = LOCK_ERROR("Error getting lock to update. [name=%s][error=%s]", name.c_str(), strerror(errno)); \
+        lock_error te = LOCK_ERROR("Error getting lock to update. [name=%s][error=%s]", lock->get_name()->c_str(), strerror(errno)); \
         LOG_CRITICAL(te.what()); \
         throw te; \
     } \
@@ -60,7 +60,7 @@
 
 #define RELEASE_LOCK_P(lock) do { \
     if (!lock->release_lock()) { \
-        lock_error te = LOCK_ERROR("Error releasing lock. [name=%s][error=%s]", name.c_str(), strerror(errno)); \
+        lock_error te = LOCK_ERROR("Error releasing lock. [name=%s][error=%s]", lock->get_name()->c_str(), strerror(errno)); \
         LOG_CRITICAL(te.what()); \
         throw te; \
     } \
@@ -68,7 +68,7 @@
 
 #define RELEASE_LOCK(lock) do { \
     if (!lock.release_lock()) { \
-        lock_error te = LOCK_ERROR("Error releasing lock. [name=%s][error=%s]", name.c_str(), strerror(errno)); \
+        lock_error te = LOCK_ERROR("Error releasing lock. [name=%s][error=%s]", lock->get_name()->c_str(), strerror(errno)); \
         LOG_CRITICAL(te.what()); \
         throw te; \
     } \

@@ -32,12 +32,7 @@
 #include "common/includes/common_utils.h"
 #include "common/includes/base_error.h"
 #include "core/includes/base_block.h"
-
-#define INFO_REC_SEPERATOR ":"
-#define INFO_REC_NAME "table name"
-#define INFO_REC_CREATEDT "create date"
-#define INFO_REC_BLOCK_SIZE "block size"
-#define INFO_REC_BLOCK_REC "block file"
+#include "core/includes/mm_block_meta.h"
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
@@ -48,92 +43,21 @@ namespace com {
         namespace reactfs {
             namespace core {
                 namespace structs {
-                    class mm_hash_constants {
-                    public:
-                        static const string INFO_FILE;
-                        static const uint64_t SMALL;
-                        static const uint64_t MEDIUM;
-                        static const uint64_t LARGE;
-                        static const uint64_t XLARGE;
-                    };
 
                     typedef struct __hash_block_index__ {
                         uint64_t block_id;
                         uint64_t record_index;
                     } __hash_block_index;
 
-                    class mm_info {
-                    private:
-                        Path *info_file = nullptr;
-                        uint32_t block_count = 0;
-                        uint32_t block_size = 0;
-
-                        ofstream infostream;
-
-                        void read_info(string name) {
-                            PRECONDITION(!IS_EMPTY(name));
-                            ifstream info(info_file->get_path());
-                            try {
-                                vector<string> vb;
-                                file_helper::readlines(&info, &vb, false);
-                                if (IS_EMPTY(vb)) {
-                                    throw BASE_ERROR("No block files specified in the info header.");
-                                }
-                                for (string line : vb) {
-                                    if (IS_EMPTY(line)) {
-                                        continue;
-                                    }
-                                    if (string_utils::starts_with(&line, "#")) {
-                                        continue;
-                                    }
-                                }
-                                info.close();
-                            } catch (const exception &e) {
-                                info.close();
-                                throw BASE_ERROR("Error reading info records. [error=%s]", e.what());
-                            } catch (...) {
-                                info.close();
-                                throw BASE_ERROR("Error reading info records. [error=UNKNOWN]");
-                            }
-                        }
-
-                        void create_info_header(string name, uint32_t block_size) {
-                            PRECONDITION(!IS_EMPTY(name));
-                            PRECONDITION(block_size > 0);
-                        }
-
-                    public:
-                        mm_info(Path *base_dir, string name, uint32_t block_size = 0) {
-                            info_file = new Path(base_dir->get_path());
-                            info_file->append(mm_hash_constants::INFO_FILE);
-
-                            if (info_file->exists()) {
-                                read_info(name);
-                            } else {
-                                create_info_header(name, block_size);
-                            }
-                        }
-
-                        ~mm_info() {
-                            if (infostream.is_open()) {
-                                infostream.flush();
-                                infostream.close();
-                            }
-                            CHECK_AND_FREE(info_file);
-                        }
-                    };
-
                     template<class _key, class _value>
                     class mm_hash_table {
                     private:
                         mutex thread_mutex;
                         sparse_hash_map<_key, __hash_block_index *> index;
-                        unordered_map<uint64_t, base_block *> blocks;
                         string name;
                         Path *base_dir = nullptr;
                         Path *info_file = nullptr;
                         ofstream infostream;
-                        uint32_t last_block_index = 0;
 
                         void set_base_dir(string name, string base_dir, bool overwrite) {
                             this->base_dir = new Path(base_dir);
@@ -188,12 +112,7 @@ namespace com {
                                 CHECK_AND_FREE(bi);
                             }
                             index.clear();
-                            for (unordered_map<uint64_t, base_block *>::const_iterator it = blocks.begin();
-                                 it != blocks.end(); it++) {
-                                base_block *block = it->second;
-                                CHECK_AND_FREE(block);
-                            }
-                            blocks.clear();
+
 
                             if (infostream.is_open()) {
                                 infostream.flush();

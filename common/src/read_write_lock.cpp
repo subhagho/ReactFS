@@ -24,7 +24,7 @@
 
 using namespace com::wookler::reactfs::common;
 
-void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, uint32_t count, bool overwrite) {
+void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, bool manager) {
     LOG_DEBUG("Creating shared memory. [name=%s]", SHARED_LOCK_NAME);
 
     string name_l(SHARED_LOCK_NAME);
@@ -37,53 +37,28 @@ void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, uin
     if (mode > 0)
         table_lock->reset();
 
-    table_lock->wait_lock();
+    WAIT_LOCK_P(table_lock);
     try {
-        const __env *env = env_utils::get_env();
-        CHECK_NOT_NULL(env);
-
-        const Path *p = env->get_work_dir();
-        Path np(p->get_path());
-        np.append(SHARED_LOCK_DIR);
-        if (!np.exists()) {
-            np.create(0755);
-        }
-        np.append(SHARED_LOCK_TABLE_NAME);
-        if (overwrite) {
-            if (np.exists()) {
-                np.remove();
-            }
-        }
-
-        uint64_t l_size = count * sizeof(__lock_struct);
+        uint64_t l_size = MAX_SHARED_LOCKS * sizeof(__lock_struct);
         uint64_t h_size = sizeof(__shared_lock_data);
         uint64_t t_size = (l_size + h_size);
-        LOG_DEBUG("Creating index file with size = %lu. [file=%s]", t_size, np.get_path().c_str());
-        stream = new fmstream();
-        stream->open(np.get_path().c_str(), t_size);
-
-        CHECK_NOT_NULL(stream);
-        base_ptr = stream->data();
-
-        if (overwrite)
-            memset(base_ptr, 0, t_size);
-
-        header_ptr = reinterpret_cast<__shared_lock_data *>(base_ptr);
-        header_ptr->max_count = count;
+        mm_data = new shm_mapped_data(SHARED_LOCK_TABLE_NAME, t_size, manager);
+        header_ptr = reinterpret_cast<__shared_lock_data *>(mm_data->get_base_ptr());
+        header_ptr->max_count = MAX_SHARED_LOCKS;
         header_ptr->used_count = 0;
 
-        void *ptr = common_utils::increment_data_ptr(base_ptr, h_size);
+        void *ptr = common_utils::increment_data_ptr(mm_data->get_base_ptr(), h_size);
 
         locks = reinterpret_cast<__lock_struct *>(ptr);
         POSTCONDITION(NOT_NULL(locks));
 
         LOG_DEBUG("Initialized shared lock table.");
-        table_lock->release_lock();
+        RELEASE_LOCK_P(table_lock);
     } catch (const exception &e) {
-        table_lock->release_lock();
+        RELEASE_LOCK_P(table_lock);
         throw LOCK_ERROR("Error creating lock table instance. [error=%s]", e.what());
     } catch (...) {
-        table_lock->release_lock();
+        RELEASE_LOCK_P(table_lock);
         throw LOCK_ERROR("Error creating lock table instance. [error=Unknown]");
     }
 }
@@ -188,10 +163,10 @@ bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) 
     return ret;
 }
 
-void com::wookler::reactfs::common::lock_env::create(mode_t mode, uint32_t count, bool overwrite) {
+void com::wookler::reactfs::common::lock_env::create(mode_t mode, bool is_manager) {
     try {
         table = new shared_lock_table();
-        table->create(mode, count, overwrite);
+        table->create(mode, is_manager);
 
         state.set_state(__state_enum::Available);
 
@@ -206,11 +181,11 @@ void com::wookler::reactfs::common::lock_env::create(mode_t mode, uint32_t count
     }
 }
 
-void com::wookler::reactfs::common::lock_env::create(uint32_t count) {
+void com::wookler::reactfs::common::lock_env::create() {
     std::lock_guard<std::mutex> guard(thread_mutex);
     try {
         table = new shared_lock_table();
-        table->create(count);
+        table->create();
 
         state.set_state(__state_enum::Available);
 
@@ -225,9 +200,9 @@ void com::wookler::reactfs::common::lock_env::create(uint32_t count) {
     }
 }
 
-void com::wookler::reactfs::common::lock_manager::init(mode_t mode, uint32_t count, bool overwrite) {
+void com::wookler::reactfs::common::lock_manager::init(mode_t mode) {
     try {
-        create(mode, count, overwrite);
+        create(mode, true);
         reset();
 
         manager_thread = new thread(lock_manager::run, this);

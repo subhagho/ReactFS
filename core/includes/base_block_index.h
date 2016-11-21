@@ -31,8 +31,8 @@
 #include "common/includes/timer.h"
 #include "common/includes/__alarm.h"
 #include "common/includes/read_write_lock.h"
+#include "common/includes/mapped_data.h"
 
-#include "common/includes/fmstream.h"
 #include "common_structs.h"
 #include "fs_error_base.h"
 
@@ -54,7 +54,7 @@ namespace com {
                     string filename;
 
                     /// Memory-mapped file handle.
-                    fmstream *stream = nullptr;
+                    file_mapped_data *mm_data = nullptr;
 
                     /// Current (committed) write pointer
                     void *write_ptr = nullptr;
@@ -301,7 +301,7 @@ namespace com {
                         PRECONDITION(in_transaction());
                         PRECONDITION(*rollback_info->transaction_id == txid);
 
-                        stream->flush();
+                        mm_data->flush();
 
                         uint64_t offset = rollback_info->start_offset;
                         while (offset < rollback_info->write_offset) {

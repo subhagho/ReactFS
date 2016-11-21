@@ -25,11 +25,9 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
         uint64_t ifile_size =
                 sizeof(__record_index_header) + r_size;
         LOG_DEBUG("Creating index file with size = %lu", ifile_size);
-        stream = new fmstream(p->get_path().c_str(), ifile_size);
-        CHECK_NOT_NULL(stream);
-        base_ptr = stream->data();
-
-        memset(base_ptr, 0, ifile_size);
+        mm_data = new file_mapped_data(p->get_path(), ifile_size);
+        CHECK_NOT_NULL(mm_data);
+        base_ptr = mm_data->get_base_ptr();
 
         header = static_cast<__record_index_header *>(base_ptr);
         header->block_id = block_id;
@@ -46,7 +44,7 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
 
         state.set_state(__state_enum::Available);
 
-        stream->flush();
+        mm_data->flush();
 
         string ps = string(p->get_path());
         this->filename = string(ps);
@@ -76,9 +74,10 @@ void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block
         if (!p->exists()) {
             throw FS_BASE_ERROR("File not found. [path=%s]", p->get_path().c_str());
         }
-        stream = new fmstream(p->get_path().c_str());
-        CHECK_NOT_NULL(stream);
-        base_ptr = stream->data();
+        mm_data = new file_mapped_data(p->get_path());
+        CHECK_NOT_NULL(mm_data);
+
+        base_ptr = mm_data->get_base_ptr();
 
         header = static_cast<__record_index_header *>(base_ptr);
         POSTCONDITION(header->block_id == block_id);
@@ -102,14 +101,7 @@ void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block
 
 void com::wookler::reactfs::core::base_block_index::close() {
     CHECK_AND_DISPOSE(state);
-
-    if (NOT_NULL(stream)) {
-        if (stream->is_open()) {
-            stream->close();
-        }
-        delete (stream);
-        stream = nullptr;
-    }
+    CHECK_AND_FREE(mm_data);
 
     if (NOT_NULL(rollback_info)) {
         CHECK_AND_FREE(rollback_info->transaction_id);

@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
         const __env *env = env_utils::get_env();
         CHECK_NOT_NULL(env);
 
-        lock_env_utils::create_manager(0755, CONFIG_LOCK_COUNT, true);
+        lock_env_utils::create_manager(0755);
         lock_env *manager = lock_env_utils::get_manager();
         CHECK_NOT_NULL(manager);
 
