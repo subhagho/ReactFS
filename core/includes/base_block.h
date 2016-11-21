@@ -430,6 +430,26 @@ namespace com {
                     }
 
                     /*!
+                     * Get the index of the last record committed to this block.
+                     *
+                     * @return - Last comitted record index.
+                     */
+                    uint64_t get_last_index() const {
+                        CHECK_STATE_AVAILABLE(state);
+                        return header->last_index;
+                    }
+
+                    /*!
+                     * Get the first record index in this block;
+                     *
+                     * @return - First record index.
+                     */
+                    uint64_t get_start_index() const {
+                        CHECK_STATE_AVAILABLE(state);
+                        return header->start_index;
+                    }
+
+                    /*!
                      * Start a new write transcation on this block. If block is currently locked for write,
                      * then the call will wait till the block is available.
                      *
@@ -452,6 +472,14 @@ namespace com {
                             }
                         }
                         return false;
+                    }
+
+                    /*!
+                     * Close this block for further writes.
+                     */
+                    void finish() {
+                        CHECK_STATE_AVAILABLE(state);
+                        header->write_state = __write_state::CLOSED;
                     }
 
                     /*!
@@ -529,9 +557,9 @@ namespace com {
                      * @param source - Source buffer to copy data from.
                      * @param length - Length of data to copy.
                      * @param transaction_id - Transaction ID.
-                     * @return - Length of data written.
+                     * @return - Record index of the create record.
                      */
-                    uint32_t write(void *source, uint32_t length, string transaction_id);
+                    uint64_t write(void *source, uint32_t length, string transaction_id);
 
                     /*!
                      * Read a set of records from the block starting at the specified record index. If count exceeds the
@@ -544,8 +572,18 @@ namespace com {
                      */
                     uint32_t read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data);
 
+                    /*!
+                     * Get the state of this block instance.
+                     *
+                     * @return - Instance state.
+                     */
                     const __state_enum get_block_state() const {
                         return state.get_state();
+                    }
+
+                    bool is_writeable() {
+                        CHECK_STATE_AVAILABLE(state);
+                        return (header->write_state == __write_state::WRITABLE);
                     }
 
                     /*!
@@ -706,7 +744,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t s
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(source);
 
-    PRECONDITION(header->write_state == __write_state::WRITABLE);
+    PRECONDITION(is_writeable());
     PRECONDITION(has_space(size));
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
@@ -778,7 +816,7 @@ string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeo
     return txid;
 }
 
-uint32_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t length, string transaction_id) {
+uint64_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t length, string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(source);
 
@@ -807,7 +845,7 @@ uint32_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t l
 
     index_ptr->write_index(r_ptr->header->index, r_ptr->header->offset, r_ptr->header->data_size, transaction_id);
 
-    return r_ptr->header->data_size;
+    return r_ptr->header->index;
 }
 
 uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data) {
@@ -849,7 +887,7 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
             }
         } else {
             shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);
-            (*s_ptr).set_data_ptr(ptr->data_ptr);
+            (*s_ptr).set_data_ptr(ptr->data_ptr, ptr->header->data_size);
 
             data->push_back(s_ptr);
         }

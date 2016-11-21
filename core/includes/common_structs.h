@@ -82,7 +82,7 @@ namespace com {
                 } __record_state;
 
                 typedef struct __record_header__ {
-                    uint32_t index = 0;
+                    uint64_t index = 0;
                     uint32_t offset = 0;
                     __record_state state = __record_state::R_FREE;
                     uint32_t data_size = 0;
@@ -152,6 +152,7 @@ namespace com {
                     bool allocated = false;
                     uint32_t size = 0;
                     void *data_ptr = nullptr;
+                    const void *const_ptr = nullptr;
                 public:
                     __read_ptr(uint32_t size) {
                         this->size = size;
@@ -164,13 +165,14 @@ namespace com {
                         data_ptr = nullptr;
                     }
 
-                    void set_data_ptr(void *data_ptr) {
+                    void set_data_ptr(const void *data_ptr, uint32_t size) {
                         PRECONDITION(NOT_NULL(data_ptr));
 
-                        this->data_ptr = data_ptr;
+                        this->const_ptr = data_ptr;
+                        this->size = size;
                     }
 
-                    void copy(void *data_ptr, uint32_t size = 0) {
+                    void copy(const void *data_ptr, uint32_t size = 0) {
                         PRECONDITION(NOT_NULL(data_ptr));
                         if (allocated) {
                             FREE_PTR(this->data_ptr);
@@ -187,8 +189,11 @@ namespace com {
                         memcpy(this->data_ptr, data_ptr, size);
                     }
 
-                    void *get_data_ptr() {
-                        return this->data_ptr;
+                    const void *get_data_ptr() {
+                        if (allocated)
+                            return this->data_ptr;
+                        else
+                            return this->const_ptr;
                     }
 
                     uint32_t get_size() {

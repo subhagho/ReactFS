@@ -59,7 +59,8 @@ void test_raw() {
 
         if (block->get_free_space() < sizeof(_test_typed))
             break;
-        block->write(&t, sizeof(_test_typed), txid);
+        uint64_t index = block->write(&t, sizeof(_test_typed), txid);
+        POSTCONDITION(index >= 0);
         count++;
     }
     block->commit(txid);
@@ -76,9 +77,10 @@ void test_raw() {
         uint32_t r_count = block->read((RECORD_START_INDEX + fetched), 5, &r);
         if (r_count > 0) {
             for (int ii = 0; ii < r.size(); ii++) {
-                void *ptr = r[ii].get()->get_data_ptr();
+                const void *ptr = r[ii].get()->get_data_ptr();
                 CHECK_NOT_NULL(ptr);
-                _test_typed *t = static_cast<_test_typed *>(ptr);
+                POSTCONDITION(r[ii].get()->get_size() == sizeof(_test_typed));
+                const _test_typed *t = static_cast<const _test_typed *>(ptr);
                 LOG_DEBUG("[index=%d][uuid=%s]", t->index, t->value);
             }
             fetched += r.size();
