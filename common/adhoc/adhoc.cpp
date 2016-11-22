@@ -11,20 +11,10 @@ using namespace std;
 using namespace com::wookler::reactfs::common;
 
 int main(int argc, char *argv[]) {
-    string s = "This is a new line";
-    if (string_utils::starts_with(&s, "This")) {
-        cout << "Find [This] succeeded...\n";
-    }
+    uint32_t ii = 0;
 
-    if (!string_utils::starts_with(&s, "is")) {
-        cout << "Find starts_with [is] failed...\n";
-    }
-
-    if (!string_utils::ends_with(&s, "is")) {
-        cout << "Find ends_with [is] failed...\n";
-    }
-
-    if (!string_utils::ends_with(&s, "line")) {
-        cout << "Find ends_with [line] succeeded...\n";
+    for (uint32_t jj = 0; jj < 10; jj++) {
+        uint32_t k = ii++;
+        cout << "[" << ii << "] value = " << k << "\n";
     }
 }

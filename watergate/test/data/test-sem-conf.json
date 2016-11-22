@@ -53,6 +53,14 @@
     },
     "test-fs-writer": {
       "data-file": "/work/dev/wookler/watergate/test/data/fs-data.txt"
-    }
+    },
+    "node-env": {
+      "data-size": "64M"
+    },
+    "mount-points": [
+      "/work/temp/data_0",
+      "/work/temp/data_1",
+      "/work/temp/data_2"
+    ]
   }
 }

@@ -7,6 +7,7 @@
 #include "common/includes/init_utils.h"
 #include "core/includes/base_block.h"
 #include "core/includes/block_utils.h"
+#include "core/includes/node_env.h"
 
 #define REUSE_BLOCK_FILE "/tmp/block_reused.raw"
 #define REUSE_BLOCK_ID 1024

@@ -53,7 +53,7 @@ namespace com {
 
                 public:
                     __metric(string name) {
-                        _assert(!IS_EMPTY(name));
+                        PRECONDITION(!IS_EMPTY(name));
 
                         this->type = BasicMetric;
                         this->name = new string(name);
@@ -61,7 +61,7 @@ namespace com {
                     }
 
                     __metric(string name, bool thread_safe) {
-                        _assert(!IS_EMPTY(name));
+                        PRECONDITION(!IS_EMPTY(name));
 
                         this->type = BasicMetric;
                         this->name = new string(name);

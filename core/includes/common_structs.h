@@ -147,6 +147,28 @@ namespace com {
                     __encryption encryption;
                 } __block_header;
 
+                class __mapped_ptr {
+                private:
+                    uint32_t size = 0;
+                    void *data_ptr = nullptr;
+                public:
+                    void set_data_ptr(void *data_ptr, uint32_t size) {
+                        PRECONDITION(NOT_NULL(data_ptr));
+
+                        this->data_ptr = data_ptr;
+                        this->size = size;
+                    }
+
+                    void *get_data_ptr() {
+                        CHECK_NOT_NULL(this->data_ptr);
+                        return this->data_ptr;
+                    }
+
+                    uint32_t get_size() {
+                        return this->size;
+                    }
+                };
+
                 class __read_ptr {
                 private:
                     bool allocated = false;
@@ -202,6 +224,7 @@ namespace com {
                 };
 
                 typedef shared_ptr<__read_ptr> shared_read_ptr;
+                typedef shared_ptr<__mapped_ptr> shared_mapped_ptr;
             }
         }
     }
