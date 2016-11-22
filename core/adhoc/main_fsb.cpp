@@ -48,8 +48,10 @@ void test_raw() {
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
     string txid = block->start_transaction();
-    POSTCONDITION(!IS_EMPTY(txid))
+    POSTCONDITION(!IS_EMPTY(txid));
     int count = 0;
+    vector<uint64_t> to_deleted;
+
     for (int ii = 0; ii < COUNT_RECORDS; ii++) {
         _test_typed t;
         t.index = ii;
@@ -61,20 +63,38 @@ void test_raw() {
             break;
         uint64_t index = block->write(&t, sizeof(_test_typed), txid);
         POSTCONDITION(index >= 0);
+        if (ii % 5 == 0) {
+            to_deleted.push_back(index);
+        }
         count++;
     }
     block->commit(txid);
     LOG_INFO("Written [%d] records to block. [used bytes=%lu]", count, block->get_used_space());
+
 
     CHECK_AND_FREE(block);
     block = new base_block();
     block->open(REUSE_BLOCK_ID, REUSE_BLOCK_FILE);
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
+    txid = block->start_transaction();
+    POSTCONDITION(!IS_EMPTY(txid));
+    int d_count = 0;
+    for (uint64_t index : to_deleted) {
+        if (block->delete_record(index, txid)) {
+            d_count++;
+        }
+    }
+
+
+    block->commit(txid);
+    LOG_INFO("Deleted [%d] records...", d_count);
+
     int fetched = 0;
     vector<shared_read_ptr> r;
-    while (fetched <= count) {
-        uint32_t r_count = block->read((RECORD_START_INDEX + fetched), 5, &r);
+    uint32_t offset = 0;
+    while (offset <= count) {
+        uint32_t r_count = block->read((RECORD_START_INDEX + offset), 5, &r);
         if (r_count > 0) {
             for (int ii = 0; ii < r.size(); ii++) {
                 const void *ptr = r[ii].get()->get_data_ptr();
@@ -85,10 +105,32 @@ void test_raw() {
             }
             fetched += r.size();
             r.clear();
+
+            offset += 5;
         } else
             break;
     }
 
+    LOG_INFO("Fetched [%d] records...", fetched);
+
+    fetched = 0;
+    offset = 0;
+    while (true) {
+        uint32_t r_count = block->read((RECORD_START_INDEX + offset), 20, &r, __record_state::R_DELETED);
+        if (r_count > 0) {
+            for (int ii = 0; ii < r.size(); ii++) {
+                const void *ptr = r[ii].get()->get_data_ptr();
+                CHECK_NOT_NULL(ptr);
+                POSTCONDITION(r[ii].get()->get_size() == sizeof(_test_typed));
+                const _test_typed *t = static_cast<const _test_typed *>(ptr);
+                LOG_DEBUG("[index=%d][uuid=%s]", t->index, t->value);
+            }
+            fetched += r.size();
+            r.clear();
+            offset += 20;
+        } else
+            break;
+    }
     CHECK_AND_FREE(block);
 }
 

@@ -23,6 +23,8 @@
 #ifndef REACTFS_BASE_BLOCK_INDEX_H
 #define REACTFS_BASE_BLOCK_INDEX_H
 
+#include <vector>
+
 #include "common/includes/common.h"
 #include "common/includes/__state__.h"
 #include "common/includes/log_utils.h"
@@ -67,6 +69,8 @@ namespace com {
 
                     /// Rollback information (in case a write transaction is in progress)
                     __rollback_info *rollback_info = nullptr;
+
+                    vector<uint64_t> rollback_info_deletes;
 
                     /*!
                      * Get the index filename for the specified block file.
@@ -147,6 +151,8 @@ namespace com {
                         rollback_info->start_index = nullptr;
                         rollback_info->used_bytes = 0;
 
+                        rollback_info_deletes.clear();
+
                         return *rollback_info->transaction_id;
                     }
 
@@ -167,6 +173,8 @@ namespace com {
                         rollback_info->start_offset = 0;
                         rollback_info->start_index = nullptr;
                         rollback_info->used_bytes = 0;
+
+                        rollback_info_deletes.clear();
                     }
 
                     /*!
@@ -234,9 +242,10 @@ namespace com {
                      * Read the index record for the specified index.
                      *
                      * @param index - Data record index.
+                     * @param all - Allow to read dirty/deleted records?
                      * @return - Index record pointer.
                      */
-                    __record_index_ptr *__read_index(uint64_t index);
+                    __record_index_ptr *__read_index(uint64_t index, bool all);
 
                 public:
                     ~base_block_index() {
@@ -315,6 +324,13 @@ namespace com {
                         header->used_size += rollback_info->used_bytes;
                         header->write_offset = rollback_info->write_offset;
 
+                        if (!IS_EMPTY(rollback_info_deletes)) {
+                            for (uint64_t index : rollback_info_deletes) {
+                                __record_index_ptr *ptr = __read_index(index, true);
+                                CHECK_NOT_NULL(ptr);
+                                ptr->readable = false;
+                            }
+                        }
                         end_transaction();
                     }
 
@@ -337,6 +353,25 @@ namespace com {
                      */
                     void force_rollback() {
                         end_transaction();
+                    }
+
+                    /*!
+                     * Delete the specified index record.
+                     *
+                     * @param index - Index of Record to delete.
+                     * @param transaction_id - Current transaction ID.
+                     * @return - Is deleted?
+                     */
+                    bool delete_index(uint64_t index, string transaction_id);
+
+                    /*!
+                     * Get the list of indexes that have been deleted.
+                     *
+                     * @param transaction_id - Current transaction ID.
+                     * @return - List of deleted indexes.
+                     */
+                    vector<uint64_t> get_deleted_indexes(string transaction_id) {
+                        return rollback_info_deletes;
                     }
 
                     /*!
@@ -384,10 +419,11 @@ namespace com {
                      * Read the index record for the specified index.
                      *
                      * @param index - Data record index.
+                     * @param all - Allow to read dirty/deleted records?
                      * @return - Index record pointer.
                      */
-                    const __record_index_ptr *read_index(uint64_t index) {
-                        return __read_index(index);
+                    const __record_index_ptr *read_index(uint64_t index, bool all = false) {
+                        return __read_index(index, all);
                     }
                 };
             }

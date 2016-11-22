@@ -78,7 +78,7 @@ namespace com {
                 } __write_state;
 
                 typedef enum __record_state__ {
-                    R_FREE = 0, R_READABLE = 1, R_DELETED = 2, R_DIRTY = 3
+                    R_FREE = 0, R_READABLE = 1, R_DELETED = 2, R_DIRTY = 3, R_ALL = 4
                 } __record_state;
 
                 typedef struct __record_header__ {

@@ -561,6 +561,15 @@ namespace com {
                      */
                     uint64_t write(void *source, uint32_t length, string transaction_id);
 
+                    bool delete_record(uint64_t index, string transaction_id) {
+                        CHECK_STATE_AVAILABLE(state);
+                        PRECONDITION(is_writeable());
+                        PRECONDITION(in_transaction());
+                        PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
+
+                        return index_ptr->delete_index(index, transaction_id);
+                    }
+
                     /*!
                      * Read a set of records from the block starting at the specified record index. If count exceeds the
                      * number of available record, only the set of available records will be returned.
@@ -568,9 +577,11 @@ namespace com {
                      * @param index - Start record index.
                      * @param count - No. of records to read.
                      * @param data - Result vector to copy the records to.
+                     * @param r_state - Type of records to read.
                      * @return - No. of records returned.
                      */
-                    uint32_t read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data);
+                    uint32_t read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
+                                  __record_state r_state = __record_state::R_READABLE);
 
                     /*!
                      * Get the state of this block instance.
@@ -581,6 +592,11 @@ namespace com {
                         return state.get_state();
                     }
 
+                    /*!
+                     * Check if this block is writeable.
+                     *
+                     * @return - Can write?
+                     */
                     bool is_writeable() {
                         CHECK_STATE_AVAILABLE(state);
                         return (header->write_state == __write_state::WRITABLE);
@@ -848,18 +864,48 @@ uint64_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t l
     return r_ptr->header->index;
 }
 
-uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data) {
+uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
+                                                       __record_state r_state) {
     CHECK_STATE_AVAILABLE(state);
+    PRECONDITION(r_state != __record_state::R_FREE);
+
     uint64_t si = index;
     uint32_t c = 0;
     temp_buffer *buffer = new temp_buffer();
     temp_buffer *writebuff = nullptr;
 
+    bool r_type = false;
+    switch (r_state) {
+        case __record_state::R_DELETED:
+        case __record_state::R_DIRTY:
+        case __record_state::R_ALL:
+            r_type = true;
+            break;
+        default:
+            break;
+    }
+
     while (si < header->last_index && c < count) {
-        const __record_index_ptr *iptr = index_ptr->read_index(si);
-        CHECK_NOT_NULL(iptr);
+        const __record_index_ptr *iptr = index_ptr->read_index(si, r_type);
+        if (IS_NULL(iptr)) {
+            si++;
+            continue;
+        }
         __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
         CHECK_NOT_NULL(ptr);
+
+        switch (r_state) {
+            case __record_state::R_DELETED:
+            case __record_state::R_DIRTY:
+                if (ptr->header->state != r_state) {
+                    si++;
+                    continue;
+                }
+                break;
+            default:
+                break;
+        }
+
         if (is_encrypted() || is_compressed()) {
             bool use_buffer = false;
             CHECK_NOT_NULL(ptr);
@@ -903,6 +949,16 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
 
+    vector<uint64_t> deleted = index_ptr->get_deleted_indexes(transaction_id);
+    if (!IS_EMPTY(deleted)) {
+        for (uint64_t index : deleted) {
+            const __record_index_ptr *iptr = index_ptr->read_index(index, true);
+            CHECK_NOT_NULL(iptr);
+            __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
+            CHECK_NOT_NULL(ptr);
+            ptr->header->state = __record_state::R_DELETED;
+        }
+    }
     index_ptr->commit(transaction_id);
     mm_data->flush();
 

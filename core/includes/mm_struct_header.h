@@ -23,6 +23,7 @@
 #ifndef REACTFS_MM_STRUCT_HEADER_H
 #define REACTFS_MM_STRUCT_HEADER_H
 
+#include <mutex>
 #include <vector>
 #include <unordered_map>
 
@@ -87,6 +88,7 @@ namespace com {
                 private:
                     __state__ state;
 
+                    mutex thread_mutex;
                     string name;
                     Path *base_dir = nullptr;
 
@@ -127,6 +129,9 @@ namespace com {
                         }
                         PRECONDITION(NOT_NULL(mount));
                         PRECONDITION(!IS_EMPTY(string(mount->path)));
+
+                        mount->blocks_used++;
+                        mount->last_block_time = time_utils::now();
 
                         Path p(mount->path);
                         string d = string(header->dir_prefix);
@@ -217,6 +222,51 @@ namespace com {
                         POSTCONDITION(strncmp(header->name, this->name.c_str(), this->name.length()) == 0);
                     }
 
+                    bool is_block_loaded(uint32_t index) {
+                        unordered_map<uint32_t, base_block *>::const_iterator iter = block_index.find(index);
+                        if (iter != block_index.end()) {
+                            return true;
+                        }
+                        return false;
+                    }
+
+                    base_block *get_block(uint32_t index) {
+                        CHECK_STATE_AVAILABLE(state);
+                        base_block *block = nullptr;
+                        unordered_map<uint32_t, base_block *>::const_iterator iter = block_index.find(index);
+                        if (iter != block_index.end()) {
+                            block = iter->second;
+                            CHECK_NOT_NULL(block);
+                        } else {
+                            __mm_block_info *bi = get_block_info(index);
+                            if (bi->deleted) {
+                                return nullptr;
+                            }
+
+                            lock_guard<std::mutex> lock(thread_mutex);
+                            if (is_block_loaded(index)) {
+                                unordered_map<uint32_t, base_block *>::const_iterator niter = block_index.find(index);
+                                if (niter != block_index.end()) {
+                                    block = niter->second;
+                                    CHECK_NOT_NULL(block);
+                                }
+                            } else {
+                                CHECK_NOT_NULL(bi);
+                                PRECONDITION(bi->block_id >= 0);
+                                PRECONDITION(!IS_EMPTY(string(bi->filename)));
+                                PRECONDITION(!bi->deleted);
+
+                                block = new base_block();
+                                CHECK_NOT_NULL(block);
+                                block->open(bi->block_id, bi->filename);
+                                POSTCONDITION(block->get_block_state() == __state_enum::Available);
+
+                                block_index[index] = block;
+                            }
+                        }
+                        return block;
+                    }
+
                 public:
                     mm_struct_header(string name, string base_dir, uint32_t record_size,
                                      string dir_prefix = EMPTY_STRING,
@@ -302,31 +352,6 @@ namespace com {
                         return header->block_count;
                     }
 
-                    base_block *get_block(uint32_t index) {
-                        CHECK_STATE_AVAILABLE(state);
-                        base_block *block = nullptr;
-                        unordered_map<uint32_t, base_block *>::const_iterator iter = block_index.find(index);
-                        if (iter != block_index.end()) {
-                            block = iter->second;
-                            CHECK_NOT_NULL(block);
-                        } else {
-                            __mm_block_info *bi = get_block_info(index);
-                            CHECK_NOT_NULL(bi);
-                            PRECONDITION(bi->block_id >= 0);
-                            PRECONDITION(!IS_EMPTY(string(bi->filename)));
-                            PRECONDITION(!bi->deleted);
-
-                            block = new base_block();
-                            CHECK_NOT_NULL(block);
-                            block->open(bi->block_id, bi->filename);
-                            POSTCONDITION(block->get_block_state() == __state_enum::Available);
-
-                            block_index[index] = block;
-                        }
-
-                        return block;
-                    }
-
                     const __mm_block_info *write(void *data, uint32_t size) {
                         CHECK_STATE_AVAILABLE(state);
 
@@ -400,12 +425,26 @@ namespace com {
                         return nullptr;
                     }
 
+                    bool remove(uint64_t index, const uint32_t block_index) {
+                        CHECK_STATE_AVAILABLE(state);
+                        PRECONDITION(block_index >= 0 && block_index < header->block_count);
+                        PRECONDITION(index >= 0 && index <= header->last_written_index);
+
+                        base_block *block = get_block(block_index);
+                        CHECK_NOT_NULL(block);
+                        PRECONDITION(index >= block->get_start_index() && index <= block->get_last_index());
+
+                        return false;
+                    }
+
                     bool has_record_index(uint64_t index, uint32_t block_id) {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(index >= 0 && index <= header->last_written_index);
 
                         base_block *block = get_block(block_id);
-                        CHECK_NOT_NULL(block);
+                        if (IS_NULL(block)) {
+                            return false;
+                        }
 
                         return (index >= block->get_start_index() && index <= block->get_last_index());
                     }
@@ -413,6 +452,39 @@ namespace com {
                     uint64_t get_last_index() {
                         CHECK_STATE_AVAILABLE(state);
                         return header->last_written_index;
+                    }
+
+                    bool delete_block(uint32_t block_index) {
+                        CHECK_STATE_AVAILABLE(state);
+                        PRECONDITION(block_index >= 0 && block_index < header->block_count);
+
+                        bool r = false;
+                        WAIT_LOCK_P(data_lock);
+                        try {
+                            __mm_block_info *bi = get_block_info(block_index);
+                            CHECK_NOT_NULL(bi);
+                            if (!bi->deleted) {
+                                bi->deleted = true;
+                                if (is_block_loaded(block_index)) {
+                                    lock_guard<std::mutex> lock(thread_mutex);
+                                    base_block *block = get_block(block_index);
+                                    CHECK_AND_FREE(block);
+                                    this->block_index.erase(block_index);
+                                }
+                                block_utils::delete_block(bi->block_id, string(bi->filename));
+                            }
+                        } catch (const exception &e) {
+                            RELEASE_LOCK_P(data_lock);
+                            fs_error_base err = FS_BASE_ERROR("Error delete block. [name=%s][block id=%lu][error=%s]",
+                                                              this->name.c_str(), block_index, e.what());
+                            throw err;
+                        } catch (...) {
+                            RELEASE_LOCK_P(data_lock);
+                            fs_error_base err = FS_BASE_ERROR("Error writing data. [name=%s][block id=%lu][error=%s]",
+                                                              this->name.c_str(), block_index, "UNKNOWN");
+                            throw err;
+                        }
+                        return r;
                     }
                 };
 

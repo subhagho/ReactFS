@@ -156,7 +156,7 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     return iptr;
 }
 
-__record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(uint64_t index) {
+__record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(uint64_t index, bool all) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
     uint32_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
@@ -165,7 +165,27 @@ __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(
     void *rptr = common_utils::increment_data_ptr(ptr, offset);
     __record_index_ptr *iptr = static_cast<__record_index_ptr *>(rptr);
     POSTCONDITION(iptr->index == index);
-    POSTCONDITION(iptr->readable);
+    if (!all && !iptr->readable)
+        return nullptr;
 
     return iptr;
+}
+
+bool com::wookler::reactfs::core::base_block_index::delete_index(uint64_t index, string transaction_id) {
+    CHECK_STATE_AVAILABLE(state);
+    PRECONDITION(header->write_state == __write_state::WRITABLE);
+    PRECONDITION(in_transaction());
+    PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
+
+    uint32_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
+    void *ptr = get_data_ptr();
+    void *rptr = common_utils::increment_data_ptr(ptr, offset);
+    __record_index_ptr *iptr = static_cast<__record_index_ptr *>(rptr);
+    POSTCONDITION(iptr->index == index);
+
+    if (iptr->readable) {
+        rollback_info_deletes.push_back(index);
+        return true;
+    }
+    return false;
 }
