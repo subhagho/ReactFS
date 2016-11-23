@@ -65,6 +65,10 @@ public:
     void error() override {
 
     }
+
+    void error(exception *e) override {
+
+    }
 };
 
 #endif //WATERGATE_TEST_ALARM_H

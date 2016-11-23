@@ -77,6 +77,8 @@ namespace com {
                     static void add_handler(int sigint, __callback *c) {
                         PRECONDITION(NOT_NULL(c));
 
+                        LOG_DEBUG("[uuid=%s] Registering signal handler...", c->get_uuid().c_str());
+
                         std::lock_guard<std::mutex> guard(_lock);
 
                         unordered_map<int, __callback_chain *>::iterator iter = signal_map.find(sigint);
@@ -128,6 +130,7 @@ namespace com {
                             __callback_chain *ptr = iter->second;
                             while (NOT_NULL(ptr)) {
                                 if (ptr->callback->get_uuid() == uuid) {
+                                    LOG_DEBUG("[uuid=%s] Removing signal handler...", uuid.c_str());
                                     if (ptr == iter->second) {
                                         if (IS_NULL(ptr->next)) {
                                             signal_map[sigint] = nullptr;
@@ -139,6 +142,7 @@ namespace com {
                                 } else if (NOT_NULL(ptr->next)) {
                                     if (NOT_NULL(ptr->next->callback)) {
                                         if (ptr->next->callback->get_uuid() == uuid) {
+                                            LOG_DEBUG("[uuid=%s] Removing signal handler...", uuid.c_str());
                                             __callback_chain *nptr = ptr->next->next;
                                             __callback_chain *rptr = ptr->next;
                                             ptr->next = nptr;

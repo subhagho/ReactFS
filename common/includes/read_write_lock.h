@@ -323,6 +323,7 @@ namespace com {
                         uint64_t startt = time_utils::now();
                         string thread_id = thread_utils::get_current_thread();
                         bool locked = false;
+                        NEW_ALARM(DEFAULT_RW_LOCK_RETRY, 0);
                         while (true) {
                             if (lock->try_lock()) {
                                 if (has_write_lock(thread_id)) {
@@ -350,7 +351,7 @@ namespace com {
                             if ((now - startt) > timeout) {
                                 break;
                             }
-                            START_ALARM(DEFAULT_RW_LOCK_RETRY);
+                            START_ALARM(0);
                         }
                         return txn_id;
                     }
@@ -364,6 +365,7 @@ namespace com {
 
                         uint64_t startt = time_utils::now();
                         bool locked = false;
+                        NEW_ALARM(DEFAULT_RW_LOCK_RETRY, 0);
                         while (true) {
                             if (lock->try_lock()) {
                                 if (!lock_struct->write_locked) {
@@ -403,7 +405,7 @@ namespace com {
                             if ((now - startt) > timeout) {
                                 break;
                             }
-                            START_ALARM(DEFAULT_RW_LOCK_RETRY);
+                            START_ALARM(0);
                         }
                         return locked;
                     }

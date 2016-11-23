@@ -153,17 +153,14 @@ namespace com {
                         t.start();
 
                         __lock_state ret;
-                        __alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
+                        NEW_ALARM(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1), 0);
                         while (true) {
                             *err = 0;
                             ret = lock_get(name, priority, quota, timeout, err);
                             if (ret != QuotaReached && ret != Retry) {
                                 break;
                             }
-                            if (!a.start()) {
-                                ret = Error;
-                                break;
-                            }
+                            START_ALARM(0);
                             if (t.get_current_elapsed() > timeout && (priority != 0)) {
                                 TRACE("Lock call timeout. [name=%s][priority=%d][timeout=%lu]", name.c_str(), priority,
                                       timeout);

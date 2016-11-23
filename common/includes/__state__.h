@@ -55,7 +55,7 @@ namespace com {
                 class __state__ {
                 private:
                     __state_enum state = Unknown;
-                    const exception *error = NULL;
+                    const exception *error = nullptr;
 
                 public:
                     const __state_enum get_state() const {

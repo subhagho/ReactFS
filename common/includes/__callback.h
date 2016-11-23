@@ -206,6 +206,14 @@ namespace com {
                      * This will be invoked in case of error conditions.
                      */
                     virtual void error() = 0;
+
+                    /*!
+                     * Virtual method to be implemented by sub-classes.
+                     * This will be invoked in case of error conditions.
+                     *
+                     * @param err - Exception handle of the error.
+                     */
+                    virtual void error(exception *err) = 0;
                 };
             }
         }

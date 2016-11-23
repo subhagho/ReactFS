@@ -222,11 +222,12 @@ void com::wookler::reactfs::common::lock_manager::run(lock_manager *manager) {
     PRECONDITION(NOT_NULL(manager));
     try {
         LOG_INFO("Starting lock manager thread...");
+        NEW_ALARM(DEFAULT_LOCK_MGR_SLEEP, 0);
         while (manager->state.get_state() == __state_enum::Available) {
             PRECONDITION(NOT_NULL(manager));
             manager->check_lock_states();
 
-            START_ALARM(DEFAULT_LOCK_MGR_SLEEP);
+            START_ALARM(0);
         }
         LOG_INFO("Lock manager thread terminated...");
     } catch (const exception &e) {

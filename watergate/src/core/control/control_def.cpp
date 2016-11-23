@@ -186,7 +186,7 @@ com::wookler::watergate::core::control_client::lock_get(string name, int priorit
             ret = Timeout;
         } else {
             int locked_priority = priority;
-            __alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
+            NEW_ALARM(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1), 0);
             for (int ii = priority - 1; ii >= 0; ii--) {
                 while (true) {
                     if (t.get_current_elapsed() > timeout) {
@@ -213,10 +213,7 @@ com::wookler::watergate::core::control_client::lock_get(string name, int priorit
                     if (ret == Locked || ret == QuotaReached || ret == Error) {
                         break;
                     } else {
-                        if (!a.start()) {
-                            ret = Error;
-                            break;
-                        }
+                        START_ALARM(0);
                     }
                 }
                 if (ret != Locked) {

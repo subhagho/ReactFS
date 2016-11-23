@@ -32,7 +32,9 @@ TEST_CASE("Test time function.", "[com::watergate::common::timer]") {
     timer t;
 
     t.start();
-    START_ALARM("4s");
+
+    NEW_ALARM("4s", 0);
+    START_ALARM(0);
 
     t.stop();
 
@@ -56,12 +58,18 @@ TEST_CASE("Test alarm with callback.", "[com::watergate::common::alarm]") {
     test_callback *tc = new test_callback(tt);
 
     t.start();
-    START_ALARM("5s");
+
+    NEW_ALARM("5s", 0);
+    START_ALARM(0);
 
     t.pause();
-    START_ALARM(1000 * 5);
+    NEW_ALARM(1000 * 5, 1);
+    START_ALARM(1);
+
     t.restart();
-    START_ALARM_WITH_CALLBACK("5s", tc);
+    NEW_ALARM_WITH_CALLBACK("5s", tc, 2);
+    START_ALARM(2);
+
     t.stop();
 
     CHECK_AND_FREE(tt);

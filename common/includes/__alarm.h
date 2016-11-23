@@ -35,12 +35,32 @@
  *
  * @param t - Interval to set the alarm for.
  */
-#define START_ALARM(t) do {\
-    com::wookler::reactfs::common::__alarm_signal_handler h(__FILE__, __LINE__); \
-    com::wookler::reactfs::common::__alarm a(t, &h); \
+#define NEW_ALARM(t, i) \
+    com::wookler::reactfs::common::__alarm_signal_handler _h_##i(__FILE__, __LINE__); \
+    com::wookler::reactfs::common::__alarm _a_##i(t, &_h_##i); \
+
+
+/*!
+ * Macro defined for running an alarm for the specified alaram instance.
+ *
+ * @param a - Alarm object instance.
+ */
+#define WAIT_ALARM(a) do {\
     bool r = a.start(); \
     POSTCONDITION(r); \
 } while(0);
+
+/*!
+ * Macro defined for running an alarm for the specified alaram instance.
+ *
+ * @param a - Alarm object pointer.
+ */
+#define WAIT_ALARM_P(a) do {\
+    bool r = a->start(); \
+    POSTCONDITION(r); \
+} while(0);
+
+#define START_ALARM(i) WAIT_ALARM(_a_##i)
 
 /*!
  * Macro defined for running an alarm for the specified interval
@@ -49,11 +69,8 @@
  * @param t - Interval to set the alarm for.
  * @param c - Callback to invoke
  */
-#define START_ALARM_WITH_CALLBACK(t, c) do {\
-    com::wookler::reactfs::common::__alarm a(t, c); \
-    bool r = a.start(); \
-    _assert(r); \
-} while(0);
+#define NEW_ALARM_WITH_CALLBACK(t, c, i) \
+    com::wookler::reactfs::common::__alarm _a_##i(t, c);
 
 namespace com {
     namespace wookler {
@@ -94,6 +111,10 @@ namespace com {
                      */
                     void error() override {
                         LOG_ERROR("[file=%s][line=%lu] Alarm interrupted...", filename, lineno);
+                    }
+
+                    void error(exception *err) override {
+                        LOG_ERROR("[file=%s][line=%lu][error=%s] Alarm interrupted...", filename, lineno, err->what());
                     }
                 };
 

@@ -84,6 +84,7 @@ void com::wookler::watergate::tests::common::basic_lock_client::run() {
         timer t;
 
         usleep((priority + 1) * 50 * 1000);
+        NEW_ALARM(sleep_timeout * (priority + 1), 0);
         for (int ii = 0; ii < 8; ii++) {
             count = 0;
             LOG_DEBUG("[pid=%d][thread=%s][name=%s][priority=%d] run sequence %d", pid, tid.c_str(),
@@ -123,7 +124,7 @@ void com::wookler::watergate::tests::common::basic_lock_client::run() {
                 usleep(5 * 1000);
                 count++;
             }
-            START_ALARM(sleep_timeout * (priority + 1));
+            START_ALARM(0);
         }
 
         LOG_DEBUG("[pid=%d][priority=%d] Finished executing. [execution time=%lu]", pid, priority,

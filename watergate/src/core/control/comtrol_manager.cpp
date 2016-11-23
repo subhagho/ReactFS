@@ -27,11 +27,9 @@ void com::wookler::watergate::core::control_manager::run(control_manager *owner)
 
     try {
         LOG_INFO("Starting control manager thread...");
-        __alarm sw(DEFAULT_CONTROL_THREAD_SLEEP);
+        NEW_ALARM(DEFAULT_CONTROL_THREAD_SLEEP, 0);
         while (NOT_NULL(owner) && owner->state.is_available()) {
-            if (!sw.start()) {
-                throw CONTROL_ERROR("Sleep state interrupted...");
-            }
+            START_ALARM(0);
             if (!IS_EMPTY(owner->semaphores)) {
                 unordered_map<string, _semaphore *>::iterator iter;
                 for (iter = owner->semaphores.begin(); iter != owner->semaphores.end(); iter++) {
