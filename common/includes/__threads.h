@@ -208,6 +208,15 @@ namespace com {
                         unique_lock<std::mutex> lock(__lock);
                         task_queue.push(task);
                     }
+
+                    /*!
+                     * Check if the task queue is empty.
+                     *
+                     * @return - Is empty?
+                     */
+                    bool is_queue_empty() {
+                        return task_queue.empty();
+                    }
                 };
 
 
@@ -346,6 +355,8 @@ namespace com {
                     __thread_stack *queue = nullptr;
                     /// Sleep interval when the queue is empty.
                     uint64_t sleep_timeout = 0;
+                    ///Thread pool name this thread belong to.
+                    string pool_name;
 
                     /*!
                      * Run function that will be invoked by the thread.
@@ -354,6 +365,8 @@ namespace com {
                         try {
                             this->__id = thread_utils::get_current_thread();
 
+                            LOG_DEBUG("[pool=%s][thread=%s] Starting runner thread...", pool_name.c_str(),
+                                      __id.c_str());
                             __alarm alarm(sleep_timeout);
                             __state.set_state(__thread_state_enum::TS_AVAILABLE);
                             while (!__state.is_stopped()) {
@@ -381,16 +394,22 @@ namespace com {
                                 __state.set_state(__thread_state_enum::TS_AVAILABLE);
                             }
                         } catch (const exception &e) {
-                            base_error be = BASE_ERROR("Thread terminated with exception. [error=%s]", e.what());
+                            base_error be = BASE_ERROR(
+                                    "[pool=%s][thread=%s] Thread terminated with exception. [error=%s]",
+                                    pool_name.c_str(), __id.c_str(), e.what());
                             LOG_CRITICAL(be.what());
                             __state.set_error(&be);
                             throw be;
                         } catch (...) {
-                            base_error be = BASE_ERROR("Thread terminated with exception. [error=UNKNOWN]");
+                            base_error be = BASE_ERROR(
+                                    "[pool=%s][thread=%s] Thread terminated with exception. [error=UNKNOWN]",
+                                    pool_name.c_str(), __id.c_str());
                             LOG_CRITICAL(be.what());
                             __state.set_error(&be);
                             throw be;
                         }
+                        LOG_DEBUG("[pool=%s][thread=%s] Stopped runner thread...", pool_name.c_str(),
+                                  __id.c_str());
                     }
 
                 public:
@@ -401,10 +420,11 @@ namespace com {
                      * @param sleep_timeout - Thread sleep timeout (in millisecods).
                      * @return
                      */
-                    __m_thread(__thread_stack *queue, uint64_t sleep_timeout) {
+                    __m_thread(string name, __thread_stack *queue, uint64_t sleep_timeout) {
                         CHECK_NOT_NULL(queue);
                         PRECONDITION(sleep_timeout > 0);
 
+                        this->pool_name = name;
                         this->queue = queue;
                         this->sleep_timeout = sleep_timeout;
                     }
@@ -416,12 +436,13 @@ namespace com {
                     * @param sleep_timeout - Thread sleep timeout (as duration string).
                     * @return
                     */
-                    __m_thread(__thread_stack *queue, string sleep_timeout) {
+                    __m_thread(string name, __thread_stack *queue, string sleep_timeout) {
                         CHECK_NOT_NULL(queue);
                         PRECONDITION(!IS_EMPTY(sleep_timeout));
                         uint64_t stime = common_utils::parse_duration(sleep_timeout);
                         POSTCONDITION(stime > 0);
 
+                        this->pool_name = name;
                         this->queue = queue;
                         this->sleep_timeout = stime;
                     }
@@ -488,24 +509,33 @@ namespace com {
                  */
                 class __thread_pool {
                 private:
+                    /// State of this thread pool.
+                    __state__ state;
                     /// Task queue to be used for this pool.
                     __thread_stack *task_queue = nullptr;
                     /// Array of managed threads that are part of this pool.
                     vector<__m_thread *> *threads;
-                    /// Number of thread in the pool.
+                    /// Number of thread(s) in the pool.
                     uint16_t max_t_count = 0;
+                    /// Unique name of this thread pool.
+                    string name;
+                    /// Ensure the pending tasks are completed prior to shutting down.
+                    bool flush_before_stop = false;
 
                 public:
                     /*!<constructor
                      *
                      * Create a new instance of a thread pool.
                      *
-                     * @param max_t_count
+                     * @param name - Thread pool name
+                     * @param max_t_count - Number of thread(s) in the pool.
                      * @return
                      */
-                    __thread_pool(uint16_t max_t_count) {
+                    __thread_pool(string name, uint16_t max_t_count) {
                         PRECONDITION(max_t_count > 0);
+                        PRECONDITION(!IS_EMPTY(name));
                         this->max_t_count = max_t_count;
+                        this->name = string(name);
                     }
 
                     /*!<destructor
@@ -522,11 +552,20 @@ namespace com {
                     }
 
                     /*!
+                     * Get the name of this thread pool.
+                     *
+                     * @return - Thread pool name.
+                     */
+                    string get_name() {
+                        return this->name;
+                    }
+
+                    /*!
                      * Setup this pool to be used to queue arbitary tasks.
                      *
                      * @param thread_sleep_timeout - Sleep timeout, in case queue is empty.
                      */
-                    void create_task_queue(uint64_t thread_sleep_timeout) {
+                    void create_task_queue(uint64_t thread_sleep_timeout, bool flush_queue = false) {
                         PRECONDITION(thread_sleep_timeout > 0);
 
                         task_queue = new __thread_stack();
@@ -536,10 +575,13 @@ namespace com {
                         CHECK_NOT_EMPTY_P(threads);
 
                         for (uint16_t ii = 0; ii < this->max_t_count; ii++) {
-                            __m_thread *t = new __m_thread(task_queue, thread_sleep_timeout);
+                            __m_thread *t = new __m_thread(name, task_queue, thread_sleep_timeout);
                             CHECK_NOT_NULL(t);
-                            threads->push_back(t);
+                            (*threads)[ii] = t;
                         }
+                        this->flush_before_stop = flush_queue;
+
+                        state.set_state(__state_enum::Available);
                     }
 
                     /*!
@@ -557,16 +599,18 @@ namespace com {
                         CHECK_NOT_EMPTY_P(threads);
 
                         for (uint16_t ii = 0; ii < this->max_t_count; ii++) {
-                            __m_thread *t = new __m_thread(task_queue, thread_sleep_timeout);
+                            __m_thread *t = new __m_thread(name, task_queue, thread_sleep_timeout);
                             CHECK_NOT_NULL(t);
-                            threads->push_back(t);
+                            (*threads)[ii] = t;
                         }
+                        state.set_state(__state_enum::Available);
                     }
 
                     /*!
                      * Start this thread pool.
                      */
                     void start() {
+                        CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(NOT_NULL(threads));
                         PRECONDITION(!IS_EMPTY_P(threads));
                         PRECONDITION(NOT_NULL(task_queue));
@@ -582,7 +626,14 @@ namespace com {
                      * Stop/Pause this thread pool. Can be restarted if required.
                      */
                     void stop() {
+                        CHECK_AND_DISPOSE(state);
                         if (NOT_NULL(threads)) {
+                            if (flush_before_stop) {
+                                NEW_ALARM(5000, 0);
+                                while (!task_queue->is_queue_empty()) {
+                                    START_ALARM(0);
+                                }
+                            }
                             for (uint16_t ii = 0; ii < threads->size(); ii++) {
                                 __m_thread *t = (*threads)[ii];
                                 if (NOT_NULL(t))
@@ -597,6 +648,7 @@ namespace com {
                      * @param task - Task instance.
                      */
                     void add_task(__callback *task) {
+                        CHECK_STATE_AVAILABLE(state);
                         CHECK_NOT_NULL(task);
                         CHECK_NOT_NULL(task_queue);
 
@@ -611,6 +663,7 @@ namespace com {
                      * @return - Has been removed?
                      */
                     bool remove_task(string name) {
+                        CHECK_STATE_AVAILABLE(state);
                         CHECK_NOT_NULL(task_queue);
                         PRECONDITION(!IS_EMPTY(name));
 

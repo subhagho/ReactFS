@@ -37,4 +37,7 @@ target_link_libraries(main_common ${COMMON_LIB_NAME} ${RFS_C_LIBRARIES})
 add_executable(main_shared_lock adhoc/main_shared_lock.cpp)
 target_link_libraries(main_shared_lock ${COMMON_LIB_NAME} ${RFS_C_LIBRARIES})
 
+add_executable(main_thread_pool adhoc/main_thread_pool.cpp)
+target_link_libraries(main_thread_pool ${COMMON_LIB_NAME} ${RFS_C_LIBRARIES})
+
 add_executable(adhoc adhoc/adhoc.cpp)
