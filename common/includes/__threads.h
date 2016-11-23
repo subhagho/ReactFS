@@ -490,8 +490,6 @@ namespace com {
                                 LOG_ERROR("[thread=%s] Terminated with exception. [error=Unknown casue.]");
                             }
                         }
-                        join();
-                        CHECK_AND_FREE(__runner);
                     }
 
                     /*!
@@ -500,6 +498,7 @@ namespace com {
                     void join() {
                         if (NOT_NULL(__runner) && __runner->joinable()) {
                             __runner->join();
+                            CHECK_AND_FREE(__runner);
                         }
                     }
                 };
@@ -638,6 +637,11 @@ namespace com {
                                 __m_thread *t = (*threads)[ii];
                                 if (NOT_NULL(t))
                                     t->stop();
+                            }
+                            for (uint16_t ii = 0; ii < threads->size(); ii++) {
+                                __m_thread *t = (*threads)[ii];
+                                if (NOT_NULL(t))
+                                    t->join();
                             }
                         }
                     }

@@ -77,18 +77,13 @@ int main(int argc, char **argv) {
             pool.create_task_registry(1000);
             pool.start();
 
-            vector<test_pool_callback *> tasks;
             for (int ii = 0; ii < CALLBACK_COUNT; ii++) {
                 test_pool_callback *c = new test_pool_callback(ii);
                 pool.add_task(c);
-                tasks.push_back(c);
             }
             NEW_ALARM(5000, 0);
             START_ALARM(0);
             pool.stop();
-            for (auto task : tasks) {
-                CHECK_AND_FREE(task);
-            }
         }
         env_utils::dispose();
 

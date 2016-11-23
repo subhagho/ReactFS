@@ -113,7 +113,7 @@ namespace com {
                     /// Unique ID of this callback instance.
                     string uuid;
                     /// Context that needs to be passed to the callback while being invoked.
-                    void *context;
+                    void *context = nullptr;
                     /// Execution state prior to invoking the callback.
                     __callback_state state;
 
