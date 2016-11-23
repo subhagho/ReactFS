@@ -23,8 +23,6 @@ namespace com {
                         ss << std::this_thread::get_id();
                         return std::string(ss.str());
                     }
-
-
                 };
 
                 class process_utils {

@@ -23,7 +23,7 @@
 #define REACTFS_THREADS_H
 
 #include <mutex>
-#include <vector>
+#include <unordered_map>
 #include <queue>
 
 #include "common.h"
@@ -32,25 +32,54 @@
 #include "__callback.h"
 #include "log_utils.h"
 #include "__alarm.h"
+#include "process_utils.h"
 
 namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
+
+                /*!
+                 * Enum defines the thread states for managed threads.
+                 */
                 typedef enum __thread_state_enum__ {
-                    TS_AVAILABLE = 0, TS_RUNNING, TS_STOPPED, TS_EXCEPTION, TS_UNKNOWN
+                    /// Thread is currently available (not running)
+                            TS_AVAILABLE = 0,
+                    /// Thread is currently executing a task.
+                            TS_RUNNING,
+                    /// Thread has been stopped.
+                            TS_STOPPED,
+                    /// Thread terminated due to an exception.
+                            TS_EXCEPTION,
+                    /// Thread state is unknown.
+                            TS_UNKNOWN
                 } __thread_state_enum;
 
+                /*!
+                 * State for a managed thread.
+                 */
                 class __thread_state {
                 private:
-                    __thread_state state = __thread_state_enum::TS_UNKNOWN;
+                    /// Current status of the thread instance.
+                    __thread_state_enum state = __thread_state_enum::TS_UNKNOWN;
+                    /// Exception handle, in case a thread terminated due to error.
                     const exception *error = nullptr;
 
                 public:
+                    /*!
+                     * Get the current state of the owner thread.
+                     *
+                     * @return - Thread state.
+                     */
                     const __thread_state_enum get_state() const {
                         return state;
                     }
 
+                    /*!
+                     * Get the current state as a string.
+                     *
+                     * @return - Current state as string.
+                     */
                     string get_state_string() const {
                         switch (state) {
                             case TS_UNKNOWN:
@@ -68,15 +97,30 @@ namespace com {
                         }
                     }
 
-                    void set_state(__state_enum s) {
+                    /*!
+                     * Get the current state of the owner thread.
+                     *
+                     * @param s - Current thread state.
+                     */
+                    void set_state(__thread_state_enum s) {
                         state = s;
                     }
 
+                    /*!
+                     * Set the thread state to exception and capture the cause.
+                     *
+                     * @param e - Error handle.
+                     */
                     void set_error(const exception *e) {
                         error = e;
-                        state = Exception;
+                        state = __thread_state_enum::TS_EXCEPTION;
                     }
 
+                    /*!
+                     * Get the exception, in case the thread is in error state.
+                     *
+                     * @return - Cause of error.
+                     */
                     const exception *get_error() const {
                         if (state == __thread_state_enum::TS_EXCEPTION) {
                             return error;
@@ -84,99 +128,499 @@ namespace com {
                         return NULL;
                     }
 
+                    /*!
+                     * Check if this thread is in error state.
+                     *
+                     * @return - Has error?
+                     */
                     bool has_error() const {
                         return (state == __thread_state_enum::TS_EXCEPTION);
                     }
 
+                    /*!
+                     * Check if the thread is available.
+                     *
+                     * @return - Is available?
+                     */
                     bool is_available() const {
                         return (state == __thread_state_enum::TS_AVAILABLE);
                     }
 
+                    /*!
+                     * Check if the thread has been stopped.
+                     *
+                     * @return - Is stopped?
+                     */
                     bool is_stopped() const {
                         return (state == __thread_state_enum::TS_STOPPED);
                     }
 
+                    /*!
+                     * Check if the thread is currently executing a task.
+                     *
+                     * @return - Is executing task?
+                     */
                     bool is_running() const {
                         return (state == __thread_state_enum::TS_RUNNING);
                     }
                 };
 
-
+                /*!
+                 * Shared queue to registering tasks
+                 * that will be executed by the thread pool.
+                 *
+                 */
                 class __thread_stack {
-                private:
-                    mutex __stack_lock;
-                    queue<__callback *> __stack;
+                protected:
+                    /// Concurrency lock.
+                    mutex __lock;
+                    /// Task queue.
+                    queue<__callback *> task_queue;
 
                 public:
-                    ~__thread_stack() {
+                    virtual ~__thread_stack() {
 
                     }
 
-                    __callback *next_job() {
-                        unique_lock<std::mutex> lock(__stack_lock);
-                        if (IS_EMPTY(__stack)) {
-                            return __stack.pop();
+                    /*!
+                     * Get the next task in the queue, if any tasks are pending.
+                     *
+                     * @return - Next task callback.
+                     */
+                    virtual __callback *next_task() {
+                        unique_lock<std::mutex> lock(__lock);
+                        if (!IS_EMPTY(task_queue)) {
+                            __callback *c = task_queue.front();
+                            task_queue.pop();
+                            CHECK_NOT_NULL(c);
+                            return c;
                         }
                         return nullptr;
                     }
+
+                    /*!
+                     * Add a new task to the queue.
+                     *
+                     * @param task - Task callback to be executed.
+                     */
+                    virtual void add_task(__callback *task) {
+                        CHECK_NOT_NULL(task);
+                        unique_lock<std::mutex> lock(__lock);
+                        task_queue.push(task);
+                    }
                 };
 
+
+                /*!
+                 * Task callback that can be executed periodically.
+                 * This is used to launch background jobs that need to keep running when
+                 * certain conditions are statisfied.
+                 */
+                class __runnable_callback : public __callback {
+                protected:
+                    /// Task name (should be unique for a thread pool).
+                    string name;
+                public:
+                    /*! <constructor
+                     * Create a new task instance.
+                     *
+                     * @param name - Task name.
+                     * @return
+                     */
+                    __runnable_callback(string name) {
+                        PRECONDITION(!IS_EMPTY(name));
+                        this->name = name;
+                    }
+
+                    /*!
+                     * Get the name of this instance of the task.
+                     *
+                     * @return - Task name.
+                     */
+                    string get_name() {
+                        return this->name;
+                    }
+
+                    /*!
+                     * Check if this task is ready to be executed.
+                     *
+                     * @return - Should be executed?
+                     */
+                    virtual bool can_run() = 0;
+                };
+
+                /*!
+                 * Task stack used to register and execute background tasks.
+                 * The task will keep getting executed based on the response of the can_run() method
+                 * till they explicitly are removed from the stack.
+                 */
+                class __runnable_stack : public __thread_stack {
+                private:
+                    /// Map to register the tasks.
+                    unordered_map<string, __callback *> map;
+                public:
+                    virtual ~__runnable_stack() {
+                        unique_lock<std::mutex> lock(__lock);
+                        if (!IS_EMPTY(map)) {
+                            unordered_map<string, __callback *>::iterator iter;
+                            for (iter = map.begin(); iter != map.end(); iter++) {
+                                auto c = iter->second;
+                                CHECK_AND_FREE(c);
+                            }
+                        }
+                        map.clear();
+                    }
+
+                    /*!
+                     * Get the next task in the queue, if any tasks are pending.
+                     * Will peridically check to see if there are any candidate task
+                     * that are ready to be queued.
+                     *
+                     * @return - Next task callback.
+                     */
+                    virtual __callback *next_task() override {
+                        unique_lock<std::mutex> lock(__lock);
+                        if (IS_EMPTY(task_queue) && !IS_EMPTY(map)) {
+                            unordered_map<string, __callback *>::const_iterator iter;
+                            for (iter = map.begin(); iter != map.end(); iter++) {
+                                __callback *c = iter->second;
+                                CHECK_NOT_NULL(c);
+                                __runnable_callback *rc = dynamic_cast<__runnable_callback *>(c);
+                                CHECK_NOT_NULL(rc);
+                                if (rc->can_run()) {
+                                    task_queue.push(rc);
+                                }
+                            }
+                        }
+                        if (!IS_EMPTY(task_queue)) {
+                            __callback *c = task_queue.front();
+                            task_queue.pop();
+                            CHECK_NOT_NULL(c);
+                            return c;
+                        }
+                        return nullptr;
+                    }
+
+                    /*!
+                    * Add a new task to the registry.
+                    *
+                    * @param task - Task callback to be executed.
+                    */
+                    virtual void add_task(__callback *task) override {
+                        CHECK_NOT_NULL(task);
+                        __runnable_callback *rc = dynamic_cast<__runnable_callback *>(task);
+                        CHECK_NOT_NULL(rc);
+                        unique_lock<std::mutex> lock(__lock);
+                        map.insert({rc->get_name(), rc});
+                    }
+
+                    /*!
+                     * Remove the specified task from the registry.
+                     *
+                     * @param name - Task name to remove.
+                     * @return - Has been removed?
+                     */
+                    bool remove_task(string name) {
+                        PRECONDITION(!IS_EMPTY(name));
+                        unordered_map<string, __callback *>::const_iterator iter = map.find(name);
+                        if (iter != map.end()) {
+                            map.erase(name);
+                            return true;
+                        }
+                        return false;
+                    }
+                };
+
+                /*!
+                 * Class defining a managed thread for executing pooled tasks.
+                 */
                 class __m_thread {
                 private:
-                    uint64_t __id;
-                    thread __runner;
+                    /// State of this thread instance.
                     __thread_state __state;
+                    /// ID of this thread instance
+                    string __id;
+                    /// Thread handle that will be launched.
+                    thread *__runner = nullptr;
+                    /// Task queue, the thread should dequeue tasks from.
                     __thread_stack *queue = nullptr;
-                    uint64_t __sleep_time = 0;
+                    /// Sleep interval when the queue is empty.
+                    uint64_t sleep_timeout = 0;
 
+                    /*!
+                     * Run function that will be invoked by the thread.
+                     */
                     void run() {
                         try {
-                            __alarm alarm(__sleep_time);
+                            this->__id = thread_utils::get_current_thread();
+
+                            __alarm alarm(sleep_timeout);
                             __state.set_state(__thread_state_enum::TS_AVAILABLE);
-                            while (__state != __thread_state_enum::TS_STOPPED) {
-                                __callback *task = queue->next_job();
+                            while (!__state.is_stopped()) {
+                                __callback *task = queue->next_task();
                                 if (IS_NULL(task)) {
                                     WAIT_ALARM(alarm);
                                     continue;
                                 }
                                 try {
+                                    __state.set_state(__thread_state_enum::TS_RUNNING);
                                     task->callback();
                                 } catch (const exception &err) {
                                     base_error be = BASE_ERROR("[task=%s] Thread terminated with exception. [error=%s]",
-                                                               task->get_uuid(),
-                                                               e.what());
+                                                               task->get_uuid().c_str(),
+                                                               err.what());
                                     LOG_WARN(be.what());
                                     task->error(&be);
                                 } catch (...) {
                                     base_error be = BASE_ERROR(
                                             "[task=%s] Thread terminated with exception. [error=UNKNOWN]",
-                                            task->get_uuid());
+                                            task->get_uuid().c_str());
                                     LOG_WARN(be.what());
                                     task->error(&be);
                                 }
+                                __state.set_state(__thread_state_enum::TS_AVAILABLE);
                             }
                         } catch (const exception &e) {
                             base_error be = BASE_ERROR("Thread terminated with exception. [error=%s]", e.what());
                             LOG_CRITICAL(be.what());
-                            __state.set_error(&e);
-                            throw e;
+                            __state.set_error(&be);
+                            throw be;
                         } catch (...) {
                             base_error be = BASE_ERROR("Thread terminated with exception. [error=UNKNOWN]");
                             LOG_CRITICAL(be.what());
-                            __state.set_error(&e);
-                            throw e;
+                            __state.set_error(&be);
+                            throw be;
                         }
                     }
 
                 public:
-                    __m_thread(__thread_stack *stack) {
-                        CHECK_NOT_NULL(stack);
-                        this->queue = stack;
+                    /*!<constructor
+                     * Create a new instance of a managed thread.
+                     *
+                     * @param queue - Task queue to be used to dequeue tasks.
+                     * @param sleep_timeout - Thread sleep timeout (in millisecods).
+                     * @return
+                     */
+                    __m_thread(__thread_stack *queue, uint64_t sleep_timeout) {
+                        CHECK_NOT_NULL(queue);
+                        PRECONDITION(sleep_timeout > 0);
+
+                        this->queue = queue;
+                        this->sleep_timeout = sleep_timeout;
                     }
 
+                    /*!<constructor
+                    * Create a new instance of a managed thread.
+                    *
+                    * @param queue - Task queue to be used to dequeue tasks.
+                    * @param sleep_timeout - Thread sleep timeout (as duration string).
+                    * @return
+                    */
+                    __m_thread(__thread_stack *queue, string sleep_timeout) {
+                        CHECK_NOT_NULL(queue);
+                        PRECONDITION(!IS_EMPTY(sleep_timeout));
+                        uint64_t stime = common_utils::parse_duration(sleep_timeout);
+                        POSTCONDITION(stime > 0);
 
+                        this->queue = queue;
+                        this->sleep_timeout = stime;
+                    }
+
+                    /*!<destructor
+                     *
+                     * Destroy this instance of a managed thread.
+                     */
+                    ~__m_thread() {
+                        if (!__state.has_error()) {
+                            __state.set_state(__thread_state_enum::TS_STOPPED);
+                        }
+                        if (NOT_NULL(__runner)) {
+                            if (__runner->joinable()) {
+                                __runner->join();
+                            }
+                            CHECK_AND_FREE(__runner);
+                        }
+                    }
+
+                    /*!
+                     * Start the thread.
+                     */
+                    void start() {
+                        if (__state.is_available() || __state.is_running()) {
+                            return;
+                        }
+                        PRECONDITION(IS_NULL(__runner));
+                        CHECK_NOT_NULL(this->queue);
+                        __runner = new thread(&__m_thread::run, this);
+                        CHECK_NOT_NULL(__runner);
+                    }
+
+                    /*!
+                     * Stop the execution of this thread.
+                     */
+                    void stop() {
+                        if (!__state.has_error()) {
+                            __state.set_state(__thread_state_enum::TS_STOPPED);
+                        } else {
+                            const exception *e = __state.get_error();
+                            if (NOT_NULL(e)) {
+                                LOG_ERROR("[thread=%s] Terminated with exception. [error=%s]", e->what());
+                            } else {
+                                LOG_ERROR("[thread=%s] Terminated with exception. [error=Unknown casue.]");
+                            }
+                        }
+                        join();
+                        CHECK_AND_FREE(__runner);
+                    }
+
+                    /*!
+                     * Wait to joing this thread instance.
+                     */
+                    void join() {
+                        if (NOT_NULL(__runner) && __runner->joinable()) {
+                            __runner->join();
+                        }
+                    }
                 };
 
+                /*!
+                 * Class defines a thread pool instance.
+                 */
+                class __thread_pool {
+                private:
+                    /// Task queue to be used for this pool.
+                    __thread_stack *task_queue = nullptr;
+                    /// Array of managed threads that are part of this pool.
+                    vector<__m_thread *> *threads;
+                    /// Number of thread in the pool.
+                    uint16_t max_t_count = 0;
+
+                public:
+                    /*!<constructor
+                     *
+                     * Create a new instance of a thread pool.
+                     *
+                     * @param max_t_count
+                     * @return
+                     */
+                    __thread_pool(uint16_t max_t_count) {
+                        PRECONDITION(max_t_count > 0);
+                        this->max_t_count = max_t_count;
+                    }
+
+                    /*!<destructor
+                     * Destroy this instance of thread pool.
+                     */
+                    ~__thread_pool() {
+                        stop();
+                        for (uint16_t ii = 0; ii < this->max_t_count; ii++) {
+                            __m_thread *t = (*threads)[ii];
+                            CHECK_AND_FREE(t);
+                        }
+                        CHECK_AND_FREE(threads);
+                        CHECK_AND_FREE(task_queue);
+                    }
+
+                    /*!
+                     * Setup this pool to be used to queue arbitary tasks.
+                     *
+                     * @param thread_sleep_timeout - Sleep timeout, in case queue is empty.
+                     */
+                    void create_task_queue(uint64_t thread_sleep_timeout) {
+                        PRECONDITION(thread_sleep_timeout > 0);
+
+                        task_queue = new __thread_stack();
+                        CHECK_NOT_NULL(task_queue);
+
+                        threads = new vector<__m_thread *>(this->max_t_count);
+                        CHECK_NOT_EMPTY_P(threads);
+
+                        for (uint16_t ii = 0; ii < this->max_t_count; ii++) {
+                            __m_thread *t = new __m_thread(task_queue, thread_sleep_timeout);
+                            CHECK_NOT_NULL(t);
+                            threads->push_back(t);
+                        }
+                    }
+
+                    /*!
+                     * Setup this pool to be used to executed registered tasks in the background.
+                     *
+                     * @param thread_sleep_timeout - Sleep timeout, in case queue is empty.
+                     */
+                    void create_task_registry(uint64_t thread_sleep_timeout) {
+                        PRECONDITION(thread_sleep_timeout > 0);
+
+                        task_queue = new __runnable_stack();
+                        CHECK_NOT_NULL(task_queue);
+
+                        threads = new vector<__m_thread *>(this->max_t_count);
+                        CHECK_NOT_EMPTY_P(threads);
+
+                        for (uint16_t ii = 0; ii < this->max_t_count; ii++) {
+                            __m_thread *t = new __m_thread(task_queue, thread_sleep_timeout);
+                            CHECK_NOT_NULL(t);
+                            threads->push_back(t);
+                        }
+                    }
+
+                    /*!
+                     * Start this thread pool.
+                     */
+                    void start() {
+                        PRECONDITION(NOT_NULL(threads));
+                        PRECONDITION(!IS_EMPTY_P(threads));
+                        PRECONDITION(NOT_NULL(task_queue));
+
+                        for (uint16_t ii = 0; ii < this->max_t_count; ii++) {
+                            __m_thread *t = (*threads)[ii];
+                            CHECK_NOT_NULL(t);
+                            t->start();
+                        }
+                    }
+
+                    /*!
+                     * Stop/Pause this thread pool. Can be restarted if required.
+                     */
+                    void stop() {
+                        if (NOT_NULL(threads)) {
+                            for (uint16_t ii = 0; ii < threads->size(); ii++) {
+                                __m_thread *t = (*threads)[ii];
+                                if (NOT_NULL(t))
+                                    t->stop();
+                            }
+                        }
+                    }
+
+                    /*!
+                     * Add/register a new task to be executed by this pool.
+                     *
+                     * @param task - Task instance.
+                     */
+                    void add_task(__callback *task) {
+                        CHECK_NOT_NULL(task);
+                        CHECK_NOT_NULL(task_queue);
+
+                        task_queue->add_task(task);
+                    }
+
+                    /*!
+                     * Remove a registered task from the pool.
+                     * Note: Only applicable if the pool is running with a registry.
+                     *
+                     * @param name - Task name to remove.
+                     * @return - Has been removed?
+                     */
+                    bool remove_task(string name) {
+                        CHECK_NOT_NULL(task_queue);
+                        PRECONDITION(!IS_EMPTY(name));
+
+                        __runnable_stack *q = dynamic_cast<__runnable_stack *>(task_queue);
+                        if (NOT_NULL(q)) {
+                            return q->remove_task(name);
+                        }
+                        return false;
+                    }
+                };
             }
         }
     }
