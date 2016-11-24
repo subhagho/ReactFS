@@ -61,6 +61,8 @@
 #define SIZE_UUID 36
 #define SIZE_USER_NAME 64
 #define SIZE_MAX_PATH 256
+#define SIZE_LOCK_NAME 32
+
 #define DEFAULT_RESOURCE_MODE 0750
 
 typedef uint8_t BYTE;

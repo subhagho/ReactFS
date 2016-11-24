@@ -16,8 +16,16 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
+                /*!
+                 * Utility class for defining thread releated methods.
+                 */
                 class thread_utils {
                 public:
+                    /*!
+                     * Get the current thread id as string.
+                     *
+                     * @return - String value of thread id.
+                     */
                     static std::string get_current_thread() {
                         std::stringstream ss;
                         ss << std::this_thread::get_id();
@@ -25,8 +33,17 @@ namespace com {
                     }
                 };
 
+                /*!
+                 * Utility class to define processe related methods.
+                 */
                 class process_utils {
                 public:
+                    /*!
+                     * Check if a process with the specified PID exists.
+                     *
+                     * @param pid - PID to check.
+                     * @return - Process exists.
+                     */
                     static bool check_process(pid_t pid) {
                         if (0 == kill(pid, 0)) {
                             return true;

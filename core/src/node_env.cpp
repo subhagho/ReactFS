@@ -6,4 +6,3 @@
 
 using namespace com::wookler::reactfs::core;
 
-__node_env *com::wookler::reactfs::core::node_utils::node_env = nullptr;

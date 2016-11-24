@@ -31,17 +31,28 @@ namespace com {
         namespace reactfs {
             namespace common {
                 /*!
-                 *
+                 * Class defines the application context.
                  */
                 class __app {
                 private:
+                    /// Application name as specified in the configuration.
                     string name;
+                    /// Application instance UUID.
                     string id;
+                    /// Host IP address of the node where this application is running.
                     string host_ip;
+                    /// Host name of the node where this application is running.
                     string host_name;
+                    /// Start time when this application instance was started.
                     time_t start_time;
 
                 public:
+                    /*!<constructor
+                     * Create a new application instance.
+                     *
+                     * @param name - Application name.
+                     * @return
+                     */
                     __app(string name) {
                         this->name = name;
                         this->start_time = time(nullptr);
@@ -50,31 +61,66 @@ namespace com {
                         this->host_name = common_utils::get_hostname();
                     }
 
+                    /*!
+                     * Get the start time of this application instanace.
+                     *
+                     * @return - Instance start time.
+                     */
                     const time_t get_start_time() const {
                         return start_time;
                     }
 
+                    /*!
+                     * Get the name of this application instance.
+                     *
+                     * @return - Application name.
+                     */
                     const string get_name() const {
                         return name;
                     }
 
+                    /*!
+                     * Get the unique ID of this application instance.
+                     *
+                     * @return - Unique instance ID.
+                     */
                     const string get_id() const {
                         return id;
                     }
 
+                    /*!
+                     * Get the uptime for this application instance.
+                     *
+                     * @return - Instance uptime.
+                     */
                     const long get_uptime() const {
                         time_t t = time(nullptr);
                         return (t - start_time);
                     }
 
+                    /*!
+                     * Get this host IP address of the node.
+                     *
+                     * @return - Host IP address.
+                     */
                     const string get_host_ip() const {
                         return host_ip;
                     }
 
+                    /*!
+                     * Get this host name of the node.
+                     *
+                     * @return - Host name.
+                     */
                     const string get_host_name() const {
                         return host_name;
                     }
 
+                    /*!
+                     * Get the default application directory name.
+                     *
+                     * @return - Application directory name.
+                     */
                     string get_app_directory() const {
                         if (!IS_EMPTY(name)) {
                             return common_utils::get_normalized_name(name);

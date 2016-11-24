@@ -88,6 +88,9 @@
       "node-env": {
         "data-size": "64M"
       },
+      "thread-pool": {
+        "pool-size": "4"
+      },
       "mount-points": [
         {
           "path": "/work/temp/data_0",
@@ -101,7 +104,70 @@
           "path": "/work/temp/data_2",
           "usage-limit": "200M"
         }
-      ]
+      ],
+      "control": {
+        "resources": [
+          {
+            "name": "dummy-resource-1",
+            "class": "com::wookler::watergate::core::dummy_resource",
+            "max_concurrency": "8"
+          },
+          {
+            "name": "fs-resource-0",
+            "class": "com::wookler::watergate::core::io::filesystem_driver",
+            "params": {
+              "fs.path.root": "/private/tmp",
+              "fs.quota.bytes": "2000",
+              "fs.quota.lease.time": "500",
+              "fs.concurrency.max": "8"
+            }
+          },
+          {
+            "name": "fs-resource-0",
+            "class": "com::wookler::watergate::core::io::filesystem_driver",
+            "params": {
+              "fs.path.root": "/work/temp/data_0",
+              "fs.quota.bytes": "2000",
+              "fs.quota.lease.time": "500",
+              "fs.concurrency.max": "8"
+            }
+          },
+          {
+            "name": "fs-resource-0",
+            "class": "com::wookler::watergate::core::io::filesystem_driver",
+            "params": {
+              "fs.path.root": "/work/temp/data_1",
+              "fs.quota.bytes": "2000",
+              "fs.quota.lease.time": "500",
+              "fs.concurrency.max": "8"
+            }
+          },
+          {
+            "name": "fs-resource-0",
+            "class": "com::wookler::watergate::core::io::filesystem_driver",
+            "params": {
+              "fs.path.root": "/work/temp/data_2",
+              "fs.quota.bytes": "2000",
+              "fs.quota.lease.time": "200",
+              "fs.concurrency.max": "8"
+            }
+          }
+        ],
+        "def": [
+          {
+            "resource": "dummy-resource-1",
+            "priorities": "2"
+          },
+          {
+            "resource": "fs-resource-0",
+            "priorities": "3"
+          }
+        ],
+        "manager": {
+          "lock.reset.time": "50s",
+          "record.reset.time": "300s"
+        }
+      }
     }
   }
 }

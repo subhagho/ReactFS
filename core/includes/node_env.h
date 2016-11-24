@@ -31,15 +31,11 @@
 #include "common/includes/mapped_data.h"
 #include "common/includes/init_utils.h"
 #include "common/includes/exclusive_lock.h"
+#include "common/includes/__threads.h"
 
+#include "node_env_structs.h"
 #include "common_structs.h"
 
-#define NODE_ENV_BASE_DIR "__node"
-#define NODE_ENV_FILE_NAME "__NODE_ENV.DATA"
-#define NODE_ENV_CONFIG_NODE "/configuration/node-env"
-#define NODE_ENV_CONFIG_SHM_SIZE "data-size"
-
-#define SIZE_KEY_MAX 64
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
@@ -48,58 +44,10 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
-
-                typedef struct __env_record__ {
-                    char key[SIZE_KEY_MAX];
-                    uint32_t size = 0;
-                    void *data = nullptr;
-                } __env_record;
-
-                typedef struct __env_header__ {
-                    uint64_t create_date = 0;
-                    uint64_t records = 0;
-                    uint64_t write_offset = 0;
-                    uint64_t data_size = 0;
-                } __env_header;
-
-                class __env_loader {
-                protected:
-                    string *config_path;
-                    string *key;
-                public:
-                    __env_loader(string *key) {
-                        PRECONDITION(!IS_EMPTY_P(key));
-                        this->key = key;
-                    }
-
-                    virtual ~__env_loader() {
-                        CHECK_AND_FREE(key);
-                        CHECK_AND_FREE(config_path);
-                    }
-
-                    __env_loader *set_config_path(string *config_path) {
-                        PRECONDITION(!IS_EMPTY_P(config_path));
-                        this->config_path = config_path;
-
-                        return this;
-                    }
-
-                    string *get_config_path() {
-                        return this->config_path;
-                    }
-
-                    string *get_key() {
-                        return this->key;
-                    }
-
-                    virtual __env_record *load(const ConfigValue *config) = 0;
-
-                    virtual void load_finished(shared_mapped_ptr record) = 0;
-                };
-
                 class __node_env {
                 protected:
                     __state__ state;
+                    bool is_server = false;
 
                     exclusive_lock *lock = nullptr;
                     const __env *env = nullptr;
@@ -108,6 +56,7 @@ namespace com {
                     void *base_ptr = nullptr;
                     __env_header *header = nullptr;
                     unordered_map<string, shared_mapped_ptr> data_index;
+
 
                     void *get_write_pointer() {
                         PRECONDITION(header->write_offset < header->data_size);
@@ -204,12 +153,8 @@ namespace com {
                         POSTCONDITION(count == header->records);
                     }
 
-                public:
-                    __node_env() {
-                        this->env = env_utils::get_env();
-                        CHECK_NOT_NULL(this->env);
-                        CHECK_STATE_AVAILABLE(this->env->get_state());
 
+                    void create() {
                         const Config *config = this->env->get_config();
                         CHECK_NOT_NULL(config);
 
@@ -232,17 +177,24 @@ namespace com {
                             const Path *w_dir = env->get_work_dir();
                             CHECK_NOT_NULL(w_dir);
                             Path p(w_dir->get_path());
-                            p.append(NODE_ENV_BASE_DIR);
-                            if (!p.exists()) {
-                                p.create(DEFAULT_RESOURCE_MODE);
-                            }
-                            p.append(NODE_ENV_FILE_NAME);
-                            if (!p.exists()) {
-                                create_new_file(&p, size);
+                            if (is_server) {
+                                p.append(NODE_ENV_BASE_DIR);
+                                if (!p.exists()) {
+                                    p.create(DEFAULT_RESOURCE_MODE);
+                                }
+                                p.append(NODE_ENV_FILE_NAME);
+                                if (!p.exists()) {
+                                    create_new_file(&p, size);
+                                } else {
+                                    load_env_data(&p);
+                                }
                             } else {
+                                p.append(NODE_ENV_BASE_DIR);
+                                p.append(NODE_ENV_FILE_NAME);
+                                PRECONDITION(p.exists());
+
                                 load_env_data(&p);
                             }
-
                             state.set_state(__state_enum::Available);
                             RELEASE_LOCK_P(lock);
                         } catch (const exception &e) {
@@ -258,6 +210,15 @@ namespace com {
                         }
                     }
 
+
+                public:
+                    __node_env(bool is_server = false) {
+                        this->env = env_utils::get_env();
+                        CHECK_NOT_NULL(this->env);
+                        CHECK_STATE_AVAILABLE(this->env->get_state());
+                        this->is_server = is_server;
+                    }
+
                     virtual ~__node_env() {
                         this->env = nullptr;
                         data_index.clear();
@@ -268,31 +229,6 @@ namespace com {
                         return this->state;
                     }
 
-                    bool add_env_data(__env_loader *loader) {
-                        CHECK_STATE_AVAILABLE(state);
-                        CHECK_NOT_NULL(loader);
-                        PRECONDITION(!IS_EMPTY_P(loader->get_key()));
-                        PRECONDITION(!IS_EMPTY_P(loader->get_config_path()));
-
-                        const Config *config = env->get_config();
-                        const ConfigValue *node = config->find(*loader->get_config_path());
-
-                        __env_record *record = loader->load(node);
-                        if (NOT_NULL(record)) {
-                            void *ptr = write(loader->get_key(), record->data, record->size);
-                            CHECK_NOT_NULL(ptr);
-
-                            shared_mapped_ptr s_ptr = make_shared<__mapped_ptr>();
-                            (*s_ptr).set_data_ptr(ptr, record->size);
-
-                            data_index.insert({*(loader->get_key()), s_ptr});
-
-                            loader->load_finished(s_ptr);
-
-                            return true;
-                        }
-                        return false;
-                    }
 
                     shared_mapped_ptr get_env_data(string key) {
                         unordered_map<string, shared_mapped_ptr>::const_iterator iter = data_index.find(key);
@@ -300,23 +236,6 @@ namespace com {
                             return iter->second;
                         }
                         return nullptr;
-                    }
-                };
-
-                class node_utils {
-                private:
-                    static __node_env *node_env;
-
-                public:
-                    static void create_node_env() {
-                        node_env = new __node_env();
-                    }
-
-                    static __node_env *get_node_env() {
-                        CHECK_NOT_NULL(node_env);
-                        CHECK_STATE_AVAILABLE(node_env->get_state());
-
-                        return node_env;
                     }
                 };
             }
