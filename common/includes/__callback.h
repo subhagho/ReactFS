@@ -22,6 +22,7 @@
 #define WATERGATE_CALLBACK_H
 
 #include "common.h"
+#include "common_utils.h"
 
 namespace com {
     namespace wookler {

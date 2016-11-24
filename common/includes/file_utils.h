@@ -91,11 +91,22 @@ namespace com {
                         return (stat(name.c_str(), &buffer) == 0);
                     }
 
-                    static inline string cannonical_path(const string path) {
+                    static inline string cannonical_path(const string &path) {
+                        if (!IS_EMPTY(path)) {
+                            if (file_exists(path)) {
+                                char buff[SIZE_MAX_PATH];
+                                memset(buff, 0, SIZE_MAX_PATH);
+                                realpath(path.c_str(), buff);
+                                string p(buff);
+                                if (!IS_EMPTY(p)) {
+                                    return p;
+                                }
+                            }
+                        }
                         return path;
                     }
 
-                    static bool remove_file(const string path, bool delete_self) {
+                    static bool remove_file(const string &path, bool delete_self) {
                         PRECONDITION(!path.empty());
                         cout << "Deleting " << path << " ...\n";
                         if (!file_exists(path)) {
@@ -120,7 +131,7 @@ namespace com {
                         return true;
                     }
 
-                    static vector<string> get_dir_content(const string path) {
+                    static vector<string> get_dir_content(const string &path) {
                         vector<string> r;
                         DIR *dir = opendir(path.c_str());
                         struct dirent *dent;
@@ -134,7 +145,7 @@ namespace com {
                         return r;
                     }
 
-                    static bool is_dir_empty(const string path) {
+                    static bool is_dir_empty(const string &path) {
                         if (!is_dir(path.c_str())) {
                             return false;
                         }
@@ -150,7 +161,7 @@ namespace com {
                         return (count > 0);
                     }
 
-                    static string create_directory(const string path, mode_t mode, bool overwrite) {
+                    static string create_directory(const string &path, mode_t mode, bool overwrite) {
                         PRECONDITION(!path.empty());
 
                         string p = cannonical_path(path);
@@ -169,11 +180,11 @@ namespace com {
                         return create_dirs(p, mode);
                     }
 
-                    static string create_directory(const string path, mode_t mode) {
+                    static string create_directory(const string &path, mode_t mode) {
                         return create_directory(path, mode, true);
                     }
 
-                    static string create_temp_directory(const string name, mode_t mode, bool overwrite) {
+                    static string create_temp_directory(const string &name, mode_t mode, bool overwrite) {
                         PRECONDITION(!name.empty());
 
                         string tp = TEMP_DIR;
@@ -191,11 +202,11 @@ namespace com {
                         return p;
                     }
 
-                    static string create_temp_directory(const string name, mode_t mode) {
+                    static string create_temp_directory(const string &name, mode_t mode) {
                         return create_temp_directory(name, mode, true);
                     }
 
-                    static string create_temp_file(string path, string ext, mode_t mode, bool overwrite) {
+                    static string create_temp_file(string &path, string ext, mode_t mode, bool overwrite) {
                         PRECONDITION(!path.empty());
 
                         if (path.front() == '/') {

@@ -155,6 +155,14 @@ bool com::wookler::watergate::core::control_client::release_lock(string name, in
         return sem_c->release_lock(priority, base_priority);
 }
 
+bool com::wookler::watergate::core::control_client::has_loaded_lock(string name) const {
+    _semaphore *sem = get_lock(name);
+    if (!IS_NULL(sem)) {
+        return true;
+    }
+    return false;
+}
+
 bool com::wookler::watergate::core::control_client::has_valid_lock(string name, int priority) const {
     _semaphore *sem = get_lock(name);
     if (IS_NULL(sem)) {

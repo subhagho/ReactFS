@@ -2,7 +2,7 @@
 // Created by Subhabrata Ghosh on 24/11/16.
 //
 
-#include "core/includes/server/node_server_env.h"
+#include "core/includes/server/node_init_manager.h"
 
 using namespace com::wookler::reactfs::core::server;
 

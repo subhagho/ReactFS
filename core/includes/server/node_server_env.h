@@ -4,7 +4,7 @@
 
 
 /*
- * Copyright [yyyy] [name of copyright owner]
+ * Copyright [2016] [Subhabrata Ghosh]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,9 @@
 #include "common/includes/__threads.h"
 #include "watergate/includes/init_utils.h"
 
-#define CONTROL_CONFIG_PATH "/configuration/node/control"
+
 #define DEFAULT_THREAD_POOL_NAME "__DEFAULT_THREAD_POOL_"
+#define DEFAULT_THREAD_POOL_SLEEP 5000
 
 using namespace com::wookler::reactfs::core;
 
@@ -41,7 +42,10 @@ namespace com {
                     class node_server_env : public __node_env {
                     private:
                         control_manager *priority_manager = nullptr;
+                        vector<__runnable_callback *> callbacks;
+
                         __thread_pool *default_pool = nullptr;
+
                     public:
                         node_server_env() : __node_env(true) {
 
@@ -49,14 +53,24 @@ namespace com {
 
                         ~node_server_env() {
                             CHECK_AND_DISPOSE(state);
+                            if (!IS_EMPTY(callbacks)) {
+                                for (auto cb : callbacks) {
+                                    if (!IS_NULL(cb)) {
+                                        default_pool->remove_task(cb->get_name());
+                                        CHECK_AND_FREE(cb);
+                                    }
+                                }
+                            }
                             CHECK_AND_FREE(priority_manager);
                             CHECK_AND_FREE(default_pool);
+
                         }
 
                         void init(bool reset) {
                             create();
                             try {
-                                priority_manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, reset);
+                                priority_manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, reset,
+                                                                                    false);
                                 CHECK_NOT_NULL(priority_manager);
 
                                 const Config *config = this->env->get_config();
@@ -75,6 +89,11 @@ namespace com {
 
                                 default_pool = new __thread_pool(DEFAULT_THREAD_POOL_NAME, p_size);
                                 CHECK_NOT_NULL(default_pool);
+                                default_pool->create_task_registry(DEFAULT_THREAD_POOL_SLEEP);
+
+                                __runnable_callback *cb = new control_manager_callback(priority_manager);
+                                default_pool->add_task(cb);
+                                callbacks.push_back(cb);
 
                             } catch (const exception &e) {
                                 base_error err = BASE_ERROR(
@@ -124,34 +143,6 @@ namespace com {
                         }
                     };
 
-                    class node_init_manager {
-                    private:
-                        static node_server_env *server_env;
-                    public:
-                        static void create_node_env(string config_file, bool reset = false) {
-                            PRECONDITION(!IS_EMPTY(config_file));
-
-                            init_utils::create_env(config_file);
-                            const __env *env = init_utils::get_env();
-                            CHECK_NOT_NULL(env);
-
-                            server_env = new node_server_env();
-                            CHECK_NOT_NULL(server_env);
-
-                            server_env->init(reset);
-                        }
-
-                        static void shutdown() {
-                            CHECK_AND_FREE(server_env);
-                            init_utils::dispose();
-                        }
-
-                        static node_server_env *get_server_env() {
-                            CHECK_NOT_NULL(server_env);
-
-                            return server_env;
-                        }
-                    };
                 }
             }
         }

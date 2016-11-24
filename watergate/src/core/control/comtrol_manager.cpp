@@ -94,5 +94,6 @@ void com::wookler::watergate::core::control_manager::init(const __app *app, cons
     }
     LOG_INFO("Using record reset timeout value %lu msec.", record_timeout);
 
-    start();
+    if (start_lock_thread)
+        start();
 }

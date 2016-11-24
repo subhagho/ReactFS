@@ -100,6 +100,7 @@ namespace com {
 
                     bool has_valid_lock(string name, int priority) const;
 
+
                 public:
                     ~control_client() override {
 
@@ -108,6 +109,8 @@ namespace com {
                     void init(const __app *app, const ConfigValue *config) override {
                         create(app, config, false, false);
                     }
+
+                    bool has_loaded_lock(string name) const;
 
                     const string find_lock(const string name, resource_type_enum type) const {
                         CHECK_STATE_AVAILABLE(state);

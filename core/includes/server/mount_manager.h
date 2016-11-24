@@ -42,6 +42,7 @@ namespace com {
                         __mount_data *mounts = nullptr;
                         __env_record *record = nullptr;
                         __mount_map *mount_map = nullptr;
+                        node_server_env *n_env = nullptr;
 
                         void get_mount_points(const ConfigValue *node, vector<__mount_def *> *v) {
                             if (node->get_type() == ConfigValueTypeEnum::Node) {
@@ -92,9 +93,12 @@ namespace com {
 
 
                     public:
-                        mount_manager(bool reset = false) : __env_loader(new string(MOUNTS_KEY)) {
+                        mount_manager(node_server_env *n_env, bool reset = false) : __env_loader(
+                                new string(MOUNTS_KEY)) {
+                            CHECK_NOT_NULL(n_env);
                             this->config_path = new string(MOUNTS_CONFIG_NODE);
                             this->reset = reset;
+                            this->n_env = n_env;
                         }
 
                         ~mount_manager() {
@@ -110,7 +114,6 @@ namespace com {
                             get_mount_points(config, &m_points);
                             POSTCONDITION(!IS_EMPTY(m_points));
 
-                            node_server_env *n_env = node_init_manager::get_server_env();
                             shared_mapped_ptr ptr = n_env->get_env_data(MOUNTS_KEY);
                             if (IS_NULL(ptr)) {
                                 __mount_data *mm = (__mount_data *) malloc(sizeof(__mount_data));

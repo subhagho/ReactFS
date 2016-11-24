@@ -36,6 +36,7 @@
 #include "node_env_structs.h"
 #include "common_structs.h"
 
+#define CONTROL_CONFIG_PATH "/configuration/node/control"
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;

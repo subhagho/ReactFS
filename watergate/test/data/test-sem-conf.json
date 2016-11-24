@@ -28,36 +28,6 @@
             "fs.quota.lease.time": "500",
             "fs.concurrency.max": "8"
           }
-        },
-        {
-          "name": "fs-resource-0",
-          "class": "com::wookler::watergate::core::io::filesystem_driver",
-          "params": {
-            "fs.path.root": "/work/temp/data_0",
-            "fs.quota.bytes": "2000",
-            "fs.quota.lease.time": "500",
-            "fs.concurrency.max": "8"
-          }
-        },
-        {
-          "name": "fs-resource-0",
-          "class": "com::wookler::watergate::core::io::filesystem_driver",
-          "params": {
-            "fs.path.root": "/work/temp/data_1",
-            "fs.quota.bytes": "2000",
-            "fs.quota.lease.time": "500",
-            "fs.concurrency.max": "8"
-          }
-        },
-        {
-          "name": "fs-resource-0",
-          "class": "com::wookler::watergate::core::io::filesystem_driver",
-          "params": {
-            "fs.path.root": "/work/temp/data_2",
-            "fs.quota.bytes": "2000",
-            "fs.quota.lease.time": "200",
-            "fs.concurrency.max": "8"
-          }
         }
       ],
       "def": [
@@ -107,21 +77,6 @@
       ],
       "control": {
         "resources": [
-          {
-            "name": "dummy-resource-1",
-            "class": "com::wookler::watergate::core::dummy_resource",
-            "max_concurrency": "8"
-          },
-          {
-            "name": "fs-resource-0",
-            "class": "com::wookler::watergate::core::io::filesystem_driver",
-            "params": {
-              "fs.path.root": "/private/tmp",
-              "fs.quota.bytes": "2000",
-              "fs.quota.lease.time": "500",
-              "fs.concurrency.max": "8"
-            }
-          },
           {
             "name": "fs-resource-0",
             "class": "com::wookler::watergate::core::io::filesystem_driver",

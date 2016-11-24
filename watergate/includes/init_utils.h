@@ -49,7 +49,9 @@ namespace com {
                         resource_helper::register_creators();
                     }
 
-                    static control_manager *init_control_manager(const __env *env, const string path, bool reset) {
+                    static control_manager *
+                    init_control_manager(const __env *env, const string path, bool reset = false,
+                                         bool run_thread = true) {
                         CHECK_NOT_NULL(env);
                         CHECK_NOT_EMPTY(path);
 
@@ -61,7 +63,7 @@ namespace com {
 
                         init_resource_factory(m_config);
 
-                        control_manager *manager = new control_manager(reset);
+                        control_manager *manager = new control_manager(reset, run_thread);
                         manager->init(env->get_app(), m_config);
 
                         return manager;

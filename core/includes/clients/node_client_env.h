@@ -34,6 +34,7 @@ namespace com {
             namespace core {
                 namespace client {
                     class node_client_env : public __node_env {
+                        const control_client *control = nullptr;
 
                     public:
                         node_client_env() : __node_env(false) {
@@ -42,6 +43,21 @@ namespace com {
 
                         void init() {
                             create();
+                            try {
+                                control = init_utils::init_control_client(env, CONTROL_CONFIG_PATH);
+                            } catch (const exception &e) {
+                                base_error err = BASE_ERROR(
+                                        "Error occurred while creating node envirnoment. [error=%s]",
+                                        e.what());
+                                state.set_error(&err);
+                                throw err;
+                            } catch (...) {
+                                base_error err = BASE_ERROR(
+                                        "Error occurred while creating node envirnoment. [error=%s]",
+                                        "UNKNOWN ERROR");
+                                state.set_error(&err);
+                                throw err;
+                            }
                         }
                     };
 

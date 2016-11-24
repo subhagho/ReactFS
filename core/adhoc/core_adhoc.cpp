@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include "core/includes/common_structs.h"
+#include "core/includes/server/node_init_manager.h"
 
 using namespace com::wookler::reactfs::core;
 typedef struct __record_index_header__ {
