@@ -99,6 +99,7 @@ namespace com {
 
                 typedef struct __record_index_header__ {
                     char block_uid[SIZE_UUID];
+                    __version_header version;
                     uint64_t block_id;
                     uint64_t create_time = 0;
                     uint64_t update_time = 0;
@@ -130,6 +131,7 @@ namespace com {
 
                 typedef struct {
                     char block_uid[SIZE_UUID];
+                    __version_header version;
                     __block_type block_type = __block_type::PRIMARY;
                     __block_record_type record_type = __block_record_type::RAW;
                     __block_state state = __block_state::AVAILABLE;

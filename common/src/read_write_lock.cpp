@@ -24,6 +24,8 @@
 
 using namespace com::wookler::reactfs::common;
 
+__version_header com::wookler::reactfs::common::shared_lock_table::__SCHEMA_VERSION__ = version_utils::init(0, 1);
+
 void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, bool manager) {
     LOG_DEBUG("Creating shared memory. [name=%s]", SHARED_LOCK_NAME);
 
@@ -44,9 +46,14 @@ void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, boo
         uint64_t t_size = (l_size + h_size);
         mm_data = new shm_mapped_data(SHARED_LOCK_TABLE_NAME, t_size, manager);
         header_ptr = reinterpret_cast<__shared_lock_data *>(mm_data->get_base_ptr());
-        header_ptr->max_count = MAX_SHARED_LOCKS;
-        header_ptr->used_count = 0;
-
+        if (manager) {
+            header_ptr->max_count = MAX_SHARED_LOCKS;
+            header_ptr->used_count = 0;
+            header_ptr->version.major = __SCHEMA_VERSION__.major;
+            header_ptr->version.minor = __SCHEMA_VERSION__.minor;
+        } else {
+            PRECONDITION(version_utils::compatible(header_ptr->version, __SCHEMA_VERSION__));
+        }
         void *ptr = common_utils::increment_data_ptr(mm_data->get_base_ptr(), h_size);
 
         locks = reinterpret_cast<__lock_struct *>(ptr);

@@ -49,6 +49,8 @@ namespace com {
             namespace core {
                 class base_block_index {
                 protected:
+                    static __version_header __SCHEMA_VERSION__;
+
                     //! State of this instance of the block object.
                     __state__ state;
 

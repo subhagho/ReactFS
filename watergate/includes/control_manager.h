@@ -46,7 +46,7 @@ namespace com {
                 private:
                     uint64_t lock_timeout;
                     uint64_t record_timeout;
-                    thread *control_thread;
+                    thread *control_thread = nullptr;
                     bool reset_lock_table = false;
                     bool start_lock_thread = true;
 

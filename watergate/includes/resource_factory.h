@@ -21,6 +21,7 @@
 #ifndef WATERGATE_RESOURCE_FACTORY_H
 #define WATERGATE_RESOURCE_FACTORY_H
 
+#include "common/includes/log_utils.h"
 #include "common/includes/__registry.h"
 #include "resource_creator.h"
 #include "resource_def.h"
@@ -39,6 +40,7 @@ namespace com {
                     static const ConfigValue *config;
 
                     static const ConfigValue *find(string name) {
+                        TRACE("Requested resource : [name=%s][path=%s]", name.c_str(), config->get_key().c_str());
                         CHECK_NOT_NULL(config);
                         if (config->get_type() == ConfigValueTypeEnum::List) {
                             const ListConfigValue *list = dynamic_cast<const ListConfigValue * >(config);

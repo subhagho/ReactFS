@@ -91,6 +91,8 @@ namespace com {
                  * Header structure used by the block list(s) to capture block information.
                  */
                 typedef struct __mm_data_header__ {
+                    /// Schema version of the saved data
+                    __version_header version;
                     /// Unique name of this block list.
                     char name[MM_STRUCT_NAME_SIZE];
                     /// Sub-directory prefix, used while creating block files under the mount points.
@@ -116,6 +118,8 @@ namespace com {
 
                 class mm_struct_header {
                 private:
+                    static __version_header __SCHEMA_VERSION__;
+
                     __state__ state;
 
                     mutex thread_mutex;
@@ -215,6 +219,8 @@ namespace com {
                         void *ptr = mm_header_data->get_base_ptr();
                         header = static_cast<__mm_data_header *>(ptr);
                         memcpy(header->name, this->name.c_str(), this->name.length());
+                        header->version.major = __SCHEMA_VERSION__.major;
+                        header->version.minor = __SCHEMA_VERSION__.minor;
                         header->block_size = block_size;
                         header->block_count = 0;
                         header->write_block_index = 0;
@@ -250,6 +256,7 @@ namespace com {
                         void *ptr = mm_header_data->get_base_ptr();
                         header = static_cast<__mm_data_header *>(ptr);
                         POSTCONDITION(strncmp(header->name, this->name.c_str(), this->name.length()) == 0);
+                        PRECONDITION(version_utils::compatible(header->version, __SCHEMA_VERSION__));
                     }
 
                     bool is_block_loaded(uint32_t index) {

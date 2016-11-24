@@ -26,6 +26,8 @@
 #include "core/includes/node_env.h"
 #include "watergate/includes/init_utils.h"
 
+#include "mount_client.h"
+
 using namespace com::wookler::reactfs::core;
 
 namespace com {
@@ -35,16 +37,27 @@ namespace com {
                 namespace client {
                     class node_client_env : public __node_env {
                         const control_client *control = nullptr;
+                        mount_client *m_client = nullptr;
 
                     public:
                         node_client_env() : __node_env(false) {
 
                         }
 
+                        ~node_client_env() {
+                            CHECK_AND_FREE(m_client);
+                        }
+
                         void init() {
                             create();
                             try {
                                 control = init_utils::init_control_client(env, CONTROL_CONFIG_PATH);
+                                m_client = new mount_client();
+                                CHECK_NOT_NULL(m_client);
+
+                                shared_mapped_ptr ptr = get_env_data(MOUNTS_KEY);
+                                m_client->init(ptr);
+
                             } catch (const exception &e) {
                                 base_error err = BASE_ERROR(
                                         "Error occurred while creating node envirnoment. [error=%s]",
@@ -58,6 +71,21 @@ namespace com {
                                 state.set_error(&err);
                                 throw err;
                             }
+                        }
+
+                        mount_client *get_mount_client() {
+                            CHECK_NOT_NULL(m_client);
+                            return m_client;
+                        }
+
+                        bool is_priority_locked(string *path) {
+                            PRECONDITION(!IS_EMPTY_P(path));
+
+                            string m_path = m_client->get_mount_point(path);
+                            if (!IS_EMPTY(m_path)) {
+                                return control->has_loaded_lock(m_path);
+                            }
+                            return false;
                         }
                     };
 

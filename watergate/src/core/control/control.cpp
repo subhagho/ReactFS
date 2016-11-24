@@ -37,6 +37,7 @@ void com::wookler::watergate::core::_semaphore::create(const __app *app, const C
         throw CONFIG_ERROR("NULL/Empty configuration value for node. [node=%s]", CONST_SEM_CONFIG_PARAM_RESOURCE_NAME);
     }
 
+    TRACE("Resource name : [%s]", r_name.c_str());
     this->resource = resource_factory::get_resource(r_name);
 
     this->name = new string(*this->resource->get_resource_name());

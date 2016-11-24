@@ -20,7 +20,7 @@
           "max_concurrency": "8"
         },
         {
-          "name": "fs-resource-0",
+          "name": "fs-temp-0",
           "class": "com::wookler::watergate::core::io::filesystem_driver",
           "params": {
             "fs.path.root": "/private/tmp",
@@ -36,7 +36,7 @@
           "priorities": "2"
         },
         {
-          "resource": "fs-resource-0",
+          "resource": "fs-temp-0",
           "priorities": "3"
         }
       ],
@@ -68,11 +68,11 @@
         },
         {
           "path": "/work/temp/data_1",
-          "usage-limit": "200M"
+          "usage-limit": "5GB"
         },
         {
           "path": "/work/temp/data_2",
-          "usage-limit": "200M"
+          "usage-limit": "5GB"
         }
       ],
       "control": {
@@ -88,7 +88,7 @@
             }
           },
           {
-            "name": "fs-resource-0",
+            "name": "fs-resource-1",
             "class": "com::wookler::watergate::core::io::filesystem_driver",
             "params": {
               "fs.path.root": "/work/temp/data_1",
@@ -98,7 +98,7 @@
             }
           },
           {
-            "name": "fs-resource-0",
+            "name": "fs-resource-2",
             "class": "com::wookler::watergate::core::io::filesystem_driver",
             "params": {
               "fs.path.root": "/work/temp/data_2",
@@ -110,8 +110,12 @@
         ],
         "def": [
           {
-            "resource": "dummy-resource-1",
-            "priorities": "2"
+            "resource": "fs-resource-1",
+            "priorities": "3"
+          },
+          {
+            "resource": "fs-resource-2",
+            "priorities": "3"
           },
           {
             "resource": "fs-resource-0",

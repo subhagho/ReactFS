@@ -47,6 +47,8 @@ namespace com {
             namespace core {
                 class __node_env {
                 protected:
+                    static __version_header __SCHEMA_VERSION__;
+
                     __state__ state;
                     bool is_server = false;
 
@@ -96,6 +98,8 @@ namespace com {
                         base_ptr = data_ptr->get_base_ptr();
 
                         header = static_cast<__env_header *>(base_ptr);
+                        header->version.major = __SCHEMA_VERSION__.major;
+                        header->version.minor = __SCHEMA_VERSION__.minor;
                         header->create_date = time_utils::now();
                         header->records = 0;
                         header->data_size = size;
@@ -124,6 +128,7 @@ namespace com {
                         base_ptr = data_ptr->get_base_ptr();
 
                         header = static_cast<__env_header *>(base_ptr);
+                        PRECONDITION(version_utils::compatible(header->version, __SCHEMA_VERSION__));
 
                         uint32_t count = 0;
                         uint32_t offset = 0;
@@ -173,6 +178,8 @@ namespace com {
                         string name_l = string(NODE_ENV_FILE_NAME);
                         lock = new exclusive_lock(&name_l, DEFAULT_RESOURCE_MODE);
                         CHECK_NOT_NULL(lock);
+                        lock->create();
+
                         WAIT_LOCK_P(lock);
                         try {
                             const Path *w_dir = env->get_work_dir();

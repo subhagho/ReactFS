@@ -49,6 +49,7 @@ namespace com {
                 } __env_record;
 
                 typedef struct __env_header__ {
+                    __version_header version;
                     uint64_t create_date = 0;
                     uint64_t records = 0;
                     uint64_t write_offset = 0;

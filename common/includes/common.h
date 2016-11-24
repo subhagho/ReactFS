@@ -73,4 +73,35 @@ typedef uint8_t *BYTE_PTR;
 
 using namespace std;
 
+namespace com {
+    namespace wookler {
+        namespace reactfs {
+            namespace common {
+                typedef struct __version_header__ {
+                    uint16_t major = 0;
+                    uint16_t minor = 0;
+                } __version_header;
+
+                class version_utils {
+                public:
+                    static bool equals(__version_header v1, __version_header v2) {
+                        return ((v1.major == v2.major) && (v1.minor == v2.minor));
+                    }
+
+                    static bool compatible(__version_header v1, __version_header v2) {
+                        return (v1.major == v2.major);
+                    }
+
+                    static __version_header init(uint16_t major, uint16_t minor) {
+                        __version_header v;
+                        v.major = major;
+                        v.minor = minor;
+                        return v;
+                    }
+                };
+            }
+        }
+    }
+}
+
 #endif

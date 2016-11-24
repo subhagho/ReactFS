@@ -24,7 +24,7 @@ namespace com {
                         PRECONDITION(IS_NULL(_lock_env));
 
                         _lock_env = new lock_env();
-                        _lock_env->create(max_count);
+                        _lock_env->create();
                         CHECK_NOT_NULL(_lock_env);
                     }
 

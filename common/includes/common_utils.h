@@ -44,6 +44,11 @@ extern "C"
 #define DUMMY_LOCAL_HOST "localhost"
 #define DUMMY_IPV6_IP "::1"
 
+#define K_BYTES 1024
+#define M_BYTES K_BYTES * 1024
+#define G_BYTES M_BYTES * 1024
+#define T_BYTES G_BYTES * 1024
+
 namespace com {
     namespace wookler {
         namespace reactfs {
@@ -75,7 +80,7 @@ namespace com {
                         string s(input);
                         if (regex_search(s, m, r)) {
                             string num = m[1];
-                            double d = atof(num.c_str());
+                            double d = strtod(num.c_str(), nullptr);
                             if (d > 0) {
                                 if (m.size() > 2) {
                                     string p = m[2];
@@ -100,27 +105,27 @@ namespace com {
                     }
 
                     static double parse_size(string input) {
-                        regex r("([[:digit:]]+)\\s*([[:alpha:]]*)");
+                        regex r("(\\-?[[:digit:]]+)\\s*([[:alpha:]]*)");
                         smatch m;
                         string s(input);
                         if (regex_search(s, m, r)) {
                             string num = m[1];
-                            double d = atof(num.c_str());
+                            double d = strtod(num.c_str(), nullptr);
                             if (d > 0) {
                                 if (m.size() > 2) {
                                     string p = m[2];
                                     char c = p[0];
                                     c = toupper(c);
                                     if (c == 'K') {
-                                        d *= 1024;
+                                        d *= K_BYTES;
                                     } else if (c == 'M') {
-                                        d *= 1024 * 1024;
+                                        d *= M_BYTES;
                                     } else if (c == 'G') {
-                                        d *= 1024;
-                                        d *= 1024 * 1024;
+                                        d *= K_BYTES;
+                                        d *= M_BYTES;
                                     } else if (c == 'T') {
-                                        d *= 1024 * 1024;
-                                        d *= 1024 * 1024;
+                                        d *= M_BYTES;
+                                        d *= M_BYTES;
                                     }
                                 }
                             }

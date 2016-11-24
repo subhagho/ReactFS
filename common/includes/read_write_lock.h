@@ -81,12 +81,15 @@ namespace com {
                 } __lock_struct;
 
                 typedef struct __shared_lock_data__ {
+                    __version_header version;
                     uint32_t max_count = 0;
                     uint32_t used_count = 0;
                 } __shared_lock_data;
 
                 class shared_lock_table {
                 private:
+                    static __version_header __SCHEMA_VERSION__;
+
                     /// Memory-mapped file handle.
                     shm_mapped_data *mm_data = nullptr;
                     exclusive_lock *table_lock = nullptr;

@@ -22,6 +22,9 @@
 #ifndef REACTFS_MOUNT_STRUCTS_H
 #define REACTFS_MOUNT_STRUCTS_H
 
+#include <sys/statvfs.h>
+#include <climits>
+
 #include "common/includes/common.h"
 #include "common/includes/common_utils.h"
 #include "common/includes/exclusive_lock.h"
@@ -29,7 +32,7 @@
 #define MAX_MOUNT_POINTS 32
 
 #define MOUNTS_KEY "env-mount-points"
-#define MOUNTS_CONFIG_NODE "mount-points"
+#define MOUNTS_CONFIG_NODE "/configuration/node/mount-points"
 #define MOUNTS_CONFIG_PATH "path"
 #define MOUNTS_CONFIG_LIMIT "usage-limit"
 
@@ -120,7 +123,7 @@ namespace com {
                         return nullptr;
                     }
 
-                    exclusive_lock *get_mount_lock(string mount_point, __mount_data *mounts) {
+                    exclusive_lock *get_mount_lock(string &mount_point, __mount_data *mounts) {
                         PRECONDITION(!IS_EMPTY(mount_point));
                         CHECK_NOT_NULL(mounts);
 
@@ -148,7 +151,57 @@ namespace com {
                         return common_utils::format("m_%s_%d", name.substr(0, off).c_str(), index);
                     }
 
+                    static double get_mount_usage(__mount_point *mp) {
+                        string p(mp->path);
+                        double score = 0.0f;
 
+                        uint64_t f_bytes = get_free_space(p);
+                        uint64_t t_bytes = get_total_space(p);
+
+                        uint64_t t_u_read = mp->total_bytes_read;
+                        uint64_t t_u_write = mp->total_bytes_written;
+
+                        uint64_t r_u_read = mp->bytes_read;
+                        uint64_t r_u_write = mp->bytes_written;
+
+                        uint64_t r_u_timer = mp->time_read;
+                        uint64_t r_u_timew = mp->time_write;
+
+                        double d_usage = ((double) t_bytes) / f_bytes;
+                        double t_r_usage = ((double) t_u_read) / G_BYTES;
+                        double t_w_usage = ((double) t_u_write) / G_BYTES;
+                        double r_r_usage = ((double) r_u_read) / G_BYTES;
+                        double r_w_usage = ((double) r_u_write) / G_BYTES;
+
+                        double io_r_usage = ((double) r_u_read) / r_u_timer;
+                        double io_w_usage = ((double) r_u_write) / r_u_timew;
+
+                        score = (d_usage + t_r_usage + (2.0 * t_w_usage) + (2.0 * r_r_usage) + (3.0 * r_w_usage) +
+                                 (3.0 * io_r_usage) + (4.0 * io_w_usage));
+                        return score;
+                    }
+
+                    static uint64_t get_free_space(string &mount_p) {
+                        PRECONDITION(!IS_EMPTY(mount_p));
+
+                        struct statvfs buff;
+                        if (statvfs(mount_p.c_str(), &buff) != 0) {
+                            throw BASE_ERROR("Error getting space stats. [file=%s][error=%s]", mount_p.c_str(),
+                                             strerror(errno));
+                        }
+                        return (buff.f_frsize * buff.f_bfree);
+                    }
+
+                    static uint64_t get_total_space(string &mount_p) {
+                        PRECONDITION(!IS_EMPTY(mount_p));
+
+                        struct statvfs buff;
+                        if (statvfs(mount_p.c_str(), &buff) != 0) {
+                            throw BASE_ERROR("Error getting space stats. [file=%s][error=%s]", mount_p.c_str(),
+                                             strerror(errno));
+                        }
+                        return (buff.f_frsize * buff.f_blocks);
+                    }
                 };
             }
         }

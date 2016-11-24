@@ -23,6 +23,7 @@
 #ifndef REACTFS_MOUNT_MANAGER_H
 #define REACTFS_MOUNT_MANAGER_H
 
+#include <sys/statvfs.h>
 #include <unordered_map>
 
 #include "core/includes/mount_structs.h"
@@ -54,7 +55,7 @@ namespace com {
                                 const vector<ConfigValue *> values = list->get_values();
                                 if (!IS_EMPTY(values)) {
                                     for (ConfigValue *value : values) {
-                                        if (value->get_type() == ConfigValueTypeEnum::Basic) {
+                                        if (value->get_type() == ConfigValueTypeEnum::Node) {
                                             __mount_def *md = get_mout_def(value);
                                             v->push_back(md);
                                         }
@@ -78,7 +79,7 @@ namespace com {
                                 const BasicConfigValue *v_node = dynamic_cast<const BasicConfigValue *>(nn);
                                 string value = v_node->get_value();
                                 POSTCONDITION(!IS_EMPTY(value));
-                                limit = stol(value);
+                                limit = common_utils::parse_size(value);
                             }
                             __mount_def *md = (__mount_def *) malloc(sizeof(__mount_def));
                             CHECK_NOT_NULL(md);
@@ -257,10 +258,19 @@ namespace com {
 
                                 exclusive_lock *lock = new exclusive_lock(&name_l);
                                 CHECK_NOT_NULL(lock);
+                                lock->create();
                                 if (reset) {
                                     lock->reset();
                                 }
 
+                                if (mp.usage_limit < 0) {
+                                    string p(mp.path);
+                                    uint64_t avail = mount_utils::get_free_space(p);
+                                    POSTCONDITION(avail >= 0);
+                                    mp.usage_limit = avail;
+                                }
+                                TRACE("[mount=%s] Available space = %lu GB", mp.path,
+                                      (mp.usage_limit / (1024 * 1024 * 1024)));
                                 mount_map->add_mount_lock(lock->get_name(), lock);
                                 mount_map->add_mount_index(string(mp.path), ii);
                             }
