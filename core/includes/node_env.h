@@ -38,6 +38,9 @@
 
 #define CONTROL_CONFIG_PATH "/configuration/node/control"
 
+#define NODE_ENV_VERSION_MAJOR ((uint16_t) 0)
+#define NODE_ENV_VERSION_MINOR ((uint16_t) 1)
+
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
 
@@ -47,7 +50,7 @@ namespace com {
             namespace core {
                 class __node_env {
                 protected:
-                    static __version_header __SCHEMA_VERSION__;
+                    __version_header version;
 
                     __state__ state;
                     bool is_server = false;
@@ -98,8 +101,8 @@ namespace com {
                         base_ptr = data_ptr->get_base_ptr();
 
                         header = static_cast<__env_header *>(base_ptr);
-                        header->version.major = __SCHEMA_VERSION__.major;
-                        header->version.minor = __SCHEMA_VERSION__.minor;
+                        header->version.major = version.major;
+                        header->version.minor = version.minor;
                         header->create_date = time_utils::now();
                         header->records = 0;
                         header->data_size = size;
@@ -128,7 +131,7 @@ namespace com {
                         base_ptr = data_ptr->get_base_ptr();
 
                         header = static_cast<__env_header *>(base_ptr);
-                        PRECONDITION(version_utils::compatible(header->version, __SCHEMA_VERSION__));
+                        PRECONDITION(version_utils::compatible(header->version, version));
 
                         uint32_t count = 0;
                         uint32_t offset = 0;
@@ -160,7 +163,7 @@ namespace com {
                     }
 
 
-                    void create() {
+                    void create(bool reset) {
                         const Config *config = this->env->get_config();
                         CHECK_NOT_NULL(config);
 
@@ -177,6 +180,9 @@ namespace com {
 
                         string name_l = string(NODE_ENV_FILE_NAME);
                         CREATE_LOCK_P(lock, &name_l, DEFAULT_RESOURCE_MODE);
+                        if (reset) {
+                            lock->reset();
+                        }
 
                         try {
                             WAIT_LOCK_GUARD(lock, 0);
@@ -222,6 +228,9 @@ namespace com {
                         CHECK_NOT_NULL(this->env);
                         CHECK_STATE_AVAILABLE(this->env->get_state());
                         this->is_server = is_server;
+
+                        version.major = NODE_ENV_VERSION_MAJOR;
+                        version.minor = NODE_ENV_VERSION_MINOR;
                     }
 
                     virtual ~__node_env() {

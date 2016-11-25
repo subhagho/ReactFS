@@ -42,6 +42,8 @@ using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
 
 #define DEFAULT_BLOAT_FACTOR (15 / 10)
+#define BLOCK_INDEX_VERSION_MAJOR ((uint16_t) 0)
+#define BLOCK_INDEX_VERSION_MINOR ((uint16_t) 1)
 
 namespace com {
     namespace wookler {
@@ -49,7 +51,7 @@ namespace com {
             namespace core {
                 class base_block_index {
                 protected:
-                    static __version_header __SCHEMA_VERSION__;
+                    __version_header version;
 
                     //! State of this instance of the block object.
                     __state__ state;
@@ -250,6 +252,11 @@ namespace com {
                     __record_index_ptr *__read_index(uint64_t index, bool all);
 
                 public:
+                    base_block_index() {
+                        version.major = BLOCK_INDEX_VERSION_MAJOR;
+                        version.minor = BLOCK_INDEX_VERSION_MINOR;
+                    }
+
                     ~base_block_index() {
                         this->close();
                     }

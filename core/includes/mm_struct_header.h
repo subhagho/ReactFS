@@ -36,20 +36,21 @@
 #include "fs_error_base.h"
 #include "base_block.h"
 #include "block_utils.h"
+#include "mm_structs_v0.h"
 
-#define MM_STRUCT_NAME_SIZE 64
 
 #define MM_HEADER_FILENAME "mm_struct_header.data"
 #define MM_BLOCK_FILE_FMT "mm_%s_block_%lu.data"
 
 #define MM_LOCK_PREFIX "_mm_"
-#define MM_MAX_BLOCKS 1024
-#define MM_MAX_MOUNTS 32
 
 #define MM_SIZE_SMALL 64 * 1024 * 1024
 #define MM_SIZE_MEDIUM 128 * 1024 * 1014
 #define MM_SIZE_LARGE 512 * 1024 * 124
 #define MM_SIZE_XLARGE 1024 * 1024 * 1024
+
+#define MM_STRUCT_VERSION_MAJOR ((uint16_t) 0)
+#define MM_STRUCT_VERSION_MINOR ((uint16_t) 1)
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
@@ -58,88 +59,66 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
-                /*!
-                 * Structure defines mount points that can be defined to balance IO load
-                 * across disks.
-                 */
-                typedef struct __mm_mount__ {
-                    /// Root path of the mount point. All files will be created under this root path.
-                    char path[SIZE_MAX_PATH];
-                    /// Number of blocks used by this block list on this mount point.
-                    uint32_t blocks_used = 0;
-                    /// Last timestamp when a block was created on this mount point.
-                    uint64_t last_block_time = 0;
-                } __mm_mount;
+                typedef __mm_mount_v0 __mm_mount;
+                typedef __mm_block_info_v0 __mm_block_info;
+                typedef __mm_data_header_v0 __mm_data_header;
 
                 /*!
-                 * Block list record that defines the blocks used by this block list.
+                 * Shared data storage manager for loading and accessing
+                 * node specific data structures.
+                 *
+                 * Both memory mapped and SHM based storage is provided my this manager.
                  */
-                typedef struct __mm_block_info__ {
-                    /// Absolute block file path.
-                    char filename[SIZE_MAX_PATH];
-                    /// Unique block id.
-                    uint32_t block_id;
-                    /// Has this block been deleted.
-                    bool deleted = false;
-                    /// Start index of the records in this block.
-                    uint64_t block_start_index = 0;
-                    /// Last index of the record written to this block.
-                    uint64_t block_last_index = 0;
-                } __mm_block_info;
-
-                /*!
-                 * Header structure used by the block list(s) to capture block information.
-                 */
-                typedef struct __mm_data_header__ {
-                    /// Schema version of the saved data
-                    __version_header version;
-                    /// Unique name of this block list.
-                    char name[MM_STRUCT_NAME_SIZE];
-                    /// Sub-directory prefix, used while creating block files under the mount points.
-                    char dir_prefix[SIZE_MAX_PATH];
-                    /// Number of mount points defined.
-                    uint16_t mounts = 0;
-                    /// Size of the blocks to be created.
-                    uint32_t block_size = 0;
-                    /// Estimated block record size (used for estimating the index file size.)
-                    uint32_t block_record_size = 0;
-                    /// Number of blocks created by this list (count includes the deleted blocks)
-                    uint32_t block_count = 0;
-                    /// Block index of the currently writable block.
-                    uint32_t write_block_index = 0;
-                    /// Last record index that has been written.
-                    uint64_t last_written_index = 0;
-                    /// Array of block information.
-                    __mm_block_info block_array[MM_MAX_BLOCKS];
-                    /// Array of defined mount points.
-                    __mm_mount mount_points[MM_MAX_MOUNTS];
-                } __mm_data_header;
-
-
-                class mm_struct_header {
+                class mm_struct_manager {
                 private:
-                    static __version_header __SCHEMA_VERSION__;
+                    /// Data version header.
+                    __version_header version;
 
+                    /// State of this instance of the memory manager.
                     __state__ state;
 
+                    /// Thread synchronisation mutex
                     mutex thread_mutex;
+
+                    /// Name of this instance of the memory manager.
                     string name;
+
+                    /// Base directory for storing mapped files.
                     Path *base_dir = nullptr;
 
+                    /// Shared lock pointer for inter-process synchronisation
                     exclusive_lock *data_lock = nullptr;
 
+                    /// Memory mapped file pointer.
                     file_mapped_data *mm_header_data = nullptr;
+
+                    /// SHM based data pointer.
                     shm_mapped_data *mm_client_data = nullptr;
 
+                    /// Memory mapped data header.
                     __mm_data_header *header = nullptr;
+
+                    /// Shared data block index.
                     unordered_map<uint32_t, base_block *> block_index;
 
+                    /*!
+                     * Get a filename, relative to the base directory.
+                     *
+                     * @param name - File/directory name.
+                     * @return - File/directory path.
+                     */
                     string get_filename(string name) {
                         Path p(base_dir->get_path());
                         p.append(name);
                         return string(p.get_path());
                     }
 
+                    /*!
+                     * Get the block record for at the specified block index.
+                     *
+                     * @param index - Block record index.
+                     * @return - Block information.
+                     */
                     __mm_block_info *get_block_info(uint32_t index) {
                         PRECONDITION(NOT_NULL(header));
                         PRECONDITION(index < header->block_count);
@@ -211,7 +190,7 @@ namespace com {
                             }
                         }
                         base_dir->create(DEFAULT_RESOURCE_MODE);
-                        string h_filename = get_filename(MM_HEADER_FILENAME);
+                        string h_filename = get_filename(string(MM_HEADER_FILENAME));
                         uint64_t h_size = sizeof(__mm_data_header);
                         mm_header_data = new file_mapped_data(h_filename, h_size);
                         CHECK_NOT_NULL(mm_header_data);
@@ -219,8 +198,8 @@ namespace com {
                         void *ptr = mm_header_data->get_base_ptr();
                         header = static_cast<__mm_data_header *>(ptr);
                         memcpy(header->name, this->name.c_str(), this->name.length());
-                        header->version.major = __SCHEMA_VERSION__.major;
-                        header->version.minor = __SCHEMA_VERSION__.minor;
+                        header->version.major = version.major;
+                        header->version.minor = version.minor;
                         header->block_size = block_size;
                         header->block_count = 0;
                         header->write_block_index = 0;
@@ -244,20 +223,6 @@ namespace com {
                         mm_header_data->flush();
                     }
 
-                    void init() {
-                        PRECONDITION(base_dir->exists());
-                        string h_filename = get_filename(MM_HEADER_FILENAME);
-                        Path p(h_filename);
-                        PRECONDITION(p.exists());
-
-                        mm_header_data = new file_mapped_data(h_filename);
-                        CHECK_NOT_NULL(mm_header_data);
-
-                        void *ptr = mm_header_data->get_base_ptr();
-                        header = static_cast<__mm_data_header *>(ptr);
-                        POSTCONDITION(strncmp(header->name, this->name.c_str(), this->name.length()) == 0);
-                        PRECONDITION(version_utils::compatible(header->version, __SCHEMA_VERSION__));
-                    }
 
                     bool is_block_loaded(uint32_t index) {
                         unordered_map<uint32_t, base_block *>::const_iterator iter = block_index.find(index);
@@ -305,61 +270,21 @@ namespace com {
                     }
 
                 public:
-                    mm_struct_header(string name, string base_dir, uint32_t record_size,
-                                     string dir_prefix = EMPTY_STRING,
-                                     uint64_t block_size = MM_SIZE_SMALL,
-                                     vector<string> *mounts = nullptr,
-                                     bool overwrite = false) {
+                    mm_struct_manager(string name, string base_dir) {
                         PRECONDITION(!IS_EMPTY(name));
                         PRECONDITION(!IS_EMPTY(base_dir));
+
+                        version.major = MM_STRUCT_VERSION_MAJOR;
+                        version.minor = MM_STRUCT_VERSION_MINOR;
 
                         this->base_dir = new Path(base_dir);
                         CHECK_NOT_NULL(this->base_dir);
                         this->base_dir->append(name);
 
                         this->name = name;
-
-                        string name_l = common_utils::format("%s%s", MM_LOCK_PREFIX, name.c_str());
-                        CREATE_LOCK_P(data_lock, &name_l, DEFAULT_RESOURCE_MODE);
-
-                        WAIT_LOCK_GUARD(data_lock, 0);
-                        try {
-                            create_new_instance(block_size, record_size, dir_prefix, mounts, overwrite);
-                            state.set_state(__state_enum::Available);
-                        } catch (const exception &e) {
-                            fs_error_base err = FS_BASE_ERROR(
-                                    "Error creating struct header. [name=%s][base dir=%s][error=%s]",
-                                    name.c_str(), base_dir.c_str(), e.what());
-                            state.set_error(&err);
-                            throw err;
-                        } catch (...) {
-                            fs_error_base err = FS_BASE_ERROR(
-                                    "Error creating struct header. [name=%s][base dir=%s][error=%s]",
-                                    name.c_str(), base_dir.c_str(), "UNKNOWN");
-                            state.set_error(&err);
-                            throw err;
-                        }
                     }
 
-                    mm_struct_header(string name, string base_dir) {
-                        PRECONDITION(!IS_EMPTY(name));
-                        PRECONDITION(!IS_EMPTY(base_dir));
-
-                        this->base_dir = new Path(base_dir);
-                        CHECK_NOT_NULL(this->base_dir);
-                        this->base_dir->append(name);
-
-                        this->name = name;
-
-                        string name_l = common_utils::format("%s%s", MM_LOCK_PREFIX, name.c_str());
-                        CREATE_LOCK_P(data_lock, &name_l, DEFAULT_RESOURCE_MODE);
-
-                        init();
-
-                        state.set_state(__state_enum::Available);
-                    }
-
-                    ~mm_struct_header() {
+                    ~mm_struct_manager() {
                         CHECK_AND_DISPOSE(state);
                         if (NOT_NULL(data_lock)) {
                             if (data_lock->is_locked()) {
@@ -377,6 +302,53 @@ namespace com {
                             CHECK_AND_FREE(block);
                         }
                         block_index.clear();
+                    }
+
+                    void create(uint32_t record_size, string dir_prefix = EMPTY_STRING,
+                                uint64_t block_size = MM_SIZE_SMALL,
+                                vector<string> *mounts = nullptr,
+                                bool overwrite = false) {
+
+                        string name_l = common_utils::format("%s%s", MM_LOCK_PREFIX, name.c_str());
+                        CREATE_LOCK_P(data_lock, &name_l, DEFAULT_RESOURCE_MODE);
+
+                        WAIT_LOCK_GUARD(data_lock, 0);
+                        try {
+                            create_new_instance(block_size, record_size, dir_prefix, mounts, overwrite);
+                            state.set_state(__state_enum::Available);
+                        } catch (const exception &e) {
+                            fs_error_base err = FS_BASE_ERROR(
+                                    "Error creating struct header. [name=%s][base dir=%s][error=%s]",
+                                    name.c_str(), base_dir->get_path().c_str(), e.what());
+                            state.set_error(&err);
+                            throw err;
+                        } catch (...) {
+                            fs_error_base err = FS_BASE_ERROR(
+                                    "Error creating struct header. [name=%s][base dir=%s][error=%s]",
+                                    name.c_str(), base_dir->get_path().c_str(), "UNKNOWN");
+                            state.set_error(&err);
+                            throw err;
+                        }
+                    }
+
+                    void init() {
+                        PRECONDITION(base_dir->exists());
+                        string h_filename = get_filename(MM_HEADER_FILENAME);
+                        Path p(h_filename);
+                        PRECONDITION(p.exists());
+
+                        mm_header_data = new file_mapped_data(h_filename);
+                        CHECK_NOT_NULL(mm_header_data);
+
+                        void *ptr = mm_header_data->get_base_ptr();
+                        header = static_cast<__mm_data_header *>(ptr);
+                        POSTCONDITION(strncmp(header->name, this->name.c_str(), this->name.length()) == 0);
+                        PRECONDITION(version_utils::compatible(header->version, version));
+
+                        string name_l = common_utils::format("%s%s", MM_LOCK_PREFIX, name.c_str());
+                        CREATE_LOCK_P(data_lock, &name_l, DEFAULT_RESOURCE_MODE);
+
+                        state.set_state(__state_enum::Available);
                     }
 
                     uint32_t get_block_count() {
@@ -506,36 +478,6 @@ namespace com {
                             block_utils::delete_block(bi->block_id, string(bi->filename));
                         }
                         return r;
-                    }
-                };
-
-                class record_iterator {
-                private:
-                    uint64_t index = 0;
-                    uint32_t block_index = 0;
-                    mm_struct_header *header = nullptr;
-
-                public:
-                    record_iterator(mm_struct_header *header) {
-                        CHECK_NOT_NULL(header);
-                        this->header = header;
-                    }
-
-                    bool has_next() {
-                        return (index < header->get_last_index());
-                    }
-
-                    shared_read_ptr next() {
-                        PRECONDITION(index < header->get_last_index());
-                        uint64_t r_index = index++;
-                        while (true) {
-                            if (header->has_record_index(r_index, block_index)) {
-                                return header->read(r_index, block_index);
-                            } else {
-                                block_index++;
-                            }
-                        }
-                        return nullptr;
                     }
                 };
             }

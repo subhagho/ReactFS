@@ -22,9 +22,6 @@
 
 using namespace com::wookler::reactfs::core;
 
-__version_header com::wookler::reactfs::core::base_block::__SCHEMA_VERSION__ = version_utils::init(0, 1);
-
-
 string
 com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, string filename, __block_type block_type,
                                                         __block_record_type record_type, uint64_t block_size,
@@ -54,8 +51,8 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
         string uuid = common_utils::uuid();
         memcpy(header->block_uid, uuid.c_str(), uuid.length());
 
-        header->version.major = __SCHEMA_VERSION__.major;
-        header->version.minor = __SCHEMA_VERSION__.minor;
+        header->version.major = version.major;
+        header->version.minor = version.minor;
         header->block_size = block_size;
         header->create_time = time_utils::now();
         header->update_time = header->create_time;
@@ -70,7 +67,7 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
         header->last_index = header->start_index;
 
         string lock_name = get_lock_name(header->block_id);
-        lock_env *env = lock_env_utils::get();
+        read_write_lock_client *env = shared_lock_utils::get();
 
         block_lock = env->add_lock(lock_name);
         CHECK_NOT_NULL(block_lock);
@@ -108,11 +105,12 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
 
         header = static_cast<__block_header *>(base_ptr);
         PRECONDITION(header->block_id == block_id);
-        PRECONDITION(version_utils::compatible(header->version, __SCHEMA_VERSION__));
+        PRECONDITION(version_utils::compatible(header->version, version));
 
         if (IS_NULL(block_lock)) {
             string lock_name = get_lock_name(header->block_id);
-            lock_env *env = lock_env_utils::get();
+            read_write_lock_client *env = shared_lock_utils::get();
+
             block_lock = env->add_lock(lock_name);
             CHECK_NOT_NULL(block_lock);
         }
@@ -150,7 +148,7 @@ void com::wookler::reactfs::core::base_block::close() {
         if (block_lock->has_thread_lock(thread_id)) {
             block_lock->release_read_lock();
         }
-        lock_env *env = lock_env_utils::get();
+        read_write_lock_client *env = shared_lock_utils::get();
         env->remove_lock(block_lock->get_name());
 
         block_lock = nullptr;

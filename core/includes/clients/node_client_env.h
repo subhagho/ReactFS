@@ -49,7 +49,7 @@ namespace com {
                         }
 
                         void init() {
-                            create();
+                            create(false);
                             try {
                                 control = init_utils::init_control_client(env, CONTROL_CONFIG_PATH);
                                 m_client = new mount_client();

@@ -8,6 +8,7 @@
 #include "core/includes/base_block.h"
 #include "core/includes/block_utils.h"
 #include "core/includes/node_env.h"
+#include "common/includes/shared_lock_utils.h"
 
 #define REUSE_BLOCK_FILE "/tmp/block_reused.raw"
 #define REUSE_BLOCK_ID 1024
@@ -149,15 +150,15 @@ int main(int argc, char **argv) {
         string configf(cf);
         env_utils::create_env(configf);
 
-        lock_env_utils::create_manager(0755);
-        lock_env *manager = lock_env_utils::get_manager();
+
+        read_write_lock_manager *manager = shared_lock_utils::create_manager(0755);
         CHECK_NOT_NULL(manager);
 
         test_raw();
 
         test_compressed();
 
-        lock_env_utils::dispose();
+        shared_lock_utils::dispose();
 
         exit(0);
     } catch (const exception &e) {

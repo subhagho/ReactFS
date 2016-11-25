@@ -4,8 +4,6 @@
 
 #include "core/includes/base_block_index.h"
 
-__version_header com::wookler::reactfs::core::base_block_index::__SCHEMA_VERSION__ = version_utils::init(0, 1);
-
 string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t block_id, string block_uuid,
                                                                      string filename, uint32_t estimated_records,
                                                                      uint64_t start_index, bool overwrite) {
@@ -32,8 +30,8 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
 
         header = static_cast<__record_index_header *>(base_ptr);
         header->block_id = block_id;
-        header->version.major = __SCHEMA_VERSION__.major;
-        header->version.minor = __SCHEMA_VERSION__.minor;
+        header->version.major = version.major;
+        header->version.minor = version.minor;
         memset(header->block_uid, 0, SIZE_UUID);
         memcpy(header->block_uid, block_uuid.c_str(), block_uuid.length());
         header->create_time = time_utils::now();
@@ -85,7 +83,7 @@ void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block
         header = static_cast<__record_index_header *>(base_ptr);
         POSTCONDITION(header->block_id == block_id);
         POSTCONDITION(strncmp(header->block_uid, block_uuid.c_str(), block_uuid.length()) == 0);
-        PRECONDITION(version_utils::compatible(header->version, __SCHEMA_VERSION__));
+        PRECONDITION(version_utils::compatible(header->version, version));
 
         this->filename = string(p->get_path());
 

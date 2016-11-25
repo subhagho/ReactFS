@@ -67,7 +67,7 @@ namespace com {
                         }
 
                         void init(bool reset) {
-                            create();
+                            create(reset);
                             try {
                                 priority_manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH, reset,
                                                                                     false);

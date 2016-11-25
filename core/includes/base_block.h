@@ -29,7 +29,7 @@
 #include "common/includes/file_utils.h"
 #include "common/includes/timer.h"
 #include "common/includes/__alarm.h"
-#include "common/includes/read_write_lock.h"
+#include "common/includes/shared_lock_utils.h"
 #include "common/includes/mapped_data.h"
 
 #include "common_structs.h"
@@ -38,6 +38,8 @@
 #include "compression_factory.h"
 #include "base_block_index.h"
 
+#define BLOCK_VERSION_MAJOR ((uint16_t) 0)
+#define BLOCK_VERSION_MINOR ((uint16_t) 1)
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
@@ -58,7 +60,7 @@ namespace com {
                  */
                 class base_block {
                 protected:
-                    static __version_header __SCHEMA_VERSION__;
+                    __version_header version;
 
                     //! State of this instance of the block object.
                     __state__ state;
@@ -244,6 +246,11 @@ namespace com {
                     }
 
                 public:
+                    base_block() {
+                        version.major = BLOCK_VERSION_MAJOR;
+                        version.minor = BLOCK_VERSION_MINOR;
+                    }
+
                     /*!< destructor
                      * Base class destructor.
                      */
