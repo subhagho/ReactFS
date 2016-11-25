@@ -28,13 +28,16 @@
 #include "common/includes/common.h"
 #include "common/includes/common_utils.h"
 #include "common/includes/exclusive_lock.h"
+#include "mount_structs_v0.h"
 
-#define MAX_MOUNT_POINTS 32
 
 #define MOUNTS_KEY "env-mount-points"
 #define MOUNTS_CONFIG_NODE "/configuration/node/mount-points"
 #define MOUNTS_CONFIG_PATH "path"
 #define MOUNTS_CONFIG_LIMIT "usage-limit"
+
+#define MOUNT_VERSION_MAJOR ((uint16_t) 0)
+#define MOUNT_VERSION_MINOR ((uint16_t) 1)
 
 using namespace com::wookler::reactfs::common;
 
@@ -42,34 +45,14 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
-                typedef enum __mount_state__ {
-                    MP_READ_WRITE = 0, MP_READ_ONLY, MP_UNAVAILABLE, MP_CORRUPTED
-                } __mount_state;
-
-                typedef struct __mount_point__ {
-                    char path[SIZE_MAX_PATH];
-                    char lock_name[SIZE_LOCK_NAME];
-                    __mount_state state = __mount_state::MP_UNAVAILABLE;
-                    int64_t usage_limit = 0;
-                    uint32_t total_blocks = 0;
-                    uint64_t total_bytes_written = 0;
-                    uint64_t total_bytes_read = 0;
-                    uint64_t bytes_written = 0;
-                    uint64_t bytes_read = 0;
-                    uint64_t time_write = 0;
-                    uint64_t time_read = 0;
-                } __mount_point;
-
-                typedef struct __mount_data__ {
-                    uint16_t mount_count = 0;
-                    uint16_t available_count = 0;
-                    __mount_point mounts[MAX_MOUNT_POINTS];
-                } __mount_data;
 
                 typedef struct __mount_def__ {
                     string *path;
                     int64_t usage_limit;
                 } __mount_def;
+
+                typedef __mount_data_v0 __mount_data;
+                typedef __mount_point_v0 __mount_point;
 
                 class __mount_map {
                 private:

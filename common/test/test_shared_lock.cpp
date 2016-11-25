@@ -16,15 +16,13 @@ TEST_CASE("Check basic shared lock operations", "[com::wookler::reactfs::common:
     const Config *config = env_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
-    lock_manager *manager = new lock_manager();
-    manager->init(0755);
+    shared_lock_utils::create_manager(0755);
+    read_write_lock_manager *manager = shared_lock_utils::get_manager();
+    CHECK_NOT_NULL(manager);
 
-    lock_env *l_env = new lock_env();
-    l_env->create();
-
+    read_write_lock_client *client = shared_lock_utils::get();
     string name("test_lock_01");
-    read_write_lock *lock = l_env->add_lock(name);
-    CHECK_NOT_NULL(lock);
+    read_write_lock *lock = client->add_lock(name);
     lock->reset();
 
     POSTCONDITION(NOT_NULL(lock));
@@ -50,6 +48,8 @@ TEST_CASE("Check basic shared lock operations", "[com::wookler::reactfs::common:
     lock->release_read_lock();
     LOG_INFO("Released read lock.");
 
-    CHECK_AND_FREE(manager);
+    client->remove_lock(name);
+
+    shared_lock_utils::dispose();
     env_utils::dispose();
 }

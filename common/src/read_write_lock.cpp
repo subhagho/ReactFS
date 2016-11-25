@@ -24,8 +24,6 @@
 
 using namespace com::wookler::reactfs::common;
 
-__version_header com::wookler::reactfs::common::shared_lock_table::__SCHEMA_VERSION__ = version_utils::init(0, 1);
-
 void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, bool manager) {
     LOG_DEBUG("Creating shared memory. [name=%s]", SHARED_LOCK_NAME);
 
@@ -48,10 +46,10 @@ void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, boo
         if (manager) {
             header_ptr->max_count = MAX_SHARED_LOCKS;
             header_ptr->used_count = 0;
-            header_ptr->version.major = __SCHEMA_VERSION__.major;
-            header_ptr->version.minor = __SCHEMA_VERSION__.minor;
+            header_ptr->version.major = version.major;
+            header_ptr->version.minor = version.minor;
         } else {
-            PRECONDITION(version_utils::compatible(header_ptr->version, __SCHEMA_VERSION__));
+            PRECONDITION(version_utils::compatible(header_ptr->version, version));
         }
         void *ptr = common_utils::increment_data_ptr(mm_data->get_base_ptr(), h_size);
 
@@ -67,12 +65,12 @@ void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, boo
 }
 
 com::wookler::reactfs::common::__lock_struct *com::wookler::reactfs::common::shared_lock_table::add_lock(
-        string name) {
+        string name, uint64_t timeout) {
     PRECONDITION(NOT_NULL(locks));
     PRECONDITION(!IS_EMPTY(name));
     PRECONDITION(name.length() < SIZE_LOCK_NAME);
 
-    WAIT_LOCK_GUARD(table_lock, 0);
+    TRY_LOCK_WITH_ERROR(table_lock, 0, timeout);
     try {
         if (header_ptr->used_count >= header_ptr->max_count) {
             throw LOCK_ERROR("Error adding new lock instance. Max records exhausted. [count=%d]",
@@ -117,13 +115,13 @@ com::wookler::reactfs::common::__lock_struct *com::wookler::reactfs::common::sha
     }
 }
 
-bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) {
+bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name, uint64_t timeout) {
     PRECONDITION(NOT_NULL(locks));
     PRECONDITION(!IS_EMPTY(name));
     PRECONDITION(name.length() < SIZE_LOCK_NAME);
 
     bool ret = false;
-    WAIT_LOCK_GUARD(table_lock, 0);
+    TRY_LOCK_WITH_ERROR(table_lock, 0, timeout);
     try {
         __lock_struct *ptr = locks;
         int found_index = -1;
@@ -160,216 +158,3 @@ bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) 
     return ret;
 }
 
-void com::wookler::reactfs::common::lock_env::create(mode_t mode, bool is_manager) {
-    try {
-        table = new shared_lock_table();
-        table->create(mode, is_manager);
-
-        state.set_state(__state_enum::Available);
-
-    } catch (const exception &e) {
-        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=%s]", e.what());
-        state.set_error(&le);
-        throw le;
-    } catch (...) {
-        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=Unknown]");
-        state.set_error(&le);
-        throw le;
-    }
-}
-
-void com::wookler::reactfs::common::lock_env::create() {
-    std::lock_guard<std::mutex> guard(thread_mutex);
-    try {
-        table = new shared_lock_table();
-        table->create();
-
-        state.set_state(__state_enum::Available);
-
-    } catch (const exception &e) {
-        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=%s]", e.what());
-        state.set_error(&le);
-        throw le;
-    } catch (...) {
-        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=Unknown]");
-        state.set_error(&le);
-        throw le;
-    }
-}
-
-void com::wookler::reactfs::common::lock_manager::init(mode_t mode) {
-    try {
-        create(mode, true);
-        reset();
-
-        manager_thread = new thread(lock_manager::run, this);
-
-    } catch (const exception &e) {
-        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=%s]", e.what());
-        state.set_error(&le);
-        throw le;
-    } catch (...) {
-        lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=Unknown]");
-        state.set_error(&le);
-        throw le;
-    }
-}
-
-void com::wookler::reactfs::common::lock_manager::run(lock_manager *manager) {
-    PRECONDITION(NOT_NULL(manager));
-    try {
-        LOG_INFO("Starting lock manager thread...");
-        NEW_ALARM(DEFAULT_LOCK_MGR_SLEEP, 0);
-        while (manager->state.get_state() == __state_enum::Available) {
-            PRECONDITION(NOT_NULL(manager));
-            manager->check_lock_states();
-
-            START_ALARM(0);
-        }
-        LOG_INFO("Lock manager thread terminated...");
-    } catch (const exception &e) {
-        LOG_ERROR("Lock manager thread terminated with error. [error=%s]", e.what());
-        manager->state.set_error(&e);
-    } catch (...) {
-        lock_error le = LOCK_ERROR("Lock manager thread terminated with unhandled exception.");
-        manager->state.set_error(&le);
-    }
-}
-
-void com::wookler::reactfs::common::lock_manager::check_lock_states() {
-    if (state.get_state() == __state_enum::Available) {
-        uint32_t count = table->get_max_size();
-        for (uint32_t ii = 0; ii < count; ii++) {
-            __lock_struct *ptr = table->get_at(ii);
-            if (NOT_NULL(ptr)) {
-                if (ptr->write_locked) {
-                    uint64_t now = time_utils::now();
-                    if ((now - ptr->owner.lock_timestamp) > DEFAULT_WRITE_LOCK_TIMEOUT) {
-                        ptr->owner.lock_timestamp = 0;
-                        ptr->owner.process_id = -1;
-                        memset(ptr->owner.txn_id, 0, SIZE_UUID);
-                        memset(ptr->owner.owner, 0, SIZE_USER_NAME);
-                        ptr->write_locked = false;
-                    }
-                }
-                __lock_readers *r_ptr = ptr->readers;
-                for (int ii = 0; ii < MAX_READER_LOCKS; ii++) {
-                    if (r_ptr[ii].used) {
-                        uint64_t now = time_utils::now();
-                        if ((now - r_ptr->lock_timestamp) > DEFAULT_READ_LOCK_TIMEOUT) {
-                            r_ptr[ii].used = false;
-                            ptr->reader_count--;
-                        }
-                    }
-                }
-                uint64_t delta = (time_utils::now() - ptr->last_used);
-                if (ptr->ref_count <= 0 && delta >= DEFAULT_RW_LOCK_EXPIRY) {
-                    table->remove_lock(ptr->name);
-                }
-            }
-        }
-    }
-}
-
-read_write_lock *com::wookler::reactfs::common::lock_env::add_lock(string name) {
-    CHECK_STATE_AVAILABLE(state);
-    std::lock_guard<std::mutex> guard(thread_mutex);
-
-    read_write_lock *lock = nullptr;
-    unordered_map<std::string, read_write_lock *>::const_iterator iter = locks.find(name);
-    if (iter != locks.end()) {
-        lock = iter->second;
-        CHECK_NOT_NULL(lock);
-    } else {
-        lock = new read_write_lock();
-        lock->create(&name, table);
-        locks[name] = lock;
-    }
-    lock->increment_ref_count();
-
-    return lock;
-}
-
-bool com::wookler::reactfs::common::lock_env::remove_lock(string name) {
-    CHECK_STATE_AVAILABLE(state);
-    std::lock_guard<std::mutex> guard(thread_mutex);
-
-    read_write_lock *lock = nullptr;
-    unordered_map<std::string, read_write_lock *>::const_iterator iter = locks.find(name);
-    if (iter != locks.end()) {
-        lock = iter->second;
-        CHECK_NOT_NULL(lock);
-    }
-    if (NOT_NULL(lock)) {
-        string thread_id = thread_utils::get_current_thread();
-        if (lock->has_write_lock(thread_id)) {
-            lock->release_write_lock();
-        }
-        if (lock->has_thread_lock(thread_id)) {
-            lock->release_read_lock();
-        }
-        lock->decrement_ref_count();
-        if (lock->get_reference_count() <= 0) {
-            table->remove_lock(lock->get_name());
-            locks.erase(lock->get_name());
-            delete (lock);
-        }
-    }
-    return false;
-}
-
-void com::wookler::reactfs::common::lock_manager::reset() {
-    CHECK_STATE_AVAILABLE(state);
-    std::lock_guard<std::mutex> guard(thread_mutex);
-    uint32_t count = table->get_max_size();
-    for (uint32_t ii = 0; ii < count; ii++) {
-        __lock_struct *ptr = table->get_at(ii);
-        if (NOT_NULL(ptr)) {
-            if (ptr->write_locked) {
-                pid_t pid = ptr->owner.process_id;
-                if (!process_utils::check_process(pid)) {
-                    ptr->owner.lock_timestamp = 0;
-                    ptr->owner.process_id = -1;
-                    memset(ptr->owner.txn_id, 0, SIZE_UUID);
-                    memset(ptr->owner.owner, 0, SIZE_USER_NAME);
-                    ptr->write_locked = false;
-                } else {
-                    uint64_t now = time_utils::now();
-                    if ((now - ptr->owner.lock_timestamp) > DEFAULT_WRITE_LOCK_TIMEOUT) {
-                        ptr->owner.lock_timestamp = 0;
-                        ptr->owner.process_id = -1;
-                        memset(ptr->owner.txn_id, 0, SIZE_UUID);
-                        memset(ptr->owner.owner, 0, SIZE_USER_NAME);
-                        ptr->write_locked = false;
-                    }
-                }
-            }
-            __lock_readers *r_ptr = ptr->readers;
-            int reader_count = 0;
-            for (int ii = 0; ii < MAX_READER_LOCKS; ii++) {
-                if (r_ptr[ii].used) {
-                    bool used = true;
-                    pid_t pid = r_ptr[ii].process_id;
-                    if (!process_utils::check_process(pid)) {
-                        r_ptr[ii].used = false;
-                        used = false;
-                    } else {
-                        uint64_t now = time_utils::now();
-                        if ((now - r_ptr->lock_timestamp) > DEFAULT_READ_LOCK_TIMEOUT) {
-                            r_ptr[ii].used = false;
-                            used = false;
-                        }
-                    }
-                    if (used) {
-                        reader_count++;
-                    }
-                }
-            }
-            ptr->reader_count = reader_count;
-        }
-    }
-}
-
-bool com::wookler::reactfs::common::lock_env_utils::is_manager = false;
-lock_env *com::wookler::reactfs::common::lock_env_utils::env = nullptr;
-mutex com::wookler::reactfs::common::lock_env_utils::env_mutex;

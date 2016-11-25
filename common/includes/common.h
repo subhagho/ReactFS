@@ -77,10 +77,12 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
-                typedef struct __version_header__ {
+                struct __version_header__ {
                     uint16_t major = 0;
                     uint16_t minor = 0;
-                } __version_header;
+                } ;
+
+                typedef __version_header__ __version_header;
 
                 class version_utils {
                 public:
@@ -90,13 +92,6 @@ namespace com {
 
                     static bool compatible(__version_header v1, __version_header v2) {
                         return (v1.major == v2.major);
-                    }
-
-                    static __version_header init(uint16_t major, uint16_t minor) {
-                        __version_header v;
-                        v.major = major;
-                        v.minor = minor;
-                        return v;
                     }
                 };
             }

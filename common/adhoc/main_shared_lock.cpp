@@ -4,6 +4,7 @@
 
 #include "common/includes/init_utils.h"
 #include "common/includes/read_write_lock.h"
+#include "common/includes/shared_lock_utils.h"
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 
@@ -24,11 +25,11 @@ int main(int argc, char **argv) {
         const __env *env = env_utils::get_env();
         CHECK_NOT_NULL(env);
 
-        lock_env_utils::create_manager(0755);
-        lock_env *manager = lock_env_utils::get_manager();
+        shared_lock_utils::create_manager(0755);
+        read_write_lock_manager *manager = shared_lock_utils::get_manager();
         CHECK_NOT_NULL(manager);
 
-        lock_env *client = lock_env_utils::get();
+        read_write_lock_client *client = shared_lock_utils::get();
         string name("test_lock_01");
         read_write_lock *lock = client->add_lock(name);
         lock->reset();
@@ -58,7 +59,7 @@ int main(int argc, char **argv) {
 
         client->remove_lock(name);
 
-        lock_env_utils::dispose();
+        shared_lock_utils::dispose();
         env_utils::dispose();
 
         exit(0);

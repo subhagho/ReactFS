@@ -36,11 +36,8 @@
 #include "unordered_map"
 #include "__bitset.h"
 #include "mapped_data.h"
+#include "rw_lock_structs_v0.h"
 
-#define DEFAULT_RW_LOCK_RETRY 10
-#define SIZE_LOCK_NAME 32
-#define MAX_READER_LOCKS 256
-#define MAX_SHARED_LOCKS 4096
 
 #define DEFAULT_LOCK_MGR_SLEEP 30 * 1000
 #define DEFAULT_READ_LOCK_TIMEOUT 5 * 60 * 1000
@@ -50,55 +47,57 @@
 #define SHARED_LOCK_TABLE_NAME "LOCK_shared_table"
 #define SHARED_LOCK_NAME "LOCK_shared_lock_table"
 
+#define SHARED_LOCK_MAJ_VERSION ((uint16_t) 0)
+#define SHARED_LOCK_MIN_VERSION ((uint16_t) 1)
+
 namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
-                typedef struct __owner__ {
-                    char owner[SIZE_USER_NAME];
-                    char txn_id[SIZE_UUID];
-                    pid_t process_id;
-                    char thread_id[SIZE_THREAD_ID];
-                    uint64_t lock_timestamp = 0;
-                } __owner;
-
-                typedef struct __lock_readers__ {
-                    bool used = false;
-                    pid_t process_id;
-                    char thread_id[SIZE_THREAD_ID];
-                    uint64_t lock_timestamp = 0;
-                } __lock_readers;
-
-                typedef struct __lock_struct__ {
-                    bool used = false;
-                    char name[SIZE_LOCK_NAME];
-                    uint64_t last_used = 0;
-                    bool write_locked = false;
-                    uint32_t ref_count = 0;
-                    __owner owner;
-                    uint64_t reader_count;
-                    __lock_readers readers[MAX_READER_LOCKS];
-                } __lock_struct;
-
-                typedef struct __shared_lock_data__ {
-                    __version_header version;
-                    uint32_t max_count = 0;
-                    uint32_t used_count = 0;
-                } __shared_lock_data;
+                typedef __owner_v0 __owner;
+                typedef __lock_readers_v0 __lock_readers;
+                typedef __lock_struct_v0 __lock_struct;
+                typedef __shared_lock_data_v0 __shared_lock_data;
 
                 class shared_lock_table {
                 private:
-                    static __version_header __SCHEMA_VERSION__;
+                    /// Current version of the data structures being used.
+                    __version_header version;
 
                     /// Memory-mapped file handle.
                     shm_mapped_data *mm_data = nullptr;
+
+                    /// Shared lock handle to writing data.
                     exclusive_lock *table_lock = nullptr;
+
+                    /// Shared Locks registry pointer.
                     __lock_struct *locks = nullptr;
+
+                    /// Persisted data header pointer.
                     __shared_lock_data *header_ptr = nullptr;
 
+                    /*!
+                     * Create/Map the data file to the local instance.
+                     *
+                     * @param mode - File create mode.
+                     * @param manager - Is this a server instance.
+                     */
                     void __create(mode_t mode, bool manager = false);
 
                 public:
+                    /*! <constructor
+                     * Default constructor.
+                     *
+                     * @return
+                     */
+                    shared_lock_table() {
+                        version.major = SHARED_LOCK_MAJ_VERSION;
+                        version.minor = SHARED_LOCK_MIN_VERSION;
+                    }
+
+                    /*! <destructor
+                     *  Instance destructor.
+                     */
                     ~shared_lock_table() {
                         CHECK_AND_FREE(table_lock);
                         CHECK_AND_FREE(mm_data);
@@ -106,16 +105,32 @@ namespace com {
                         header_ptr = nullptr;
                     }
 
+                    /*!
+                     * Get the max number of shared locks that can be registered.
+                     *
+                     * @return - Max shared locks.
+                     */
                     uint32_t get_max_size() {
                         PRECONDITION(NOT_NULL(header_ptr));
                         return header_ptr->max_count;
                     }
 
+                    /*!
+                     * Get the number of shared lock slots currently being used.
+                     *
+                     * @return - Used shared lock slots.
+                     */
                     uint32_t get_used_size() {
                         PRECONDITION(NOT_NULL(header_ptr));
                         return header_ptr->used_count;
                     }
 
+                    /*!
+                     * Get the shared lock record at the specified index.
+                     *
+                     * @param index - Record index.
+                     * @return - Lock record at index.
+                     */
                     __lock_struct *get_at(uint32_t index) {
                         PRECONDITION(NOT_NULL(locks));
                         PRECONDITION(NOT_NULL(header_ptr));
@@ -128,30 +143,79 @@ namespace com {
                         return nullptr;
                     }
 
+                    /*!
+                     * Create/Map the shared lock data to this instance.
+                     *
+                     * @param mode - Shared lock file create mode.
+                     * @param is_manager - Is this instance a server instance?
+                     */
                     void create(mode_t mode, bool is_manager) {
                         __create(mode, is_manager);
                     }
 
+                    /*!
+                     * Map the shared lock data to this instance in client mode.
+                     */
                     void create() {
                         __create(0, false);
                     }
 
-                    __lock_struct *add_lock(string name);
+                    /*!
+                     * Add a new shared lock. Will allocate the lock record if slot is available.
+                     *
+                     * @param name - Shared lock name.
+                     * @param timeout - Lock add timeout, defaults to DEFAULT_WRITE_LOCK_TIMEOUT
+                     * @return - Allocated shared lock record.
+                     */
+                    __lock_struct *add_lock(string name, uint64_t timeout = DEFAULT_WRITE_LOCK_TIMEOUT);
 
-                    bool remove_lock(string name);
+                    /*!
+                     * Remove the shared lock record, already registered.
+                     *
+                     * @param name - Shared lock name.
+                     * @param timeout - Lock add timeout, defaults to DEFAULT_WRITE_LOCK_TIMEOUT
+                     * @return - Has been removed?
+                     */
+                    bool remove_lock(string name, uint64_t timeout = DEFAULT_WRITE_LOCK_TIMEOUT);
                 };
 
+                /*!
+                 * Class defines a Read/Write locking framework for inter-process locking.
+                 *
+                 * This implementation is based on a semaphore based exclusive lock and a
+                 * SHM backed data structure to define read/write locking semantics.
+                 */
                 class read_write_lock {
                 private:
+                    /// State of this instance of the RW lock.
                     __state__ state;
+
+                    /// Shared exclusive lock, used to control SHM updates.
                     exclusive_lock *lock;
+
+                    /// SHM mapped structure for this lock instance.
                     __lock_struct *lock_struct;
+
+                    /// Current transaction ID, if in a locked mode.
                     string txn_id;
+
+                    /// Thread records, to support reentrant locking.
                     unordered_map<string, int> reader_threads;
+
+                    /// Pointer to the SHM mapped table.
                     shared_lock_table *table = nullptr;
+
+                    /// Name of the shared lock.
                     string name;
+
+                    /// NUmber of lock references active.
                     uint32_t reference_count = 0;
 
+                    /*!
+                     * Find a free slot to register a new thread.
+                     *
+                     * @return - Free slot index, or -1 if slots exhausted.
+                     */
                     int find_free_reader() {
                         __lock_readers *ptr = lock_struct->readers;
                         for (int ii = 0; ii < MAX_READER_LOCKS; ii++) {
@@ -163,14 +227,20 @@ namespace com {
                         return -1;
                     }
 
+                    /*!
+                     * Check and clear any lock(s) acquired by this instance.
+                     */
                     void check_and_clear() {
                         PRECONDITION(NOT_NULL(lock_struct));
                         PRECONDITION(lock_struct->used);
 
                         pid_t pid = getpid();
+
+                        // Check and release, if this instance currently holds a write lock.
                         if (lock_struct->write_locked && lock_struct->owner.process_id == pid) {
                             release_write_lock();
                         }
+                        // Check if this instance has acquired any read locks.
                         if (!reader_threads.empty()) {
                             vector<string> threads;
                             for (auto it = reader_threads.begin(); it != reader_threads.end(); ++it) {
@@ -182,6 +252,7 @@ namespace com {
                                     }
                                 }
                             }
+                            // Release all read locks acquired by this instance.
                             for (vector<string>::iterator it = threads.begin(); it != threads.end(); ++it) {
                                 release_read_lock(*it);
                             }
@@ -189,6 +260,11 @@ namespace com {
                         table->remove_lock(name);
                     }
 
+                    /*!
+                     * Check if this process has a valid lock record and the record hasn't expired.
+                     * This check is needed as the background server thread will release and reuse records
+                     * that have expired due to inactivity.
+                     */
                     void check_lock_valid() {
                         if (!lock_struct->used) {
                             lock_error e = LOCK_ERROR("Lock has been released by manager.");
@@ -204,6 +280,13 @@ namespace com {
                         }
                     }
 
+                    /*!
+                     * Release a read lock, check is done to ensure that locks are not already released.
+                     *
+                     * @param thread_id - Current thread ID of the caller.
+                     * @param timeout - Lock timeout, defaults to DEFAULT_LOCK_TIMEOUT
+                     * @return - Is lock released?
+                     */
                     bool release_read_lock(string thread_id, uint64_t timeout = DEFAULT_LOCK_TIMEOUT) {
                         bool locked = false;
                         TRY_LOCK_WITH_ERROR(lock, 0, timeout);
@@ -225,11 +308,21 @@ namespace com {
                         return locked;
                     }
 
+
+
                 public:
+                    /*!<constructor
+                     *
+                     * Default constructor.
+                     * @return
+                     */
                     read_write_lock() {
 
                     }
 
+                    /*!<destructor
+                     * Default destructor.
+                     */
                     ~read_write_lock() {
                         state.set_state(__state_enum::Disposed);
                         check_and_clear();
@@ -238,6 +331,12 @@ namespace com {
                         lock_struct = nullptr;
                     }
 
+                    /*!
+                     * Create and initialize the lock instance.
+                     *
+                     * @param name - Shared lock name.
+                     * @param table - SHM based lock table pointer.
+                     */
                     void create(const string *name, shared_lock_table *table) {
                         try {
                             CHECK_NOT_NULL(table);
@@ -263,16 +362,35 @@ namespace com {
                         }
                     }
 
+                    /*!
+                     * Reset the exclusive lock.
+                     *
+                     * Note: Should be called only during server startup or
+                     * when recovering from error conditions.
+                     */
                     void reset() {
                         CHECK_STATE_AVAILABLE(state);
                         lock->reset();
                     }
 
+                    /*!
+                     * Get the current transaction ID.
+                     * Will be empty if not currently holding a write lock.
+                     *
+                     * @return - Current transaction ID, empty if no write lock.
+                     */
                     string get_txn_id() {
                         CHECK_STATE_AVAILABLE(state);
                         return txn_id;
                     }
 
+                    /*!
+                     * Check if this process holds the write lock,
+                     * and the current thread is the locker.
+                     *
+                     * @param thread_id - Calling thread ID.
+                     * @return - Has write lock?
+                     */
                     bool has_write_lock(string thread_id) {
                         check_lock_valid();
                         CHECK_STATE_AVAILABLE(state);
@@ -287,6 +405,12 @@ namespace com {
                         return false;
                     }
 
+                    /*!
+                     * Check if the calling thread already has a read lock.
+                     *
+                     * @param thread_id - Calling thread ID.
+                     * @return - Has read lock?
+                     */
                     bool has_thread_lock(string thread_id) {
                         check_lock_valid();
                         CHECK_STATE_AVAILABLE(state);
@@ -302,6 +426,12 @@ namespace com {
                         return false;
                     }
 
+                    /*!
+                     * Get the index of the thread record, if thread has already been registered.
+                     *
+                     * @param thread_id - Calling thread ID.
+                     * @return - Thread record index or -1 if not found.
+                     */
                     int get_reader_index(string thread_id) {
                         CHECK_STATE_AVAILABLE(state);
                         unordered_map<std::string, int>::const_iterator iter = reader_threads.find(thread_id);
@@ -315,6 +445,15 @@ namespace com {
                         return -1;
                     }
 
+                    /*!
+                     * Acquire a write lock. Will retry for the specified timeout.
+                     * Lock calls are thread reentrant and will return true if the calling thread
+                     * has already acquired a write lock.
+                     *
+                     * @param owner - Username of the requesting process owner.
+                     * @param timeout - Timeout for retrying.
+                     * @return - New transaction ID, or empty string if acquire failed.
+                     */
                     string write_lock(string owner, uint64_t timeout) {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(!IS_EMPTY(owner));
@@ -357,12 +496,29 @@ namespace com {
                         return txn_id;
                     }
 
+                    /*!
+                     * Get a write lock, without waiting.
+                     * Will return immediately if lock is not acquired.
+                     *
+                     * @param owner - Username of the requesting process owner.
+                     * @return - New transaction ID, or empty string if acquire failed.
+                     */
                     string write_lock(string owner) {
                         return write_lock(owner, 0);
                     }
 
+                    /*!
+                     * Get a read lock on behalf of the calling thread.
+                     * Lock calls are thread reentrant and will return true if the calling thread
+                     * has already acquired a read lock.
+                     *
+                     * @param timeout - Retry timeout.
+                     * @return - Is read lock acquired?
+                     */
                     bool read_lock(uint64_t timeout) {
                         CHECK_STATE_AVAILABLE(state);
+
+                        string thread_id = thread_utils::get_current_thread();
 
                         uint64_t startt = time_utils::now();
                         bool locked = false;
@@ -372,7 +528,6 @@ namespace com {
                             TRY_LOCK(lock, 0, timeout, ret);
                             if (ret) {
                                 if (!lock_struct->write_locked) {
-                                    string thread_id = thread_utils::get_current_thread();
                                     if (!has_thread_lock(thread_id)) {
                                         if (lock_struct->reader_count < MAX_READER_LOCKS) {
                                             int index = find_free_reader();
@@ -412,10 +567,23 @@ namespace com {
                         return locked;
                     }
 
+                    /*!
+                    * Get a read lock on behalf of the calling thread.
+                    * Lock calls are thread reentrant and will return true if the calling thread
+                    * has already acquired a read lock.
+                    *
+                    * @return - Is read lock acquired?
+                    */
                     bool read_lock() {
                         return read_lock(0);
                     }
 
+                    /*!
+                     * Release the write lock currently held by this process/thread.
+                     * Is thread safe and will not release if lock has been acquired by a different thread.
+                     *
+                     * @return - Has been released?
+                     */
                     bool release_write_lock() {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(!IS_EMPTY(txn_id));
@@ -438,6 +606,12 @@ namespace com {
                         return locked;
                     }
 
+                    /*!
+                    * Release the read lock currently held by this process/thread.
+                    * Is thread safe and will not release if lock has been acquired by a different thread.
+                    *
+                    * @return - Has been released?
+                    */
                     bool release_read_lock() {
                         CHECK_STATE_AVAILABLE(state);
 
@@ -446,9 +620,15 @@ namespace com {
                         return release_read_lock(thread_id);
                     }
 
+                    /*!
+                     * Get the name of this shared read/write lock.
+                     *
+                     * @return - Lock name.
+                     */
                     string get_name() {
                         return this->name;
                     }
+
 
                     void increment_ref_count() {
                         reference_count++;
@@ -463,119 +643,8 @@ namespace com {
                     }
                 };
 
-                class lock_env {
-                protected:
-                    __state__ state;
-                    mutex thread_mutex;
-                    shared_lock_table *table = nullptr;
-                    unordered_map<string, read_write_lock *> locks;
 
-                    void create(mode_t mode, bool is_manager = false);
 
-                public:
-                    ~lock_env() {
-                        std::lock_guard<std::mutex> guard(thread_mutex);
-                        state.set_state(__state_enum::Disposed);
-                        if (!locks.empty()) {
-                            unordered_map<string, read_write_lock *>::iterator iter;
-                            for (iter = locks.begin(); iter != locks.end(); iter++) {
-                                read_write_lock *lock = iter->second;
-                                if (NOT_NULL(lock)) {
-                                    delete (lock);
-                                }
-                            }
-                        }
-                        CHECK_AND_FREE(table);
-                    }
-
-                    shared_lock_table *get_lock_table() {
-                        CHECK_STATE_AVAILABLE(state);
-                        return table;
-                    }
-
-                    void create();
-
-                    read_write_lock *add_lock(string name);
-
-                    bool remove_lock(string name);
-
-                };
-
-                class lock_manager : public lock_env {
-                private:
-                    thread *manager_thread = nullptr;
-
-                    void check_lock_states();
-
-                    static void run(lock_manager *manager);
-
-                public:
-                    ~lock_manager() {
-                        state.set_state(__state_enum::Disposed);
-                        if (NOT_NULL(manager_thread)) {
-                            manager_thread->join();
-                            delete (manager_thread);
-                            manager_thread = nullptr;
-                        }
-                    }
-
-                    void init(mode_t mode);
-
-                    void reset();
-                };
-
-                class lock_env_utils {
-                private:
-                    static mutex env_mutex;
-                    static bool is_manager;
-                    static lock_env *env;
-                public:
-                    static lock_env *create_manager(mode_t mode) {
-                        std::lock_guard<std::mutex> guard(env_mutex);
-                        if (NOT_NULL(env) && !is_manager) {
-                            throw LOCK_ERROR("Lock environment already initialized in client mode.");
-                        }
-                        if (is_manager && NOT_NULL(env)) {
-                            return env;
-                        }
-                        is_manager = true;
-
-                        lock_manager *manager = new lock_manager();
-                        manager->init(mode);
-
-                        env = manager;
-                        return env;
-                    }
-
-                    static lock_env *create_client() {
-                        std::lock_guard<std::mutex> guard(env_mutex);
-                        if (NOT_NULL(env)) {
-                            return env;
-                        }
-                        is_manager = false;
-                        env = new lock_env();
-                        env->create();
-
-                        return env;
-                    }
-
-                    static lock_env *get() {
-                        CHECK_NOT_NULL(env);
-                        return env;
-                    }
-
-                    static lock_manager *get_manager() {
-                        CHECK_NOT_NULL(env);
-                        PRECONDITION(is_manager);
-
-                        return static_cast<lock_manager *>(env);
-                    }
-
-                    static void dispose() {
-                        std::lock_guard<std::mutex> guard(env_mutex);
-                        CHECK_AND_FREE(env);
-                    }
-                };
             }
         }
     }

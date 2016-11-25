@@ -37,6 +37,8 @@ namespace com {
                 namespace client {
                     class mount_client {
                     private:
+                        __version_header version;
+
                         __mount_data *mounts = nullptr;
                         __mount_map *mount_map = nullptr;
 
@@ -57,6 +59,11 @@ namespace com {
                         }
 
                     public:
+                        mount_client() {
+                            version.major = MOUNT_VERSION_MAJOR;
+                            version.minor = MOUNT_VERSION_MINOR;
+                        }
+
                         void init(shared_mapped_ptr ptr) {
 
                             CHECK_NOT_NULL(ptr);
@@ -68,6 +75,7 @@ namespace com {
                             mounts = static_cast<__mount_data *>(p);
                             CHECK_NOT_NULL(mounts);
 
+                            version_utils::compatible(version, mounts->version);
                             mount_map = new __mount_map();
                             for (uint16_t ii = 0; ii < mounts->mount_count; ii++) {
                                 __mount_point mp = mounts->mounts[ii];
