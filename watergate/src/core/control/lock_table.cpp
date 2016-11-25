@@ -36,8 +36,7 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
 
         LOG_DEBUG("Creating shared memory. [name=%s]", this->name.c_str());
 
-        lock = new exclusive_lock(&l_name);
-        lock->create();
+        INIT_LOCK_P(lock, &l_name);
         if (overwrite) {
             lock->reset();
         }

@@ -77,8 +77,8 @@ namespace com {
                                 string name_l = string(mp.lock_name);
                                 POSTCONDITION(!IS_EMPTY(name_l));
 
-                                exclusive_lock *lock = new exclusive_lock(&name_l);
-                                CHECK_NOT_NULL(lock);
+                                exclusive_lock *lock = nullptr;
+                                INIT_LOCK_P(lock, &name_l);
 
                                 mount_map->add_mount_lock(lock->get_name(), lock);
                                 mount_map->add_mount_index(string(mp.path), ii);

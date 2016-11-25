@@ -31,11 +31,10 @@ void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, boo
 
     string name_l(SHARED_LOCK_NAME);
     if (mode > 0) {
-        table_lock = new exclusive_lock(&name_l, mode);
+        CREATE_LOCK_P(table_lock, &name_l, mode);
     } else {
-        table_lock = new exclusive_lock(&name_l);
+        INIT_LOCK_P(table_lock, &name_l);
     }
-    table_lock->create();
     if (mode > 0)
         table_lock->reset();
 

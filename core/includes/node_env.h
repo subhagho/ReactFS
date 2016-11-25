@@ -176,9 +176,7 @@ namespace com {
                         POSTCONDITION(size > 0);
 
                         string name_l = string(NODE_ENV_FILE_NAME);
-                        lock = new exclusive_lock(&name_l, DEFAULT_RESOURCE_MODE);
-                        CHECK_NOT_NULL(lock);
-                        lock->create();
+                        CREATE_LOCK_P(lock, &name_l, DEFAULT_RESOURCE_MODE);
 
                         try {
                             WAIT_LOCK_GUARD(lock, 0);

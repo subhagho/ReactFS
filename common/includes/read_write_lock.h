@@ -204,26 +204,24 @@ namespace com {
                         }
                     }
 
-                    bool release_read_lock(string thread_id) {
+                    bool release_read_lock(string thread_id, uint64_t timeout = DEFAULT_LOCK_TIMEOUT) {
                         bool locked = false;
-                        if (lock->wait_lock()) {
-                            if (has_thread_lock(thread_id)) {
-                                if (lock_struct->reader_count > 0) {
-                                    int index = get_reader_index(thread_id);
-                                    if (index >= 0) {
-                                        lock_struct->reader_count--;
-                                        lock_struct->readers[index].used = false;
+                        TRY_LOCK_WITH_ERROR(lock, 0, timeout);
+                        if (has_thread_lock(thread_id)) {
+                            if (lock_struct->reader_count > 0) {
+                                int index = get_reader_index(thread_id);
+                                if (index >= 0) {
+                                    lock_struct->reader_count--;
+                                    lock_struct->readers[index].used = false;
 
-                                        reader_threads.erase(thread_id);
-                                        locked = true;
-                                    }
-                                } else {
-                                    throw LOCK_ERROR("Error getting lock. [name=%s]", lock->get_name()->c_str());
+                                    reader_threads.erase(thread_id);
+                                    locked = true;
                                 }
+                            } else {
+                                throw LOCK_ERROR("Error getting lock. [name=%s]", lock->get_name()->c_str());
                             }
-                            lock_struct->last_used = time_utils::now();
-                            lock->release_lock();
                         }
+                        lock_struct->last_used = time_utils::now();
                         return locked;
                     }
 
@@ -246,8 +244,7 @@ namespace com {
                             CHECK_NOT_EMPTY_P(name);
 
                             this->name = string(*name);
-                            lock = new exclusive_lock(name);
-                            lock->create();
+                            INIT_LOCK_P(lock, &(this->name));
 
                             this->table = table;
                             lock_struct = this->table->add_lock(*name);
@@ -326,9 +323,12 @@ namespace com {
                         uint64_t startt = time_utils::now();
                         string thread_id = thread_utils::get_current_thread();
                         bool locked = false;
+
                         NEW_ALARM(DEFAULT_RW_LOCK_RETRY, 0);
                         while (true) {
-                            if (lock->try_lock()) {
+                            bool ret = false;
+                            TRY_LOCK(lock, 0, timeout, ret);
+                            if (ret) {
                                 if (has_write_lock(thread_id)) {
                                     locked = true;
                                 } else if (!lock_struct->write_locked && lock_struct->reader_count == 0) {
@@ -345,13 +345,11 @@ namespace com {
 
                                     locked = true;
                                 }
-                                lock->release_lock();
                             }
                             if (locked) {
                                 break;
                             }
-                            uint64_t now = time_utils::now();
-                            if ((now - startt) > timeout) {
+                            if ((time_utils::now() - startt) > timeout) {
                                 break;
                             }
                             START_ALARM(0);
@@ -370,7 +368,9 @@ namespace com {
                         bool locked = false;
                         NEW_ALARM(DEFAULT_RW_LOCK_RETRY, 0);
                         while (true) {
-                            if (lock->try_lock()) {
+                            bool ret = false;
+                            TRY_LOCK(lock, 0, timeout, ret);
+                            if (ret) {
                                 if (!lock_struct->write_locked) {
                                     string thread_id = thread_utils::get_current_thread();
                                     if (!has_thread_lock(thread_id)) {
@@ -399,7 +399,6 @@ namespace com {
                                         locked = true;
                                     }
                                 }
-                                lock->release_lock();
                             }
                             if (locked) {
                                 break;
@@ -421,24 +420,20 @@ namespace com {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(!IS_EMPTY(txn_id));
 
+                        TRY_LOCK_WITH_ERROR(lock, 0, DEFAULT_LOCK_TIMEOUT);
                         bool locked = false;
-                        if (lock->wait_lock()) {
-                            if (lock_struct->write_locked) {
-                                string thread_id = thread_utils::get_current_thread();
-                                if (has_write_lock(thread_id)) {
-                                    lock_struct->owner.process_id = -1;
-                                    lock_struct->owner.lock_timestamp = 0;
-                                    memset(lock_struct->owner.txn_id, 0, SIZE_UUID);
-                                    memset(lock_struct->owner.owner, 0, SIZE_USER_NAME);
-                                    memset(lock_struct->owner.thread_id, 0, SIZE_THREAD_ID);
-                                    lock_struct->write_locked = false;
-                                    txn_id = EMPTY_STRING;
-                                    locked = true;
-                                }
+                        if (lock_struct->write_locked) {
+                            string thread_id = thread_utils::get_current_thread();
+                            if (has_write_lock(thread_id)) {
+                                lock_struct->owner.process_id = -1;
+                                lock_struct->owner.lock_timestamp = 0;
+                                memset(lock_struct->owner.txn_id, 0, SIZE_UUID);
+                                memset(lock_struct->owner.owner, 0, SIZE_USER_NAME);
+                                memset(lock_struct->owner.thread_id, 0, SIZE_THREAD_ID);
+                                lock_struct->write_locked = false;
+                                txn_id = EMPTY_STRING;
+                                locked = true;
                             }
-                            lock->release_lock();
-                        } else {
-                            throw LOCK_ERROR("Error getting lock. [name=%s]", lock->get_name()->c_str());
                         }
                         return locked;
                     }

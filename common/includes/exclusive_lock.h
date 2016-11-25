@@ -31,9 +31,9 @@
 #include "common/includes/__alarm.h"
 #include "common/includes/timer.h"
 
-#define DEFAULT_LOCK_MODE 0760
+#define DEFAULT_LOCK_MODE 0760 /// Default lock create mode.
 #define DEFAULT_LOCK_RETRY_TIME 500
-#define DEFAULT_LOCK_TIMEOUT 5000
+#define DEFAULT_LOCK_TIMEOUT 30 * 1000 /// Default lock timeout is 30 secs.
 
 #define CONST_LOCK_ERROR_PREFIX "Lock Error : "
 
@@ -56,6 +56,21 @@
     if (!__guard_##i.get_lock(t)) { \
         throw com::wookler::reactfs::common::lock_timeout_error(__FILE__, __LINE__, __guard_##i.get_lock_name().c_str()); \
     }
+#define TRY_LOCK(lock, i, t, b) \
+    com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, false); \
+    b = __guard_##i.get_lock(t);
+
+#define INIT_LOCK_P(var, name) do {\
+    var = new com::wookler::reactfs::common::exclusive_lock(name); \
+    var->__create(); \
+    CHECK_NOT_NULL(var); \
+} while(0);
+
+#define CREATE_LOCK_P(var, name, mode) do {\
+    var = new com::wookler::reactfs::common::exclusive_lock(name, mode); \
+    var->__create(); \
+    CHECK_NOT_NULL(var); \
+} while(0);
 
 namespace com {
     namespace wookler {
@@ -170,7 +185,7 @@ namespace com {
                      */
                     ~exclusive_lock() {
                         if (locked) {
-                            release_lock();
+                            __release_lock();
                         }
                         if (NOT_NULL(semaphore) && semaphore != SEM_FAILED) {
                             if (sem_close(semaphore) != 0) {
@@ -221,7 +236,7 @@ namespace com {
                     /*!
                      * Create/Initialize this instance of the shared lock.
                      */
-                    void create() {
+                    void __create() {
                         semaphore = sem_open(name->c_str(), O_CREAT, mode, 1);
                         if (IS_NULL(semaphore) || semaphore == SEM_FAILED) {
                             lock_error e = LOCK_ERROR("Error creating lock. [name=%s][errno=%s]", name->c_str(),
@@ -247,7 +262,7 @@ namespace com {
                      *
                      * @return - Is acquired?
                      */
-                    bool try_lock() {
+                    bool __try_lock() {
                         if (is_locked()) {
                             return true;
                         }
@@ -266,12 +281,12 @@ namespace com {
                      * @param timeout - Time for which to retry.
                      * @return - Is acquired?
                      */
-                    bool try_lock(uint64_t timeout) {
+                    bool __try_lock(uint64_t timeout) {
                         NEW_ALARM(DEFAULT_LOCK_RETRY_TIME, 0);
                         long rem = timeout;
                         uint64_t s_time = time_utils::now();
                         while (rem >= 0) {
-                            if (try_lock()) {
+                            if (__try_lock()) {
                                 return true;
                             }
                             START_ALARM(0);
@@ -284,7 +299,7 @@ namespace com {
                     /*!
                      * Acquire this lock, wait till the lock is acquired.
                      */
-                    bool wait_lock() {
+                    bool __wait_lock() {
                         if (is_locked()) {
                             return true;
                         }
@@ -302,7 +317,7 @@ namespace com {
                      * Release this lock, if acquired.
                      * @return - Has been released.
                      */
-                    bool release_lock() {
+                    bool __release_lock() {
                         if (!is_locked()) {
                             return false;
                         }
@@ -351,7 +366,7 @@ namespace com {
                         CHECK_NOT_NULL(lock);
                         this->lock = lock;
                         if (wait) {
-                            this->lock->wait_lock();
+                            this->lock->__wait_lock();
                         }
                     }
 
@@ -361,7 +376,7 @@ namespace com {
                     ~exclusive_lock_guard() {
                         if (NOT_NULL(lock)) {
                             if (lock->is_locked()) {
-                                lock->release_lock();
+                                lock->__release_lock();
                             }
                         }
                     }
@@ -374,9 +389,9 @@ namespace com {
                      */
                     bool get_lock(uint64_t timeout = 0) {
                         if (timeout <= 0) {
-                            return this->lock->try_lock();
+                            return this->lock->__try_lock();
                         } else {
-                            return this->lock->try_lock(timeout);
+                            return this->lock->__try_lock(timeout);
                         }
                     }
 
@@ -386,7 +401,7 @@ namespace com {
                      * @return
                      */
                     bool release() {
-                        return this->lock->release_lock();
+                        return this->lock->__release_lock();
                     }
 
                     /*!

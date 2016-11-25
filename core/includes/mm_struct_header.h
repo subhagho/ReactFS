@@ -320,8 +320,7 @@ namespace com {
                         this->name = name;
 
                         string name_l = common_utils::format("%s%s", MM_LOCK_PREFIX, name.c_str());
-                        data_lock = new exclusive_lock(&name_l, DEFAULT_RESOURCE_MODE);
-                        CHECK_NOT_NULL(data_lock);
+                        CREATE_LOCK_P(data_lock, &name_l, DEFAULT_RESOURCE_MODE);
 
                         WAIT_LOCK_GUARD(data_lock, 0);
                         try {
@@ -353,8 +352,7 @@ namespace com {
                         this->name = name;
 
                         string name_l = common_utils::format("%s%s", MM_LOCK_PREFIX, name.c_str());
-                        data_lock = new exclusive_lock(&name_l, DEFAULT_RESOURCE_MODE);
-                        CHECK_NOT_NULL(data_lock);
+                        CREATE_LOCK_P(data_lock, &name_l, DEFAULT_RESOURCE_MODE);
 
                         init();
 
@@ -365,7 +363,7 @@ namespace com {
                         CHECK_AND_DISPOSE(state);
                         if (NOT_NULL(data_lock)) {
                             if (data_lock->is_locked()) {
-                                data_lock->release_lock();
+                                data_lock->__release_lock();
                             }
                             CHECK_AND_FREE(data_lock);
                         }

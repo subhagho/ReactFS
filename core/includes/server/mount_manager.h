@@ -256,9 +256,8 @@ namespace com {
                                 memset(mp.lock_name, 0, SIZE_LOCK_NAME);
                                 strncpy(mp.lock_name, name_l.c_str(), name_l.length());
 
-                                exclusive_lock *lock = new exclusive_lock(&name_l);
-                                CHECK_NOT_NULL(lock);
-                                lock->create();
+                                exclusive_lock *lock = nullptr;
+                                CREATE_LOCK_P(lock, &name_l, DEFAULT_LOCK_MODE);
                                 if (reset) {
                                     lock->reset();
                                 }
