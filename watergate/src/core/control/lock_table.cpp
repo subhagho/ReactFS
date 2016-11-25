@@ -41,7 +41,7 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
         if (overwrite) {
             lock->reset();
         }
-        WAIT_LOCK_P(lock);
+        WAIT_LOCK_GUARD(lock, 0);
         try {
             const __env *env = env_utils::get_env();
             CHECK_NOT_NULL(env);
@@ -93,13 +93,9 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
             ptr = common_utils::increment_data_ptr(ptr, b_size);
             record_ptr = reinterpret_cast<__lock_record *>(ptr);
 
-            RELEASE_LOCK_P(lock);
-
         } catch (const exception &ei) {
-            RELEASE_LOCK_P(lock);
             throw LOCK_TABLE_ERROR("ERROR : %s", ei.what());
         } catch (...) {
-            RELEASE_LOCK_P(lock);
             throw LOCK_TABLE_ERROR("Un-typed exception triggered.");
         }
         state.set_state(Available);
@@ -126,25 +122,23 @@ void com::wookler::watergate::core::lock_table::remove_record(uint32_t index) {
     PRECONDITION(index >= 0 && index < header_ptr->max_records);
     PRECONDITION(bit_index->check(index));
 
-    WAIT_LOCK_P(lock);
+    WAIT_LOCK_GUARD(lock, 0);
 
     __lock_record *rec = (record_ptr + index);
     RESET_RECORD(rec);
     header_ptr->used_record--;
     bit_index->clear(index);
-
-    RELEASE_LOCK_P(lock);
 }
 
 __lock_record *com::wookler::watergate::core::lock_table::create_new_record(string app_name, string app_id, pid_t pid) {
     if (header_ptr->used_record >= header_ptr->max_records) {
         return nullptr;
     }
-    WAIT_LOCK_P(lock);
+    WAIT_LOCK_GUARD(lock, 0);
     int index = bit_index->get_free_bit();
     if (index >= 0)
         header_ptr->used_record++;
-    RELEASE_LOCK_P(lock);
+    RELEASE_LOCK_GUARD(0);
 
     if (index < 0) {
         return nullptr;

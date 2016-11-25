@@ -323,20 +323,17 @@ namespace com {
                         data_lock = new exclusive_lock(&name_l, DEFAULT_RESOURCE_MODE);
                         CHECK_NOT_NULL(data_lock);
 
-                        WAIT_LOCK_P(data_lock);
+                        WAIT_LOCK_GUARD(data_lock, 0);
                         try {
                             create_new_instance(block_size, record_size, dir_prefix, mounts, overwrite);
                             state.set_state(__state_enum::Available);
-                            RELEASE_LOCK_P(data_lock);
                         } catch (const exception &e) {
-                            RELEASE_LOCK_P(data_lock);
                             fs_error_base err = FS_BASE_ERROR(
                                     "Error creating struct header. [name=%s][base dir=%s][error=%s]",
                                     name.c_str(), base_dir.c_str(), e.what());
                             state.set_error(&err);
                             throw err;
                         } catch (...) {
-                            RELEASE_LOCK_P(data_lock);
                             fs_error_base err = FS_BASE_ERROR(
                                     "Error creating struct header. [name=%s][base dir=%s][error=%s]",
                                     name.c_str(), base_dir.c_str(), "UNKNOWN");
@@ -368,7 +365,7 @@ namespace com {
                         CHECK_AND_DISPOSE(state);
                         if (NOT_NULL(data_lock)) {
                             if (data_lock->is_locked()) {
-                                RELEASE_LOCK_P(data_lock);
+                                data_lock->release_lock();
                             }
                             CHECK_AND_FREE(data_lock);
                         }
@@ -389,10 +386,10 @@ namespace com {
                         return header->block_count;
                     }
 
-                    const __mm_block_info *write(void *data, uint32_t size) {
+                    const __mm_block_info *write(void *data, uint32_t size, uint64_t timeout = DEFAULT_LOCK_TIMEOUT) {
                         CHECK_STATE_AVAILABLE(state);
 
-                        WAIT_LOCK_P(data_lock);
+                        TRY_LOCK_WITH_ERROR(data_lock, 0, timeout);
                         try {
                             base_block *w_block = get_block(header->write_block_index);
                             uint32_t free_space = w_block->get_free_space();
@@ -410,16 +407,12 @@ namespace com {
                             __mm_block_info *bi = get_block_info(header->write_block_index);
                             CHECK_NOT_NULL(bi);
 
-                            RELEASE_LOCK_P(data_lock);
-
                             return bi;
                         } catch (const exception &e) {
-                            RELEASE_LOCK_P(data_lock);
                             fs_error_base err = FS_BASE_ERROR("Error writing data. [name=%s][error=%s]",
                                                               this->name.c_str(), e.what());
                             throw err;
                         } catch (...) {
-                            RELEASE_LOCK_P(data_lock);
                             fs_error_base err = FS_BASE_ERROR("Error writing data. [name=%s][error=%s]",
                                                               this->name.c_str(), "UNKNOWN");
                             throw err;
@@ -496,35 +489,23 @@ namespace com {
                         return header->last_written_index;
                     }
 
-                    bool delete_block(uint32_t block_index) {
+                    bool delete_block(uint32_t block_index, uint64_t timeout = DEFAULT_LOCK_TIMEOUT) {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(block_index >= 0 && block_index < header->block_count);
 
                         bool r = false;
-                        WAIT_LOCK_P(data_lock);
-                        try {
-                            __mm_block_info *bi = get_block_info(block_index);
-                            CHECK_NOT_NULL(bi);
-                            if (!bi->deleted) {
-                                bi->deleted = true;
-                                if (is_block_loaded(block_index)) {
-                                    lock_guard<std::mutex> lock(thread_mutex);
-                                    base_block *block = get_block(block_index);
-                                    CHECK_AND_FREE(block);
-                                    this->block_index.erase(block_index);
-                                }
-                                block_utils::delete_block(bi->block_id, string(bi->filename));
+                        TRY_LOCK_WITH_ERROR(data_lock, 0, timeout);
+                        __mm_block_info *bi = get_block_info(block_index);
+                        CHECK_NOT_NULL(bi);
+                        if (!bi->deleted) {
+                            bi->deleted = true;
+                            if (is_block_loaded(block_index)) {
+                                lock_guard<std::mutex> lock(thread_mutex);
+                                base_block *block = get_block(block_index);
+                                CHECK_AND_FREE(block);
+                                this->block_index.erase(block_index);
                             }
-                        } catch (const exception &e) {
-                            RELEASE_LOCK_P(data_lock);
-                            fs_error_base err = FS_BASE_ERROR("Error delete block. [name=%s][block id=%lu][error=%s]",
-                                                              this->name.c_str(), block_index, e.what());
-                            throw err;
-                        } catch (...) {
-                            RELEASE_LOCK_P(data_lock);
-                            fs_error_base err = FS_BASE_ERROR("Error writing data. [name=%s][block id=%lu][error=%s]",
-                                                              this->name.c_str(), block_index, "UNKNOWN");
-                            throw err;
+                            block_utils::delete_block(bi->block_id, string(bi->filename));
                         }
                         return r;
                     }

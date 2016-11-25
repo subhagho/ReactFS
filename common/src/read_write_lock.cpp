@@ -39,7 +39,7 @@ void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, boo
     if (mode > 0)
         table_lock->reset();
 
-    WAIT_LOCK_P(table_lock);
+    WAIT_LOCK_GUARD(table_lock, 0);
     try {
         uint64_t l_size = MAX_SHARED_LOCKS * sizeof(__lock_struct);
         uint64_t h_size = sizeof(__shared_lock_data);
@@ -60,12 +60,9 @@ void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, boo
         POSTCONDITION(NOT_NULL(locks));
 
         LOG_DEBUG("Initialized shared lock table.");
-        RELEASE_LOCK_P(table_lock);
     } catch (const exception &e) {
-        RELEASE_LOCK_P(table_lock);
         throw LOCK_ERROR("Error creating lock table instance. [error=%s]", e.what());
     } catch (...) {
-        RELEASE_LOCK_P(table_lock);
         throw LOCK_ERROR("Error creating lock table instance. [error=Unknown]");
     }
 }
@@ -76,7 +73,7 @@ com::wookler::reactfs::common::__lock_struct *com::wookler::reactfs::common::sha
     PRECONDITION(!IS_EMPTY(name));
     PRECONDITION(name.length() < SIZE_LOCK_NAME);
 
-    table_lock->wait_lock();
+    WAIT_LOCK_GUARD(table_lock, 0);
     try {
         if (header_ptr->used_count >= header_ptr->max_count) {
             throw LOCK_ERROR("Error adding new lock instance. Max records exhausted. [count=%d]",
@@ -112,14 +109,11 @@ com::wookler::reactfs::common::__lock_struct *com::wookler::reactfs::common::sha
             strncpy(r_ptr->name, name.c_str(), name.length());
             header_ptr->used_count++;
         }
-        table_lock->release_lock();
 
         return r_ptr;
     } catch (const exception &e) {
-        table_lock->release_lock();
         throw LOCK_ERROR("Error creating lock table instance. [error=%s]", e.what());
     } catch (...) {
-        table_lock->release_lock();
         throw LOCK_ERROR("Error creating lock table instance. [error=Unknown]");
     }
 }
@@ -130,7 +124,7 @@ bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) 
     PRECONDITION(name.length() < SIZE_LOCK_NAME);
 
     bool ret = false;
-    table_lock->wait_lock();
+    WAIT_LOCK_GUARD(table_lock, 0);
     try {
         __lock_struct *ptr = locks;
         int found_index = -1;
@@ -159,12 +153,9 @@ bool com::wookler::reactfs::common::shared_lock_table::remove_lock(string name) 
                 header_ptr->used_count--;
             }
         }
-        table_lock->release_lock();
     } catch (const exception &e) {
-        table_lock->release_lock();
         throw LOCK_ERROR("Error creating lock table instance. [error=%s]", e.what());
     } catch (...) {
-        table_lock->release_lock();
         throw LOCK_ERROR("Error creating lock table instance. [error=Unknown]");
     }
     return ret;

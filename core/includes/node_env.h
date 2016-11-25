@@ -180,8 +180,8 @@ namespace com {
                         CHECK_NOT_NULL(lock);
                         lock->create();
 
-                        WAIT_LOCK_P(lock);
                         try {
+                            WAIT_LOCK_GUARD(lock, 0);
                             const Path *w_dir = env->get_work_dir();
                             CHECK_NOT_NULL(w_dir);
                             Path p(w_dir->get_path());
@@ -204,7 +204,6 @@ namespace com {
                                 load_env_data(&p);
                             }
                             state.set_state(__state_enum::Available);
-                            RELEASE_LOCK_P(lock);
                         } catch (const exception &e) {
                             base_error err = BASE_ERROR("Error occurred while creating node envirnoment. [error=%s]",
                                                         e.what());

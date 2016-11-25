@@ -111,20 +111,10 @@ namespace com {
                             if (is_readable(m_index)) {
                                 exclusive_lock *lock = mount_map->get_mount_lock(m_path, mounts);
                                 CHECK_NOT_NULL(lock);
-                                WAIT_LOCK_P(lock);
-                                try {
-                                    mp.bytes_read += bytes_read;
-                                    mp.total_bytes_read += bytes_read;
-                                    mp.time_read += time;
-
-                                    RELEASE_LOCK_P(lock);
-                                } catch (const exception &e) {
-                                    RELEASE_LOCK_P(lock);
-                                    throw BASE_ERROR(e.what());
-                                } catch (...) {
-                                    RELEASE_LOCK_P(lock);
-                                    throw BASE_ERROR("Un-typed exception occurred while updating metrics.");
-                                }
+                                TRY_LOCK_WITH_ERROR(lock, 0, DEFAULT_LOCK_TIMEOUT);
+                                mp.bytes_read += bytes_read;
+                                mp.total_bytes_read += bytes_read;
+                                mp.time_read += time;
                             }
                         }
 
@@ -136,19 +126,9 @@ namespace com {
                             if (is_writable(m_index)) {
                                 exclusive_lock *lock = mount_map->get_mount_lock(m_path, mounts);
                                 CHECK_NOT_NULL(lock);
-                                WAIT_LOCK_P(lock);
-                                try {
-                                    mp.bytes_written += bytes_written;
-                                    mp.time_write += time;
-
-                                    RELEASE_LOCK_P(lock);
-                                } catch (const exception &e) {
-                                    RELEASE_LOCK_P(lock);
-                                    throw BASE_ERROR(e.what());
-                                } catch (...) {
-                                    RELEASE_LOCK_P(lock);
-                                    throw BASE_ERROR("Un-typed exception occurred while updating metrics.");
-                                }
+                                TRY_LOCK_WITH_ERROR(lock, 0, DEFAULT_LOCK_TIMEOUT);
+                                mp.bytes_written += bytes_written;
+                                mp.time_write += time;
                             }
                         }
 
@@ -176,19 +156,10 @@ namespace com {
                                 bool reserved = false;
                                 exclusive_lock *lock = mount_map->get_mount_lock(m_path, mounts);
                                 CHECK_NOT_NULL(lock);
-                                WAIT_LOCK_P(lock);
-                                try {
-                                    if (can_create_block(path, size)) {
-                                        mp.total_bytes_written += size;
-                                        reserved = true;
-                                    }
-                                    RELEASE_LOCK_P(lock);
-                                } catch (const exception &e) {
-                                    RELEASE_LOCK_P(lock);
-                                    throw BASE_ERROR(e.what());
-                                } catch (...) {
-                                    RELEASE_LOCK_P(lock);
-                                    throw BASE_ERROR("Un-typed exception occurred while updating metrics.");
+                                WAIT_LOCK_GUARD(lock, 0);
+                                if (can_create_block(path, size)) {
+                                    mp.total_bytes_written += size;
+                                    reserved = true;
                                 }
                                 return reserved;
                             }

@@ -27,14 +27,19 @@
 #include "common/includes/base_error.h"
 #include "common/includes/common_utils.h"
 #include "common/includes/log_utils.h"
+#include "common/includes/process_utils.h"
+#include "common/includes/__alarm.h"
+#include "common/includes/timer.h"
 
-#define DEFAULT_LOCK_MODE 0660
+#define DEFAULT_LOCK_MODE 0760
+#define DEFAULT_LOCK_RETRY_TIME 500
+#define DEFAULT_LOCK_TIMEOUT 5000
 
 #define CONST_LOCK_ERROR_PREFIX "Lock Error : "
 
 #define LOCK_ERROR(fmt, ...) lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define LOCK_ERROR_PTR(fmt, ...) new lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define EXCLUSIVE_LOCK_PREFIX "/EL::"
+#define EXCLUSIVE_LOCK_PREFIX "/ExL__"
 
 #define CHECK_SEMAPHORE_PTR(s, name) do { \
     if (IS_NULL(s) || s == SEM_FAILED) { \
@@ -42,74 +47,131 @@
     } \
 } while(0);
 
-#define WAIT_LOCK_P(lock) do { \
-    if (!lock->wait_lock()) { \
-        lock_error te = LOCK_ERROR("Error getting lock to update. [name=%s][error=%s]", lock->get_name()->c_str(), strerror(errno)); \
-        LOG_CRITICAL(te.what()); \
-        throw te; \
-    } \
-} while(0);
+#define WAIT_LOCK_GUARD(lock, i) com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, true);
 
-#define WAIT_LOCK(lock) do { \
-    if (!lock.wait_lock()) { \
-        lock_error te = LOCK_ERROR("Error getting lock to update. [name=%s][error=%s]", lock->get_name()->c_str(), strerror(errno)); \
-        LOG_CRITICAL(te.what()); \
-        throw te; \
-    } \
-} while(0);
+#define RELEASE_LOCK_GUARD(i) __guard_##i.release();
 
-#define RELEASE_LOCK_P(lock) do { \
-    if (!lock->release_lock()) { \
-        lock_error te = LOCK_ERROR("Error releasing lock. [name=%s][error=%s]", lock->get_name()->c_str(), strerror(errno)); \
-        LOG_CRITICAL(te.what()); \
-        throw te; \
-    } \
-} while(0);
-
-#define RELEASE_LOCK(lock) do { \
-    if (!lock.release_lock()) { \
-        lock_error te = LOCK_ERROR("Error releasing lock. [name=%s][error=%s]", lock->get_name()->c_str(), strerror(errno)); \
-        LOG_CRITICAL(te.what()); \
-        throw te; \
-    } \
-} while(0);
+#define TRY_LOCK_WITH_ERROR(lock, i, t) \
+    com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, false); \
+    if (!__guard_##i.get_lock(t)) { \
+        throw com::wookler::reactfs::common::lock_timeout_error(__FILE__, __LINE__, __guard_##i.get_lock_name().c_str()); \
+    }
 
 namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
+                /*!
+                 * Exception type raised due to lock related errors.
+                 */
                 class lock_error : public base_error {
                 public:
+                    /*!<constructor
+                     *
+                     * @param file - Source file name
+                     * @param line - Source line number.
+                     * @param mesg - Error Message
+                     * @return
+                     */
                     lock_error(char const *file, const int line, string mesg) : base_error(file, line,
                                                                                            CONST_LOCK_ERROR_PREFIX,
                                                                                            mesg) {
                     }
                 };
 
+                class lock_timeout_error : public base_error {
+                public:
+                    /*!<constructor
+                     * Exception raised when a lock acquire failed.
+                     *
+                     * @param file - Source file name
+                     * @param line - Source line number.
+                     * @param lock_name - Name of the lock which was being acquired.
+                     * @return
+                     */
+                    lock_timeout_error(char const *file, const int line, const string &lock_name)
+                            : base_error(file,
+                                         line,
+                                         CONST_LOCK_ERROR_PREFIX,
+                                         common_utils::format("Timeout while acquiring lock. [lock=%s]",
+                                                              lock_name.c_str())) {
+                    }
+                };
+
+                /*!
+                 * Semaphore base exclusive lock implementation. Only one process/thread can hold this
+                 * lock at any given point of time.
+                 *
+                 * The locks are reentrant, hence the same thread calling lock/release will not cause problems.
+                 */
                 class exclusive_lock {
                 private:
+                    /// Unique name associated with this lock. Since the locks are shared between
+                    /// processes, this name should be unique per machine.
                     string *name = nullptr;
+                    /// More with which this lock should be created.
                     mode_t mode = DEFAULT_LOCK_MODE;
+                    /// Semaphore handle backing this lock.
                     sem_t *semaphore = nullptr;
+                    /// Thread ID of the thread that has obtained this lock.
+                    string lock_owner;
+                    /// Is this lock currently acquired.
                     bool locked = false;
 
+                    /*!
+                     * Set this lock has been successfully acquired by the current thread.
+                     */
+                    void set_locked() {
+                        locked = true;
+                        lock_owner = thread_utils::get_current_thread();
+                    }
+
+                    /*!
+                     * Reset the lock owner info.
+                     */
+                    void reset_locked() {
+                        locked = false;
+                        lock_owner = EMPTY_STRING;
+                    }
+
                 public:
+                    /*!<constructor
+                     *
+                     * Create a new instance of a shared lock with the specified name.
+                     *
+                     * @param name - Unique lock name.
+                     * @return
+                     */
                     exclusive_lock(const string *name) {
                         string ss = common_utils::get_normalized_name(*name);
-                        assert(!IS_EMPTY(ss));
+                        PRECONDITION(!IS_EMPTY(ss));
                         this->name = new string(EXCLUSIVE_LOCK_PREFIX);
                         this->name->append(ss);
                     }
 
+                    /*!<constructor
+                     *
+                     * Create a new instance of a shared lock with the specified name.
+                     *
+                     * @param name - Unique lock name.
+                     * @param mode - Lock create mode.
+                     * @return
+                     */
                     exclusive_lock(const string *name, mode_t mode) {
                         string ss = common_utils::get_normalized_name(*name);
-                        assert(!IS_EMPTY(ss));
+                        PRECONDITION(!IS_EMPTY(ss));
                         this->name = new string(EXCLUSIVE_LOCK_PREFIX);
                         this->name->append(ss);
                         this->mode = mode;
                     }
 
+                    /*!<destructor
+                     * Dispose this instance of the shared lock.
+                     */
                     ~exclusive_lock() {
+                        if (locked) {
+                            release_lock();
+                        }
                         if (NOT_NULL(semaphore) && semaphore != SEM_FAILED) {
                             if (sem_close(semaphore) != 0) {
                                 LOG_ERROR("Error closing semaphore. [name=%s][errno=%s]", name, strerror(errno));
@@ -119,10 +181,23 @@ namespace com {
                         CHECK_AND_FREE(name);
                     }
 
+                    /*!
+                     * Check if the lock has been acquired and owned by the current thread.
+                     *
+                     * @return - Is acquired and owned?
+                     */
                     bool is_locked() {
-                        return locked;
+                        if (locked) {
+                            string tid = thread_utils::get_current_thread();
+                            return (tid == lock_owner);
+                        }
+                        return false;
                     }
 
+                    /*!
+                     * Reset the backing semaphore. Should only be used during system startup or in case of recovering
+                     * from error state.
+                     */
                     void reset() {
                         CHECK_SEMAPHORE_PTR(semaphore, name);
                         if (sem_trywait(semaphore) == 0) {
@@ -140,9 +215,12 @@ namespace com {
                                 throw e;
                             }
                         }
-                        locked = false;
+                        reset_locked();
                     }
 
+                    /*!
+                     * Create/Initialize this instance of the shared lock.
+                     */
                     void create() {
                         semaphore = sem_open(name->c_str(), O_CREAT, mode, 1);
                         if (IS_NULL(semaphore) || semaphore == SEM_FAILED) {
@@ -151,52 +229,173 @@ namespace com {
                             LOG_ERROR(e.what());
                             throw e;
                         }
+                        reset_locked();
                         LOG_DEBUG("Created exclusive lock. [name=%s]", name->c_str());
-                        locked = false;
                     }
 
+                    /*!
+                     * Get the name of this shared lock.
+                     *
+                     * @return - Lock name.
+                     */
                     const string *get_name() const {
                         return name;
                     }
 
+                    /*!
+                     * Try to acquire this lock. Will return immediately if acquire fails.
+                     *
+                     * @return - Is acquired?
+                     */
                     bool try_lock() {
+                        if (is_locked()) {
+                            return true;
+                        }
                         CHECK_SEMAPHORE_PTR(semaphore, name);
                         if (sem_trywait(semaphore) == 0) {
-                            locked = true;
+                            set_locked();
                             return true;
                         } else {
                             return false;
                         }
                     }
 
+                    /*!
+                     * Try to acquire this lock. Will retry till the timeout is exhausted.
+                     *
+                     * @param timeout - Time for which to retry.
+                     * @return - Is acquired?
+                     */
+                    bool try_lock(uint64_t timeout) {
+                        NEW_ALARM(DEFAULT_LOCK_RETRY_TIME, 0);
+                        long rem = timeout;
+                        uint64_t s_time = time_utils::now();
+                        while (rem >= 0) {
+                            if (try_lock()) {
+                                return true;
+                            }
+                            START_ALARM(0);
+                            uint64_t delta = (time_utils::now() - s_time);
+                            rem = timeout - delta;
+                        }
+                        return false;
+                    }
+
+                    /*!
+                     * Acquire this lock, wait till the lock is acquired.
+                     */
                     bool wait_lock() {
+                        if (is_locked()) {
+                            return true;
+                        }
                         CHECK_SEMAPHORE_PTR(semaphore, name);
                         if (sem_wait(semaphore) == 0) {
-                            locked = true;
+                            set_locked();
                             return true;
                         } else {
-                            return false;
+                            throw LOCK_ERROR("Error while getting lock. [name=%s][error=%s]",
+                                             this->name->c_str(), strerror(errno));
                         }
                     }
 
+                    /*!
+                     * Release this lock, if acquired.
+                     * @return - Has been released.
+                     */
                     bool release_lock() {
+                        if (!is_locked()) {
+                            return false;
+                        }
                         CHECK_SEMAPHORE_PTR(semaphore, name);
                         if (sem_post(semaphore) == 0) {
-                            locked = false;
+                            reset_locked();
                             return true;
                         } else {
-                            return false;
+                            throw LOCK_ERROR("Error while getting lock. [name=%s][error=%s]",
+                                             this->name->c_str(), strerror(errno));
                         }
                     }
 
+                    /*!
+                     * Dispose this instance of the lock. Lock will be recreated if subsequently invoked.
+                     *
+                     * @return
+                     */
                     bool dispose() {
                         CHECK_SEMAPHORE_PTR(semaphore, name);
                         if (sem_unlink(name->c_str()) != 0) {
-                            LOG_ERROR("Error closing semaphore. [name=%s]", name);
+                            LOG_ERROR("Error closing semaphore. [name=%s][error=%s]", name->c_str(), strerror(errno));
                             return false;
                         } else {
                             return true;
                         }
+                    }
+                };
+
+                /*!
+                 * Exception/return safe lock/unlock guard. Should never be instantiated as a pointer.
+                 */
+                class exclusive_lock_guard {
+                private:
+                    /// Lock handle backing this guard.
+                    exclusive_lock *lock;
+                public:
+                    /*!
+                     * Create a new guard instance. Will acquire the lock in wait mode if wait is true.
+                     *
+                     * @param lock - Lock instance handle.
+                     * @param wait - Acquire wait lock.
+                     * @return
+                     */
+                    exclusive_lock_guard(exclusive_lock *lock, bool wait = true) {
+                        CHECK_NOT_NULL(lock);
+                        this->lock = lock;
+                        if (wait) {
+                            this->lock->wait_lock();
+                        }
+                    }
+
+                    /*!
+                     * Dispose the guard, will release the lock if acquired.
+                     */
+                    ~exclusive_lock_guard() {
+                        if (NOT_NULL(lock)) {
+                            if (lock->is_locked()) {
+                                lock->release_lock();
+                            }
+                        }
+                    }
+
+                    /*!
+                     * Acquire this lock, will retry till timeout is exhausted.
+                     *
+                     * @param timeout - Acquire timeout.
+                     * @return - Is acquired.
+                     */
+                    bool get_lock(uint64_t timeout = 0) {
+                        if (timeout <= 0) {
+                            return this->lock->try_lock();
+                        } else {
+                            return this->lock->try_lock(timeout);
+                        }
+                    }
+
+                    /*!
+                     * Release the lock, if acquired.
+                     *
+                     * @return
+                     */
+                    bool release() {
+                        return this->lock->release_lock();
+                    }
+
+                    /*!
+                     * Get the name of the backing lock.
+                     *
+                     * @return - Lock name.
+                     */
+                    string get_lock_name() {
+                        return *(lock->get_name());
                     }
                 };
             }

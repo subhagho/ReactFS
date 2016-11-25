@@ -126,11 +126,10 @@ namespace com {
 
                     void reset() {
                         CHECK_STATE_AVAILABLE(state);
-                        WAIT_LOCK_P(lock);
+                        WAIT_LOCK_GUARD(lock, 0);
                         bit_index->clear();
                         reset_all_records();
                         header_ptr->used_record = 0;
-                        RELEASE_LOCK_P(lock);
                     }
 
                     void __check_expired_locks(uint32_t index, uint64_t expiry_time, uint32_t *counts) {
