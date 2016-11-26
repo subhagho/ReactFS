@@ -48,3 +48,4 @@ cscope*
 /.yavide_session
 
 .env
+/**/cmake-build-debug

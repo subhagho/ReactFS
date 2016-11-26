@@ -93,7 +93,7 @@ namespace com {
                     private:
                         static node_client_env *client_env;
                     public:
-                        static void create_node_env(string config_file, bool reset = false) {
+                        static void create_node_env(string config_file) {
                             PRECONDITION(!IS_EMPTY(config_file));
 
                             init_utils::create_env(config_file);

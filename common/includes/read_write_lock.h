@@ -44,8 +44,8 @@
 #define DEFAULT_WRITE_LOCK_TIMEOUT  60 * 1000
 #define DEFAULT_RW_LOCK_EXPIRY 10 * 60 * 1000
 
-#define SHARED_LOCK_TABLE_NAME "LOCK_shared_table"
-#define SHARED_LOCK_NAME "LOCK_shared_lock_table"
+#define RW_SHARED_LOCK_TABLE_NAME "LOCK_shared_table"
+#define RW_SHARED_LOCK_NAME "LOCK_shared_lock_table"
 
 #define SHARED_LOCK_MAJ_VERSION ((uint16_t) 0)
 #define SHARED_LOCK_MIN_VERSION ((uint16_t) 1)

@@ -34,12 +34,13 @@
 #define DEFAULT_LOCK_MODE 0760 /// Default lock create mode.
 #define DEFAULT_LOCK_RETRY_TIME 500
 #define DEFAULT_LOCK_TIMEOUT 30 * 1000 /// Default lock timeout is 30 secs.
+#define EXCLUSIVE_LOCK_PREFIX "/ExLk"
 
 #define CONST_LOCK_ERROR_PREFIX "Lock Error : "
 
 #define LOCK_ERROR(fmt, ...) lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define LOCK_ERROR_PTR(fmt, ...) new lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define EXCLUSIVE_LOCK_PREFIX "/ExL__"
+
 
 #define CHECK_SEMAPHORE_PTR(s, name) do { \
     if (IS_NULL(s) || s == SEM_FAILED) { \

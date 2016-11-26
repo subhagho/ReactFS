@@ -88,11 +88,10 @@ namespace com {
 
                 typedef struct __record_header__v0__ {
                     uint64_t index = 0;
-                    uint32_t offset = 0;
+                    uint64_t offset = 0;
                     __record_state state = __record_state::R_FREE;
-                    uint32_t data_size = 0;
-                    uint32_t uncompressed_size = 0;
-                    PADCHAR(0, 4);
+                    uint64_t data_size = 0;
+                    uint64_t uncompressed_size = 0;
                     uint64_t timestamp = 0;
                 } __record_header_v0;
 
@@ -111,16 +110,16 @@ namespace com {
                     uint64_t start_index = 0;
                     uint64_t last_index = 0;
                     __write_state write_state = __write_state::WRITABLE;
-                    uint32_t total_size = 0;
-                    uint32_t used_size = 0;
-                    uint32_t write_offset = 0;
+                    uint64_t total_size = 0;
+                    uint64_t used_size = 0;
+                    uint64_t write_offset = 0;
                 } __record_index_header_v0;
 
                 typedef struct __record_index_ptr_v0__ {
                     uint64_t index = 0;
                     bool readable = false;
-                    uint32_t offset = 0;
-                    uint32_t size = 0;
+                    uint64_t offset = 0;
+                    uint64_t size = 0;
                 } __record_index_ptr_v0;
 
                 typedef struct __rollback_info_v0__ {
@@ -128,15 +127,16 @@ namespace com {
                     string *transaction_id;
                     uint64_t start_offset = 0;
                     uint64_t write_offset = 0; // Write-offset of the last committed write.
-                    uint32_t used_bytes = 0;
+                    uint64_t used_bytes = 0;
                     uint64_t last_index = 0;
                     uint64_t start_time = 0;
                     __record_index_ptr_v0 *start_index = nullptr;
                 } __rollback_info_v0;
 
                 typedef struct __block_header_v0__ {
-                    char block_uid[SIZE_UUID];
                     __version_header version;
+                    char block_uid[SIZE_UUID];
+                    uint64_t source_id;
                     __block_type block_type = __block_type::PRIMARY;
                     __block_record_type record_type = __block_record_type::RAW;
                     __block_state state = __block_state::AVAILABLE;
@@ -147,9 +147,9 @@ namespace com {
                     uint64_t start_index = 0;
                     uint64_t last_index = 0;
                     uint64_t block_ttl = 0;
-                    uint32_t block_size;
-                    uint32_t write_offset;
-                    uint32_t used_bytes = 0;
+                    uint64_t block_size;
+                    uint64_t write_offset;
+                    uint64_t used_bytes = 0;
                     __compression_v0 compression;
                     __encryption_v0 encryption;
                 } __block_header_v0;

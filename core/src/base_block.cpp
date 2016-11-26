@@ -164,8 +164,8 @@ void com::wookler::reactfs::core::base_block::close() {
 }
 
 __record *
-com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t size, string transaction_id,
-                                                        uint32_t uncompressed_size) {
+com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t size, string transaction_id,
+                                                        uint64_t uncompressed_size) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(source);
 
@@ -200,7 +200,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint32_t s
 }
 
 __record *
-com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint32_t offset, uint32_t size) {
+com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint64_t offset, uint64_t size) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
 
@@ -248,7 +248,7 @@ uint64_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t l
     temp_buffer buffer;
     bool use_buffer = false;
 
-    uint32_t uncompressed_size = 0;
+    uint64_t uncompressed_size = 0;
 
     if (is_compressed()) {
         use_buffer = true;
@@ -264,7 +264,7 @@ uint64_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t l
 
 
     void *data_ptr = (use_buffer ? buffer.get_ptr() : source);
-    uint32_t size = (use_buffer ? buffer.get_used_size() : length);
+    uint64_t size = (use_buffer ? buffer.get_used_size() : length);
 
     __record *r_ptr = __write_record(data_ptr, size, transaction_id, uncompressed_size);
 
@@ -326,7 +326,7 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
                 CHECK_NOT_NULL(compression);
 
                 void *data_ptr = (use_buffer ? buffer->get_ptr() : ptr->data_ptr);
-                uint32_t data_size = (use_buffer ? buffer->get_used_size() : ptr->header->data_size);
+                uint64_t data_size = (use_buffer ? buffer->get_used_size() : ptr->header->data_size);
 
                 if (use_buffer && IS_NULL(writebuff)) {
                     writebuff = new temp_buffer();
@@ -372,7 +372,7 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     mm_data->flush();
 
     void *d_ptr = get_data_ptr();
-    uint32_t offset = header->write_offset;
+    uint64_t offset = header->write_offset;
     while (offset <= rollback_info->write_offset) {
         void *ptr = common_utils::increment_data_ptr(d_ptr, offset);
         __record_header *header = static_cast<__record_header *>(ptr);

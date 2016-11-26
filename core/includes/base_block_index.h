@@ -225,8 +225,8 @@ namespace com {
                      * @param size - Data record size required.
                      * @return - Is space available?
                      */
-                    bool has_space(uint32_t size) {
-                        uint32_t free_space = get_free_space();
+                    bool has_space(uint64_t size) {
+                        uint64_t free_space = get_free_space();
                         return (free_space >= size);
                     }
 
@@ -240,7 +240,7 @@ namespace com {
                      * @return - Created index pointer.
                      */
                     __record_index_ptr *
-                    __write_index(uint64_t index, uint32_t offset, uint32_t size, string transaction_id);
+                    __write_index(uint64_t index, uint64_t offset, uint64_t size, string transaction_id);
 
                     /*!
                      * Read the index record for the specified index.
@@ -388,7 +388,7 @@ namespace com {
                      *
                      * @return - Space available (in bytes).
                      */
-                    const uint32_t get_free_space() const {
+                    const uint64_t get_free_space() const {
                         CHECK_STATE_AVAILABLE(state);
                         if (in_transaction()) {
                             return (header->total_size -
@@ -402,7 +402,7 @@ namespace com {
                      *
                      * @return - Space used (in bytes).
                      */
-                    const uint32_t get_used_space() const {
+                    const uint64_t get_used_space() const {
                         CHECK_STATE_AVAILABLE(state);
                         if (in_transaction()) {
                             return (header->used_size + rollback_info->used_bytes);
@@ -420,7 +420,7 @@ namespace com {
                      * @return - Created index pointer.
                      */
                     const __record_index_ptr *
-                    write_index(uint64_t index, uint32_t offset, uint32_t size, string transaction_id) {
+                    write_index(uint64_t index, uint64_t offset, uint64_t size, string transaction_id) {
                         return __write_index(index, offset, size, transaction_id);
                     }
 

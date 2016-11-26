@@ -125,7 +125,7 @@ namespace com {
                      * @param size - Size of the data record, read from the index.
                      * @return - Fetched record.
                      */
-                    __record *__read_record(uint64_t index, uint32_t offset, uint32_t size);
+                    __record *__read_record(uint64_t index, uint64_t offset, uint64_t size);
 
                     /*!
                      * Create a new data record and save it to the backing file.
@@ -136,7 +136,7 @@ namespace com {
                      * @return - Record pointer of the added record.
                      */
                     __record *
-                    __write_record(void *source, uint32_t size, string transcation_id, uint32_t uncompressed_size);
+                    __write_record(void *source, uint64_t size, string transcation_id, uint64_t uncompressed_size);
 
                     /*!
                      * Close this data block instance.
@@ -219,9 +219,9 @@ namespace com {
                         return common_utils::increment_data_ptr(write_ptr, rollback_info->write_offset);
                     }
 
-                    uint32_t get_write_offset() {
+                    uint64_t get_write_offset() {
                         PRECONDITION(in_transaction());
-                        return (uint32_t) rollback_info->write_offset;
+                        return  rollback_info->write_offset;
                     }
 
                     /*!
@@ -230,8 +230,8 @@ namespace com {
                      * @param size - Data record size required.
                      * @return - Is space available?
                      */
-                    bool has_space(uint32_t size) {
-                        uint32_t free_space = get_free_space();
+                    bool has_space(uint64_t size) {
+                        uint64_t free_space = get_free_space();
                         return (free_space >= size);
                     }
 
@@ -272,7 +272,7 @@ namespace com {
                      *
                      * @return - Space available (in bytes).
                      */
-                    uint32_t get_free_space() const {
+                    uint64_t get_free_space() const {
                         CHECK_STATE_AVAILABLE(state);
                         if (in_transaction()) {
                             return (header->block_size -
@@ -286,7 +286,7 @@ namespace com {
                      *
                      * @return - Space used (in bytes).
                      */
-                    uint32_t get_used_space() const {
+                    uint64_t get_used_space() const {
                         CHECK_STATE_AVAILABLE(state);
                         if (in_transaction()) {
                             return (header->used_bytes + rollback_info->used_bytes);

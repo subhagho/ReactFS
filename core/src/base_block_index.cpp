@@ -130,14 +130,14 @@ void com::wookler::reactfs::core::base_block_index::open_index(uint64_t block_id
 }
 
 __record_index_ptr *
-com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uint32_t offset, uint32_t size,
+com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uint64_t offset, uint64_t size,
                                                              string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(header->write_state == __write_state::WRITABLE);
     PRECONDITION(has_space(sizeof(__record_index_ptr)));
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
-    uint32_t last_index = get_last_index();
+    uint64_t last_index = get_last_index();
     PRECONDITION((index == header->start_index) || (index == last_index + 1));
     PRECONDITION(offset >= 0);
 
@@ -161,7 +161,7 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
 __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(uint64_t index, bool all) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
-    uint32_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
+    uint64_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
 
     void *ptr = get_data_ptr();
     void *rptr = common_utils::increment_data_ptr(ptr, offset);
@@ -179,7 +179,7 @@ bool com::wookler::reactfs::core::base_block_index::delete_index(uint64_t index,
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
 
-    uint32_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
+    uint64_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
     void *ptr = get_data_ptr();
     void *rptr = common_utils::increment_data_ptr(ptr, offset);
     __record_index_ptr *iptr = static_cast<__record_index_ptr *>(rptr);
