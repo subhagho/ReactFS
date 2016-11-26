@@ -134,6 +134,7 @@ namespace com {
                             if (NOT_NULL(record)) {
                                 void *ptr = write(loader->get_key(), record->data, record->size);
                                 CHECK_NOT_NULL(ptr);
+                                header->records++;
 
                                 shared_mapped_ptr s_ptr = make_shared<__mapped_ptr>();
                                 (*s_ptr).set_data_ptr(ptr, record->size);

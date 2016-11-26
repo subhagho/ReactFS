@@ -55,7 +55,7 @@ namespace com {
                                 m_client = new mount_client();
                                 CHECK_NOT_NULL(m_client);
 
-                                shared_mapped_ptr ptr = get_env_data(MOUNTS_KEY);
+                                shared_mapped_ptr *ptr = get_env_data(MOUNTS_KEY);
                                 m_client->init(ptr);
 
                             } catch (const exception &e) {

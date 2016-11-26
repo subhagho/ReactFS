@@ -243,12 +243,14 @@ namespace com {
                         return this->state;
                     }
 
-
-                    shared_mapped_ptr get_env_data(string key) {
-                        unordered_map<string, shared_mapped_ptr>::const_iterator iter = data_index.find(key);
+                    shared_mapped_ptr* get_env_data(string key) {
+                        unordered_map<string, shared_mapped_ptr>::iterator iter = data_index.find(key);
                         if (iter != data_index.end()) {
-                            return iter->second;
+                            shared_mapped_ptr ptr = iter->second;
+                            TRACE("Specified key data found. [key=%s][size=%lu]", key.c_str(), (*ptr).get_size());
+                            return &iter->second;
                         }
+                        TRACE("Specified key data not found. [key=%s]", key.c_str());
                         return nullptr;
                     }
                 };

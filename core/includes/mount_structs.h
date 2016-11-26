@@ -156,8 +156,8 @@ namespace com {
                         double r_r_usage = ((double) r_u_read) / G_BYTES;
                         double r_w_usage = ((double) r_u_write) / G_BYTES;
 
-                        double io_r_usage = ((double) r_u_read) / r_u_timer;
-                        double io_w_usage = ((double) r_u_write) / r_u_timew;
+                        double io_r_usage = (r_u_timer > 0 ? ((double) r_u_read) / r_u_timer : 0);
+                        double io_w_usage = (r_u_timew > 0 ? ((double) r_u_write) / r_u_timew : 0);
 
                         score = (d_usage + t_r_usage + (2.0 * t_w_usage) + (2.0 * r_r_usage) + (3.0 * r_w_usage) +
                                  (3.0 * io_r_usage) + (4.0 * io_w_usage));

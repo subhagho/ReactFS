@@ -64,12 +64,12 @@ namespace com {
                             version.minor = MOUNT_VERSION_MINOR;
                         }
 
-                        void init(shared_mapped_ptr ptr) {
+                        void init(shared_mapped_ptr *ptr) {
 
                             CHECK_NOT_NULL(ptr);
 
-                            PRECONDITION(ptr.get()->get_size() == sizeof(__mount_data));
-                            void *p = ptr.get()->get_data_ptr();
+                            PRECONDITION(ptr->get()->get_size() == sizeof(__mount_data));
+                            void *p = ptr->get()->get_data_ptr();
                             CHECK_NOT_NULL(p);
 
                             mounts = static_cast<__mount_data *>(p);
@@ -78,18 +78,18 @@ namespace com {
                             version_utils::compatible(version, mounts->version);
                             mount_map = new __mount_map();
                             for (uint16_t ii = 0; ii < mounts->mount_count; ii++) {
-                                __mount_point mp = mounts->mounts[ii];
-                                if (mp.state == __mount_state::MP_UNAVAILABLE) {
+                                __mount_point *mp = &mounts->mounts[ii];
+                                if (mp->state == __mount_state::MP_UNAVAILABLE) {
                                     continue;
                                 }
-                                string name_l = string(mp.lock_name);
+                                string name_l = string(mp->lock_name);
                                 POSTCONDITION(!IS_EMPTY(name_l));
 
                                 exclusive_lock *lock = nullptr;
                                 INIT_LOCK_P(lock, &name_l);
 
                                 mount_map->add_mount_lock(lock->get_name(), lock);
-                                mount_map->add_mount_index(string(mp.path), ii);
+                                mount_map->add_mount_index(string(mp->path), ii);
                             }
                         }
 

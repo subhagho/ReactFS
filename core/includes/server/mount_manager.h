@@ -115,7 +115,7 @@ namespace com {
                             get_mount_points(config, &m_points);
                             POSTCONDITION(!IS_EMPTY(m_points));
 
-                            shared_mapped_ptr ptr = n_env->get_env_data(MOUNTS_KEY);
+                            shared_mapped_ptr *ptr = n_env->get_env_data(MOUNTS_KEY);
                             if (IS_NULL(ptr)) {
                                 __mount_data *mm = (__mount_data *) malloc(sizeof(__mount_data));
                                 CHECK_NOT_NULL(mm);
@@ -153,8 +153,8 @@ namespace com {
                                 }
                                 return record;
                             } else {
-                                PRECONDITION(ptr.get()->get_size() == sizeof(__mount_data));
-                                void *p = ptr.get()->get_data_ptr();
+                                PRECONDITION(ptr->get()->get_size() == sizeof(__mount_data));
+                                void *p = ptr->get()->get_data_ptr();
                                 CHECK_NOT_NULL(p);
 
                                 mounts = static_cast<__mount_data *>(p);
@@ -171,13 +171,13 @@ namespace com {
                                             strncmp(mounts->mounts[jj].path, md->path->c_str(), md->path->length()) ==
                                             0) {
                                             mounts->mounts[jj].usage_limit = md->usage_limit;
-                                            indexes[ii] = jj;
+                                            indexes.push_back(jj);
                                             found = true;
                                             break;
                                         }
                                     }
                                     if (!found) {
-                                        indexes[ii] = -1;
+                                        indexes.push_back(-1);
                                     }
                                 }
                                 for (uint32_t ii = 0; ii < indexes.size(); ii++) {
@@ -185,11 +185,11 @@ namespace com {
                                     if (index < 0) {
                                         __mount_def *md = m_points[ii];
                                         uint32_t offset = mounts->mount_count++;
-                                        __mount_point mp = mounts->mounts[offset];
+                                        __mount_point *mp = &mounts->mounts[offset];
                                         memset(&mp, 0, sizeof(__mount_point));
-                                        strncpy(mp.path, md->path->c_str(), md->path->length());
-                                        mp.state = __mount_state::MP_READ_WRITE;
-                                        mp.usage_limit = md->usage_limit;
+                                        memcpy(mp->path, md->path->c_str(), md->path->length());
+                                        mp->state = __mount_state::MP_READ_WRITE;
+                                        mp->usage_limit = md->usage_limit;
                                     }
                                 }
                                 indexes.clear();
@@ -201,29 +201,29 @@ namespace com {
                                             strncmp(mounts->mounts[jj].path, md->path->c_str(), md->path->length()) ==
                                             0) {
                                             mounts->mounts[jj].usage_limit = md->usage_limit;
-                                            indexes[jj] = ii;
+                                            indexes.push_back(ii);
                                             found = true;
                                             break;
                                         }
                                     }
                                     if (!found) {
-                                        indexes[jj] = -1;
+                                        indexes.push_back(-1);
                                     }
                                 }
                                 for (uint32_t ii = 0; ii < indexes.size(); ii++) {
                                     int index = indexes[ii];
                                     if (index < 0) {
-                                        __mount_point mp = mounts->mounts[ii];
+                                        __mount_point *mp = &mounts->mounts[ii];
                                         bool dir_available = false;
-                                        Path p(string(mp.path));
+                                        Path p(string(mp->path));
                                         if (p.exists()) {
                                             dir_available = true;
                                         }
-                                        mp.usage_limit = 0;
+                                        mp->usage_limit = 0;
                                         if (dir_available)
-                                            mp.state = __mount_state::MP_READ_ONLY;
+                                            mp->state = __mount_state::MP_READ_ONLY;
                                         else
-                                            mp.state = __mount_state::MP_UNAVAILABLE;
+                                            mp->state = __mount_state::MP_UNAVAILABLE;
                                     }
                                 }
                                 for (auto mp : m_points) {
@@ -247,14 +247,14 @@ namespace com {
                             mount_map = new __mount_map();
 
                             for (uint16_t ii = 0; ii < mounts->mount_count; ii++) {
-                                __mount_point mp = mounts->mounts[ii];
-                                if (mp.state == __mount_state::MP_UNAVAILABLE) {
+                                __mount_point *mp = &mounts->mounts[ii];
+                                if (mp->state == __mount_state::MP_UNAVAILABLE) {
                                     continue;
                                 }
-                                string name_l = mount_utils::get_lock_name(&mp, ii);
+                                string name_l = mount_utils::get_lock_name(mp, ii);
                                 POSTCONDITION(!IS_EMPTY(name_l));
-                                memset(mp.lock_name, 0, SIZE_LOCK_NAME);
-                                strncpy(mp.lock_name, name_l.c_str(), name_l.length());
+                                memset(mp->lock_name, 0, SIZE_LOCK_NAME);
+                                memcpy(mp->lock_name, name_l.c_str(), name_l.length());
 
                                 exclusive_lock *lock = nullptr;
                                 CREATE_LOCK_P(lock, &name_l, DEFAULT_LOCK_MODE);
@@ -262,16 +262,16 @@ namespace com {
                                     lock->reset();
                                 }
 
-                                if (mp.usage_limit < 0) {
-                                    string p(mp.path);
+                                if (mp->usage_limit < 0) {
+                                    string p(mp->path);
                                     uint64_t avail = mount_utils::get_free_space(p);
                                     POSTCONDITION(avail >= 0);
-                                    mp.usage_limit = avail;
+                                    mp->usage_limit = avail;
                                 }
-                                TRACE("[mount=%s] Available space = %lu GB", mp.path,
-                                      (mp.usage_limit / (1024 * 1024 * 1024)));
+                                TRACE("[mount=%s] Available space = %lu GB", mp->path,
+                                      (mp->usage_limit / (1024 * 1024 * 1024)));
                                 mount_map->add_mount_lock(lock->get_name(), lock);
-                                mount_map->add_mount_index(string(mp.path), ii);
+                                mount_map->add_mount_index(string(mp->path), ii);
                             }
                             if (NOT_NULL(this->record)) {
                                 FREE_PTR(this->record->data);
