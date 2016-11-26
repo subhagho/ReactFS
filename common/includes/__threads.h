@@ -33,6 +33,7 @@
 #include "log_utils.h"
 #include "__alarm.h"
 #include "process_utils.h"
+#include "timer.h"
 
 namespace com {
     namespace wookler {
@@ -229,6 +230,9 @@ namespace com {
                 protected:
                     /// Task name (should be unique for a thread pool).
                     string name;
+
+                    /// Last time this callback was executed.
+                    uint64_t last_run_time;
                 public:
                     /*! <constructor
                      * Create a new task instance.
@@ -239,6 +243,24 @@ namespace com {
                     __runnable_callback(string name) {
                         PRECONDITION(!IS_EMPTY(name));
                         this->name = name;
+                    }
+
+                    /*!
+                     * Set the last execution timestamp.
+                     *
+                     * @param last_run_time - Last execution timestamp.
+                     */
+                    void set_last_run_time(uint64_t last_run_time) {
+                        this->last_run_time = last_run_time;
+                    }
+
+                    /*!
+                     * Get the last execution timestamp.
+                     *
+                     * @return - Last executed time.
+                     */
+                    uint64_t get_last_run_time() {
+                        return this->last_run_time;
                     }
 
                     /*!
@@ -256,6 +278,27 @@ namespace com {
                      * @return - Should be executed?
                      */
                     virtual bool can_run() = 0;
+
+
+                    /*!
+                     * Virtual method to be implemented by sub-classes.
+                     * This will be invoked in case of normal execution.
+                     */
+                    virtual void callback() = 0;
+
+                    /*!
+                     * Virtual method to be implemented by sub-classes.
+                     * This will be invoked in case of error conditions.
+                     */
+                    virtual void error() = 0;
+
+                    /*!
+                     * Virtual method to be implemented by sub-classes.
+                     * This will be invoked in case of error conditions.
+                     *
+                     * @param err - Exception handle of the error.
+                     */
+                    virtual void error(exception *err) = 0;
                 };
 
                 /*!
@@ -297,6 +340,7 @@ namespace com {
                                 __runnable_callback *rc = dynamic_cast<__runnable_callback *>(c);
                                 CHECK_NOT_NULL(rc);
                                 if (rc->can_run()) {
+                                    rc->set_last_run_time(time_utils::now());
                                     task_queue.push(rc);
                                 }
                             }
@@ -377,6 +421,7 @@ namespace com {
                                 }
                                 try {
                                     __state.set_state(__thread_state_enum::TS_RUNNING);
+
                                     task->callback();
                                 } catch (const exception &err) {
                                     base_error be = BASE_ERROR("[task=%s] Thread terminated with exception. [error=%s]",

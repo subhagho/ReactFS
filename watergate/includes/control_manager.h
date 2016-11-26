@@ -119,7 +119,6 @@ namespace com {
 
                 class control_manager_callback : public __runnable_callback {
                 private:
-                    uint64_t last_run_time;
                     control_manager *owner = nullptr;
 
                 public:

@@ -23,9 +23,11 @@
 #ifndef REACTFS_NODE_SERVER_ENV_H
 #define REACTFS_NODE_SERVER_ENV_H
 
-#include "core/includes/node_env.h"
 #include "common/includes/__threads.h"
+#include "common/includes/read_write_lock_manager.h"
+#include "common/includes/shared_lock_utils.h"
 #include "watergate/includes/init_utils.h"
+#include "core/includes/node_env.h"
 
 
 #define DEFAULT_THREAD_POOL_NAME "__DEFAULT_THREAD_POOL_"
@@ -91,7 +93,15 @@ namespace com {
                                 CHECK_NOT_NULL(default_pool);
                                 default_pool->create_task_registry(DEFAULT_THREAD_POOL_SLEEP);
 
+                                shared_lock_utils::create_manager(DEFAULT_LOCK_MODE, false);
+                                __runnable_callback *rwcb = new rw_lock_manager_callback(
+                                        shared_lock_utils::get_manager());
+                                CHECK_NOT_NULL(rwcb);
+                                default_pool->add_task(rwcb);
+                                callbacks.push_back(rwcb);
+
                                 __runnable_callback *cb = new control_manager_callback(priority_manager);
+                                CHECK_NOT_NULL(cb);
                                 default_pool->add_task(cb);
                                 callbacks.push_back(cb);
 

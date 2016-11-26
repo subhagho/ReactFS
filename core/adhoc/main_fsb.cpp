@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
         env_utils::create_env(configf);
 
 
-        read_write_lock_manager *manager = shared_lock_utils::create_manager(0755);
+        read_write_lock_manager *manager = shared_lock_utils::create_manager(0755, true);
         CHECK_NOT_NULL(manager);
 
         test_raw();

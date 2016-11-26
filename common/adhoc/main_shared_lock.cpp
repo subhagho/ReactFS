@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
         const __env *env = env_utils::get_env();
         CHECK_NOT_NULL(env);
 
-        shared_lock_utils::create_manager(0755);
+        shared_lock_utils::create_manager(0755, true);
         read_write_lock_manager *manager = shared_lock_utils::get_manager();
         CHECK_NOT_NULL(manager);
 

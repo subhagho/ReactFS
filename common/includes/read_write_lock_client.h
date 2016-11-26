@@ -101,6 +101,26 @@ namespace com {
                      */
                     bool remove_lock(string name);
 
+                    /*!
+                     * Get the state of this handle.
+                     *
+                     * @return - Current state.
+                     */
+                    const __state_enum get_state() {
+                        return state.get_state();
+                    }
+
+                    /*!
+                     * Get the exception instance for this handle, if handle has error.
+                     *
+                     * @return - exception instance, or null if no error.
+                     */
+                    const exception *get_error() {
+                        if (state.has_error()) {
+                            return state.get_error();
+                        }
+                        return nullptr;
+                    }
                 };
             }
         }

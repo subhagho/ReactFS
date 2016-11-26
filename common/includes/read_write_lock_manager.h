@@ -22,6 +22,9 @@
 #define REACTFS_READ_WRITE_LOCK_MANAGER_H
 
 #include "read_write_lock_client.h"
+#include "__threads.h"
+
+#define RW_LOCK_MANAGER_THREAD "RW_LOCK_MANAGER_THREAD"
 
 namespace com {
     namespace wookler {
@@ -29,13 +32,18 @@ namespace com {
             namespace common {
                 class read_write_lock_manager : public read_write_lock_client {
                 private:
+                    bool use_manager_thread = false;
+
                     thread *manager_thread = nullptr;
 
-                    void check_lock_states();
 
                     static void run(read_write_lock_manager *manager);
 
                 public:
+                    read_write_lock_manager(bool use_manager_thread) {
+                        this->use_manager_thread = use_manager_thread;
+                    }
+
                     ~read_write_lock_manager() {
                         state.set_state(__state_enum::Disposed);
                         if (NOT_NULL(manager_thread)) {
@@ -48,6 +56,57 @@ namespace com {
                     void init(mode_t mode);
 
                     void reset();
+
+                    void set_error(const exception *e) {
+                        state.set_error(e);
+                    }
+
+                    void check_lock_states();
+                };
+
+                class rw_lock_manager_callback : public __runnable_callback {
+                private:
+                    read_write_lock_manager *manager = nullptr;
+                public:
+                    rw_lock_manager_callback(read_write_lock_manager *manager) : __runnable_callback(
+                            RW_LOCK_MANAGER_THREAD) {
+                        CHECK_NOT_NULL(manager);
+                        PRECONDITION(manager->get_state() == __state_enum::Available);
+                        this->manager = manager;
+                        LOG_INFO("Created lock manager callback...");
+                    }
+
+
+                    virtual bool can_run() override {
+                        uint64_t now = time_utils::now();
+                        return ((now - last_run_time) >= DEFAULT_LOCK_MGR_SLEEP);
+                    }
+
+
+                    virtual void callback() override {
+                        PRECONDITION(NOT_NULL(manager));
+                        try {
+                            if (manager->get_state() == __state_enum::Available) {
+                                PRECONDITION(NOT_NULL(manager));
+                                manager->check_lock_states();
+                            }
+                        } catch (const exception &e) {
+                            LOG_ERROR("Lock manager thread terminated with error. [error=%s]", e.what());
+                            manager->set_error(&e);
+                        } catch (...) {
+                            lock_error le = LOCK_ERROR("Lock manager thread terminated with unhandled exception.");
+                            manager->set_error(&le);
+                        }
+                    }
+
+
+                    virtual void error() override {
+                        // Do nothing....
+                    }
+
+                    virtual void error(exception *err) override {
+                        manager->set_error(err);
+                    }
                 };
             }
         }

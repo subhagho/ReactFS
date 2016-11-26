@@ -32,6 +32,8 @@ int main(int argc, char **argv) {
         node_server_env *env = node_init_manager::get_server_env();
         CHECK_NOT_NULL(env);
 
+        node_init_manager::shutdown();
+
         node_init_client::create_node_env(configf);
         node_client_env *c_env = node_init_client::get_client_env();
         CHECK_NOT_NULL(c_env);
@@ -40,7 +42,6 @@ int main(int argc, char **argv) {
             string s = block_utils::get_block_dir(c_env->get_mount_client());
         }
         node_init_client::shutdown();
-        node_init_manager::shutdown();
 
     } catch (const exception &e) {
         LOG_ERROR(e.what());

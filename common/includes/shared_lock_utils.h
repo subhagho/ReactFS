@@ -34,7 +34,7 @@ namespace com {
                     static bool is_manager;
                     static read_write_lock_client *instance;
                 public:
-                    static read_write_lock_manager *create_manager(mode_t mode) {
+                    static read_write_lock_manager *create_manager(mode_t mode, bool use_thread) {
                         std::lock_guard<std::mutex> guard(shared_mutex);
                         if (NOT_NULL(instance) && !is_manager) {
                             throw LOCK_ERROR("Lock environment already initialized in client mode.");
@@ -44,7 +44,8 @@ namespace com {
                         }
                         is_manager = true;
 
-                        read_write_lock_manager *manager = new read_write_lock_manager();
+                        read_write_lock_manager *manager = new read_write_lock_manager(use_thread);
+                        CHECK_NOT_NULL(manager);
                         manager->init(mode);
 
                         instance = manager;
@@ -58,6 +59,7 @@ namespace com {
                         }
                         is_manager = false;
                         instance = new read_write_lock_client();
+                        CHECK_NOT_NULL(instance);
                         instance->create();
 
                         return instance;
