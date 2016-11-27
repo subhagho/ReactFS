@@ -28,6 +28,7 @@
 
 #include "common.h"
 #include "common_utils.h"
+#include "time_utils.h"
 
 using namespace std::chrono;
 
@@ -35,45 +36,6 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
-                class time_utils {
-                public:
-                    static uint64_t now() {
-                        milliseconds nt = duration_cast<milliseconds>(
-                                system_clock::now().time_since_epoch()
-                        );
-                        return nt.count();
-                    }
-
-                    static long get_delta_time(long start) {
-                        milliseconds nt = duration_cast<milliseconds>(
-                                system_clock::now().time_since_epoch()
-                        );
-                        return (nt.count() - start);
-                    }
-
-                    static string get_time_string(long ts, string fmt) {
-                        if (ts >= 0) {
-                            long t = ts / 1000;
-                            auto tm = *std::localtime(&t);
-
-                            std::ostringstream oss;
-                            oss << std::put_time(&tm, fmt.c_str());
-                            string str = string(oss.str());
-
-                            long ms = ts % 1000;
-                            str.append(".");
-                            str.append(to_string(ms));
-
-                            return str;
-                        }
-                        return EMPTY_STRING;
-                    }
-
-                    static string get_time_string(uint64_t ts) {
-                        return get_time_string(ts, DEFAULT_TIMESTAMP_FORMAT);
-                    }
-                };
-
                 class timer {
                 private:
                     time_point<system_clock> _t = system_clock::now().min();

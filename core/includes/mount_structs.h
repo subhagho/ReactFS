@@ -46,20 +46,36 @@ namespace com {
         namespace reactfs {
             namespace core {
 
+                /*!
+                 * Structure to read the mount points defined in the start-up configuration.
+                 */
                 typedef struct __mount_def__ {
+                    /// File system path of the mount point.
                     string *path;
+                    /// Usage Limit of the mount point (-1 signifies use all available disk space)
                     int64_t usage_limit;
                 } __mount_def;
 
                 typedef __mount_data_v0 __mount_data;
                 typedef __mount_point_v0 __mount_point;
 
+                /*!
+                 * In-memory data structure for associated data for managing and using
+                 * mount points.
+                 */
                 class __mount_map {
                 private:
+                    /// Map of locks defined for writing to the shared mount data.
                     unordered_map<string, exclusive_lock *> mount_locks;
+                    /// Map of the record indexes for the mount points.
                     unordered_map<string, uint16_t> mount_index;
 
                 public:
+                    /*!<destructor
+                     * Dispose the map.
+                     *
+                     * Will delete the mount locks.
+                     */
                     ~__mount_map() {
                         if (!IS_EMPTY(mount_locks)) {
                             unordered_map<string, exclusive_lock *>::iterator iter;
@@ -72,11 +88,23 @@ namespace com {
                         mount_index.clear();
                     }
 
+                    /*!
+                     * Add a mount record index to the index map.
+                     *
+                     * @param name - Mount point (path)
+                     * @param index - Record index.
+                     */
                     void add_mount_index(string name, uint16_t index) {
                         PRECONDITION(!IS_EMPTY(name));
                         mount_index.insert({name, index});
                     }
 
+                    /*!
+                     * Get the mount point record index for the specified mount path.
+                     *
+                     * @param name - Mount point (path)
+                     * @return - Record index.
+                     */
                     short get_mount_index(string name) {
                         PRECONDITION(!IS_EMPTY(name));
                         unordered_map<string, uint16_t>::iterator iter = mount_index.find(name);
@@ -86,6 +114,12 @@ namespace com {
                         return (short) -1;
                     }
 
+                    /*!
+                     * Add an instance of a shared lock used for inter-process synchronisation.
+                     *
+                     * @param name - Mount point (path)
+                     * @param lock - Shared lock.
+                     */
                     void add_mount_lock(const string *name, exclusive_lock *lock) {
                         PRECONDITION(!IS_EMPTY_P(name));
                         PRECONDITION(NOT_NULL(lock));
@@ -94,6 +128,12 @@ namespace com {
                         mount_locks.insert({key, lock});
                     }
 
+                    /*!
+                     * Get the shared lock to be used for updating data for this mount point.
+                     *
+                     * @param name - Mount point lock name (this isn't the same as the mount path)
+                     * @return - Shared lock.
+                     */
                     exclusive_lock *get_mount_lock(string *name) {
                         PRECONDITION(!IS_EMPTY_P(name));
                         string key(*name);
@@ -106,6 +146,16 @@ namespace com {
                         return nullptr;
                     }
 
+                    /*!
+                     * Get the shared lock to be used for updating data for this mount point.
+                     * This is a utiliy function that will find the lock name associated with the specified
+                     * mount point and then return lock handle.
+                     *
+                     * @param name - Mount point (path)
+                     * @param mounts - Pointer to the mount points data strucutre.
+                     *
+                     * @return - Shared lock.
+                     */
                     exclusive_lock *get_mount_lock(string &mount_point, __mount_data *mounts) {
                         PRECONDITION(!IS_EMPTY(mount_point));
                         CHECK_NOT_NULL(mounts);
@@ -123,8 +173,18 @@ namespace com {
                     }
                 };
 
+                /*!
+                 * Class defines static utility functions for mount point related operations.
+                 */
                 class mount_utils {
                 public:
+                    /*!
+                     * Get the shared lock name for the specified mount definition.
+                     *
+                     * @param mp - Mount definition.
+                     * @param index - Index of this mount point in the mount array.
+                     * @return - Name to be used for creating the shared lock.
+                     */
                     static string get_lock_name(__mount_point *mp, uint16_t index) {
                         string name = string(mp->path);
                         uint16_t off = 16;
@@ -134,6 +194,18 @@ namespace com {
                         return common_utils::format("m_%s_%d", name.substr(0, off).c_str(), index);
                     }
 
+                    /*!
+                     * Get a computed usage stat for this mount point.
+                     *
+                     * The computation takes into account the following:
+                     *  - Free/Total space
+                     *  - Total Read/Writes to this mount
+                     *  - Recent Read/Writes to this mount (last 24Hrs)
+                     *  - Computed IO Stats (last 24Hrs)
+                     *
+                     * @param mp
+                     * @return
+                     */
                     static double get_mount_usage(__mount_point *mp) {
                         string p(mp->path);
                         double score = 0.0f;
@@ -144,11 +216,11 @@ namespace com {
                         uint64_t t_u_read = mp->total_bytes_read;
                         uint64_t t_u_write = mp->total_bytes_written;
 
-                        uint64_t r_u_read = mp->bytes_read;
-                        uint64_t r_u_write = mp->bytes_written;
+                        uint64_t r_u_read = mp->bytes_read.total_value;
+                        uint64_t r_u_write = mp->bytes_written.total_value;
 
-                        uint64_t r_u_timer = mp->time_read;
-                        uint64_t r_u_timew = mp->time_write;
+                        uint64_t r_u_timer = mp->bytes_read.total_time;
+                        uint64_t r_u_timew = mp->bytes_written.total_time;
 
                         double d_usage = ((double) t_bytes) / f_bytes;
                         double t_r_usage = ((double) t_u_read) / G_BYTES;
@@ -164,6 +236,12 @@ namespace com {
                         return score;
                     }
 
+                    /*!
+                     * Get the available disk space for the specified mount path.
+                     *
+                     * @param mount_p - Mount path.
+                     * @return - Available disk space.
+                     */
                     static uint64_t get_free_space(string &mount_p) {
                         PRECONDITION(!IS_EMPTY(mount_p));
 
@@ -175,6 +253,12 @@ namespace com {
                         return (buff.f_frsize * buff.f_bfree);
                     }
 
+                    /*!
+                     * Get the total disk space for the specified mount path.
+                     *
+                     * @param mount_p - Mount path.
+                     * @return - Total disk space.
+                     */
                     static uint64_t get_total_space(string &mount_p) {
                         PRECONDITION(!IS_EMPTY(mount_p));
 

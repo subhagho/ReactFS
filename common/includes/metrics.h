@@ -39,6 +39,24 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
+                typedef struct __usage_array__ {
+                    uint16_t index;
+                    uint64_t value;
+                    uint64_t time;
+                } __usage_array;
+
+                template<uint16_t __SIZE__>
+                struct __usage_metric__ {
+                    uint16_t size = __SIZE__;
+                    uint64_t reset_time;
+                    uint64_t total_value;
+                    uint64_t total_time;
+                    uint16_t current_index;
+                    __usage_array records[__SIZE__];
+                };
+
+                typedef __usage_metric__<24> __hourly_usage_metric;
+
                 enum __metric_type_enum {
                     BasicMetric, AverageMetric
                 };
@@ -254,6 +272,47 @@ namespace com {
                                 }
                             }
                         }
+                    }
+
+                    static void reset_hourly_metrics(__hourly_usage_metric *metric) {
+                        metric->reset_time = time_utils::now();
+                        metric->current_index = 0;
+                        metric->total_time = 0;
+                        metric->total_value = 0;
+                        for (uint16_t ii = 0; ii < metric->size; ii++) {
+                            metric->records[ii].index = ii;
+                            metric->records[ii].time = 0;
+                            metric->records[ii].value = 0;
+                        }
+                    }
+
+                    static void update_hourly_metrics(__hourly_usage_metric *metric, uint64_t value, uint64_t time) {
+                        uint32_t hours = time_utils::get_hour_diff(metric->reset_time);
+                        if (hours > 0) {
+                            if (hours >= metric->size) {
+                                reset_hourly_metrics(metric);
+                            } else {
+                                uint16_t max = (hours >= metric->size ? metric->size : hours);
+                                uint16_t index = metric->current_index + 1;
+                                for (uint16_t ii = 0; ii < max; ii++) {
+                                    metric->total_value -= metric->records[index].value;
+                                    metric->total_time -= metric->records[index].time;
+
+                                    metric->records[index].index = ii;
+                                    metric->records[index].time = 0;
+                                    metric->records[index].value = 0;
+                                    index++;
+                                    if (index >= metric->size) {
+                                        index = 0;
+                                    }
+                                }
+                                metric->current_index++;
+                            }
+                        }
+                        metric->total_value += value;
+                        metric->total_time += time;
+                        metric->records[metric->current_index].value += value;
+                        metric->records[metric->current_index].time += time;
                     }
                 };
             }

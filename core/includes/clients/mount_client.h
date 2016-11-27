@@ -115,14 +115,13 @@ namespace com {
                             string m_path = get_mount_point(path);
                             short m_index = mount_map->get_mount_index(m_path);
                             POSTCONDITION(m_index >= 0 && m_index < mounts->mount_count);
-                            __mount_point mp = mounts->mounts[m_index];
+                            __mount_point *mp = &mounts->mounts[m_index];
                             if (is_readable(m_index)) {
                                 exclusive_lock *lock = mount_map->get_mount_lock(m_path, mounts);
                                 CHECK_NOT_NULL(lock);
                                 TRY_LOCK_WITH_ERROR(lock, 0, DEFAULT_LOCK_TIMEOUT);
-                                mp.bytes_read += bytes_read;
-                                mp.total_bytes_read += bytes_read;
-                                mp.time_read += time;
+                                mp->total_bytes_read += bytes_read;
+                                metrics_utils::update_hourly_metrics(&(mp->bytes_read), bytes_read, time);
                             }
                         }
 
@@ -130,13 +129,13 @@ namespace com {
                             string m_path = get_mount_point(path);
                             short m_index = mount_map->get_mount_index(m_path);
                             POSTCONDITION(m_index >= 0 && m_index < mounts->mount_count);
-                            __mount_point mp = mounts->mounts[m_index];
+                            __mount_point *mp = &mounts->mounts[m_index];
                             if (is_writable(m_index)) {
                                 exclusive_lock *lock = mount_map->get_mount_lock(m_path, mounts);
                                 CHECK_NOT_NULL(lock);
                                 TRY_LOCK_WITH_ERROR(lock, 0, DEFAULT_LOCK_TIMEOUT);
-                                mp.bytes_written += bytes_written;
-                                mp.time_write += time;
+                                mp->total_bytes_written += bytes_written;
+                                metrics_utils::update_hourly_metrics(&(mp->bytes_written), bytes_written, time);
                             }
                         }
 
@@ -144,12 +143,13 @@ namespace com {
                             string m_path = get_mount_point(path);
                             short m_index = mount_map->get_mount_index(m_path);
                             POSTCONDITION(m_index >= 0 && m_index < mounts->mount_count);
-                            __mount_point mp = mounts->mounts[m_index];
-                            if (is_writable(m_index)) {
-                                if (mp.usage_limit < 0) {
-                                    return true;
-                                }
-                                uint64_t available_bytes = (mp.usage_limit - mp.total_bytes_written);
+                            __mount_point *mp = &mounts->mounts[m_index];
+                            if (is_writable(m_index) && mp->usage_limit > 0) {
+                                string p(mp->path);
+                                uint64_t available_bytes = (mp->usage_limit - mp->total_bytes_used);
+                                uint64_t actual_freespace = mount_utils::get_free_space(p);
+                                available_bytes = (available_bytes < actual_freespace ? available_bytes
+                                                                                      : actual_freespace);
                                 return (available_bytes >= size);
                             }
                             return false;
@@ -159,14 +159,14 @@ namespace com {
                             string m_path = get_mount_point(path);
                             short m_index = mount_map->get_mount_index(m_path);
                             POSTCONDITION(m_index >= 0 && m_index < mounts->mount_count);
-                            __mount_point mp = mounts->mounts[m_index];
+                            __mount_point *mp = &mounts->mounts[m_index];
                             if (is_writable(m_index)) {
                                 bool reserved = false;
                                 exclusive_lock *lock = mount_map->get_mount_lock(m_path, mounts);
                                 CHECK_NOT_NULL(lock);
                                 WAIT_LOCK_GUARD(lock, 0);
                                 if (can_create_block(path, size)) {
-                                    mp.total_bytes_written += size;
+                                    mp->total_bytes_used += size;
                                     reserved = true;
                                 }
                                 return reserved;
@@ -178,13 +178,13 @@ namespace com {
                             double score = ULONG_MAX;
                             string mount;
                             for (uint16_t ii = 0; ii < mounts->mount_count; ii++) {
-                                __mount_point mp = mounts->mounts[ii];
-                                if (mp.state != __mount_state::MP_READ_WRITE) {
+                                __mount_point *mp = &mounts->mounts[ii];
+                                if (mp->state != __mount_state::MP_READ_WRITE) {
                                     continue;
                                 }
-                                double bs = mount_utils::get_mount_usage(&mp);
+                                double bs = mount_utils::get_mount_usage(mp);
                                 if (score > bs) {
-                                    mount = string(mp.path);
+                                    mount = string(mp->path);
                                     score = bs;
                                 }
                             }

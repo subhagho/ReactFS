@@ -127,14 +127,12 @@ namespace com {
                                     PRECONDITION(!IS_EMPTY_P(md->path));
                                     strncpy(mm->mounts[ii].path, md->path->c_str(), md->path->length());
                                     mm->mounts[ii].state = __mount_state::MP_READ_WRITE;
-                                    mm->mounts[ii].bytes_read = 0;
-                                    mm->mounts[ii].bytes_written = 0;
-                                    mm->mounts[ii].time_read = 0;
-                                    mm->mounts[ii].time_write = 0;
                                     mm->mounts[ii].total_blocks = 0;
                                     mm->mounts[ii].total_bytes_read = 0;
                                     mm->mounts[ii].total_bytes_written = 0;
                                     mm->mounts[ii].usage_limit = md->usage_limit;
+                                    metrics_utils::reset_hourly_metrics(&(mm->mounts[ii].bytes_read));
+                                    metrics_utils::reset_hourly_metrics(&(mm->mounts[ii].bytes_written));
                                 }
                                 record = (__env_record *) malloc(sizeof(__env_record));
                                 CHECK_NOT_NULL(record);
@@ -171,7 +169,7 @@ namespace com {
                                             strncmp(mounts->mounts[jj].path, md->path->c_str(), md->path->length()) ==
                                             0) {
                                             mounts->mounts[jj].usage_limit = md->usage_limit;
-                                            indexes.push_back(jj);
+                                            indexes.push_back((int) jj);
                                             found = true;
                                             break;
                                         }
@@ -201,7 +199,7 @@ namespace com {
                                             strncmp(mounts->mounts[jj].path, md->path->c_str(), md->path->length()) ==
                                             0) {
                                             mounts->mounts[jj].usage_limit = md->usage_limit;
-                                            indexes.push_back(ii);
+                                            indexes.push_back((int) ii);
                                             found = true;
                                             break;
                                         }
@@ -265,8 +263,9 @@ namespace com {
                                 if (mp->usage_limit < 0) {
                                     string p(mp->path);
                                     uint64_t avail = mount_utils::get_free_space(p);
-                                    POSTCONDITION(avail >= 0);
-                                    mp->usage_limit = avail;
+                                    TRACE("[mount=%s] Available space = %lu", mp->path, avail);
+                                    if (avail > 0)
+                                        mp->usage_limit = avail;
                                 }
                                 TRACE("[mount=%s] Available space = %lu GB", mp->path,
                                       (mp->usage_limit / (1024 * 1024 * 1024)));
@@ -278,8 +277,6 @@ namespace com {
                                 CHECK_AND_FREE(this->record);
                             }
                         }
-
-
                     };
                 }
             }

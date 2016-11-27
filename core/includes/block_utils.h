@@ -5,9 +5,9 @@
 #ifndef REACTFS_BLOCK_UTILS_H
 #define REACTFS_BLOCK_UTILS_H
 
-#include <ctime>
 
 #include "common/includes/common_utils.h"
+#include "common/includes/time_utils.h"
 #include "common_structs.h"
 #include "base_block.h"
 #include "clients/mount_client.h"
@@ -46,8 +46,6 @@ namespace com {
                     static string get_block_dir(mount_client *m_client) {
                         CHECK_NOT_NULL(m_client);
 
-                        time_t t = time(NULL);
-                        tm *time_ptr = localtime(&t);
 
                         string mount = m_client->get_next_mount();
                         POSTCONDITION(!IS_EMPTY(mount));
@@ -57,8 +55,9 @@ namespace com {
                         }
                         Path path(mount);
                         POSTCONDITION(path.exists());
-                        string dir = common_utils::format("%d/%02d/%02d/%02d", time_ptr->tm_year, time_ptr->tm_mon,
-                                                          time_ptr->tm_mday, time_ptr->tm_hour);
+
+                        string dir = time_utils::get_hour_dir();
+                        POSTCONDITION(!IS_EMPTY(dir));
                         path.append(dir);
                         if (!path.exists()) {
                             path.create(DEFAULT_RESOURCE_MODE);
