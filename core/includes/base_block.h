@@ -184,6 +184,7 @@ namespace com {
                         rollback_info->write_offset = header->write_offset;
                         rollback_info->start_index = nullptr;
                         rollback_info->used_bytes = 0;
+                        rollback_info->block_checksum = header->block_checksum;
 
                         return *rollback_info->transaction_id;
                     }
@@ -205,6 +206,7 @@ namespace com {
                         rollback_info->write_offset = 0;
                         rollback_info->start_index = nullptr;
                         rollback_info->used_bytes = 0;
+                        rollback_info->block_checksum = 0;
 
                         block_lock->release_write_lock();
                     }
@@ -221,7 +223,7 @@ namespace com {
 
                     uint64_t get_write_offset() {
                         PRECONDITION(in_transaction());
-                        return  rollback_info->write_offset;
+                        return rollback_info->write_offset;
                     }
 
                     /*!
@@ -243,6 +245,18 @@ namespace com {
                     uint64_t get_next_index() {
                         PRECONDITION(in_transaction());
                         return rollback_info->last_index++;
+                    }
+
+                    /*!
+                     * Is this record currently readable or an uncommitted record.?
+                     *
+                     * @param record - Record to check.
+                     * @return - Is valid?
+                     */
+                    bool is_record_in_valid_state(__record *record) {
+                        CHECK_NOT_NULL(record);
+                        return (record->header->state == __record_state::R_READABLE ||
+                                record->header->state == __record_state::R_DIRTY);
                     }
 
                 public:
@@ -570,12 +584,26 @@ namespace com {
                      */
                     uint64_t write(void *source, uint32_t length, string transaction_id);
 
+                    /*!
+                     * Delete the record at the specified index.
+                     *
+                     * @param index - Record index.
+                     * @param transaction_id - Current transaction Id.
+                     * @return - Is deleted?
+                     */
                     bool delete_record(uint64_t index, string transaction_id) {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(is_writeable());
                         PRECONDITION(in_transaction());
                         PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
 
+                        const __record_index_ptr *iptr = index_ptr->read_index(index, true);
+                        CHECK_NOT_NULL(iptr);
+                        __record *ptr = __read_record(index, iptr->offset, iptr->size);
+                        CHECK_NOT_NULL(ptr);
+                        PRECONDITION(is_record_in_valid_state(ptr));
+                        rollback_info->block_checksum -= ptr->header->checksum;
+                        CHECK_AND_FREE(ptr);
                         return index_ptr->delete_index(index, transaction_id);
                     }
 
@@ -610,6 +638,11 @@ namespace com {
                         CHECK_STATE_AVAILABLE(state);
                         return (header->write_state == __write_state::WRITABLE);
                     }
+
+                    /*!
+                     * Validate the data sanity of this block.
+                     */
+                    void validation_block();
 
                     /*!
                      * Static utility funtion to get the lockname for the specified block id.

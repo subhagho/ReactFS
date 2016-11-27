@@ -65,6 +65,8 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
         header->encryption.type = __encryption_type::NO_ENCRYPTION;
         header->start_index = start_index;
         header->last_index = header->start_index;
+        header->block_checksum = 0;
+        header->commit_sequence = 0;
 
         string lock_name = get_lock_name(header->block_id);
         read_write_lock_client *env = shared_lock_utils::get();
@@ -180,13 +182,17 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
     __record *record = (__record *) malloc(sizeof(__record));
     CHECK_NOT_NULL(record);
 
+    uint32_t checksum = common_utils::crc32c(0, (BYTE *) source, size);
+
     record->header = static_cast<__record_header *>(w_ptr);
+
     record->header->index = get_next_index();
     record->header->offset = get_write_offset();
     record->header->data_size = size;
     record->header->timestamp = time_utils::now();
     record->header->uncompressed_size = uncompressed_size;
     record->header->state = __record_state::R_DIRTY;
+    record->header->checksum = checksum;
 
     w_ptr = common_utils::increment_data_ptr(w_ptr, sizeof(__record_header));
     record->data_ptr = w_ptr;
@@ -195,6 +201,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
 
     rollback_info->used_bytes += size;
     rollback_info->write_offset += (sizeof(__record_header) + size);
+    rollback_info->block_checksum += record->header->checksum;
 
     return record;
 }
@@ -215,6 +222,9 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint64_t 
     POSTCONDITION(record->header->index == index);
     POSTCONDITION(record->header->offset == offset);
     POSTCONDITION(record->header->data_size == size);
+
+    uint32_t checksum = common_utils::crc32c(0, (BYTE *) record->data_ptr, record->header->data_size);
+    POSTCONDITION(checksum == record->header->checksum);
 
     return record;
 }
@@ -270,7 +280,10 @@ uint64_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t l
 
     index_ptr->write_index(r_ptr->header->index, r_ptr->header->offset, r_ptr->header->data_size, transaction_id);
 
-    return r_ptr->header->index;
+    uint64_t index = r_ptr->header->index;
+    CHECK_AND_FREE(r_ptr);
+
+    return index;
 }
 
 uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
@@ -382,6 +395,8 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     header->last_index = rollback_info->last_index;
     header->used_bytes += rollback_info->used_bytes;
     header->write_offset = rollback_info->write_offset;
+    header->block_checksum = rollback_info->block_checksum;
+    header->commit_sequence++;
 
     end_transaction();
 }
@@ -420,4 +435,9 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
     index_ptr->open_index(header->block_id, header->block_uid, this->filename);
 
     state.set_state(__state_enum::Available);
+}
+
+void com::wookler::reactfs::core::base_block::validation_block() {
+    CHECK_STATE_AVAILABLE(state);
+
 }

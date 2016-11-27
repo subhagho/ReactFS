@@ -26,6 +26,7 @@
 
 #define CONST_FS_BASE_ERROR_PREFIX "File System Error : "
 #define CONST_FS_ARCH_ERROR_PREFIX "Block Archival Error : "
+#define CONST_BLOCK_VALID_ERROR_PREFIX "Block Validation Error : "
 
 #define FS_BASE_ERROR(fmt, ...) fs_error_base(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define FS_BASE_ERROR_PTR(fmt, ...) new fs_error_base(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
@@ -66,6 +67,20 @@ namespace com {
                     fs_archival_error(char const *file, const int line, const exception &e) : base_error(file, line,
                                                                                                          CONST_FS_ARCH_ERROR_PREFIX,
                                                                                                          e.what()) {
+                    }
+                };
+
+                class block_validation_error : public base_error {
+                public:
+                    block_validation_error(char const *file, const int line, string mesg) : base_error(file, line,
+                                                                                                       CONST_BLOCK_VALID_ERROR_PREFIX,
+                                                                                                       mesg) {
+                    }
+
+                    block_validation_error(char const *file, const int line, const exception &e) : base_error(file,
+                                                                                                              line,
+                                                                                                              CONST_BLOCK_VALID_ERROR_PREFIX,
+                                                                                                              e.what()) {
                     }
                 };
             }

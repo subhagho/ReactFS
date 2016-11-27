@@ -44,6 +44,9 @@ extern "C"
 #define DUMMY_LOCAL_HOST "localhost"
 #define DUMMY_IPV6_IP "::1"
 
+/* CRC-32C (iSCSI) polynomial in reversed bit order. */
+#define POLY 0x82f63b78
+
 #define K_BYTES 1024
 #define M_BYTES K_BYTES * 1024
 #define G_BYTES M_BYTES * 1024
@@ -292,6 +295,19 @@ namespace com {
 #endif
 
                         return DUMMY_LOCAL_IP;
+                    }
+
+                    static uint32_t crc32c(uint32_t crc, const BYTE *buf, size_t len)
+                    {
+                        int k;
+
+                        crc = ~crc;
+                        while (len--) {
+                            crc ^= *buf++;
+                            for (k = 0; k < 8; k++)
+                                crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
+                        }
+                        return ~crc;
                     }
                 };
 
