@@ -96,44 +96,41 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
 }
 
 void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, string filename) {
-    try {
-        Path p(filename);
-        if (!p.exists()) {
-            throw FS_BASE_ERROR("File not found. [path=%s]", filename.c_str());
-        }
-        mm_data = new file_mapped_data(p.get_path());
-        CHECK_ALLOC(mm_data, TYPE_NAME(file_mapped_data));
-        base_ptr = mm_data->get_base_ptr();
-
-        header = static_cast<__block_header *>(base_ptr);
-        PRECONDITION(header->block_id == block_id);
-        PRECONDITION(version_utils::compatible(header->version, version));
-
-        if (IS_NULL(block_lock)) {
-            string lock_name = get_lock_name(header->block_id);
-            read_write_lock_client *env = shared_lock_utils::get();
-
-            block_lock = env->add_lock(lock_name);
-            CHECK_NOT_NULL(block_lock);
-        }
-        this->filename = string(p.get_path());
-
-        if (header->compression.compressed) {
-            compression = compression_factory::get_compression_handler(header->compression.type);
-            CHECK_NOT_NULL(compression);
-        }
-        return base_ptr;
-    } catch (const exception &e) {
-        fs_error_base err = FS_BASE_ERROR("Error creating block. [block id=%lu][filename=%s][error=%s]", block_id,
-                                          filename.c_str(), e.what());
-        state.set_error(&err);
-        throw err;
-    } catch (...) {
-        fs_error_base err = FS_BASE_ERROR("Error creating block. [block id=%lu][filename=%s][error=%s]", block_id,
-                                          filename.c_str(), "UNKNOWN ERROR");
-        state.set_error(&err);
-        throw err;
+    Path p(filename);
+    if (!p.exists()) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_FILE_NOT_FOUND, "File not found. [path=%s]",
+                             filename.c_str());
     }
+    mm_data = new file_mapped_data(p.get_path());
+    CHECK_ALLOC(mm_data, TYPE_NAME(file_mapped_data));
+    base_ptr = mm_data->get_base_ptr();
+
+    header = static_cast<__block_header *>(base_ptr);
+    if (header->block_id != block_id) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_COPRRUPTED,
+                             "Block id read from block file does not match. [read block id=%lu][expected block id=%lu]",
+                             header->block_id, block_id);
+    }
+    if (!version_utils::compatible(header->version, version)) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_DATA_VERSION,
+                             "Block data structure version does not match. [read varion=%s][expected version=%s]",
+                             version_utils::get_version_string(header->version).c_str(),
+                             version_utils::get_version_string(version).c_str());
+    }
+
+    if (IS_NULL(block_lock)) {
+        string lock_name = get_lock_name(header->block_id);
+        read_write_lock_client *env = shared_lock_utils::get();
+
+        block_lock = env->add_lock(lock_name);
+        CHECK_NOT_NULL(block_lock);
+    }
+    this->filename = string(p.get_path());
+
+    if (header->compression.compressed) {
+        compression = compression_factory::get_compression_handler(header->compression.type);
+    }
+    return base_ptr;
 }
 
 void com::wookler::reactfs::core::base_block::close() {
@@ -442,5 +439,4 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
 
 void com::wookler::reactfs::core::base_block::validation_block() {
     CHECK_STATE_AVAILABLE(state);
-
 }

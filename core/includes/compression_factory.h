@@ -50,7 +50,8 @@ namespace com {
                                 instances[s_type] = c;
                                 break;
                             default:
-                                throw FS_ARCHIVAL_ERROR("Compression type not supported. [type=%d]", type);
+                                throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_COMPRESSION,
+                                                     "Compression type not supported. [type=%d]", type);
                         }
                         return c;
                     }

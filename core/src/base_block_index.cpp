@@ -67,38 +67,40 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
 
 void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block_id, string block_uuid,
                                                                   string filename) {
-    try {
-        Path *p = get_index_file(filename);
+    Path *p = get_index_file(filename);
 
-        LOG_DEBUG("Opening new index file. [file=%s]", p->get_path().c_str());
+    LOG_DEBUG("Opening new index file. [file=%s]", p->get_path().c_str());
 
-        if (!p->exists()) {
-            throw FS_BASE_ERROR("File not found. [path=%s]", p->get_path().c_str());
-        }
-        mm_data = new file_mapped_data(p->get_path());
-        CHECK_ALLOC(mm_data, TYPE_NAME(file_mapped_data));
-
-        base_ptr = mm_data->get_base_ptr();
-
-        header = static_cast<__record_index_header *>(base_ptr);
-        POSTCONDITION(header->block_id == block_id);
-        POSTCONDITION(strncmp(header->block_uid, block_uuid.c_str(), block_uuid.length()) == 0);
-        PRECONDITION(version_utils::compatible(header->version, version));
-
-        this->filename = string(p->get_path());
-
-        return base_ptr;
-    } catch (const exception &e) {
-        fs_error_base err = FS_BASE_ERROR("Error opening block index. [block id=%lu][filename=%s][error=%s]", block_id,
-                                          filename.c_str(), e.what());
-        state.set_error(&err);
-        throw err;
-    } catch (...) {
-        fs_error_base err = FS_BASE_ERROR("Error opening block index. [block id=%lu][filename=%s][error=%s]", block_id,
-                                          filename.c_str(), "UNKNOWN ERROR");
-        state.set_error(&err);
-        throw err;
+    if (!p->exists()) {
+        throw FS_BLOCK_ERROR(
+                fs_block_error::ERRCODE_INDEX_FILE_NOUT_FOUND, "File not found. [path=%s]", p->get_path().c_str());
     }
+    mm_data = new file_mapped_data(p->get_path());
+    CHECK_ALLOC(mm_data, TYPE_NAME(file_mapped_data));
+
+    base_ptr = mm_data->get_base_ptr();
+
+    header = static_cast<__record_index_header *>(base_ptr);
+    if (header->block_id != block_id) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
+                             "Block id read from index file does not match. [read block id=%lu][expected block id=%lu]",
+                                     header->block_id, block_id);
+    }
+    if (strncmp(header->block_uid, block_uuid.c_str(), block_uuid.length()) != 0) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
+                             "Block uid read from index file does not match. [read block uid=%s][expected block uid=%s]",
+                             header->block_uid, block_uuid.c_str());
+    }
+    if (!version_utils::compatible(header->version, version)) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_DATA_VERSION,
+                             "Block index structure version does not match. [read varion=%s][expected version=%s]",
+                             version_utils::get_version_string(header->version).c_str(),
+                             version_utils::get_version_string(version).c_str());
+    }
+
+    this->filename = string(p->get_path());
+
+    return base_ptr;
 }
 
 void com::wookler::reactfs::core::base_block_index::close() {
@@ -166,7 +168,10 @@ __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(
     void *ptr = get_data_ptr();
     void *rptr = common_utils::increment_data_ptr(ptr, offset);
     __record_index_ptr *iptr = static_cast<__record_index_ptr *>(rptr);
-    POSTCONDITION(iptr->index == index);
+    if (iptr->index != index) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
+                             "Block index miss-match. [expected index=%lu][found index=%lu]", index, iptr->index);
+    }
     if (!all && !iptr->readable)
         return nullptr;
 
@@ -183,11 +188,11 @@ bool com::wookler::reactfs::core::base_block_index::delete_index(uint64_t index,
     void *ptr = get_data_ptr();
     void *rptr = common_utils::increment_data_ptr(ptr, offset);
     __record_index_ptr *iptr = static_cast<__record_index_ptr *>(rptr);
-    POSTCONDITION(iptr->index == index);
-
-    if (iptr->readable) {
-        rollback_info_deletes.push_back(index);
-        return true;
+    if (iptr->index != index) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
+                             "Block index miss-match. [expected index=%lu][found index=%lu]", index, iptr->index);
     }
+
+    rollback_info_deletes.push_back(index);
     return false;
 }

@@ -327,7 +327,11 @@ namespace com {
                         while (offset < rollback_info->write_offset) {
                             void *ptr = common_utils::increment_data_ptr(write_ptr, offset);
                             __record_index_ptr *iptr = reinterpret_cast<__record_index_ptr *>(ptr);
-                            PRECONDITION(!iptr->readable);
+                            if (iptr->readable) {
+                                throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
+                                                     "Tying to commit an index record already committed. [index=%lu]",
+                                                     iptr->index);
+                            }
                             iptr->readable = true;
                             offset += sizeof(__record_index_ptr);
                         }
@@ -338,7 +342,11 @@ namespace com {
                         if (!IS_EMPTY(rollback_info_deletes)) {
                             for (uint64_t index : rollback_info_deletes) {
                                 __record_index_ptr *ptr = __read_index(index, true);
-                                CHECK_NOT_NULL(ptr);
+                                if (IS_NULL(ptr)) {
+                                    throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
+                                                         "Tying to commit an index delete for an index that does not exist. [index=%lu]",
+                                                         index);
+                                }
                                 ptr->readable = false;
                             }
                         }

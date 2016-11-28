@@ -260,6 +260,18 @@ namespace com {
                                 record->header->state == __record_state::R_DIRTY);
                     }
 
+                    /*!
+                     * Get the last index written to the block.
+                     *
+                     * @return - Last written index.
+                     */
+                    uint64_t get_current_index() {
+                        if (in_transaction()) {
+                            return rollback_info->last_index;
+                        }
+                        return header->last_index;
+                    }
+
                 public:
                     base_block() {
                         version.major = BLOCK_VERSION_MAJOR;
@@ -597,11 +609,18 @@ namespace com {
                         PRECONDITION(is_writeable());
                         PRECONDITION(in_transaction());
                         PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
+                        PRECONDITION(index >= header->start_index && index <= get_current_index());
 
                         const __record_index_ptr *iptr = index_ptr->read_index(index, true);
-                        CHECK_NOT_NULL(iptr);
+                        if (IS_NULL(iptr)) {
+                            throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_NOT_FOUND,
+                                                 "Index missing from block index. [index=%lu]", index);
+                        }
                         __record *ptr = __read_record(index, iptr->offset, iptr->size);
-                        CHECK_NOT_NULL(ptr);
+                        if (IS_NULL(ptr)) {
+                            throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_RECORD_NOT_FOUND,
+                                                 "Record not found in block. [index=%lu]", index);
+                        }
                         PRECONDITION(is_record_in_valid_state(ptr));
                         rollback_info->block_checksum -= ptr->header->checksum;
                         CHECK_AND_FREE(ptr);

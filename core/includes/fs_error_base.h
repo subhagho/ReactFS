@@ -30,13 +30,12 @@
 
 #define FS_BASE_ERROR(fmt, ...) fs_error_base(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define FS_BASE_ERROR_PTR(fmt, ...) new fs_error_base(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+
 #define FS_BASE_ERROR_E(e) fs_error_base(__FILE__, __LINE__, e)
 #define FS_BASE_ERROR_E_PTR(e) new fs_error_base(__FILE__, __LINE__, e)
 
-#define FS_ARCHIVAL_ERROR(fmt, ...) fs_error_base(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define FS_ARCHIVAL_ERROR_PTR(fmt, ...) new fs_error_base(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define FS_ARCHIVAL_ERROR_E(e) fs_error_base(__FILE__, __LINE__, e)
-#define FS_ARCHIVAL_ERROR_E_PTR(e) new fs_error_base(__FILE__, __LINE__, e)
+#define FS_BLOCK_ERROR(e, fmt, ...) fs_block_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__), e)
+#define FS_BLOCK_ERROR_PTR(e, fmt, ...) new fs_block_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__), e)
 
 using namespace com::wookler::reactfs::common;
 
@@ -45,15 +44,26 @@ namespace com {
         namespace reactfs {
             namespace core {
                 class fs_error_base : public base_error {
+                private:
+                    exception *error = nullptr;
                 public:
                     fs_error_base(char const *file, const int line, string mesg) : base_error(file, line,
                                                                                               CONST_FS_BASE_ERROR_PREFIX,
                                                                                               mesg) {
                     }
 
-                    fs_error_base(char const *file, const int line, const exception &e) : base_error(file, line,
-                                                                                                     CONST_FS_BASE_ERROR_PREFIX,
-                                                                                                     e.what()) {
+                    fs_error_base(char const *file, const int line, exception *e) : base_error(file, line,
+                                                                                               CONST_FS_BASE_ERROR_PREFIX,
+                                                                                               e->what()) {
+                        error = e;
+                    }
+
+                    ~fs_error_base() {
+                        CHECK_AND_FREE(error);
+                    }
+
+                    const exception *get_nested_error() {
+                        return error;
                     }
                 };
 
@@ -61,6 +71,17 @@ namespace com {
                 private:
                     int err_code = 0;
                 public:
+                    static const char *error_strings[];
+                    static const uint16_t ERRCODE_INDEX_COPRRUPTED;
+                    static const uint16_t ERRCODE_INDEX_NOT_FOUND;
+                    static const uint16_t ERRCODE_INDEX_FILE_NOUT_FOUND;
+                    static const uint16_t ERRCODE_BLOCK_COPRRUPTED;
+                    static const uint16_t ERRCODE_BLOCK_FILE_NOT_FOUND;
+                    static const uint16_t ERRCODE_RECORD_NOT_FOUND;
+                    static const uint16_t ERRCODE_INDEX_DATA_VERSION;
+                    static const uint16_t ERRCODE_BLOCK_DATA_VERSION;
+                    static const uint16_t ERRCODE_BLOCK_COMPRESSION;
+
                     fs_block_error(char const *file, const int line, string mesg, int err_code) : base_error(file, line,
                                                                                                              CONST_FS_BLOCK_ERROR_PREFIX,
                                                                                                              mesg) {
@@ -72,6 +93,10 @@ namespace com {
                             CONST_FS_BLOCK_ERROR_PREFIX,
                             e.what()) {
                         this->err_code = err_code;
+                    }
+
+                    const char *get_error_mesg(uint16_t errcode) {
+                        return error_strings[errcode];
                     }
                 };
 
