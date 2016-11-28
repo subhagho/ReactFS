@@ -21,9 +21,11 @@ namespace com {
                     public:
                         static void register_creators() {
                             dummy_resource_creator *dc = new dummy_resource_creator();
+                            CHECK_ALLOC(dc, TYPE_NAME(dummy_resource_creator));
                             resource_factory::add_resource(dummy_resource::DUMMY_RESOURCE_CLASS, dc);
 
                             filesystem_driver_creator *fc = new filesystem_driver_creator();
+                            CHECK_ALLOC(fc, TYPE_NAME(filesystem_driver_creator));
                             resource_factory::add_resource(fs_driver_constants::FS_RESOURCE_CLASS, fc);
                         }
                     };

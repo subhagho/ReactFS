@@ -51,7 +51,7 @@ namespace com {
 
                     void open_file(string filename) {
                         stream = new fmstream(filename.c_str());
-                        CHECK_NOT_NULL(stream);
+                        CHECK_ALLOC(stream, TYPE_NAME(fmstream));
                         base_ptr = stream->data();
                         CHECK_NOT_NULL(base_ptr);
 
@@ -60,7 +60,7 @@ namespace com {
 
                     void create_file(string filename, uint64_t size) {
                         stream = new fmstream(filename.c_str(), size);
-                        CHECK_NOT_NULL(stream);
+                        CHECK_ALLOC(stream, TYPE_NAME(fmstream));
                         base_ptr = stream->data();
                         CHECK_NOT_NULL(base_ptr);
 

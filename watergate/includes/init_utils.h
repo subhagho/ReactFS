@@ -64,6 +64,7 @@ namespace com {
                         init_resource_factory(m_config);
 
                         control_manager *manager = new control_manager(reset, run_thread);
+                        CHECK_ALLOC(manager, TYPE_NAME(control_manager));
                         manager->init(env->get_app(), m_config);
 
                         return manager;
@@ -84,6 +85,8 @@ namespace com {
                         CHECK_NOT_NULL(dn);
 
                         control_client *control = new control_client();
+                        CHECK_ALLOC(control, TYPE_NAME(control_client));
+
                         control->init(env->get_app(), dn);
 
                         set_client(control);

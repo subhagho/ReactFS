@@ -25,7 +25,7 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
                 sizeof(__record_index_header) + r_size;
         LOG_DEBUG("Creating index file with size = %lu", ifile_size);
         mm_data = new file_mapped_data(p->get_path(), ifile_size);
-        CHECK_NOT_NULL(mm_data);
+        CHECK_ALLOC(mm_data, TYPE_NAME(file_mapped_data));
         base_ptr = mm_data->get_base_ptr();
 
         header = static_cast<__record_index_header *>(base_ptr);
@@ -76,7 +76,7 @@ void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block
             throw FS_BASE_ERROR("File not found. [path=%s]", p->get_path().c_str());
         }
         mm_data = new file_mapped_data(p->get_path());
-        CHECK_NOT_NULL(mm_data);
+        CHECK_ALLOC(mm_data, TYPE_NAME(file_mapped_data));
 
         base_ptr = mm_data->get_base_ptr();
 

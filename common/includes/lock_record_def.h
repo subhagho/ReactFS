@@ -129,6 +129,7 @@ namespace com {
                     thread_lock_record(thread_lock_ptr *thread_ptr, int priorities) {
                         this->thread_id = thread_ptr->thread_id;
                         this->p_counts = (int *) malloc(priorities * sizeof(int));
+                        CHECK_ALLOC(this->p_counts, TYPE_NAME(int *));
                         this->priorities = priorities;
                         for (int ii = 0; ii < this->priorities; ii++) {
                             p_counts[ii] = 0;
@@ -220,10 +221,13 @@ namespace com {
 
                     static thread_lock_ptr *create_new_ptr(int max_priority) {
                         thread_lock_ptr *ptr = new thread_lock_ptr();
+                        CHECK_ALLOC(ptr, TYPE_NAME(thread_lock_ptr));
                         ptr->thread_id = thread_utils::get_current_thread();
                         ptr->priority_lock_index = (__lock_id **) malloc(max_priority * sizeof(__lock_id *));
+                        CHECK_ALLOC(ptr->priority_lock_index, TYPE_NAME(__lock_id * ));
                         for (int ii = 0; ii < max_priority; ii++) {
                             ptr->priority_lock_index[ii] = (__lock_id *) malloc(sizeof(__lock_id));
+                            CHECK_ALLOC(ptr->priority_lock_index[ii], TYPE_NAME(__lock_id));
                             ptr->priority_lock_index[ii]->acquired_time = 0;
                             ptr->priority_lock_index[ii]->id = -1;
                         }

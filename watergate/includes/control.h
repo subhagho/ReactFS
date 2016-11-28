@@ -67,14 +67,14 @@ namespace com {
                     }
                 };
 
-                struct _struct_priority_record {
+                struct __struct_priority_record {
                     int priority;
                     mutex priority_lock;
                     uint64_t count = 0;
                     uint64_t index = 0;
                 };
 
-                class _semaphore {
+                class __semaphore {
                 private:
                     mode_t mode = DEFAULT_SEM_MODE;
                     bool is_server;
@@ -109,7 +109,7 @@ namespace com {
                     void create(const __app *app, const ConfigValue *config, bool server);
 
                 public:
-                    virtual ~_semaphore();
+                    virtual ~__semaphore();
 
                     const string *get_name() const {
                         return this->name;
@@ -129,17 +129,17 @@ namespace com {
                     virtual void init(const __app *app, const ConfigValue *config, bool overwrite = false) = 0;
                 };
 
-                class _semaphore_owner : public _semaphore {
+                class __semaphore_owner : public __semaphore {
                 private:
                     __state__ state;
                     lock_table_manager *manager;
 
                 public:
-                    _semaphore_owner() {
+                    __semaphore_owner() {
                         this->owner = true;
                     }
 
-                    ~_semaphore_owner() {
+                    ~__semaphore_owner() {
                         if (NOT_NULL(semaphores)) {
                             for (int ii = 0; ii < priorities; ii++) {
                                 delete_sem(ii);
@@ -159,6 +159,8 @@ namespace com {
                         create(app, config, true);
 
                         table = new lock_table_manager();
+                        CHECK_ALLOC(table, TYPE_NAME(lock_table_manager));
+
                         manager = get_table_manager();
                         manager->init(*name, resource, max_lock_clients, overwrite);
 
@@ -196,10 +198,10 @@ namespace com {
 
                 };
 
-                class _semaphore_client : public _semaphore {
+                class __semaphore_client : public __semaphore {
                 private:
                     lock_table_client *client;
-                    vector<_struct_priority_record *> counts;
+                    vector<__struct_priority_record *> counts;
                     unordered_map<string, thread_lock_record *> threads;
 
                     void reset_locks(int priority, __lock_state state) {
@@ -247,7 +249,7 @@ namespace com {
                 public:
                     mutex sem_lock;
 
-                    ~_semaphore_client() {
+                    ~__semaphore_client() {
                         if (NOT_NULL(semaphores)) {
                             for (int ii = 0; ii < priorities; ii++) {
                                 delete_sem(ii);
@@ -276,11 +278,15 @@ namespace com {
                         create(app, config, false);
 
                         table = new lock_table_client();
+                        CHECK_ALLOC(table, TYPE_NAME(lock_table_client));
+
                         client = get_table_client();
                         client->init(app, *name, resource, max_lock_clients);
 
                         for (int ii = 0; ii < priorities; ii++) {
-                            _struct_priority_record *lc = new _struct_priority_record();
+                            __struct_priority_record *lc = new __struct_priority_record();
+                            CHECK_ALLOC(lc, TYPE_NAME(__struct_priority_record));
+
                             counts.push_back(lc);
                             counts[ii]->priority = ii;
                             counts[ii]->count = 0;
@@ -313,7 +319,7 @@ namespace com {
                             thread_lock_ptr *ptr = thread_lock_record::create_new_ptr(priorities);
                             CHECK_NOT_NULL(ptr);
                             r = new thread_lock_record(ptr, priorities);
-                            CHECK_NOT_NULL(r);
+                            CHECK_ALLOC(r, TYPE_NAME(thread_lock_record));
                             threads.insert(make_pair(ptr->thread_id, r));
                         }
                         return r;
@@ -379,7 +385,7 @@ namespace com {
                                           ii, counts[ii]->count);
                             }
                             for (int ii = 0; ii < priorities; ii++) {
-                                _assert(counts[ii]->count == 0);
+                                ASSERT(counts[ii]->count == 0);
                             }
                         }
                     }

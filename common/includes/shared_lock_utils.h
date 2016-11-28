@@ -45,7 +45,7 @@ namespace com {
                         is_manager = true;
 
                         read_write_lock_manager *manager = new read_write_lock_manager(use_thread);
-                        CHECK_NOT_NULL(manager);
+                        CHECK_ALLOC(manager, TYPE_NAME(read_write_lock_manager));
                         manager->init(mode);
 
                         instance = manager;
@@ -59,7 +59,7 @@ namespace com {
                         }
                         is_manager = false;
                         instance = new read_write_lock_client();
-                        CHECK_NOT_NULL(instance);
+                        CHECK_ALLOC(instance, TYPE_NAME(read_write_lock_client));
                         instance->create();
 
                         return instance;

@@ -51,7 +51,7 @@ namespace com {
                         this->_size = get_byte_size(count);
 
                         this->_data = (uint32_t *) malloc(this->_size);
-                        CHECK_NOT_NULL(this->_data);
+                        CHECK_ALLOC(this->_data, TYPE_NAME(uint32_t *));
 
                         mapped = false;
                     }

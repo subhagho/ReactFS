@@ -24,6 +24,7 @@ namespace com {
                     create_new_block(uint64_t block_id, string filename, __block_type type, uint32_t block_size,
                                      uint32_t est_record_size, uint64_t start_index) {
                         base_block *block = new base_block();
+                        CHECK_ALLOC(block, TYPE_NAME(base_block));
                         string uuid = block->create(block_id, filename, type, block_size, start_index, est_record_size,
                                                     false);
                         POSTCONDITION(!IS_EMPTY(uuid));
@@ -34,6 +35,7 @@ namespace com {
 
                     static void delete_block(uint64_t block_id, string filename) {
                         base_block *block = new base_block();
+                        CHECK_ALLOC(block, TYPE_NAME(base_block));
                         block->open(block_id, filename);
                         CHECK_AND_FREE(block);
 

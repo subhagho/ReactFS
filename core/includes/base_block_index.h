@@ -88,6 +88,7 @@ namespace com {
                         fname.append(".index");
 
                         Path *p = new Path(pp.get_parent_dir());
+                        CHECK_ALLOC(p, TYPE_NAME(Path));
                         p->append(fname);
 
                         return p;
@@ -142,9 +143,10 @@ namespace com {
                     string setup_transaction(string txid) {
                         if (IS_NULL(rollback_info)) {
                             rollback_info = (__rollback_info *) malloc(sizeof(__rollback_info));
+                            CHECK_ALLOC(rollback_info, TYPE_NAME(__rollback_info));
                             rollback_info->transaction_id = new string();
+                            CHECK_ALLOC(rollback_info->transaction_id, TYPE_NAME(string));
                         }
-                        CHECK_NOT_NULL(rollback_info);
 
                         rollback_info->in_transaction = true;
                         rollback_info->last_index = header->last_index;

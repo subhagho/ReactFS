@@ -14,6 +14,11 @@
 
 using namespace com::wookler::reactfs::common;
 
+#define __MP_READ_WRITE "READ_WRITE"
+#define __MP_READ_ONLY "READ_ONLY"
+#define __MP_UNAVAILABLE "UNAVAILABLE"
+#define __MP_CORRUPTED "CORRUPTED"
+
 namespace com {
     namespace wookler {
         namespace reactfs {

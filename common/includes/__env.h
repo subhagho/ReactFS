@@ -61,8 +61,11 @@ namespace com {
 
                     void setup_defaults() {
                         this->app = new __app(CONST_CONFIG_ENV_PARAM_APPNAME);
+                        CHECK_ALLOC(this->app, TYPE_NAME(__app));
 
                         this->work_dir = new Path(CONST_DEFAULT_DIR);
+                        CHECK_ALLOC(this->work_dir, TYPE_NAME(string));
+
                         string appdir = this->app->get_app_directory();
                         if (!IS_EMPTY(appdir)) {
                             this->work_dir->append(appdir);
@@ -74,6 +77,7 @@ namespace com {
                         }
 
                         this->temp_dir = new Path(CONST_DEFAULT_DIR);
+                        CHECK_ALLOC(this->temp_dir, TYPE_NAME(string));
                         if (!IS_EMPTY(appdir)) {
                             this->temp_dir->append(appdir);
                         }

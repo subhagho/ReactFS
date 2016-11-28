@@ -38,6 +38,8 @@
 
 #define CONST_LOCK_ERROR_PREFIX "Lock Error : "
 
+
+
 #define LOCK_ERROR(fmt, ...) lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define LOCK_ERROR_PTR(fmt, ...) new lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
@@ -46,31 +48,6 @@
     if (IS_NULL(s) || s == SEM_FAILED) { \
         throw LOCK_ERROR("Semaphore is not valid. [name=%s]", name->c_str()); \
     } \
-} while(0);
-
-#define WAIT_LOCK_GUARD(lock, i) com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, true);
-
-#define RELEASE_LOCK_GUARD(i) __guard_##i.release();
-
-#define TRY_LOCK_WITH_ERROR(lock, i, t) \
-    com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, false); \
-    if (!__guard_##i.get_lock(t)) { \
-        throw com::wookler::reactfs::common::lock_timeout_error(__FILE__, __LINE__, __guard_##i.get_lock_name().c_str()); \
-    }
-#define TRY_LOCK(lock, i, t, b) \
-    com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, false); \
-    b = __guard_##i.get_lock(t);
-
-#define INIT_LOCK_P(var, name) do {\
-    var = new com::wookler::reactfs::common::exclusive_lock(name); \
-    var->__create(); \
-    CHECK_NOT_NULL(var); \
-} while(0);
-
-#define CREATE_LOCK_P(var, name, mode) do {\
-    var = new com::wookler::reactfs::common::exclusive_lock(name, mode); \
-    var->__create(); \
-    CHECK_NOT_NULL(var); \
 } while(0);
 
 namespace com {
@@ -162,6 +139,7 @@ namespace com {
                         string ss = common_utils::get_normalized_name(*name);
                         PRECONDITION(!IS_EMPTY(ss));
                         this->name = new string(EXCLUSIVE_LOCK_PREFIX);
+                        CHECK_ALLOC(this->name, TYPE_NAME(string));
                         this->name->append(ss);
                     }
 
@@ -177,6 +155,7 @@ namespace com {
                         string ss = common_utils::get_normalized_name(*name);
                         PRECONDITION(!IS_EMPTY(ss));
                         this->name = new string(EXCLUSIVE_LOCK_PREFIX);
+                        CHECK_ALLOC(this->name, TYPE_NAME(string));
                         this->name->append(ss);
                         this->mode = mode;
                     }
@@ -418,4 +397,30 @@ namespace com {
         }
     }
 }
+
+#define WAIT_LOCK_GUARD(lock, i) com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, true);
+
+#define RELEASE_LOCK_GUARD(i) __guard_##i.release();
+
+#define TRY_LOCK_WITH_ERROR(lock, i, t) \
+    com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, false); \
+    if (!__guard_##i.get_lock(t)) { \
+        throw com::wookler::reactfs::common::lock_timeout_error(__FILE__, __LINE__, __guard_##i.get_lock_name().c_str()); \
+    }
+#define TRY_LOCK(lock, i, t, b) \
+    com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, false); \
+    b = __guard_##i.get_lock(t);
+
+#define INIT_LOCK_P(var, name) do {\
+    var = new com::wookler::reactfs::common::exclusive_lock(name); \
+    CHECK_ALLOC(var, TYPE_NAME(exclusive_lock)); \
+    var->__create(); \
+} while(0);
+
+#define CREATE_LOCK_P(var, name, mode) do {\
+    var = new com::wookler::reactfs::common::exclusive_lock(name, mode); \
+    CHECK_ALLOC(var, TYPE_NAME(exclusive_lock)); \
+    var->__create(); \
+} while(0);
+
 #endif //WATERGATE_EXCLUSIVE_LOCK_H

@@ -53,7 +53,7 @@ namespace com {
                             try {
                                 control = init_utils::init_control_client(env, CONTROL_CONFIG_PATH);
                                 m_client = new mount_client();
-                                CHECK_NOT_NULL(m_client);
+                                CHECK_ALLOC(m_client, TYPE_NAME(mount_client));
 
                                 shared_mapped_ptr *ptr = get_env_data(MOUNTS_KEY);
                                 m_client->init(ptr);
@@ -101,7 +101,7 @@ namespace com {
                             CHECK_NOT_NULL(env);
 
                             client_env = new node_client_env();
-                            CHECK_NOT_NULL(client_env);
+                            CHECK_ALLOC(client_env, TYPE_NAME(node_client_env));
 
                             client_env->init();
                         }

@@ -24,57 +24,8 @@
 #include "common_utils.h"
 
 #define CONST_NOTF_ERROR_PREFIX "Data Not Found : "
-
-/// Convinience macros to create exception(s)
-#define BASE_ERROR(fmt, ...) base_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define BASE_ERROR_PTR(fmt, ...) new base_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-
-#define NOT_FOUND_ERROR(fmt, ...) not_found_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define NOT_FOUND_ERROR_PTR(fmt, ...) new not_found_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-
-#ifdef NDEBUG
-#define    _assert(e)    ((void)0)
-#else
-#define _assert(e) do {\
-    if (!(e)) { \
-        LOG_ERROR("Assertion failed. [%s][%s]", #e, __PRETTY_FUNCTION__); \
-        throw BASE_ERROR("Assertion failed. [%s][%s]", #e, __PRETTY_FUNCTION__); \
-    } \
-} while(0);
-#endif
-
-#define ASSERT _assert
-
-/// Check to ensure that the specified pointer is not null. Will raise an exception if NULL.
-#define CHECK_NOT_NULL(p) do { \
-    if (IS_NULL(p)) { \
-        throw BASE_ERROR("Specified pointer is null. [%s][%s]", #p, __PRETTY_FUNCTION__); \
-    } \
-} while(0);
-
-#define CHECK_NOT_EMPTY(p) do { \
-    if (IS_EMPTY(p)) { \
-        throw BASE_ERROR("Specified instance is empty. [%s][%s]", #p, __PRETTY_FUNCTION__); \
-    } \
-} while(0);
-
-#define CHECK_NOT_EMPTY_P(p) do { \
-    if (IS_NULL(p) || IS_EMPTY_P(p)) { \
-        throw BASE_ERROR("Specified instance is null or empty. [%s][%s]", #p, __PRETTY_FUNCTION__); \
-    } \
-} while(0);
-
-#define PRECONDITION(p) do { \
-    if (!(p)) { \
-        throw BASE_ERROR("Pre-condition : Check condition failed. [%s][%s]", #p, __PRETTY_FUNCTION__); \
-    } \
-} while(0);
-
-#define POSTCONDITION(p) do { \
-    if (!(p)) { \
-        throw BASE_ERROR("Post-condition : Check condition failed. [%s][%s]", #p, __PRETTY_FUNCTION__); \
-    } \
-} while(0);
+#define CONST_ALLOC_ERROR_PREFIX "Error allocating memory : "
+#define CONST_CAST_ERROR_PREFIX "Error casting types : "
 
 namespace com {
     namespace wookler {
@@ -95,7 +46,7 @@ namespace com {
                     string r_mesg;
 
                     /*!
-                     *
+                     * Construct the exception message.
                      */
                     void set_r_mesg() {
                         stringstream ss;
@@ -146,9 +97,109 @@ namespace com {
                                                                                                 CONST_NOTF_ERROR_PREFIX,
                                                                                                 mesg) {
                     }
+
+                    not_found_error(char const *file, const int line, string mesg, string key) : base_error(file, line,
+                                                                                                            CONST_NOTF_ERROR_PREFIX,
+                                                                                                            common_utils::format(
+                                                                                                                    "[key=%s][error=%s]",
+                                                                                                                    key.c_str(),
+                                                                                                                    mesg.c_str())) {
+                    }
+                };
+
+                class alloc_error : public base_error {
+                public:
+                    alloc_error(char const *file, const int line, string mesg) : base_error(file, line,
+                                                                                            CONST_ALLOC_ERROR_PREFIX,
+                                                                                            mesg) {
+
+                    }
+                };
+
+                class cast_error : public base_error {
+                public:
+                    cast_error(char const *file, const int line, string source, string target) : base_error(file, line,
+                                                                                                            CONST_CAST_ERROR_PREFIX,
+                                                                                                            common_utils::format(
+                                                                                                                    "Cast failed. [source type=%s][target type=%s]",
+                                                                                                                    source.c_str(),
+                                                                                                                    target.c_str())) {
+
+                    }
                 };
             }
         }
     }
 }
+
+
+/// Convinience macros to create exception(s)
+#define BASE_ERROR(fmt, ...) base_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+#define BASE_ERROR_PTR(fmt, ...) new base_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+
+#define NOT_FOUND_ERROR(fmt, ...) not_found_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+#define NOT_FOUND_ERROR_PTR(fmt, ...) new not_found_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+
+#define ALLOC_ERROR(fmt, ...) alloc_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+#define ALLOC_ERROR_PTR(fmt, ...) new alloc_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+
+#define CAST_ERROR(s, t) cast_error(__FILE__, __LINE__, s, t)
+#define CAST_ERROR_PTR(s, t) new cast_error(__FILE__, __LINE__, s, t)
+
+#ifdef NDEBUG
+#define    _assert(e)    ((void)0)
+#else
+#define _assert(e) do {\
+    if (!(e)) { \
+        LOG_ERROR("Assertion failed. [%s][%s]", #e, __PRETTY_FUNCTION__); \
+        throw BASE_ERROR("Assertion failed. [%s][%s]", #e, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+#endif
+
+#define ASSERT _assert
+
+/// Check to ensure that the specified pointer is not null. Will raise an exception if NULL.
+#define CHECK_NOT_NULL(p) do { \
+    if (IS_NULL(p)) { \
+        throw BASE_ERROR("Specified pointer is null. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+
+#define CHECK_ALLOC(p, t) do {\
+    if (IS_NULL(p)) { \
+        throw ALLOC_ERROR("Specified pointer is null. [%s][%s][type=%s]", #p, __PRETTY_FUNCTION__, t); \
+    } \
+} while(0);
+
+#define CHECK_CAST(p, s, t) do {\
+    if (IS_NULL(p)) { \
+        throw CAST_ERROR(s, t); \
+    } \
+} while(0);
+
+#define CHECK_NOT_EMPTY(p) do { \
+    if (IS_EMPTY(p)) { \
+        throw BASE_ERROR("Specified instance is empty. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+
+#define CHECK_NOT_EMPTY_P(p) do { \
+    if (IS_NULL(p) || IS_EMPTY_P(p)) { \
+        throw BASE_ERROR("Specified instance is null or empty. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+
+#define PRECONDITION(p) do { \
+    if (!(p)) { \
+        throw BASE_ERROR("Pre-condition : Check condition failed. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+
+#define POSTCONDITION(p) do { \
+    if (!(p)) { \
+        throw BASE_ERROR("Post-condition : Check condition failed. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+
 #endif //WATERGATE_BASE_ERROR_H

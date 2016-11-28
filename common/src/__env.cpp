@@ -25,6 +25,7 @@ com::wookler::reactfs::common::__log *LOG = nullptr;
 void com::wookler::reactfs::common::__env::create(string filename, string app_name) {
     try {
         this->config = new Config();
+        CHECK_ALLOC(this->config, TYPE_NAME(Config));
         this->config->create(filename);
 
         const ConfigValue *e_node = this->config->find(CONST_CONFIG_ENV_PATH);
@@ -38,12 +39,15 @@ void com::wookler::reactfs::common::__env::create(string filename, string app_na
                     }
                 }
                 this->app = new __app(app_name);
+                CHECK_ALLOC(this->app, TYPE_NAME(__app));
                 string appdir = this->app->get_app_directory();
                 const string workdir = e_params->get_string(CONFIG_ENV_PARAM_WORKDIR);
                 if (!IS_EMPTY(workdir)) {
                     this->work_dir = new Path(workdir);
+                    CHECK_ALLOC(this->work_dir, TYPE_NAME(Path));
                 } else {
                     this->work_dir = new Path(CONST_DEFAULT_DIR);
+                    CHECK_ALLOC(this->work_dir, TYPE_NAME(Path));
                     if (!IS_EMPTY(appdir)) {
                         this->work_dir->append(appdir);
                     }
@@ -56,8 +60,10 @@ void com::wookler::reactfs::common::__env::create(string filename, string app_na
                 const string tempdir = e_params->get_string(CONFIG_ENV_PARAM_TEMPDIR);
                 if (!IS_EMPTY(tempdir)) {
                     this->temp_dir = new Path(tempdir);
+                    CHECK_ALLOC(this->temp_dir, TYPE_NAME(Path));
                 } else {
                     this->temp_dir = new Path(CONST_DEFAULT_DIR);
+                    CHECK_ALLOC(this->temp_dir, TYPE_NAME(Path));
                     if (!IS_EMPTY(appdir)) {
                         this->temp_dir->append(appdir);
                     }
@@ -71,10 +77,12 @@ void com::wookler::reactfs::common::__env::create(string filename, string app_na
                 setup_defaults();
             }
             LOG = new __log();
+            CHECK_ALLOC(LOG, TYPE_NAME(__log));
             LOG->init(e_node, this->work_dir, this->app->get_name());
         } else {
             setup_defaults();
             LOG = new __log();
+            CHECK_ALLOC(LOG, TYPE_NAME(__log));
             LOG->init();
         }
 
@@ -104,6 +112,7 @@ Path *com::wookler::reactfs::common::__env::get_temp_dir(string name, mode_t mod
     assert(!name.empty());
 
     Path *pp = new Path(temp_dir->get_path());
+    CHECK_ALLOC(pp, TYPE_NAME(Path));
     pp->append(name);
 
     file_utils::create_directory(pp->get_path(), mode);
@@ -122,6 +131,7 @@ Path *com::wookler::reactfs::common::__env::get_work_dir(string name, mode_t mod
     assert(!name.empty());
 
     Path *pp = new Path(work_dir->get_path());
+    CHECK_ALLOC(pp, TYPE_NAME(Path));
     pp->append(name);
 
     file_utils::create_directory(pp->get_path(), mode);

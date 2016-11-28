@@ -94,11 +94,13 @@ namespace com {
                                     ptr = ptr->next;
                                 }
                                 __callback_chain *next = new __callback_chain();
+                                CHECK_ALLOC(next, TYPE_NAME(__callback_chain));
                                 next->callback = c;
                                 next->next = nullptr;
                                 ptr->next = next;
                             } else {
                                 __callback_chain *next = new __callback_chain();
+                                CHECK_ALLOC(next, TYPE_NAME(__callback_chain));
                                 next->callback = c;
                                 next->next = nullptr;
                                 signal_map[sigint] = next;
@@ -107,6 +109,7 @@ namespace com {
                             std::signal(sigint, __signals::signal_handler);
 
                             __callback_chain *next = new __callback_chain();
+                            CHECK_ALLOC(next, TYPE_NAME(__callback_chain));
                             next->callback = c;
                             next->next = nullptr;
 

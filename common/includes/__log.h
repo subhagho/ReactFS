@@ -112,6 +112,7 @@ namespace com {
                                 const string fs = dv->get_value();
                                 if (!IS_EMPTY(fs)) {
                                     file = new Path(fs);
+                                    CHECK_ALLOC(file, TYPE_NAME(Path));
                                     const string pp = file->get_parent_dir();
                                     if (!IS_EMPTY(pp)) {
                                         Path pd = Path(pp);
@@ -127,6 +128,7 @@ namespace com {
                             }
                             if (IS_NULL(file)) {
                                 file = new Path(workdir->get_path());
+                                CHECK_ALLOC(file, TYPE_NAME(Path));
                                 file->append("log");
                                 if (!file->exists()) {
                                     file->create(0755);

@@ -10,9 +10,10 @@ void com::wookler::reactfs::common::read_write_lock_manager::init(mode_t mode) {
         create(mode, true);
         reset();
 
-        if (use_manager_thread)
+        if (use_manager_thread) {
             manager_thread = new thread(read_write_lock_manager::run, this);
-
+            CHECK_ALLOC(manager_thread, TYPE_NAME(thread));
+        }
     } catch (const exception &e) {
         lock_error le = LOCK_ERROR("Error creating lock manager instance. [error=%s]", e.what());
         state.set_error(&le);

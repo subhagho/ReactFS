@@ -71,6 +71,7 @@ typedef uint8_t *BYTE_PTR;
 #define PADCHAR(i, s) char __padchar_##i[s]
 #define PADINT(i) uint32_t __padint_##i
 
+
 using namespace std;
 
 namespace com {
@@ -80,7 +81,7 @@ namespace com {
                 struct __version_header__ {
                     uint16_t major = 0;
                     uint16_t minor = 0;
-                } ;
+                };
 
                 typedef __version_header__ __version_header;
 
@@ -94,9 +95,12 @@ namespace com {
                         return (v1.major == v2.major);
                     }
                 };
+
             }
         }
     }
 }
+
+#define TYPE_NAME(X) #X
 
 #endif

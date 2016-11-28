@@ -104,6 +104,7 @@ namespace com {
                             POSTCONDITION(cn->get_value() == fs_driver_constants::FS_RESOURCE_CLASS);
 
                             filesystem_driver *resource = new filesystem_driver();
+                            CHECK_ALLOC(resource, TYPE_NAME(filesystem_driver));
                             resource->configure(node);
 
                             return resource;

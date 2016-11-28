@@ -77,8 +77,10 @@ namespace com {
                         string k(key);
                         if (regex_search(k, m, r)) {
                             string *s = new string(m[1]);
+                            CHECK_ALLOC(s, TYPE_NAME(string));
                             if (is_self(*s)) {
                                 s = new string(this->key);
+                                CHECK_ALLOC(s, TYPE_NAME(string));
                             }
                             return s;
                         } else if (is_self(key)) {
@@ -195,6 +197,7 @@ namespace com {
 
                     void set_value(string value) {
                         this->value = new string(value);
+                        CHECK_ALLOC(this->value, TYPE_NAME(string));
                     }
 
                     const string get_value() const {
@@ -314,6 +317,8 @@ namespace com {
                         PRECONDITION(!IS_EMPTY(value));
 
                         BasicConfigValue *v = new BasicConfigValue(key, parent);
+                        CHECK_ALLOC(v, TYPE_NAME(BasicConfigValue));
+
                         v->set_value(value);
 
                         params.insert(make_pair(key, v));

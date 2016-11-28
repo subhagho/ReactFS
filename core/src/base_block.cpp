@@ -42,7 +42,7 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
         uint64_t ts = sizeof(__block_header) + b_size;
 
         mm_data = new file_mapped_data(p.get_path(), ts, overwrite);
-        CHECK_NOT_NULL(mm_data);
+        CHECK_ALLOC(mm_data, TYPE_NAME(file_mapped_data));
         base_ptr = mm_data->get_base_ptr();
 
         header = static_cast<__block_header *>(base_ptr);
@@ -102,7 +102,7 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
             throw FS_BASE_ERROR("File not found. [path=%s]", filename.c_str());
         }
         mm_data = new file_mapped_data(p.get_path());
-        CHECK_NOT_NULL(mm_data);
+        CHECK_ALLOC(mm_data, TYPE_NAME(file_mapped_data));
         base_ptr = mm_data->get_base_ptr();
 
         header = static_cast<__block_header *>(base_ptr);
@@ -180,7 +180,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
 
 
     __record *record = (__record *) malloc(sizeof(__record));
-    CHECK_NOT_NULL(record);
+    CHECK_ALLOC(record, TYPE_NAME(__record));
 
     uint32_t checksum = common_utils::crc32c(0, (BYTE *) source, size);
 
@@ -214,7 +214,7 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint64_t 
     void *ptr = get_data_ptr();
     void *rptr = common_utils::increment_data_ptr(ptr, offset);
     __record *record = (__record *) malloc(sizeof(__record));
-    CHECK_NOT_NULL(record);
+    CHECK_ALLOC(record, TYPE_NAME(__record));
     record->header = static_cast<__record_header *>(rptr);
     rptr = common_utils::increment_data_ptr(rptr, sizeof(__record_header));
     record->data_ptr = rptr;
@@ -294,6 +294,8 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
     uint64_t si = index;
     uint32_t c = 0;
     temp_buffer *buffer = new temp_buffer();
+    CHECK_ALLOC(buffer, TYPE_NAME(temp_buffer));
+
     temp_buffer *writebuff = nullptr;
 
     bool r_type = false;
@@ -343,6 +345,7 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
 
                 if (use_buffer && IS_NULL(writebuff)) {
                     writebuff = new temp_buffer();
+                    CHECK_ALLOC(writebuff, TYPE_NAME(temp_buffer));
                 }
                 temp_buffer *buff = (use_buffer ? writebuff : buffer);
                 int ret = compression->read_archive_data(data_ptr, ptr->header->uncompressed_size, buff);
@@ -431,7 +434,7 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
     }
 
     index_ptr = new base_block_index();
-    CHECK_NOT_NULL(index_ptr);
+    CHECK_ALLOC(index_ptr, TYPE_NAME(base_block_index));
     index_ptr->open_index(header->block_id, header->block_uid, this->filename);
 
     state.set_state(__state_enum::Available);

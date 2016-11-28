@@ -77,6 +77,7 @@ void com::wookler::reactfs::common::Config::create(string filename) {
 
 ConfigValue *com::wookler::reactfs::common::Config::process_node(Json json) {
     config = new NodeConfigValue(CONST_CONFIG_ROOT_NAME, nullptr);
+    CHECK_ALLOC(config, TYPE_NAME(NodeConfigValue));
 
     map<string, Json> values = json.object_items();
     if (!IS_EMPTY(values)) {
@@ -114,6 +115,7 @@ ConfigValue *com::wookler::reactfs::common::Config::process_value_node(string na
 
     if (json.is_string() || json.is_number() || json.is_bool()) {
         BasicConfigValue *c = new BasicConfigValue(name, parent);
+        CHECK_ALLOC(c, TYPE_NAME(BasicConfigValue));
         if (json.is_string()) {
             c->set_value(json.string_value());
         } else if (json.is_number()) {
@@ -152,6 +154,7 @@ ConfigValue *com::wookler::reactfs::common::Config::process_list_node(string nam
         vector<Json> values = json.array_items();
         if (!IS_EMPTY(values)) {
             ListConfigValue *node = new ListConfigValue(name, parent);
+            CHECK_ALLOC(node, TYPE_NAME(ListConfigValue));
             for (int ii = 0; ii < values.size(); ii++) {
                 Json j = values[ii];
                 process_node(name, j, node);
@@ -178,6 +181,7 @@ ConfigValue *com::wookler::reactfs::common::Config::process_object_node(string n
         map<string, Json> values = json.object_items();
         if (!IS_EMPTY(values)) {
             NodeConfigValue *node = new NodeConfigValue(name, parent);
+            CHECK_ALLOC(node, TYPE_NAME(NodeConfigValue));
             map<string, Json>::iterator iter;
             for (iter = values.begin(); iter != values.end(); iter++) {
                 string key = iter->first;
@@ -210,6 +214,7 @@ ConfigValue *com::wookler::reactfs::common::Config::process_param_node(string na
         map<string, Json> values = json.object_items();
         if (!IS_EMPTY(values)) {
             ParamConfigValue *node = new ParamConfigValue(name, parent);
+            CHECK_ALLOC(node, TYPE_NAME(ParamConfigValue));
             map<string, Json>::iterator iter;
             for (iter = values.begin(); iter != values.end(); iter++) {
                 string key = iter->first;

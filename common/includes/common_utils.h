@@ -34,6 +34,7 @@ extern "C"
 #include <time.h>
 #include <unistd.h>
 #include <regex>
+#include <locale>
 
 #include "common.h"
 
@@ -297,8 +298,7 @@ namespace com {
                         return DUMMY_LOCAL_IP;
                     }
 
-                    static uint32_t crc32c(uint32_t crc, const BYTE *buf, size_t len)
-                    {
+                    static uint32_t crc32c(uint32_t crc, const BYTE *buf, size_t len) {
                         int k;
 
                         crc = ~crc;
@@ -428,6 +428,32 @@ namespace com {
                             elems->push_back(item);
                         }
                         return elems->size();
+                    }
+
+                    static string toupper(string &input) {
+                        if (!IS_EMPTY(input)) {
+                            stringstream ss;
+                            std::locale loc;
+                            for (string::size_type ii = 0; ii < input.length(); ii++) {
+                                char c = std::toupper(input[ii], loc);
+                                ss << c;
+                            }
+                            return string(ss.str());
+                        }
+                        return input;
+                    }
+
+                    static string tolower(string &input) {
+                        if (!IS_EMPTY(input)) {
+                            stringstream ss;
+                            std::locale loc;
+                            for (string::size_type ii = 0; ii < input.length(); ii++) {
+                                char c = std::tolower(input[ii], loc);
+                                ss << c;
+                            }
+                            return string(ss.str());
+                        }
+                        return input;
                     }
                 };
             }

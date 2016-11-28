@@ -46,12 +46,12 @@ namespace com {
                             CHECK_NOT_NULL(env);
 
                             server_env = new node_server_env();
-                            CHECK_NOT_NULL(server_env);
+                            CHECK_ALLOC(server_env, TYPE_NAME(node_server_env));
 
                             server_env->init(reset);
 
                             mount_manager *mm = new mount_manager(server_env, reset);
-                            CHECK_NOT_NULL(mm);
+                            CHECK_ALLOC(mm, TYPE_NAME(mount_manager));
 
                             server_env->add_env_data(mm);
                             CHECK_AND_FREE(mm);

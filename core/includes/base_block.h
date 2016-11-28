@@ -173,9 +173,10 @@ namespace com {
                     string setup_transaction(string txid) {
                         if (IS_NULL(rollback_info)) {
                             rollback_info = (__rollback_info *) malloc(sizeof(__rollback_info));
+                            CHECK_ALLOC(rollback_info, TYPE_NAME(__rollback_info));
                             rollback_info->transaction_id = new string();
+                            CHECK_ALLOC(rollback_info->transaction_id, TYPE_NAME(string));
                         }
-                        CHECK_NOT_NULL(rollback_info);
 
                         rollback_info->in_transaction = true;
                         rollback_info->last_index = header->last_index;
@@ -552,7 +553,7 @@ namespace com {
                         uint32_t estimated_records = (block_size / est_record_size);
 
                         index_ptr = new base_block_index();
-                        CHECK_NOT_NULL(index_ptr);
+                        CHECK_ALLOC(index_ptr, TYPE_NAME(base_block_index));
 
                         index_ptr->create_index(header->block_id, header->block_uid, this->filename, estimated_records,
                                                 header->start_index, overwrite);

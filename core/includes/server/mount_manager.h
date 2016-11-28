@@ -81,10 +81,21 @@ namespace com {
                                 POSTCONDITION(!IS_EMPTY(value));
                                 limit = common_utils::parse_size(value);
                             }
+                            __mount_state ms = __mount_state::MP_READ_WRITE;
+                            nn = node->find(MOUNTS_CONFIG_STATE);
+                            if (NOT_NULL(nn)) {
+                                PRECONDITION(nn->get_type() == ConfigValueTypeEnum::Basic);
+                                const BasicConfigValue *v_node = dynamic_cast<const BasicConfigValue *>(nn);
+                                string value = v_node->get_value();
+                                POSTCONDITION(!IS_EMPTY(value));
+                                ms = mount_utils::parse_state(value);
+                            }
                             __mount_def *md = (__mount_def *) malloc(sizeof(__mount_def));
-                            CHECK_NOT_NULL(md);
+                            CHECK_ALLOC(md, TYPE_NAME(__mount_def));
                             md->path = new string(name);
+                            CHECK_ALLOC(md->path, TYPE_NAME(string));
                             md->usage_limit = limit;
+                            md->state = ms;
 
                             Path p(*(md->path));
                             POSTCONDITION(p.exists());
@@ -98,6 +109,7 @@ namespace com {
                                 new string(MOUNTS_KEY)) {
                             CHECK_NOT_NULL(n_env);
                             this->config_path = new string(MOUNTS_CONFIG_NODE);
+                            CHECK_ALLOC(this->config_path, TYPE_NAME(string));
                             this->reset = reset;
                             this->n_env = n_env;
                         }
@@ -118,7 +130,7 @@ namespace com {
                             shared_mapped_ptr *ptr = n_env->get_env_data(MOUNTS_KEY);
                             if (IS_NULL(ptr)) {
                                 __mount_data *mm = (__mount_data *) malloc(sizeof(__mount_data));
-                                CHECK_NOT_NULL(mm);
+                                CHECK_ALLOC(mm, TYPE_NAME(__mount_data));
                                 memset(mm, 0, sizeof(__mount_data));
                                 mm->mount_count = m_points.size();
                                 mm->available_count = m_points.size();
@@ -135,13 +147,13 @@ namespace com {
                                     metrics_utils::reset_hourly_metrics(&(mm->mounts[ii].bytes_written));
                                 }
                                 record = (__env_record *) malloc(sizeof(__env_record));
-                                CHECK_NOT_NULL(record);
+                                CHECK_ALLOC(record, TYPE_NAME(__env_record));
 
                                 memset(record, 0, sizeof(__env_record));
                                 strncpy(record->key, this->key->c_str(), this->key->length());
                                 record->size = sizeof(__mount_data);
                                 record->data = malloc(sizeof(BYTE) * record->size);
-                                CHECK_NOT_NULL(record->data);
+                                CHECK_ALLOC(record->data, TYPE_NAME(BYTE *));
                                 memcpy(record->data, mm, record->size);
 
                                 FREE_PTR(mm);
@@ -156,7 +168,7 @@ namespace com {
                                 CHECK_NOT_NULL(p);
 
                                 mounts = static_cast<__mount_data *>(p);
-                                CHECK_NOT_NULL(mounts);
+                                CHECK_CAST(mounts, "void *", TYPE_NAME(__mount_data));
 
                                 mounts->available_count = m_points.size();
                                 vector<int> indexes;
@@ -169,6 +181,7 @@ namespace com {
                                             strncmp(mounts->mounts[jj].path, md->path->c_str(), md->path->length()) ==
                                             0) {
                                             mounts->mounts[jj].usage_limit = md->usage_limit;
+                                            mounts->mounts[jj].state = md->state;
                                             indexes.push_back((int) jj);
                                             found = true;
                                             break;
@@ -186,7 +199,7 @@ namespace com {
                                         __mount_point *mp = &mounts->mounts[offset];
                                         memset(&mp, 0, sizeof(__mount_point));
                                         memcpy(mp->path, md->path->c_str(), md->path->length());
-                                        mp->state = __mount_state::MP_READ_WRITE;
+                                        mp->state = md->state;
                                         mp->usage_limit = md->usage_limit;
                                     }
                                 }
@@ -199,6 +212,7 @@ namespace com {
                                             strncmp(mounts->mounts[jj].path, md->path->c_str(), md->path->length()) ==
                                             0) {
                                             mounts->mounts[jj].usage_limit = md->usage_limit;
+                                            mounts->mounts[jj].state = md->state;
                                             indexes.push_back((int) ii);
                                             found = true;
                                             break;
@@ -240,10 +254,10 @@ namespace com {
                             CHECK_NOT_NULL(ptr);
 
                             mounts = static_cast<__mount_data *>(ptr);
-                            CHECK_NOT_NULL(mounts);
+                            CHECK_CAST(mounts, "void *", TYPE_NAME(__mount_data));
 
                             mount_map = new __mount_map();
-
+                            CHECK_ALLOC(mount_map, TYPE_NAME(__mount_map));
                             for (uint16_t ii = 0; ii < mounts->mount_count; ii++) {
                                 __mount_point *mp = &mounts->mounts[ii];
                                 if (mp->state == __mount_state::MP_UNAVAILABLE) {

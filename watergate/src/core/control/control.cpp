@@ -24,7 +24,7 @@
 #include "watergate/includes/resource_factory.h"
 
 
-void com::wookler::watergate::core::_semaphore::create(const __app *app, const ConfigValue *config, bool server) {
+void com::wookler::watergate::core::__semaphore::create(const __app *app, const ConfigValue *config, bool server) {
     CHECK_NOT_NULL(app);
     CHECK_NOT_NULL(config);
 
@@ -41,6 +41,7 @@ void com::wookler::watergate::core::_semaphore::create(const __app *app, const C
     this->resource = resource_factory::get_resource(r_name);
 
     this->name = new string(*this->resource->get_resource_name());
+    CHECK_ALLOC(this->name, TYPE_NAME(string));
 
     this->is_server = server;
 
@@ -72,6 +73,8 @@ void com::wookler::watergate::core::_semaphore::create(const __app *app, const C
 
 
     semaphores = (sem_t **) malloc(this->priorities * sizeof(sem_t *));
+    CHECK_ALLOC(semaphores, TYPE_NAME(sem_t *));
+
     memset(semaphores, 0, this->priorities * sizeof(sem_t *));
 
     for (int ii = 0; ii < this->priorities; ii++) {
@@ -87,7 +90,7 @@ void com::wookler::watergate::core::_semaphore::create(const __app *app, const C
     }
 }
 
-void com::wookler::watergate::core::_semaphore::create_sem(int index) {
+void com::wookler::watergate::core::__semaphore::create_sem(int index) {
     PRECONDITION(index >= 0 && index < priorities);
 
     string sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
@@ -100,7 +103,7 @@ void com::wookler::watergate::core::_semaphore::create_sem(int index) {
     semaphores[index] = ptr;
 }
 
-void com::wookler::watergate::core::_semaphore::delete_sem(int index) {
+void com::wookler::watergate::core::__semaphore::delete_sem(int index) {
     PRECONDITION(index >= 0 && index < priorities);
 
     if (IS_VALID_SEM_PTR(semaphores[index])) {
@@ -118,14 +121,14 @@ void com::wookler::watergate::core::_semaphore::delete_sem(int index) {
     }
 }
 
-com::wookler::watergate::core::_semaphore::~_semaphore() {
+com::wookler::watergate::core::__semaphore::~__semaphore() {
     CHECK_AND_FREE(this->name);
     CHECK_AND_FREE(resource);
     CHECK_AND_FREE(table);
 }
 
 __lock_state
-com::wookler::watergate::core::_semaphore_client::try_lock(int priority, double quota, int base_priority, bool wait) {
+com::wookler::watergate::core::__semaphore_client::try_lock(int priority, double quota, int base_priority, bool wait) {
     PRECONDITION(priority >= 0 && priority < priorities);
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
@@ -219,7 +222,7 @@ com::wookler::watergate::core::_semaphore_client::try_lock(int priority, double 
 }
 
 __lock_state
-com::wookler::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
+com::wookler::watergate::core::__semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
     ASSERT(NOT_NULL(semaphores));
@@ -316,7 +319,7 @@ com::wookler::watergate::core::_semaphore_client::try_lock_base(double quota, in
                         BASE_PRIORITY);
 }
 
-bool com::wookler::watergate::core::_semaphore_client::release_lock_base(int base_priority) {
+bool com::wookler::watergate::core::__semaphore_client::release_lock_base(int base_priority) {
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
     ASSERT(NOT_NULL(semaphores));
@@ -407,7 +410,7 @@ bool com::wookler::watergate::core::_semaphore_client::release_lock_base(int bas
     return false;
 }
 
-bool com::wookler::watergate::core::_semaphore_client::release_lock(int priority, int base_priority) {
+bool com::wookler::watergate::core::__semaphore_client::release_lock(int priority, int base_priority) {
     PRECONDITION(priority >= 0 && priority < priorities);
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
@@ -493,19 +496,19 @@ bool com::wookler::watergate::core::_semaphore_client::release_lock(int priority
     return false;
 }
 
-void com::wookler::watergate::core::_semaphore_owner::reset() {
+void com::wookler::watergate::core::__semaphore_owner::reset() {
     LOG_DEBUG("[name=%s] Resetting all semaphores...", name->c_str());
     clear_locks();
 }
 
-void com::wookler::watergate::core::_semaphore_owner::check_expired_locks(uint64_t expiry_time) {
+void com::wookler::watergate::core::__semaphore_owner::check_expired_locks(uint64_t expiry_time) {
     PRECONDITION(expiry_time > 0);
 
     uint32_t counts[MAX_PRIORITY_ALLOWED];
     memset(counts, 0, (MAX_PRIORITY_ALLOWED * sizeof(uint32_t)));
 
     lock_table_manager *tm = get_table_manager();
-    CHECK_NOT_NULL(tm);
+    CHECK_ALLOC(tm, TYPE_NAME(lock_table_manager));
 
     tm->check_expired_locks(expiry_time, counts);
     for (int ii = 0; ii < MAX_PRIORITY_ALLOWED; ii++) {
@@ -524,7 +527,7 @@ void com::wookler::watergate::core::_semaphore_owner::check_expired_locks(uint64
     }
 }
 
-void com::wookler::watergate::core::_semaphore_owner::check_expired_records(uint64_t expiry_time) {
+void com::wookler::watergate::core::__semaphore_owner::check_expired_records(uint64_t expiry_time) {
     PRECONDITION(expiry_time > 0);
 
     lock_table_manager *tm = get_table_manager();

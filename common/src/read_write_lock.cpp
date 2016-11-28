@@ -42,6 +42,7 @@ void com::wookler::reactfs::common::shared_lock_table::__create(mode_t mode, boo
         uint64_t h_size = sizeof(__shared_lock_data);
         uint64_t t_size = (l_size + h_size);
         mm_data = new shm_mapped_data(RW_SHARED_LOCK_TABLE_NAME, t_size, manager);
+        CHECK_ALLOC(mm_data, TYPE_NAME(shm_mapped_data));
         header_ptr = reinterpret_cast<__shared_lock_data *>(mm_data->get_base_ptr());
         if (manager) {
             header_ptr->max_count = MAX_SHARED_LOCKS;

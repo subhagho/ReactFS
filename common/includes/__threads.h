@@ -338,7 +338,7 @@ namespace com {
                                 __callback *c = iter->second;
                                 CHECK_NOT_NULL(c);
                                 __runnable_callback *rc = dynamic_cast<__runnable_callback *>(c);
-                                CHECK_NOT_NULL(rc);
+                                CHECK_CAST(rc, TYPE_NAME(__callback), TYPE_NAME(__runnable_callback));
                                 if (rc->can_run()) {
                                     rc->set_last_run_time(time_utils::now());
                                     task_queue.push(rc);
@@ -362,7 +362,8 @@ namespace com {
                     virtual void add_task(__callback *task) override {
                         CHECK_NOT_NULL(task);
                         __runnable_callback *rc = dynamic_cast<__runnable_callback *>(task);
-                        CHECK_NOT_NULL(rc);
+                        CHECK_CAST(rc, TYPE_NAME(__callback),
+                                   TYPE_NAME(_runnable_callback));
                         unique_lock<std::mutex> lock(__lock);
                         map.insert({rc->get_name(), rc});
                     }
@@ -518,7 +519,7 @@ namespace com {
                         PRECONDITION(IS_NULL(__runner));
                         CHECK_NOT_NULL(this->queue);
                         __runner = new thread(&__m_thread::run, this);
-                        CHECK_NOT_NULL(__runner);
+                        CHECK_ALLOC(__runner, TYPE_NAME(thread));
                     }
 
                     /*!
@@ -613,14 +614,14 @@ namespace com {
                         PRECONDITION(thread_sleep_timeout > 0);
 
                         task_queue = new __thread_stack();
-                        CHECK_NOT_NULL(task_queue);
+                        CHECK_ALLOC(task_queue, TYPE_NAME(__thread_stack));
 
                         threads = new vector<__m_thread *>(this->max_t_count);
-                        CHECK_NOT_EMPTY_P(threads);
+                        CHECK_ALLOC(threads, TYPE_NAME(vector));
 
                         for (uint16_t ii = 0; ii < this->max_t_count; ii++) {
                             __m_thread *t = new __m_thread(name, task_queue, thread_sleep_timeout);
-                            CHECK_NOT_NULL(t);
+                            CHECK_ALLOC(t, TYPE_NAME(__m_thread));
                             (*threads)[ii] = t;
                         }
                         this->flush_before_stop = flush_queue;
@@ -637,14 +638,14 @@ namespace com {
                         PRECONDITION(thread_sleep_timeout > 0);
 
                         task_queue = new __runnable_stack();
-                        CHECK_NOT_NULL(task_queue);
+                        CHECK_ALLOC(task_queue, TYPE_NAME(__runnable_stack));
 
                         threads = new vector<__m_thread *>(this->max_t_count);
-                        CHECK_NOT_EMPTY_P(threads);
+                        CHECK_ALLOC(threads, TYPE_NAME(vector));
 
                         for (uint16_t ii = 0; ii < this->max_t_count; ii++) {
                             __m_thread *t = new __m_thread(name, task_queue, thread_sleep_timeout);
-                            CHECK_NOT_NULL(t);
+                            CHECK_ALLOC(t, TYPE_NAME(__m_thread));
                             (*threads)[ii] = t;
                         }
                         state.set_state(__state_enum::Available);
@@ -717,14 +718,13 @@ namespace com {
                         PRECONDITION(!IS_EMPTY(name));
 
                         __runnable_stack *q = dynamic_cast<__runnable_stack *>(task_queue);
-                        if (NOT_NULL(q)) {
-                            return q->remove_task(name);
-                        }
-                        return false;
+                        CHECK_CAST(q, TYPE_NAME(__thread_stack), TYPE_NAME(__runnable_stack));
+                        return q->remove_task(name);
                     }
                 };
             }
         }
     }
 }
+
 #endif //REACTFS_THREADS_H

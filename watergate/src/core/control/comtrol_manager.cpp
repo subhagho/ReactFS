@@ -31,11 +31,12 @@ void com::wookler::watergate::core::control_manager::run(control_manager *owner)
         while (NOT_NULL(owner) && owner->state.is_available()) {
             START_ALARM(0);
             if (!IS_EMPTY(owner->semaphores)) {
-                unordered_map<string, _semaphore *>::iterator iter;
+                unordered_map<string, __semaphore *>::iterator iter;
                 for (iter = owner->semaphores.begin(); iter != owner->semaphores.end(); iter++) {
-                    _semaphore *sem = iter->second;
+                    __semaphore *sem = iter->second;
                     if (NOT_NULL(sem)) {
-                        _semaphore_owner *c = static_cast<_semaphore_owner *>(sem);
+                        __semaphore_owner *c = static_cast<__semaphore_owner *>(sem);
+                        CHECK_CAST(c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_owner));
                         c->check_expired_locks(owner->lock_timeout);
                         c->check_expired_records(owner->record_timeout);
                     }

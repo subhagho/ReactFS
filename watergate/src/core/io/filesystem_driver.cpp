@@ -39,6 +39,7 @@ void com::wookler::watergate::core::io::filesystem_driver::setup() {
                            fs_driver_constants::CONFIG_PARAM_ROOT_PATH.c_str());
     }
     root_path = new Path(rp);
+    CHECK_ALLOC(root_path, TYPE_NAME(Path));
 
     string qb = params->get_string(fs_driver_constants::CONFIG_PARAM_QUOTA_BYTES);
     if (IS_EMPTY(qb)) {

@@ -99,7 +99,7 @@ namespace com {
                         PRECONDITION(size > 0);
 
                         this->data_ptr = (BYTE_PTR) malloc(size * sizeof(BYTE_PTR));
-                        CHECK_NOT_NULL(this->data_ptr);
+                        CHECK_ALLOC(this->data_ptr, TYPE_NAME(BYTE *));
 
                         allocated = true;
                         memcpy(this->data_ptr, data_ptr, size);

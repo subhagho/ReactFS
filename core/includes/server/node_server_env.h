@@ -90,18 +90,18 @@ namespace com {
                                 POSTCONDITION(p_size > 0);
 
                                 default_pool = new __thread_pool(DEFAULT_THREAD_POOL_NAME, p_size);
-                                CHECK_NOT_NULL(default_pool);
+                                CHECK_ALLOC(default_pool, TYPE_NAME(__thread_pool));
                                 default_pool->create_task_registry(DEFAULT_THREAD_POOL_SLEEP);
 
                                 shared_lock_utils::create_manager(DEFAULT_LOCK_MODE, false);
                                 __runnable_callback *rwcb = new rw_lock_manager_callback(
                                         shared_lock_utils::get_manager());
-                                CHECK_NOT_NULL(rwcb);
+                                CHECK_ALLOC(rwcb, TYPE_NAME(__runnable_callback));
                                 default_pool->add_task(rwcb);
                                 callbacks.push_back(rwcb);
 
                                 __runnable_callback *cb = new control_manager_callback(priority_manager);
-                                CHECK_NOT_NULL(cb);
+                                CHECK_ALLOC(cb, TYPE_NAME(__runnable_callback));
                                 default_pool->add_task(cb);
                                 callbacks.push_back(cb);
 

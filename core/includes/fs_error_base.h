@@ -25,7 +25,7 @@
 #include "common/includes/base_error.h"
 
 #define CONST_FS_BASE_ERROR_PREFIX "File System Error : "
-#define CONST_FS_ARCH_ERROR_PREFIX "Block Archival Error : "
+#define CONST_FS_BLOCK_ERROR_PREFIX "File System Block Error : "
 #define CONST_BLOCK_VALID_ERROR_PREFIX "Block Validation Error : "
 
 #define FS_BASE_ERROR(fmt, ...) fs_error_base(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
@@ -57,16 +57,21 @@ namespace com {
                     }
                 };
 
-                class fs_archival_error : public base_error {
+                class fs_block_error : public base_error {
+                private:
+                    int err_code = 0;
                 public:
-                    fs_archival_error(char const *file, const int line, string mesg) : base_error(file, line,
-                                                                                                  CONST_FS_ARCH_ERROR_PREFIX,
-                                                                                                  mesg) {
+                    fs_block_error(char const *file, const int line, string mesg, int err_code) : base_error(file, line,
+                                                                                                             CONST_FS_BLOCK_ERROR_PREFIX,
+                                                                                                             mesg) {
+                        this->err_code = err_code;
                     }
 
-                    fs_archival_error(char const *file, const int line, const exception &e) : base_error(file, line,
-                                                                                                         CONST_FS_ARCH_ERROR_PREFIX,
-                                                                                                         e.what()) {
+                    fs_block_error(char const *file, const int line, const exception &e, int err_code) : base_error(
+                            file, line,
+                            CONST_FS_BLOCK_ERROR_PREFIX,
+                            e.what()) {
+                        this->err_code = err_code;
                     }
                 };
 

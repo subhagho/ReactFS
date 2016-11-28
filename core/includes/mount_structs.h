@@ -35,6 +35,7 @@
 #define MOUNTS_CONFIG_NODE "/configuration/node/mount-points"
 #define MOUNTS_CONFIG_PATH "path"
 #define MOUNTS_CONFIG_LIMIT "usage-limit"
+#define MOUNTS_CONFIG_STATE "state"
 
 #define MOUNT_VERSION_MAJOR ((uint16_t) 0)
 #define MOUNT_VERSION_MINOR ((uint16_t) 1)
@@ -45,6 +46,8 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
+                typedef __mount_data_v0 __mount_data;
+                typedef __mount_point_v0 __mount_point;
 
                 /*!
                  * Structure to read the mount points defined in the start-up configuration.
@@ -54,10 +57,9 @@ namespace com {
                     string *path;
                     /// Usage Limit of the mount point (-1 signifies use all available disk space)
                     int64_t usage_limit;
+                    /// State of the mount point
+                    __mount_state state = __mount_state::MP_READ_WRITE;
                 } __mount_def;
-
-                typedef __mount_data_v0 __mount_data;
-                typedef __mount_point_v0 __mount_point;
 
                 /*!
                  * In-memory data structure for associated data for managing and using
@@ -268,6 +270,22 @@ namespace com {
                                              strerror(errno));
                         }
                         return (buff.f_frsize * buff.f_blocks);
+                    }
+
+                    static __mount_state parse_state(string state) {
+                        PRECONDITION(!IS_EMPTY(state));
+                        state = string_utils::trim(state);
+                        state = string_utils::toupper(state);
+                        if (state == __MP_READ_WRITE) {
+                            return __mount_state::MP_READ_WRITE;
+                        } else if (state == __MP_READ_ONLY) {
+                            return __mount_state::MP_READ_ONLY;
+                        } else if (state == __MP_UNAVAILABLE) {
+                            return __mount_state::MP_UNAVAILABLE;
+                        } else if (state == __MP_CORRUPTED) {
+                            return __mount_state::MP_CORRUPTED;
+                        }
+                        throw BASE_ERROR("Unknown mount state specified. [state=%s]", state.c_str());
                     }
                 };
             }

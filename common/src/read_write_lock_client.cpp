@@ -23,6 +23,8 @@
 void com::wookler::reactfs::common::read_write_lock_client::create(mode_t mode, bool is_manager) {
     try {
         table = new shared_lock_table();
+        CHECK_ALLOC(table, TYPE_NAME(shared_lock_table));
+
         table->create(mode, is_manager);
 
         state.set_state(__state_enum::Available);
@@ -42,6 +44,8 @@ void com::wookler::reactfs::common::read_write_lock_client::create() {
     std::lock_guard<std::mutex> guard(thread_mutex);
     try {
         table = new shared_lock_table();
+        CHECK_ALLOC(table, TYPE_NAME(shared_lock_table));
+
         table->create();
 
         state.set_state(__state_enum::Available);
@@ -69,6 +73,7 @@ read_write_lock *com::wookler::reactfs::common::read_write_lock_client::add_lock
         CHECK_NOT_NULL(lock);
     } else {
         lock = new read_write_lock();
+        CHECK_ALLOC(lock, TYPE_NAME(read_write_lock));
         lock->create(&name, table);
         locks[name] = lock;
     }

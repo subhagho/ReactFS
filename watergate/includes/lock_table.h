@@ -306,7 +306,7 @@ namespace com {
                         if (NOT_NULL(lock_record)) {
                             pid_t pid = getpid();
                             if (lock_record->app.proc_id != pid) {
-                                throw new LOCK_TABLE_ERROR("Invalid lock record. [current pid=%d][app pid=%d]", pid,
+                                throw LOCK_TABLE_ERROR("Invalid lock record. [current pid=%d][app pid=%d]", pid,
                                                            lock_record->app.proc_id);
                             }
                         }

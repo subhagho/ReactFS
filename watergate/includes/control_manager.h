@@ -52,6 +52,7 @@ namespace com {
 
                     void start() {
                         control_thread = new thread(control_manager::run, this);
+                        CHECK_ALLOC(control_thread, TYPE_NAME(thread));
                     }
 
 
@@ -81,11 +82,11 @@ namespace com {
 
                     void clear_locks() {
                         if (!IS_EMPTY(semaphores)) {
-                            unordered_map<string, _semaphore *>::iterator iter;
+                            unordered_map<string, __semaphore *>::iterator iter;
                             for (iter = semaphores.begin(); iter != semaphores.end(); iter++) {
-                                _semaphore *sem = iter->second;
+                                __semaphore *sem = iter->second;
                                 if (NOT_NULL(sem)) {
-                                    _semaphore_owner *c = static_cast<_semaphore_owner *>(sem);
+                                    __semaphore_owner *c = static_cast<__semaphore_owner *>(sem);
                                     c->reset();
                                 }
                             }
@@ -103,11 +104,11 @@ namespace com {
                     void run_checkup() {
                         if (state.is_available()) {
                             if (!IS_EMPTY(semaphores)) {
-                                unordered_map<string, _semaphore *>::iterator iter;
+                                unordered_map<string, __semaphore *>::iterator iter;
                                 for (iter = semaphores.begin(); iter != semaphores.end(); iter++) {
-                                    _semaphore *sem = iter->second;
+                                    __semaphore *sem = iter->second;
                                     if (NOT_NULL(sem)) {
-                                        _semaphore_owner *c = static_cast<_semaphore_owner *>(sem);
+                                        __semaphore_owner *c = static_cast<__semaphore_owner *>(sem);
                                         c->check_expired_locks(lock_timeout);
                                         c->check_expired_records(record_timeout);
                                     }

@@ -193,7 +193,7 @@ namespace com {
                         string h_filename = get_filename(string(MM_HEADER_FILENAME));
                         uint64_t h_size = sizeof(__mm_data_header);
                         mm_header_data = new file_mapped_data(h_filename, h_size);
-                        CHECK_NOT_NULL(mm_header_data);
+                        CHECK_ALLOC(mm_header_data, TYPE_NAME(file_mapped_data));
 
                         void *ptr = mm_header_data->get_base_ptr();
                         header = static_cast<__mm_data_header *>(ptr);
@@ -259,7 +259,7 @@ namespace com {
                                 PRECONDITION(!bi->deleted);
 
                                 block = new base_block();
-                                CHECK_NOT_NULL(block);
+                                CHECK_ALLOC(block, TYPE_NAME(base_block));
                                 block->open(bi->block_id, bi->filename);
                                 POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
@@ -278,7 +278,7 @@ namespace com {
                         version.minor = MM_STRUCT_VERSION_MINOR;
 
                         this->base_dir = new Path(base_dir);
-                        CHECK_NOT_NULL(this->base_dir);
+                        CHECK_ALLOC(this->base_dir, TYPE_NAME(Path));
                         this->base_dir->append(name);
 
                         this->name = name;
@@ -338,7 +338,7 @@ namespace com {
                         PRECONDITION(p.exists());
 
                         mm_header_data = new file_mapped_data(h_filename);
-                        CHECK_NOT_NULL(mm_header_data);
+                        CHECK_ALLOC(mm_header_data, TYPE_NAME(file_mapped_data));
 
                         void *ptr = mm_header_data->get_base_ptr();
                         header = static_cast<__mm_data_header *>(ptr);

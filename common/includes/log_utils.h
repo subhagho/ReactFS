@@ -23,42 +23,6 @@
 
 #include "__log.h"
 
-#define LOG_DEBUG(fmt, ...) do { \
-    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::debug)) { \
-        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
-        com::wookler::reactfs::common::log_utils::debug(s); \
-    } \
-} while(0)
-#define LOG_INFO(fmt, ...) do { \
-    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::info)) { \
-        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
-        com::wookler::reactfs::common::log_utils::info(s); \
-    } \
-} while(0)
-#define LOG_WARN(fmt, ...) do { \
-    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::warn)) { \
-        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
-        com::wookler::reactfs::common::log_utils::warn(s); \
-    } \
-} while(0)
-#define LOG_ERROR(fmt, ...) do { \
-    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::err)) { \
-        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
-        com::wookler::reactfs::common::log_utils::error(s); \
-    } \
-} while(0)
-#define LOG_CRITICAL(fmt, ...) do { \
-    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::critical)) { \
-        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
-        com::wookler::reactfs::common::log_utils::critical(s); \
-    } \
-} while(0)
-#define TRACE(fmt, ...) do { \
-    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::trace)) { \
-        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
-        com::wookler::reactfs::common::log_utils::trace(s); \
-    } \
-} while(0)
 
 namespace spd = spdlog;
 
@@ -189,4 +153,43 @@ namespace com {
         }
     }
 }
+
+
+#define LOG_DEBUG(fmt, ...) do { \
+    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::debug)) { \
+        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::wookler::reactfs::common::log_utils::debug(s); \
+    } \
+} while(0)
+#define LOG_INFO(fmt, ...) do { \
+    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::info)) { \
+        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::wookler::reactfs::common::log_utils::info(s); \
+    } \
+} while(0)
+#define LOG_WARN(fmt, ...) do { \
+    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::warn)) { \
+        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::wookler::reactfs::common::log_utils::warn(s); \
+    } \
+} while(0)
+#define LOG_ERROR(fmt, ...) do { \
+    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::err)) { \
+        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::wookler::reactfs::common::log_utils::error(s); \
+    } \
+} while(0)
+#define LOG_CRITICAL(fmt, ...) do { \
+    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::critical)) { \
+        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::wookler::reactfs::common::log_utils::critical(s); \
+    } \
+} while(0)
+#define TRACE(fmt, ...) do { \
+    if (com::wookler::reactfs::common::log_utils::check_log_level(spdlog::level::trace)) { \
+        string s = com::wookler::reactfs::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::wookler::reactfs::common::log_utils::trace(s); \
+    } \
+} while(0)
+
 #endif //WATERGATE_LOG_UTILS_H

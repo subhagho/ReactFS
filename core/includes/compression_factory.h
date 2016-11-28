@@ -46,7 +46,7 @@ namespace com {
                         switch (type) {
                             case __compression_type::ZLIB:
                                 c = new compression_zlib();
-                                CHECK_NOT_NULL(c);
+                                CHECK_ALLOC(c, TYPE_NAME(compression_zlib));
                                 instances[s_type] = c;
                                 break;
                             default:

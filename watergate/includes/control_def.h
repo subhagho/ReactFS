@@ -52,14 +52,14 @@ namespace com {
                 class control_def {
                 protected:
                     __state__ state;
-                    unordered_map<string, _semaphore *> semaphores;
+                    unordered_map<string, __semaphore *> semaphores;
 
                     void add_resource_lock(const __app *app, const ConfigValue *config, bool server, bool overwrite);
 
-                    _semaphore *get_lock(string name) const {
+                    __semaphore *get_lock(string name) const {
                         CHECK_STATE_AVAILABLE(state);
                         if (!IS_EMPTY(name)) {
-                            unordered_map<string, _semaphore *>::const_iterator iter = semaphores.find(name);
+                            unordered_map<string, __semaphore *>::const_iterator iter = semaphores.find(name);
                             if (iter != semaphores.end()) {
                                 return iter->second;
                             }
@@ -115,11 +115,12 @@ namespace com {
                     const string find_lock(const string name, resource_type_enum type) const {
                         CHECK_STATE_AVAILABLE(state);
                         if (!IS_EMPTY(name)) {
-                            unordered_map<string, _semaphore *>::const_iterator iter;
+                            unordered_map<string, __semaphore *>::const_iterator iter;
                             for (iter = semaphores.begin(); iter != semaphores.end(); iter++) {
-                                _semaphore *sem = iter->second;
+                                __semaphore *sem = iter->second;
                                 if (NOT_NULL(sem)) {
-                                    _semaphore_client *c = static_cast<_semaphore_client *>(sem);
+                                    __semaphore_client *c = static_cast<__semaphore_client *>(sem);
+                                    CHECK_CAST(c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
                                     if (c->is_resource_type(type)) {
                                         if (c->accept(name)) {
                                             return *c->get_name();
@@ -133,9 +134,10 @@ namespace com {
                     }
 
                     uint64_t get_quota(const string name) const {
-                        _semaphore *sem = get_lock(name);
+                        __semaphore *sem = get_lock(name);
                         if (NOT_NULL(sem)) {
-                            _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+                            __semaphore_client *sem_c = static_cast<__semaphore_client *>(sem);
+                            CHECK_CAST(sem_c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
                             return sem_c->get_quota();
                         }
                         return 0;
@@ -179,12 +181,13 @@ namespace com {
                     thread_lock_ptr *register_thread(string lock_name) const {
                         CHECK_STATE_AVAILABLE(state);
 
-                        _semaphore *sem = get_lock(lock_name);
+                        __semaphore *sem = get_lock(lock_name);
                         if (IS_NULL(sem)) {
                             throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", lock_name.c_str());
                         }
 
-                        _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+                        __semaphore_client *sem_c = static_cast<__semaphore_client *>(sem);
+                        CHECK_CAST(sem_c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
                         LOG_DEBUG("[pid=%d] Registering current thread.", getpid());
 
                         thread_lock_record *rec = sem_c->register_thread();
@@ -199,11 +202,12 @@ namespace com {
                     void dump() const {
                         LOG_DEBUG("**************[REGISTERED CONTROLS:%d]**************", getpid());
                         if (!IS_EMPTY(semaphores)) {
-                            unordered_map<string, _semaphore *>::const_iterator iter;
+                            unordered_map<string, __semaphore *>::const_iterator iter;
                             for (iter = semaphores.begin(); iter != semaphores.end(); iter++) {
-                                _semaphore *sem = iter->second;
+                                __semaphore *sem = iter->second;
                                 if (NOT_NULL(sem)) {
-                                    _semaphore_client *c = static_cast<_semaphore_client *>(sem);
+                                    __semaphore_client *c = static_cast<__semaphore_client *>(sem);
+                                    CHECK_CAST(c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
                                     c->dump();
                                 }
                             }
@@ -213,11 +217,12 @@ namespace com {
 
                     void test_assert() const {
                         if (!IS_EMPTY(semaphores)) {
-                            unordered_map<string, _semaphore *>::const_iterator iter;
+                            unordered_map<string, __semaphore *>::const_iterator iter;
                             for (iter = semaphores.begin(); iter != semaphores.end(); iter++) {
-                                _semaphore *sem = iter->second;
+                                __semaphore *sem = iter->second;
                                 if (NOT_NULL(sem)) {
-                                    _semaphore_client *c = static_cast<_semaphore_client *>(sem);
+                                    __semaphore_client *c = static_cast<__semaphore_client *>(sem);
+                                    CHECK_CAST(c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
                                     c->test_assert();
                                 }
                             }

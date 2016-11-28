@@ -38,12 +38,14 @@ namespace com {
 
                     static void create_env(const string configfile) {
                         env = new __env();
+                        CHECK_ALLOC(env, TYPE_NAME(__env));
                         env->create(configfile);
                         CHECK_ENV_STATE(env);
                     }
 
                     static void create_env(const string configfile, const string appname) {
                         env = new __env();
+                        CHECK_ALLOC(env, TYPE_NAME(__env));
                         env->create(configfile, appname);
                         CHECK_ENV_STATE(env);
                     }

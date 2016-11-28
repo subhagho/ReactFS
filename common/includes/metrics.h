@@ -75,6 +75,7 @@ namespace com {
 
                         this->type = BasicMetric;
                         this->name = new string(name);
+                        CHECK_ALLOC(this->name, TYPE_NAME(string));
                         this->value = 0;
                     }
 
@@ -83,6 +84,7 @@ namespace com {
 
                         this->type = BasicMetric;
                         this->name = new string(name);
+                        CHECK_ALLOC(this->name, TYPE_NAME(string));
                         this->value = 0;
                         this->thread_safe = thread_safe;
                     }
@@ -198,8 +200,10 @@ namespace com {
                             __metric *metric = nullptr;
                             if (type == BasicMetric) {
                                 metric = new __metric(name, thread_safe);
+                                CHECK_ALLOC(metric, TYPE_NAME(__metric));
                             } else if (type == AverageMetric) {
                                 metric = new _avg_metric(name, thread_safe);
+                                CHECK_ALLOC(metric, TYPE_NAME(_avg_metric));
                             }
 
                             if (NOT_NULL(metric)) {

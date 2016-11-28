@@ -73,10 +73,11 @@ namespace com {
                             CHECK_NOT_NULL(p);
 
                             mounts = static_cast<__mount_data *>(p);
-                            CHECK_NOT_NULL(mounts);
+                            CHECK_CAST(mounts, "void *", TYPE_NAME(__mount_data));
 
                             version_utils::compatible(version, mounts->version);
                             mount_map = new __mount_map();
+                            CHECK_ALLOC(mount_map, TYPE_NAME(__mount_map));
                             for (uint16_t ii = 0; ii < mounts->mount_count; ii++) {
                                 __mount_point *mp = &mounts->mounts[ii];
                                 if (mp->state == __mount_state::MP_UNAVAILABLE) {

@@ -97,7 +97,7 @@ namespace com {
 
                     void create_new_file(Path *p, uint64_t size) {
                         data_ptr = new file_mapped_data(p->get_path(), size, false);
-                        CHECK_NOT_NULL(data_ptr);
+                        CHECK_ALLOC(data_ptr, TYPE_NAME(file_mapped_data));
                         base_ptr = data_ptr->get_base_ptr();
 
                         header = static_cast<__env_header *>(base_ptr);
@@ -127,7 +127,7 @@ namespace com {
 
                     void load_env_data(Path *p) {
                         data_ptr = new file_mapped_data(p->get_path());
-                        CHECK_NOT_NULL(data_ptr);
+                        CHECK_ALLOC(data_ptr, TYPE_NAME(file_mapped_data));
                         base_ptr = data_ptr->get_base_ptr();
 
                         header = static_cast<__env_header *>(base_ptr);
@@ -136,7 +136,7 @@ namespace com {
                         uint32_t count = 0;
                         uint32_t offset = 0;
                         __env_record *record = (__env_record *) malloc(sizeof(__env_record));
-                        CHECK_NOT_NULL(record);
+                        CHECK_ALLOC(record, TYPE_NAME(__env_record));
                         while (count < header->records && is_valid_offset(offset)) {
                             void *ptr = get_read_ptr(offset);
                             CHECK_NOT_NULL(ptr);

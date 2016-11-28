@@ -47,11 +47,13 @@ void com::wookler::watergate::core::control_def::create(const __app *app, const 
 
 void com::wookler::watergate::core::control_def::add_resource_lock(const __app *app, const ConfigValue *config,
                                                                    bool server, bool overwrite) {
-    _semaphore *sem = nullptr;
+    __semaphore *sem = nullptr;
     if (server) {
-        sem = new _semaphore_owner();
+        sem = new __semaphore_owner();
+        CHECK_ALLOC(sem, TYPE_NAME(__semaphore_owner));
     } else {
-        sem = new _semaphore_client();
+        sem = new __semaphore_client();
+        CHECK_ALLOC(sem, TYPE_NAME(__semaphore_client));
     }
     sem->init(app, config, (server && overwrite));
 
@@ -95,11 +97,12 @@ com::wookler::watergate::core::control_client::try_lock(string name, int priorit
                                                         double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
-    _semaphore *sem = get_lock(name);
+    __semaphore *sem = get_lock(name);
     if (IS_NULL(sem)) {
         throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
     }
-    _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+    __semaphore_client *sem_c = static_cast<__semaphore_client *>(sem);
+    CHECK_CAST(sem_c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
 
     __lock_state r = __lock_state::None;
 
@@ -119,12 +122,13 @@ com::wookler::watergate::core::control_client::wait_lock(string name, int priori
                                                          double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
-    _semaphore *sem = get_lock(name);
+    __semaphore *sem = get_lock(name);
     if (IS_NULL(sem)) {
         throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
     }
 
-    _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+    __semaphore_client *sem_c = static_cast<__semaphore_client *>(sem);
+    CHECK_CAST(sem_c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
 
     __lock_state r = __lock_state::None;
 
@@ -142,12 +146,13 @@ com::wookler::watergate::core::control_client::wait_lock(string name, int priori
 bool com::wookler::watergate::core::control_client::release_lock(string name, int priority, int base_priority) const {
     CHECK_STATE_AVAILABLE(state);
 
-    _semaphore *sem = get_lock(name);
+    __semaphore *sem = get_lock(name);
     if (IS_NULL(sem)) {
         throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
     }
 
-    _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+    __semaphore_client *sem_c = static_cast<__semaphore_client *>(sem);
+    CHECK_CAST(sem_c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
 
     if (IS_BASE_PRIORITY(priority))
         return sem_c->release_lock_base(base_priority);
@@ -156,7 +161,7 @@ bool com::wookler::watergate::core::control_client::release_lock(string name, in
 }
 
 bool com::wookler::watergate::core::control_client::has_loaded_lock(string name) const {
-    _semaphore *sem = get_lock(name);
+    __semaphore *sem = get_lock(name);
     if (!IS_NULL(sem)) {
         return true;
     }
@@ -164,12 +169,13 @@ bool com::wookler::watergate::core::control_client::has_loaded_lock(string name)
 }
 
 bool com::wookler::watergate::core::control_client::has_valid_lock(string name, int priority) const {
-    _semaphore *sem = get_lock(name);
+    __semaphore *sem = get_lock(name);
     if (IS_NULL(sem)) {
         throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
     }
 
-    _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+    __semaphore_client *sem_c = static_cast<__semaphore_client *>(sem);
+    CHECK_CAST(sem_c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
 
     return sem_c->has_valid_lock(priority);
 }
@@ -242,12 +248,13 @@ com::wookler::watergate::core::control_client::lock_get(string name, int priorit
                 }
             }
 
-            _semaphore *sem = get_lock(name);
+            __semaphore *sem = get_lock(name);
             if (IS_NULL(sem)) {
                 throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
             }
 
-            _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+            __semaphore_client *sem_c = static_cast<__semaphore_client *>(sem);
+            CHECK_CAST(sem_c, TYPE_NAME(__semaphore), TYPE_NAME(__semaphore_client));
 
             t.stop();
             long ts = t.get_elapsed();

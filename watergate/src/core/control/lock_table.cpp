@@ -71,9 +71,9 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
 
             LOG_DEBUG("Creating index file with size = %lu. [file=%s]", t_size, np.get_path().c_str());
             stream = new fmstream();
+            CHECK_ALLOC(stream, TYPE_NAME(fmstream));
             stream->open(np.get_path().c_str(), t_size);
 
-            CHECK_NOT_NULL(stream);
             base_ptr = stream->data();
             if (server && overwrite) {
                 memset(base_ptr, 0, t_size);
@@ -87,7 +87,7 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
             void *ptr = common_utils::increment_data_ptr(base_ptr, h_size);
             uint32_t *iptr = reinterpret_cast<uint32_t *>(ptr);
             bit_index = new com::wookler::reactfs::common::__bitset(iptr, b_size);
-            CHECK_NOT_NULL(bit_index);
+            CHECK_ALLOC(bit_index, TYPE_NAME(__bitset));
 
             ptr = common_utils::increment_data_ptr(ptr, b_size);
             record_ptr = reinterpret_cast<__lock_record *>(ptr);
