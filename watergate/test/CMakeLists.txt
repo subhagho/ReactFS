@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.1)
 
 enable_testing()
 
-set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk)
-
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
@@ -13,7 +11,6 @@ INCLUDE(../../makefiles/CMakeTestInclude.txt)
 LINK_DIRECTORIES(../cmake ../../common/cmake)
 
 find_package(Threads)
-
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")

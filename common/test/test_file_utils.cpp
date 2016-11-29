@@ -51,7 +51,8 @@ TEST_CASE("Test file copy/delete.", "[com::watergate::common::file_utils]") {
 
     LOG_DEBUG("Copied file [source=%s] to [dest=%s]", source.get_path().c_str(), dest->get_path().c_str());
 
-    vector<string> lines = file_copy::copy_lines(*dest);
+    vector<string> lines;
+    file_helper::copy_lines(*dest, &lines);
     CHECK_NOT_EMPTY(lines);
     for (auto line : lines) {
         LOG_DEBUG("LINE = [%s]", line.c_str());

@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.1)
 
 enable_testing()
 
-if (${APPLE})
-    set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk)
-    INCLUDE_DIRECTORIES(/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers/)
-endif ()
-
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
@@ -16,10 +11,6 @@ INCLUDE(../../makefiles/CMakeTestInclude.txt)
 LINK_DIRECTORIES(/usr/lib ../../common/cmake ../../watergate/cmake ../../core/cmake)
 
 find_package(Threads)
-
-# Build Catch unit tests
-add_library(catch INTERFACE)
-target_include_directories(catch INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 if (${APPLE})

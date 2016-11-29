@@ -42,7 +42,8 @@ int main(int argc, char **argv) {
 
         LOG_DEBUG("Copied file [source=%s] to [dest=%s]", source.get_path().c_str(), dest->get_path().c_str());
 
-        vector<string> lines = file_copy::copy_lines(source);
+        vector <string> lines;
+        file_helper::copy_lines(source, &lines);
         CHECK_NOT_EMPTY(lines);
         for (auto line : lines) {
             LOG_DEBUG("LINE = [%s]", line.c_str());
