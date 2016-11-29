@@ -25,6 +25,7 @@
 #include <sys/statvfs.h>
 #include <climits>
 
+#include "common/includes/metrics.h"
 #include "common/includes/common.h"
 #include "common/includes/common_utils.h"
 #include "common/includes/exclusive_lock.h"
@@ -272,6 +273,12 @@ namespace com {
                         return (buff.f_frsize * buff.f_blocks);
                     }
 
+                    /*!
+                     * Parse the mount point state from the specified state string.
+                     *
+                     * @param state - State string.
+                     * @return - Parsed mount state.
+                     */
                     static __mount_state parse_state(string state) {
                         PRECONDITION(!IS_EMPTY(state));
                         state = string_utils::trim(state);
@@ -286,6 +293,68 @@ namespace com {
                             return __mount_state::MP_CORRUPTED;
                         }
                         throw BASE_ERROR("Unknown mount state specified. [state=%s]", state.c_str());
+                    }
+                };
+
+                class mount_metrics {
+                public:
+
+                    static void reset_hourly_metrics(__hourly_usage_metric *metric) {
+                        metric->reset_time = time_utils::now();
+                        metric->current_index = 0;
+                        metric->total_time = 0;
+                        metric->total_value = 0;
+                        for (uint16_t ii = 0; ii < metric->size; ii++) {
+                            metric->records[ii].index = ii;
+                            metric->records[ii].time = 0;
+                            metric->records[ii].value = 0;
+                        }
+                    }
+
+                    static void update_hourly_metrics(__hourly_usage_metric *metric, uint64_t value, uint64_t time) {
+                        uint32_t hours = time_utils::get_hour_diff(metric->reset_time);
+                        if (hours > 0) {
+                            if (hours >= metric->size) {
+                                reset_hourly_metrics(metric);
+                            } else {
+                                uint16_t max = (hours >= metric->size ? metric->size : hours);
+                                uint16_t index = metric->current_index + 1;
+                                for (uint16_t ii = 0; ii < max; ii++) {
+                                    metric->total_value -= metric->records[index].value;
+                                    metric->total_time -= metric->records[index].time;
+
+                                    metric->records[index].index = ii;
+                                    metric->records[index].time = 0;
+                                    metric->records[index].value = 0;
+                                    index++;
+                                    if (index >= metric->size) {
+                                        index = 0;
+                                    }
+                                }
+                                metric->current_index++;
+                            }
+                        }
+                        metric->total_value += value;
+                        metric->total_time += time;
+                        metric->records[metric->current_index].value += value;
+                        metric->records[metric->current_index].time += time;
+                    }
+
+                    static __avg_metric *get_hourly_metric(string name, __hourly_usage_metric *metric) {
+                        uint32_t hour = time_utils::get_hour(nullptr);
+                        POSTCONDITION(hour >= 0 && hour < 24);
+                        __avg_metric *avg = new __avg_metric(name, false);
+                        CHECK_ALLOC(metric, TYPE_NAME(_avg_metric));
+                        avg->set(metric->records[hour].value, metric->records[hour].time);
+
+                        return avg;
+                    }
+
+                    static void get_hourly_metric(__avg_metric *avg, __hourly_usage_metric *metric) {
+                        uint32_t hour = time_utils::get_hour(nullptr);
+                        POSTCONDITION(hour >= 0 && hour < 24);
+                        CHECK_ALLOC(metric, TYPE_NAME(_avg_metric));
+                        avg->set(metric->records[hour].value, metric->records[hour].time);
                     }
                 };
             }

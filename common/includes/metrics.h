@@ -63,9 +63,9 @@ namespace com {
 
                 class __metric {
                 protected:
-                    string *name;
+                    string *name = nullptr;
                     __metric_type_enum type;
-                    double value;
+                    double value = 0.0f;
                     bool thread_safe = false;
                     double max_value = 0;
 
@@ -90,11 +90,7 @@ namespace com {
                     }
 
                     virtual ~__metric() {
-                        if (NOT_NULL(name)) {
-                            delete (name);
-
-                            name = nullptr;
-                        }
+                        CHECK_AND_FREE(name);
                     }
 
                     string *get_name() {
@@ -119,14 +115,18 @@ namespace com {
                     }
 
                     virtual void set_value(double value) {
-                        this->value += value;
-                        if (value > max_value) {
+                        this->value = value;
+                        if (this->value > max_value) {
                             this->max_value = value;
                         }
                     }
 
                     virtual double get_value() {
                         return this->value;
+                    }
+
+                    virtual void increment(double value) {
+                        this->value += value;
                     }
 
                     virtual void print() {
@@ -137,20 +137,20 @@ namespace com {
                     }
                 };
 
-                class _avg_metric : public __metric {
+                class __avg_metric : public __metric {
                 private:
                     uint64_t count = 0;
 
                 public:
-                    _avg_metric(string name) : __metric(name) {
+                    __avg_metric(string name) : __metric(name) {
                         this->type = AverageMetric;
                     }
 
-                    _avg_metric(string name, bool thread_safe) : __metric(name, thread_safe) {
+                    __avg_metric(string name, bool thread_safe) : __metric(name, thread_safe) {
                         this->type = AverageMetric;
                     }
 
-                    void set_value(double value) override {
+                    void increment(double value) override {
                         __metric::set_value(value);
                         this->count++;
                     }
@@ -160,6 +160,16 @@ namespace com {
                             return (this->value / this->count);
                         }
                         return 0.0;
+                    }
+
+                    void set(double value, uint64_t div) {
+                        __metric::set_value(value);
+                        this->count = div;
+                    }
+
+                    void increment(double value, uint64_t div) {
+                        __metric::increment(value);
+                        this->count += div;
                     }
 
                     void print() override {
@@ -202,7 +212,7 @@ namespace com {
                                 metric = new __metric(name, thread_safe);
                                 CHECK_ALLOC(metric, TYPE_NAME(__metric));
                             } else if (type == AverageMetric) {
-                                metric = new _avg_metric(name, thread_safe);
+                                metric = new __avg_metric(name, thread_safe);
                                 CHECK_ALLOC(metric, TYPE_NAME(_avg_metric));
                             }
 
@@ -245,9 +255,32 @@ namespace com {
                                 if (NOT_NULL(metric)) {
                                     if (metric->is_thread_safe()) {
                                         std::lock_guard<std::mutex> guard(g_lock);
-                                        metric->set_value(value);
+                                        metric->increment(value);
                                     } else {
-                                        metric->set_value(value);
+                                        metric->increment(value);
+                                    }
+                                }
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+
+                    static bool update(string name, double value, double div) {
+                        CHECK_STATE_AVAILABLE(state);
+
+                        if (NOT_NULL(metrics)) {
+                            unordered_map<string, __metric *>::iterator iter = metrics->find(name);
+                            if (iter != metrics->end()) {
+                                __metric *metric = iter->second;
+                                if (NOT_NULL(metric) && metric->get_type() == __metric_type_enum::AverageMetric) {
+                                    __avg_metric *avg = dynamic_cast<__avg_metric *>(metric);
+                                    CHECK_CAST(avg, TYPE_NAME(__metric), TYPE_NAME(__avg_metric));
+                                    if (metric->is_thread_safe()) {
+                                        std::lock_guard<std::mutex> guard(g_lock);
+                                        avg->increment(value, div);
+                                    } else {
+                                        avg->increment(value, div);
                                     }
                                 }
                                 return true;
@@ -276,47 +309,6 @@ namespace com {
                                 }
                             }
                         }
-                    }
-
-                    static void reset_hourly_metrics(__hourly_usage_metric *metric) {
-                        metric->reset_time = time_utils::now();
-                        metric->current_index = 0;
-                        metric->total_time = 0;
-                        metric->total_value = 0;
-                        for (uint16_t ii = 0; ii < metric->size; ii++) {
-                            metric->records[ii].index = ii;
-                            metric->records[ii].time = 0;
-                            metric->records[ii].value = 0;
-                        }
-                    }
-
-                    static void update_hourly_metrics(__hourly_usage_metric *metric, uint64_t value, uint64_t time) {
-                        uint32_t hours = time_utils::get_hour_diff(metric->reset_time);
-                        if (hours > 0) {
-                            if (hours >= metric->size) {
-                                reset_hourly_metrics(metric);
-                            } else {
-                                uint16_t max = (hours >= metric->size ? metric->size : hours);
-                                uint16_t index = metric->current_index + 1;
-                                for (uint16_t ii = 0; ii < max; ii++) {
-                                    metric->total_value -= metric->records[index].value;
-                                    metric->total_time -= metric->records[index].time;
-
-                                    metric->records[index].index = ii;
-                                    metric->records[index].time = 0;
-                                    metric->records[index].value = 0;
-                                    index++;
-                                    if (index >= metric->size) {
-                                        index = 0;
-                                    }
-                                }
-                                metric->current_index++;
-                            }
-                        }
-                        metric->total_value += value;
-                        metric->total_time += time;
-                        metric->records[metric->current_index].value += value;
-                        metric->records[metric->current_index].time += time;
                     }
                 };
             }

@@ -35,13 +35,27 @@ namespace com {
         namespace reactfs {
             namespace core {
                 namespace client {
+                    /*!
+                     * Client handle class to interact with defined mount points.
+                     * Assumes the mount manager has already initialized the mount configuration for this node.
+                     */
                     class mount_client {
                     private:
+                        /// Data structure version for the mount strucutres.
                         __version_header version;
 
+                        /// Handle to the shared mount data.
                         __mount_data *mounts = nullptr;
+
+                        /// Local structures to manage mount interactions.
                         __mount_map *mount_map = nullptr;
 
+                        /*!
+                         * Check if the mount at the specified index is readable.
+                         *
+                         * @param index - Mount array index.
+                         * @return - Is readable?
+                         */
                         bool is_readable(uint16_t index) {
                             __mount_point mp = mounts->mounts[index];
                             if (mp.state == __mount_state::MP_READ_ONLY || mp.state == __mount_state::MP_READ_WRITE) {
@@ -50,6 +64,12 @@ namespace com {
                             return false;
                         }
 
+                        /*!
+                         * Check if the mount at the specified index is writable.
+                         *
+                         * @param index - Mount array index.
+                         * @return - Is writable?
+                         */
                         bool is_writable(uint16_t index) {
                             __mount_point mp = mounts->mounts[index];
                             if (mp.state == __mount_state::MP_READ_WRITE) {
@@ -59,11 +79,27 @@ namespace com {
                         }
 
                     public:
+                        /*!<constructor
+                         * Default mount client constructor.
+                         */
                         mount_client() {
                             version.major = MOUNT_VERSION_MAJOR;
                             version.minor = MOUNT_VERSION_MINOR;
                         }
 
+                        /*!<destructor
+                         * Default destructor for the mount client.
+                         */
+                        ~mount_client() {
+                            CHECK_AND_FREE(mount_map);
+                            mounts = nullptr;
+                        }
+
+                        /*!
+                         * Initialize this mount client using the mapped data passed in the shared pointer.
+                         *
+                         * @param ptr - Mount data pointer.
+                         */
                         void init(shared_mapped_ptr *ptr) {
 
                             CHECK_NOT_NULL(ptr);
@@ -94,6 +130,12 @@ namespace com {
                             }
                         }
 
+                        /*!
+                         * Get the mount point that the specified file system path is under.
+                         *
+                         * @param path - File system path.
+                         * @return - Associated mount point.
+                         */
                         string get_mount_point(const string *path) const {
                             CHECK_NOT_NULL(mounts);
                             PRECONDITION(!IS_EMPTY_P(path));
@@ -115,6 +157,13 @@ namespace com {
                             return EMPTY_STRING;
                         }
 
+                        /*!
+                         * Update the read metrics associated with the mount point for the specified path.
+                         *
+                         * @param path - File system path.
+                         * @param bytes_read - Bytes read.
+                         * @param time - Time to read the specified bytes.
+                         */
                         void update_read_metrics(string *path, uint64_t bytes_read, uint64_t time) {
                             string m_path = get_mount_point(path);
                             short m_index = mount_map->get_mount_index(m_path);
@@ -125,10 +174,17 @@ namespace com {
                                 CHECK_NOT_NULL(lock);
                                 TRY_LOCK_WITH_ERROR(lock, 0, DEFAULT_LOCK_TIMEOUT);
                                 mp->total_bytes_read += bytes_read;
-                                metrics_utils::update_hourly_metrics(&(mp->bytes_read), bytes_read, time);
+                                mount_metrics::update_hourly_metrics(&(mp->bytes_read), bytes_read, time);
                             }
                         }
 
+                        /*!
+                         * Update the write metrics associated with the mount point for the specified path.
+                         *
+                         * @param path - File system path.
+                         * @param bytes_written - Bytes written.
+                         * @param time - Time to write the specified bytes.
+                         */
                         void update_write_metrics(string *path, uint64_t bytes_written, uint64_t time) {
                             string m_path = get_mount_point(path);
                             short m_index = mount_map->get_mount_index(m_path);
@@ -139,10 +195,17 @@ namespace com {
                                 CHECK_NOT_NULL(lock);
                                 TRY_LOCK_WITH_ERROR(lock, 0, DEFAULT_LOCK_TIMEOUT);
                                 mp->total_bytes_written += bytes_written;
-                                metrics_utils::update_hourly_metrics(&(mp->bytes_written), bytes_written, time);
+                                mount_metrics::update_hourly_metrics(&(mp->bytes_written), bytes_written, time);
                             }
                         }
 
+                        /*!
+                         * Check if a block of the specified size can be created on the passed mount point.
+                         *
+                         * @param path - Mount point path.
+                         * @param size - Required data size.
+                         * @return - Can create?
+                         */
                         bool can_create_block(string *path, uint64_t size) {
                             string m_path = get_mount_point(path);
                             short m_index = mount_map->get_mount_index(m_path);
@@ -159,6 +222,13 @@ namespace com {
                             return false;
                         }
 
+                        /*!
+                         * Reserve space on the mount point associated with the specified path.
+                         *
+                         * @param path - Path to get the mount point.
+                         * @param size - Size to reserve.
+                         * @return - Is reserved?
+                         */
                         bool reserve_block(string *path, uint64_t size) {
                             string m_path = get_mount_point(path);
                             short m_index = mount_map->get_mount_index(m_path);
@@ -179,6 +249,12 @@ namespace com {
                             return false;
                         }
 
+                        /*!
+                         * Get the next mount point to be used to create a block.
+                         *
+                         * @param size - Requested block size.
+                         * @return - Mount point.
+                         */
                         string get_next_mount(uint64_t size) {
                             double score = ULONG_MAX;
                             string mount;
@@ -201,6 +277,12 @@ namespace com {
                             return mount;
                         }
 
+                        /*!
+                         * Release the data reserved for the file used by a deleted block.
+                         *
+                         * @param path - Path of the deleted block.
+                         * @param size - File size of the file being deleted.
+                         */
                         void release_block(const string *path, uint64_t size) {
                             string m_path = get_mount_point(path);
                             short m_index = mount_map->get_mount_index(m_path);

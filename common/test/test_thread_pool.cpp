@@ -2,7 +2,7 @@
 // Created by Subhabrata Ghosh on 09/11/16.
 //
 
-#include "test_thread_pool.h"
+#include "test_node_client.h"
 
 using namespace com::wookler::reactfs::common;
 

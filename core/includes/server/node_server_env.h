@@ -152,6 +152,32 @@ namespace com {
                             CHECK_STATE_AVAILABLE(state);
                             return priority_manager;
                         }
+
+                        void add_runnable(__runnable_callback *runnable) {
+                            CHECK_NOT_NULL(runnable);
+                            default_pool->add_task(runnable);
+                            callbacks.push_back(runnable);
+                        }
+
+                        bool remove_runnable(string name) {
+                            PRECONDITION(!IS_EMPTY(name));
+                            bool r = default_pool->remove_task(name);
+                            int index = -1;
+                            for (uint32_t ii = 0; ii < callbacks.size(); ii++) {
+                                __runnable_callback *rc = callbacks[ii];
+                                if (NOT_NULL(rc)) {
+                                    if (rc->get_name() == name) {
+                                        index = ii;
+                                        break;
+                                    }
+                                }
+                            }
+                            vector<__runnable_callback *>::iterator iter = callbacks.begin();
+                            if (index >= 0) {
+                                callbacks.erase(iter + index);
+                            }
+                            return r;
+                        }
                     };
 
                 }

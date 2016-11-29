@@ -26,8 +26,16 @@
 #include <sys/statvfs.h>
 #include <unordered_map>
 
+#include "common/includes/metrics.h"
+#include "common/includes/log_utils.h"
+#include "common/includes/__threads.h"
 #include "core/includes/mount_structs.h"
 #include "node_server_env.h"
+
+#define MOUNT_METRICS_LOGGER_NAME "mount-metrics-logger"
+#define MOUNT_METRICS_LOG_FREQUENCY 1000 * 60 * 3
+#define MOUNT_METRIC_NAME_R "mount-metrics-read"
+#define MOUNT_METRIC_NAME_W "mount-metrics-write"
 
 using namespace com::wookler::reactfs::core;
 
@@ -36,6 +44,59 @@ namespace com {
         namespace reactfs {
             namespace core {
                 namespace server {
+
+                    class mount_metrics_logger : public __runnable_callback {
+                    private:
+                        __mount_data *mounts = nullptr;
+                        __avg_metric *read_metric = nullptr;
+                        __avg_metric *write_metric = nullptr;
+
+                    public:
+                        mount_metrics_logger(__mount_data *mounts) : __runnable_callback(MOUNT_METRICS_LOGGER_NAME) {
+                            CHECK_NOT_NULL(mounts);
+                            this->mounts = mounts;
+                            this->read_metric = new __avg_metric(MOUNT_METRIC_NAME_R, false);
+                            CHECK_ALLOC(this->read_metric, TYPE_NAME(__avg_metric));
+                            this->write_metric = new __avg_metric(MOUNT_METRIC_NAME_W, false);
+                            CHECK_ALLOC(this->write_metric, TYPE_NAME(__avg_metric));
+                        }
+
+
+                        bool can_run() {
+                            uint64_t now = time_utils::now();
+                            return ((now - last_run_time) >= MOUNT_METRICS_LOG_FREQUENCY);
+                        }
+
+
+                        void callback() {
+                            try {
+                                for (uint16_t ii = 0; ii < mounts->mount_count; ii++) {
+                                    __mount_point *mp = &mounts->mounts[ii];
+                                    CHECK_NOT_NULL(mp);
+                                    if (mp->state == __mount_state::MP_READ_WRITE) {
+                                        mount_metrics::get_hourly_metric(this->write_metric, &mp->bytes_written);
+                                        this->write_metric->print();
+                                        mount_metrics::get_hourly_metric(this->read_metric, &mp->bytes_read);
+                                        this->read_metric->print();
+                                    } else if (mp->state == __mount_state::MP_READ_ONLY) {
+                                        mount_metrics::get_hourly_metric(this->read_metric, &mp->bytes_read);
+                                        this->read_metric->print();
+                                    }
+                                }
+                            } catch (const exception &e) {
+                                LOG_CRITICAL("Error while running [%s][error=%s]", MOUNT_METRICS_LOGGER_NAME, e.what());
+                            }
+                        }
+
+                        void error() {
+                            // Do nothing...
+                        }
+
+                        void error(exception *err) {
+                            LOG_CRITICAL("Error running [%s][error=%s]", MOUNT_METRICS_LOGGER_NAME, err->what());
+                        }
+                    };
+
                     class mount_manager : public __env_loader {
                     private:
                         bool reset = false;
@@ -143,8 +204,8 @@ namespace com {
                                     mm->mounts[ii].total_bytes_read = 0;
                                     mm->mounts[ii].total_bytes_written = 0;
                                     mm->mounts[ii].usage_limit = md->usage_limit;
-                                    metrics_utils::reset_hourly_metrics(&(mm->mounts[ii].bytes_read));
-                                    metrics_utils::reset_hourly_metrics(&(mm->mounts[ii].bytes_written));
+                                    mount_metrics::reset_hourly_metrics(&(mm->mounts[ii].bytes_read));
+                                    mount_metrics::reset_hourly_metrics(&(mm->mounts[ii].bytes_written));
                                 }
                                 record = (__env_record *) malloc(sizeof(__env_record));
                                 CHECK_ALLOC(record, TYPE_NAME(__env_record));
@@ -153,7 +214,7 @@ namespace com {
                                 strncpy(record->key, this->key->c_str(), this->key->length());
                                 record->size = sizeof(__mount_data);
                                 record->data = malloc(sizeof(BYTE) * record->size);
-                                CHECK_ALLOC(record->data, TYPE_NAME(BYTE *));
+                                CHECK_ALLOC(record->data, TYPE_NAME(BYTE * ));
                                 memcpy(record->data, mm, record->size);
 
                                 FREE_PTR(mm);
@@ -290,8 +351,17 @@ namespace com {
                                 FREE_PTR(this->record->data);
                                 CHECK_AND_FREE(this->record);
                             }
+                            mount_metrics_logger *m_logger = new mount_metrics_logger(this->mounts);
+                            CHECK_ALLOC(m_logger, TYPE_NAME(mount_metrics_logger));
+                            n_env->add_runnable(m_logger);
+                        }
+
+                        __mount_data *get_mounts() {
+                            CHECK_NOT_NULL(this->mounts);
+                            return this->mounts;
                         }
                     };
+
                 }
             }
         }

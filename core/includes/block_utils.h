@@ -20,6 +20,17 @@ namespace com {
             namespace core {
                 class block_utils {
                 public:
+                    /*!
+                     * Create a new basic block based on the specified parameters.
+                     *
+                     * @param block_id - Block id of the new block.
+                     * @param filename - Filename to be used for this block.
+                     * @param type - Type of the block.
+                     * @param block_size - Data size for this block.
+                     * @param est_record_size - Estimated size for the records in this block. (to be used to estimate index size)
+                     * @param start_index - Start index for the records in this block.
+                     * @return - UUID of the new block created.
+                     */
                     static string
                     create_new_block(uint64_t block_id, string filename, __block_type type, uint32_t block_size,
                                      uint32_t est_record_size, uint64_t start_index) {
@@ -33,6 +44,13 @@ namespace com {
                         return uuid;
                     }
 
+                    /*!
+                     * Delete the specified block from the file system.
+                     *
+                     * @param m_client - Mount client handle.
+                     * @param block_id - Block ID of the block to be deleted.
+                     * @param filename - File name of the block file.
+                     */
                     static void delete_block(mount_client *m_client, uint64_t block_id, string filename) {
                         base_block *block = new base_block();
                         CHECK_ALLOC(block, TYPE_NAME(base_block));
@@ -48,6 +66,13 @@ namespace com {
                         }
                     }
 
+                    /*!
+                     * Get the directory for a new block being created.
+                     *
+                     * @param m_client - Mount client handle.
+                     * @param size - Total file size estimated for this block.
+                     * @return - Directory path where the block should be created.
+                     */
                     static string get_block_dir(mount_client *m_client, uint64_t size) {
                         CHECK_NOT_NULL(m_client);
 

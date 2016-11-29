@@ -37,12 +37,14 @@
 #include "compression.h"
 #include "compression_factory.h"
 #include "base_block_index.h"
+#include "clients/node_client_env.h"
 
 #define BLOCK_VERSION_MAJOR ((uint16_t) 0)
 #define BLOCK_VERSION_MINOR ((uint16_t) 1)
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
+using namespace com::wookler::reactfs::core::client;
 
 namespace com {
     namespace wookler {

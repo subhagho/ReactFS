@@ -175,6 +175,8 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
 
     void *w_ptr = get_write_ptr();
 
+    timer t;
+    t.start();
 
     __record *record = (__record *) malloc(sizeof(__record));
     CHECK_ALLOC(record, TYPE_NAME(__record));
@@ -199,6 +201,12 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
     rollback_info->used_bytes += size;
     rollback_info->write_offset += (sizeof(__record_header) + size);
     rollback_info->block_checksum += record->header->checksum;
+
+    t.stop();
+    uint64_t write_bytes = (sizeof(__record_header) + size);
+    node_client_env *n_env = node_init_client::get_client_env();
+    mount_client *m_client = n_env->get_mount_client();
+    m_client->update_read_metrics(&filename, write_bytes, t.get_elapsed());
 
     return record;
 }
@@ -306,15 +314,19 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
             break;
     }
 
+    uint64_t read_bytes = 0;
+    timer t;
+    t.start();
     while (si < header->last_index && c < count) {
         const __record_index_ptr *iptr = index_ptr->read_index(si, r_type);
         if (IS_NULL(iptr)) {
             si++;
             continue;
         }
+
         __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
         CHECK_NOT_NULL(ptr);
-
+        read_bytes += iptr->size;
         switch (r_state) {
             case __record_state::R_DELETED:
             case __record_state::R_DIRTY:
@@ -362,7 +374,13 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
         si++;
         c++;
     }
+    t.stop();
 
+    if (read_bytes > 0) {
+        node_client_env *n_env = node_init_client::get_client_env();
+        mount_client *m_client = n_env->get_mount_client();
+        m_client->update_read_metrics(&filename, read_bytes, t.get_elapsed());
+    }
     return data->size();
 }
 

@@ -39,7 +39,6 @@
 #define CONST_LOCK_ERROR_PREFIX "Lock Error : "
 
 
-
 #define LOCK_ERROR(fmt, ...) lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define LOCK_ERROR_PTR(fmt, ...) new lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
@@ -326,6 +325,12 @@ namespace com {
                         }
                     }
 
+                    /*!
+                     * Utility function to get the associated lock name for the specified name.
+                     *
+                     * @param name - Resource name.
+                     * @return - Associated lock name.
+                     */
                     static string get_lock_name(const string *name) {
                         string n = string(EXCLUSIVE_LOCK_PREFIX);
                         n.append(*name);
