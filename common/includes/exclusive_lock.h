@@ -21,6 +21,8 @@
 #ifndef WATERGATE_EXCLUSIVE_LOCK_H
 #define WATERGATE_EXCLUSIVE_LOCK_H
 
+#include <fcntl.h>           /* For O_* constants */
+#include <sys/stat.h>        /* For mode constants */
 #include <semaphore.h>
 
 #include "common/includes/common.h"
