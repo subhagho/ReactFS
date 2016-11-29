@@ -127,6 +127,7 @@ namespace com {
                         PRECONDITION(NOT_NULL(lock));
 
                         string key(*name);
+                        TRACE("Adding mount lock [key=%s]", key.c_str());
                         mount_locks.insert({key, lock});
                     }
 
@@ -141,9 +142,10 @@ namespace com {
                         string key(*name);
                         unordered_map<string, exclusive_lock *>::iterator iter = mount_locks.find(key);
                         if (iter != mount_locks.end()) {
+                            TRACE("Found mount lock for %s", key.c_str());
                             exclusive_lock *lock = iter->second;
                             POSTCONDITION(NOT_NULL(lock));
-                            return lock;
+                            return iter->second;
                         }
                         return nullptr;
                     }
@@ -166,9 +168,10 @@ namespace com {
                         if (index >= 0) {
                             __mount_point mp = mounts->mounts[index];
                             if (mp.state != __mount_state::MP_UNAVAILABLE) {
-                                string name_l = string(mp.lock_name);
+                                string name_l = common_utils::get_normalized_name(mp.lock_name);
                                 POSTCONDITION(!IS_EMPTY(name_l));
-                                return get_mount_lock(&name_l);
+                                string n = exclusive_lock::get_lock_name(&name_l);
+                                return get_mount_lock(&n);
                             }
                         }
                         return nullptr;
@@ -212,9 +215,6 @@ namespace com {
                         string p(mp->path);
                         double score = 0.0f;
 
-                        uint64_t f_bytes = get_free_space(p);
-                        uint64_t t_bytes = get_total_space(p);
-
                         uint64_t t_u_read = mp->total_bytes_read;
                         uint64_t t_u_write = mp->total_bytes_written;
 
@@ -224,7 +224,7 @@ namespace com {
                         uint64_t r_u_timer = mp->bytes_read.total_time;
                         uint64_t r_u_timew = mp->bytes_written.total_time;
 
-                        double d_usage = ((double) t_bytes) / f_bytes;
+                        double d_usage = ((double) mp->total_bytes_used) / M_BYTES;
                         double t_r_usage = ((double) t_u_read) / G_BYTES;
                         double t_w_usage = ((double) t_u_write) / G_BYTES;
                         double r_r_usage = ((double) r_u_read) / G_BYTES;

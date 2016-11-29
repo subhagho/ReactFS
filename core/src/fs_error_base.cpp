@@ -29,6 +29,8 @@ const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_RECORD_NOT_F
 const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_INDEX_DATA_VERSION = 6;
 const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_BLOCK_DATA_VERSION = 7;
 const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_BLOCK_COMPRESSION = 8;
+const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_BLOCK_OUT_OF_SPACE = 9;
+const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_ALLOCATING_BLOCK_SPACE = 10;
 
 const char *com::wookler::reactfs::core::fs_block_error::error_strings[] = {
         "Block index corrupted.",
@@ -39,5 +41,8 @@ const char *com::wookler::reactfs::core::fs_block_error::error_strings[] = {
         "Specified data block not found",
         "Index structures versions don't match.",
         "Data block structures versions don't match",
-        "Data block compression handler not found."
+        "Data block compression handler not found.",
+        "Not enough space left on local filesystem",
+        "Error trying to allocate block space"
+
 };

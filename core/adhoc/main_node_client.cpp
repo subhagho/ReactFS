@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
         CHECK_NOT_NULL(c_env);
 
         for (uint16_t ii = 0; ii < 20; ii++) {
-            string s = block_utils::get_block_dir(c_env->get_mount_client());
+            string s = block_utils::get_block_dir(c_env->get_mount_client(), (ii * M_BYTES));
         }
         node_init_client::shutdown();
 

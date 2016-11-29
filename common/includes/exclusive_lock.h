@@ -154,9 +154,9 @@ namespace com {
                     exclusive_lock(const string *name, mode_t mode) {
                         string ss = common_utils::get_normalized_name(*name);
                         PRECONDITION(!IS_EMPTY(ss));
-                        this->name = new string(EXCLUSIVE_LOCK_PREFIX);
+                        string n = get_lock_name(name);
+                        this->name = new string(n);
                         CHECK_ALLOC(this->name, TYPE_NAME(string));
-                        this->name->append(ss);
                         this->mode = mode;
                     }
 
@@ -324,6 +324,13 @@ namespace com {
                         } else {
                             return true;
                         }
+                    }
+
+                    static string get_lock_name(const string *name) {
+                        string n = string(EXCLUSIVE_LOCK_PREFIX);
+                        n.append(*name);
+
+                        return n;
                     }
                 };
 

@@ -37,7 +37,7 @@
 #include "base_block.h"
 #include "block_utils.h"
 #include "mm_structs_v0.h"
-
+#include "clients/node_client_env.h"
 
 #define MM_HEADER_FILENAME "mm_struct_header.data"
 #define MM_BLOCK_FILE_FMT "mm_%s_block_%lu.data"
@@ -51,6 +51,7 @@
 
 #define MM_STRUCT_VERSION_MAJOR ((uint16_t) 0)
 #define MM_STRUCT_VERSION_MINOR ((uint16_t) 1)
+#define MM_BLOCK_BLOAT_FACTOR 110
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
@@ -126,27 +127,24 @@ namespace com {
                         return (header->block_array + index);
                     }
 
+                    uint64_t get_block_size() {
+                        uint64_t size = header->block_size + sizeof(__block_header);
+                        uint64_t r_count = (header->block_size / header->block_record_size) + 1;
+                        size += (r_count * sizeof(__record_header));
+                        return ((size * MM_BLOCK_BLOAT_FACTOR) / 100);
+                    }
 
                     void create_new_block() {
                         uint32_t index = header->block_count;
-                        __mm_mount *mount = nullptr;
-                        for (uint16_t ii = 0; ii < header->mounts; ii++) {
-                            if (IS_NULL(mount)) {
-                                mount = (header->mount_points);
-                                continue;
-                            }
-                            __mm_mount *nptr = (header->mount_points + ii);
-                            if (nptr->last_block_time < mount->last_block_time) {
-                                mount = nptr;
-                            }
-                        }
-                        PRECONDITION(NOT_NULL(mount));
-                        PRECONDITION(!IS_EMPTY(string(mount->path)));
 
-                        mount->blocks_used++;
-                        mount->last_block_time = time_utils::now();
+                        uint64_t size = get_block_size();
 
-                        Path p(mount->path);
+                        node_client_env *n_env = node_init_client::get_client_env();
+                        mount_client *m_client = n_env->get_mount_client();
+                        string m_path = block_utils::get_block_dir(m_client, size);
+                        POSTCONDITION(!IS_EMPTY(m_path));
+
+                        Path p(m_path);
                         string d = string(header->dir_prefix);
                         if (!IS_EMPTY(d)) {
                             p.append(d);
@@ -475,7 +473,10 @@ namespace com {
                                 CHECK_AND_FREE(block);
                                 this->block_index.erase(block_index);
                             }
-                            block_utils::delete_block(bi->block_id, string(bi->filename));
+                            node_client_env *n_env = node_init_client::get_client_env();
+                            mount_client *m_client = n_env->get_mount_client();
+
+                            block_utils::delete_block(m_client, bi->block_id, string(bi->filename));
                         }
                         return r;
                     }

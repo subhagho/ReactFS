@@ -317,6 +317,18 @@ namespace com {
 
                         return (status);
                     }
+
+                    static off_t get_file_size(string path) {
+                        PRECONDITION(!IS_EMPTY(path));
+                        PRECONDITION(file_exists(path));
+
+                        struct stat st;
+
+                        if (stat(path.c_str(), &st) == 0)
+                            return st.st_size;
+
+                        return -1;
+                    }
                 };
 
                 class Path {

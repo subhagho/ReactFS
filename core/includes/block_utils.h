@@ -33,7 +33,7 @@ namespace com {
                         return uuid;
                     }
 
-                    static void delete_block(uint64_t block_id, string filename) {
+                    static void delete_block(mount_client *m_client, uint64_t block_id, string filename) {
                         base_block *block = new base_block();
                         CHECK_ALLOC(block, TYPE_NAME(base_block));
                         block->open(block_id, filename);
@@ -41,16 +41,27 @@ namespace com {
 
                         Path p(filename);
                         if (p.exists()) {
+                            uint64_t f_size = file_utils::get_file_size(p.get_path());
+                            LOG_INFO("Deleting block file. [filename=%s][size=%lu]", p.get_path().c_str(), f_size);
+                            m_client->release_block(p.get_path_p(), f_size);
                             p.remove();
                         }
                     }
 
-                    static string get_block_dir(mount_client *m_client) {
+                    static string get_block_dir(mount_client *m_client, uint64_t size) {
                         CHECK_NOT_NULL(m_client);
 
 
-                        string mount = m_client->get_next_mount();
-                        POSTCONDITION(!IS_EMPTY(mount));
+                        string mount = m_client->get_next_mount(size);
+                        if (IS_EMPTY(mount)) {
+                            throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_OUT_OF_SPACE, "Requested size = %lu",
+                                                 size);
+                        }
+
+                        if (!m_client->reserve_block(&mount, size)) {
+                            throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_ALLOCATING_BLOCK_SPACE, "[mount=%s][size=%lu]",
+                                                 mount.c_str(), size);
+                        }
 
                         if (!string_utils::ends_with(&mount, "/")) {
                             mount.append("/");

@@ -94,7 +94,7 @@ namespace com {
                             }
                         }
 
-                        string get_mount_point(string *path) const {
+                        string get_mount_point(const string *path) const {
                             CHECK_NOT_NULL(mounts);
                             PRECONDITION(!IS_EMPTY_P(path));
 
@@ -102,6 +102,9 @@ namespace com {
                             for (uint16_t ii = 0; ii < mounts->mount_count; ii++) {
                                 string m_path = string(mounts->mounts[ii].path);
                                 POSTCONDITION(!IS_EMPTY(m_path));
+                                if (*path == m_path) {
+                                    return m_path;
+                                }
                                 if (!string_utils::ends_with(&m_path, "/")) {
                                     m_path.append("/");
                                 }
@@ -168,6 +171,7 @@ namespace com {
                                 WAIT_LOCK_GUARD(lock, 0);
                                 if (can_create_block(path, size)) {
                                     mp->total_bytes_used += size;
+                                    mp->total_blocks++;
                                     reserved = true;
                                 }
                                 return reserved;
@@ -175,12 +179,17 @@ namespace com {
                             return false;
                         }
 
-                        string get_next_mount() {
+                        string get_next_mount(uint64_t size) {
                             double score = ULONG_MAX;
                             string mount;
                             for (uint16_t ii = 0; ii < mounts->mount_count; ii++) {
                                 __mount_point *mp = &mounts->mounts[ii];
                                 if (mp->state != __mount_state::MP_READ_WRITE) {
+                                    continue;
+                                }
+
+                                uint64_t avail = (mp->usage_limit - mp->total_bytes_used);
+                                if (avail < size) {
                                     continue;
                                 }
                                 double bs = mount_utils::get_mount_usage(mp);
@@ -190,6 +199,18 @@ namespace com {
                                 }
                             }
                             return mount;
+                        }
+
+                        void release_block(const string *path, uint64_t size) {
+                            string m_path = get_mount_point(path);
+                            short m_index = mount_map->get_mount_index(m_path);
+                            POSTCONDITION(m_index >= 0 && m_index < mounts->mount_count);
+                            __mount_point *mp = &mounts->mounts[m_index];
+                            exclusive_lock *lock = mount_map->get_mount_lock(m_path, mounts);
+                            CHECK_NOT_NULL(lock);
+                            WAIT_LOCK_GUARD(lock, 0);
+                            mp->total_bytes_used -= size;
+                            mp->total_blocks--;
                         }
                     };
                 }
