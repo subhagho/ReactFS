@@ -25,7 +25,7 @@
 
 #define MM_STRUCT_NAME_SIZE 64
 #define MM_MAX_BLOCKS 1024
-#define MM_MAX_MOUNTS 32
+#define MM_MAX_SUB_PATH 128
 
 namespace com {
     namespace wookler {
@@ -48,16 +48,26 @@ namespace com {
                  * Block list record that defines the blocks used by this block list.
                  */
                 typedef struct __mm_block_info_v0__ {
+                    /// Bit index of this block.
+                    uint32_t index = 0;
+                    /// Indicates if this block record is already used.
+                    bool used = false;
                     /// Absolute block file path.
                     char filename[SIZE_MAX_PATH];
                     /// Unique block id.
                     uint32_t block_id;
+                    /// UUID of this block.
+                    char block_uuid[SIZE_UUID];
                     /// Has this block been deleted.
                     bool deleted = false;
                     /// Start index of the records in this block.
                     uint64_t block_start_index = 0;
                     /// Last index of the record written to this block.
                     uint64_t block_last_index = 0;
+                    /// Timestamp when this block was created.
+                    uint64_t created_time = 0;
+                    /// Last updated timestamp of this block.
+                    uint64_t updated_time = 0;
                 } __mm_block_info_v0;
 
                 /*!
@@ -69,23 +79,25 @@ namespace com {
                     /// Unique name of this block list.
                     char name[MM_STRUCT_NAME_SIZE];
                     /// Sub-directory prefix, used while creating block files under the mount points.
-                    char dir_prefix[SIZE_MAX_PATH];
-                    /// Number of mount points defined.
-                    uint16_t mounts = 0;
+                    char dir_prefix[MM_MAX_SUB_PATH];
+                    /// File system filename that these blocks are mapped to.
+                    char filename[SIZE_MAX_PATH];
                     /// Size of the blocks to be created.
                     uint32_t block_size = 0;
                     /// Estimated block record size (used for estimating the index file size.)
                     uint32_t block_record_size = 0;
                     /// Number of blocks created by this list (count includes the deleted blocks)
                     uint32_t block_count = 0;
+                    /// Index of the last block created in this chain
+                    uint32_t last_block_index = 0;
                     /// Block index of the currently writable block.
                     uint32_t write_block_index = 0;
                     /// Last record index that has been written.
                     uint64_t last_written_index = 0;
+                    /// Time since last updated when a block will be auto-deleted
+                    uint64_t block_expiry_time = 0;
                     /// Array of block information.
                     __mm_block_info_v0 block_array[MM_MAX_BLOCKS];
-                    /// Array of defined mount points.
-                    __mm_mount_v0 mount_points[MM_MAX_MOUNTS];
                 } __mm_data_header_v0;
 
             }

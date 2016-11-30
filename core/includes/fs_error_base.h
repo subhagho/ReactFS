@@ -83,6 +83,7 @@ namespace com {
                     static const uint16_t ERRCODE_BLOCK_COMPRESSION;
                     static const uint16_t ERRCODE_BLOCK_OUT_OF_SPACE;
                     static const uint16_t ERRCODE_ALLOCATING_BLOCK_SPACE;
+                    static const uint16_t ERRCODE_MM_MAX_BLOCKS_USED;
 
                     fs_block_error(char const *file, const int line, string mesg, int err_code) : base_error(file, line,
                                                                                                              CONST_FS_BLOCK_ERROR_PREFIX,

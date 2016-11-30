@@ -102,6 +102,9 @@ namespace com {
                     /// Shared data block index.
                     unordered_map<uint32_t, base_block *> block_index;
 
+                    /// Bit set representing available block records.
+                    com::wookler::reactfs::common::__bitset *block_bitset;
+
                     /*!
                      * Get a filename, relative to the base directory.
                      *
@@ -134,9 +137,21 @@ namespace com {
                         return ((size * MM_BLOCK_BLOAT_FACTOR) / 100);
                     }
 
-                    void create_new_block() {
-                        uint32_t index = header->block_count;
+                    uint32_t find_free_index() {
+                        int index = block_bitset->get_free_bit();
+                        if (index < 0) {
+                            throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_MM_MAX_BLOCKS_USED, "Current block count = %d",
+                                                 header->block_count);
+                        }
+                        if (block_bitset->check_and_set(index)) {
+                            return index;
+                        } else {
+                            throw new FS_BASE_ERROR("Error updating the requested bit index. [index=%d]", index);
+                        }
+                    }
 
+                    void create_new_block() {
+                        uint32_t index = find_free_index();
                         uint64_t size = get_block_size();
 
                         node_client_env *n_env = node_init_client::get_client_env();
@@ -160,24 +175,43 @@ namespace com {
                             throw FS_BASE_ERROR("Error creating block : Block file already exists. [file=%s]",
                                                 p.get_path().c_str());
                         }
+                        __mm_block_info *bi = get_block_info(index);
+                        POSTCONDITION(!bi->used || bi->deleted);
 
                         uint64_t r_index = 0;
                         if (header->block_count > 0) {
                             base_block *block = get_block(header->write_block_index);
                             CHECK_NOT_NULL(block);
                             r_index = block->get_last_index();
+                            POSTCONDITION(r_index == header->last_written_index);
                             block->finish();
                         }
-                        string uuid = block_utils::create_new_block(index, p.get_path(), __block_usage::PRIMARY,
+                        uint64_t block_id = header->last_block_index++;
+                        string uuid = block_utils::create_new_block(block_id, p.get_path(),
+                                                                    __block_usage::PRIMARY,
                                                                     header->block_size,
                                                                     header->block_record_size, r_index);
                         POSTCONDITION(!IS_EMPTY(uuid));
+
+                        bi->used = true;
+                        bi->block_id = block_id;
+                        bi->block_start_index = r_index;
+                        bi->block_last_index = r_index;
+                        memset(bi->filename, 0, SIZE_MAX_PATH);
+                        memcpy(bi->filename, p.get_path().c_str(), p.get_path().length());
+                        bi->deleted = false;
+                        memset(bi->block_uuid, 0, SIZE_UUID);
+                        memcpy(bi->block_uuid, uuid.c_str(), uuid.length());
+                        bi->created_time = time_utils::now();
+                        bi->updated_time = bi->created_time;
+                        bi->index = index;
+
                         header->write_block_index = index;
                         header->block_count++;
                     }
 
                     void create_new_instance(uint64_t block_size, uint32_t record_size, string dir_prefix,
-                                             vector<string> *mounts,
+                                             uint64_t block_expiry,
                                              bool overwrite) {
                         if (base_dir->exists()) {
                             if (overwrite) {
@@ -194,7 +228,15 @@ namespace com {
                         CHECK_ALLOC(mm_header_data, TYPE_NAME(file_mapped_data));
 
                         void *ptr = mm_header_data->get_base_ptr();
+                        uint32_t *b_ptr = static_cast<uint32_t *>(ptr);
+                        memset(b_ptr, 0, com::wookler::reactfs::common::__bitset::get_byte_size(MM_MAX_BLOCKS));
+                        block_bitset = new com::wookler::reactfs::common::__bitset(b_ptr, MM_MAX_BLOCKS);
+
+                        ptr = common_utils::increment_data_ptr(ptr,
+                                                               com::wookler::reactfs::common::__bitset::get_byte_size(
+                                                                       MM_MAX_BLOCKS));
                         header = static_cast<__mm_data_header *>(ptr);
+                        memset(header, 0, sizeof(__mm_data_header));
                         memcpy(header->name, this->name.c_str(), this->name.length());
                         header->version.major = version.major;
                         header->version.minor = version.minor;
@@ -202,20 +244,10 @@ namespace com {
                         header->block_count = 0;
                         header->write_block_index = 0;
                         header->block_record_size = record_size;
+                        header->last_block_index = 0;
+                        header->last_written_index = 0;
+                        header->block_expiry_time = block_expiry;
 
-                        if (IS_EMPTY_P(mounts)) {
-                            header->mounts = 1;
-                            string path = this->base_dir->get_path();
-                            strncpy(header->mount_points[0].path, path.c_str(), path.length());
-                            header->mount_points[0].blocks_used = 0;
-                        } else {
-                            header->mounts = mounts->size();
-                            for (uint32_t ii = 0; ii < mounts->size(); ii++) {
-                                string path = (*mounts)[ii];
-                                strncpy(header->mount_points[ii].path, path.c_str(), path.length());
-                                header->mount_points[ii].blocks_used = 0;
-                            }
-                        }
                         create_new_block();
 
                         mm_header_data->flush();
@@ -303,8 +335,7 @@ namespace com {
                     }
 
                     void create(uint32_t record_size, string dir_prefix = EMPTY_STRING,
-                                uint64_t block_size = MM_SIZE_SMALL,
-                                vector<string> *mounts = nullptr,
+                                uint64_t block_size = MM_SIZE_SMALL, uint64_t block_expiry = 0,
                                 bool overwrite = false) {
 
                         string name_l = common_utils::format("%s%s", MM_LOCK_PREFIX, name.c_str());
@@ -312,7 +343,7 @@ namespace com {
 
                         WAIT_LOCK_GUARD(data_lock, 0);
                         try {
-                            create_new_instance(block_size, record_size, dir_prefix, mounts, overwrite);
+                            create_new_instance(block_size, record_size, dir_prefix, block_expiry, overwrite);
                             state.set_state(__state_enum::Available);
                         } catch (const exception &e) {
                             fs_error_base err = FS_BASE_ERROR(
@@ -339,6 +370,12 @@ namespace com {
                         CHECK_ALLOC(mm_header_data, TYPE_NAME(file_mapped_data));
 
                         void *ptr = mm_header_data->get_base_ptr();
+                        uint32_t *b_ptr = static_cast<uint32_t *>(ptr);
+                        block_bitset = new com::wookler::reactfs::common::__bitset(b_ptr, MM_MAX_BLOCKS);
+
+                        ptr = common_utils::increment_data_ptr(ptr,
+                                                               com::wookler::reactfs::common::__bitset::get_byte_size(
+                                                                       MM_MAX_BLOCKS));
                         header = static_cast<__mm_data_header *>(ptr);
                         POSTCONDITION(strncmp(header->name, this->name.c_str(), this->name.length()) == 0);
                         PRECONDITION(version_utils::compatible(header->version, version));
@@ -374,6 +411,8 @@ namespace com {
 
                             __mm_block_info *bi = get_block_info(header->write_block_index);
                             CHECK_NOT_NULL(bi);
+                            bi->block_last_index = i;
+                            bi->updated_time = time_utils::now();
 
                             return bi;
                         } catch (const exception &e) {
@@ -475,8 +514,11 @@ namespace com {
                             }
                             node_client_env *n_env = node_init_client::get_client_env();
                             mount_client *m_client = n_env->get_mount_client();
+                            block_bitset->clear(bi->index);
 
                             block_utils::delete_block(m_client, bi->block_id, string(bi->filename));
+
+                            r = true;
                         }
                         return r;
                     }
