@@ -153,6 +153,8 @@ namespace com {
                     uint64_t used_bytes = 0;
                     uint64_t block_checksum = 0;
                     uint64_t commit_sequence = 0;
+                    uint32_t total_records = 0;
+                    uint32_t deleted_records = 0;
                     __compression_v0 compression;
                     __encryption_v0 encryption;
                 } __block_header_v0;

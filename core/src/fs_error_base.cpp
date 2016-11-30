@@ -32,6 +32,7 @@ const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_BLOCK_COMPRE
 const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_BLOCK_OUT_OF_SPACE = 9;
 const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_ALLOCATING_BLOCK_SPACE = 10;
 const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_MM_MAX_BLOCKS_USED = 11;
+const uint16_t com::wookler::reactfs::core::fs_block_error::ERRCODE_BLOCK_SANITY_FAILED = 12;
 
 const char *com::wookler::reactfs::core::fs_block_error::error_strings[] = {
         "Block index corrupted.",
@@ -45,6 +46,7 @@ const char *com::wookler::reactfs::core::fs_block_error::error_strings[] = {
         "Data block compression handler not found.",
         "Not enough space left on local filesystem",
         "Error trying to allocate block space",
-        "Maximum number of blocks per file structure exhausted."
+        "Maximum number of blocks per file structure exhausted.",
+        "Sanity check for block failed."
 
 };

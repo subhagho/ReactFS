@@ -50,6 +50,14 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
+                typedef struct __block_check_record__ {
+                    uint64_t block_id;
+                    string block_uuid;
+                    uint64_t record_index_start;
+                    uint64_t record_index_last;
+                    uint64_t checksum;
+                    uint64_t commit_sequence;
+                } __block_check_record;
 
                 /*!
                  * Base data block class. This class is responsible for managing read/write of data into the memory mapped
@@ -488,6 +496,16 @@ namespace com {
                     }
 
                     /*!
+                     * Get the block checksum for this block.
+                     *
+                     * @return - Block checksum
+                     */
+                    uint64_t get_block_checksum() const {
+                        CHECK_STATE_AVAILABLE(state);
+                        return header->block_checksum;
+                    }
+
+                    /*!
                      * Start a new write transcation on this block. If block is currently locked for write,
                      * then the call will wait till the block is available.
                      *
@@ -561,7 +579,8 @@ namespace com {
                      * @return - UUID of the new block created.
                      */
                     virtual string create(uint64_t block_id, string filename, __block_usage usage,
-                                  uint64_t block_size, uint64_t start_index, uint32_t est_record_size, bool overwrite) {
+                                          uint64_t block_size, uint64_t start_index, uint32_t est_record_size,
+                                          bool overwrite) {
                         string uuid = __create_block(block_id, filename, usage, __block_def::BASIC,
                                                      block_size, start_index, overwrite);
                         uint32_t estimated_records = (block_size / est_record_size);
@@ -626,6 +645,9 @@ namespace com {
                         PRECONDITION(is_record_in_valid_state(ptr));
                         rollback_info->block_checksum -= ptr->header->checksum;
                         CHECK_AND_FREE(ptr);
+
+                        header->update_time = time_utils::now();
+
                         return index_ptr->delete_index(index, transaction_id);
                     }
 
@@ -640,7 +662,7 @@ namespace com {
                      * @return - No. of records returned.
                      */
                     virtual uint32_t read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
-                                  __record_state r_state = __record_state::R_READABLE);
+                                          __record_state r_state = __record_state::R_READABLE);
 
                     /*!
                      * Get the state of this block instance.
@@ -664,7 +686,23 @@ namespace com {
                     /*!
                      * Validate the data sanity of this block.
                      */
-                    virtual void validation_block();
+                    virtual __block_check_record* check_block_sanity();
+
+
+                    void dump_block_state() {
+                        CHECK_STATE_AVAILABLE(state);
+                        string ct = time_utils::get_time_string(header->create_time);
+                        string ut = time_utils::get_time_string(header->update_time);
+
+                        LOG_DEBUG("[block id=%lu][block uuid=%s][block state=%d][created at=%s][updated at=%s]",
+                                  header->block_id,
+                                  header->block_uid, header->state, ct.c_str(), ut.c_str());
+                        LOG_DEBUG(
+                                "[block id=%lu][used bytes=%lu][total records=%lu][deleted records=%lu], [checksum=%lu]",
+                                header->block_id, header->used_bytes, header->total_records,
+                                header->deleted_records,
+                                header->block_checksum);
+                    }
 
                     /*!
                      * Static utility funtion to get the lockname for the specified block id.

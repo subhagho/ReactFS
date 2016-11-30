@@ -24,8 +24,8 @@ using namespace com::wookler::reactfs::core;
 
 string
 com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, string filename, __block_usage usage,
-                                                        __block_def type,
-                                                        uint64_t block_size, uint64_t start_index, bool overwrite) {
+                                                        __block_def type, uint64_t block_size, uint64_t start_index,
+                                                        bool overwrite) {
     try {
         Path p(filename);
         if (p.exists()) {
@@ -67,6 +67,8 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
         header->last_index = header->start_index;
         header->block_checksum = 0;
         header->commit_sequence = 0;
+        header->total_records = 0;
+        header->deleted_records = 0;
 
         string lock_name = get_lock_name(header->block_id);
         read_write_lock_client *env = shared_lock_utils::get();
@@ -207,6 +209,8 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
     node_client_env *n_env = node_init_client::get_client_env();
     mount_client *m_client = n_env->get_mount_client();
     m_client->update_read_metrics(&filename, write_bytes, t.get_elapsed());
+
+    header->update_time = record->header->timestamp;
 
     return record;
 }
@@ -397,6 +401,7 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
             __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
             CHECK_NOT_NULL(ptr);
             ptr->header->state = __record_state::R_DELETED;
+            header->deleted_records++;
         }
     }
     index_ptr->commit(transaction_id);
@@ -404,17 +409,20 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
 
     void *d_ptr = get_data_ptr();
     uint64_t offset = header->write_offset;
+    uint32_t added = 0;
     while (offset <= rollback_info->write_offset) {
         void *ptr = common_utils::increment_data_ptr(d_ptr, offset);
         __record_header *header = static_cast<__record_header *>(ptr);
         header->state = __record_state::R_READABLE;
         offset += (sizeof(__record_header) + header->data_size);
+        added++;
     }
     header->last_index = rollback_info->last_index;
     header->used_bytes += rollback_info->used_bytes;
     header->write_offset = rollback_info->write_offset;
     header->block_checksum = rollback_info->block_checksum;
     header->commit_sequence++;
+    header->total_records += added;
 
     end_transaction();
 }
@@ -455,6 +463,70 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
     state.set_state(__state_enum::Available);
 }
 
-void com::wookler::reactfs::core::base_block::validation_block() {
+__block_check_record *com::wookler::reactfs::core::base_block::check_block_sanity() {
     CHECK_STATE_AVAILABLE(state);
+
+    long block_checksum = 0;
+    uint32_t total_records = 0;
+    uint32_t deleted_records = 0;
+
+    for (uint32_t ii = header->start_index; ii < header->total_records; ii++) {
+        const __record_index_ptr *iptr = index_ptr->read_index(ii, true);
+        if (IS_NULL(iptr)) {
+            throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
+                                 "[block id=%lu] Missing index record. [index=%lu]", header->block_id, ii);
+        }
+        if (iptr->readable) {
+            __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
+            CHECK_NOT_NULL(ptr);
+            uint32_t checksum = common_utils::crc32c(0, (BYTE *) ptr->data_ptr, ptr->header->data_size);
+            if (checksum != ptr->header->checksum) {
+                throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
+                                     "[block id=%lu][record id=%lu] Record checksum check failed. [expected=%lu][computed=%lu]",
+                                     header->block_id, ii, ptr->header->checksum, checksum);
+            }
+            TRACE("[block id=%lu][record id=%lu] Record checksum check. [expected=%lu][computed=%lu]",
+                  header->block_id, ii, ptr->header->checksum, checksum);
+            if (ptr->header->state != __record_state::R_READABLE) {
+                block_checksum -= checksum;
+            } else {
+                block_checksum += checksum;
+            }
+        } else {
+            deleted_records++;
+        }
+        total_records++;
+    }
+    if (block_checksum != header->block_checksum) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
+                             "[block id=%lu] Block checksum check failed. [expected=%lu][computed=%l]",
+                             header->block_id, header->block_checksum, block_checksum);
+    }
+    TRACE("[block id=%lu] Block checksum check. [expected=%lu][computed=%l]",
+          header->block_id, header->block_checksum, block_checksum);
+    if (total_records != header->total_records) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
+                             "[block id=%lu] Block record count mismatch. [expected=%lu][computed=%lu]",
+                             header->block_id, header->total_records, total_records);
+    }
+    TRACE("[block id=%lu] Block record count. [expected=%lu][computed=%lu]",
+          header->block_id, header->total_records, total_records);
+    if (deleted_records != header->deleted_records) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
+                             "[block id=%lu] Block deleted record count mismatch. [expected=%lu][computed=%lu]",
+                             header->block_id, header->deleted_records, deleted_records);
+    }
+    TRACE("[block id=%lu] Block deleted record count. [expected=%lu][computed=%lu]",
+          header->block_id, header->deleted_records, deleted_records);
+
+    __block_check_record *bcr = (__block_check_record *)malloc(sizeof(__block_check_record));
+    CHECK_ALLOC(bcr, TYPE_NAME(__block_check_record));
+    bcr->block_id = header->block_id;
+    bcr->checksum = header->block_checksum;
+    bcr->block_uuid = string(header->block_uid);
+    bcr->commit_sequence = header->commit_sequence;
+    bcr->record_index_last = header->last_index;
+    bcr->record_index_start = header->start_index;
+
+    return bcr;
 }

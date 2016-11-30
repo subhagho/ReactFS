@@ -133,6 +133,10 @@ void test_raw() {
         } else
             break;
     }
+
+    block->check_block_sanity();
+    block->dump_block_state();
+
     CHECK_AND_FREE(block);
 }
 
@@ -151,14 +155,15 @@ int main(int argc, char **argv) {
         env_utils::create_env(configf);
 
 
-        read_write_lock_manager *manager = shared_lock_utils::create_manager(0755, true);
-        CHECK_NOT_NULL(manager);
+        node_init_client::create_node_env(configf);
+        node_client_env *c_env = node_init_client::get_client_env();
+        CHECK_NOT_NULL(c_env);
 
         test_raw();
 
         test_compressed();
 
-        shared_lock_utils::dispose();
+        node_init_client::shutdown();
 
         exit(0);
     } catch (const exception &e) {

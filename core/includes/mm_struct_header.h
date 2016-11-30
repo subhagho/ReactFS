@@ -205,6 +205,7 @@ namespace com {
                         bi->created_time = time_utils::now();
                         bi->updated_time = bi->created_time;
                         bi->index = index;
+                        bi->block_checksum = 0;
 
                         header->write_block_index = index;
                         header->block_count++;
@@ -413,6 +414,7 @@ namespace com {
                             CHECK_NOT_NULL(bi);
                             bi->block_last_index = i;
                             bi->updated_time = time_utils::now();
+                            bi->block_checksum = w_block->get_block_checksum();
 
                             return bi;
                         } catch (const exception &e) {
@@ -476,19 +478,33 @@ namespace com {
                         bool r = block->delete_record(index, txid);
                         block->commit(txid);
 
+                        __mm_block_info *bi = get_block_info(block_index);
+                        CHECK_NOT_NULL(bi);
+                        bi->updated_time = time_utils::now();
+                        bi->block_checksum = block->get_block_checksum();
+
                         return r;
                     }
 
-                    bool has_record_index(uint64_t index, uint32_t block_id) {
-                        CHECK_STATE_AVAILABLE(state);
-                        PRECONDITION(index >= 0 && index <= header->last_written_index);
-
-                        base_block *block = get_block(block_id);
-                        if (IS_NULL(block)) {
-                            return false;
+                    const __mm_block_info *get_block_id_for_index(uint64_t index) {
+                        uint32_t ii = 0;
+                        uint32_t offset = 0;
+                        while (ii < header->block_count) {
+                            if (offset >= MM_MAX_BLOCKS) {
+                                break;
+                            }
+                            if (block_bitset->check(offset)) {
+                                __mm_block_info *bi = get_block_info(ii);
+                                CHECK_NOT_NULL(bi);
+                                POSTCONDITION(bi->used);
+                                if (index >= bi->block_start_index && index <= bi->block_last_index) {
+                                    return bi;
+                                }
+                                ii++;
+                            }
+                            offset++;
                         }
-
-                        return (index >= block->get_start_index() && index <= block->get_last_index());
+                        return nullptr;
                     }
 
                     uint64_t get_last_index() {

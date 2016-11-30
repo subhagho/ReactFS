@@ -225,7 +225,7 @@ namespace com {
                      * @return - Incremented average value.
                      */
                     double increment(double value) override {
-                        __metric::set_value(value);
+                        __metric::increment(value);
                         this->count++;
 
                         return get_value();

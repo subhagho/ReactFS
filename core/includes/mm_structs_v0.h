@@ -68,6 +68,8 @@ namespace com {
                     uint64_t created_time = 0;
                     /// Last updated timestamp of this block.
                     uint64_t updated_time = 0;
+                    /// The block checksum of the data block.
+                    uint64_t block_checksum = 0;
                 } __mm_block_info_v0;
 
                 /*!
