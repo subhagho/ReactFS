@@ -325,26 +325,24 @@ namespace com {
 
                     static void update_hourly_metrics(__hourly_usage_metric *metric, uint64_t value, uint64_t time) {
                         uint32_t hours = time_utils::get_hour_diff(metric->reset_time);
-                        if (hours > 0) {
-                            if (hours >= metric->size) {
-                                reset_hourly_metrics(metric);
-                            } else {
-                                uint16_t max = (hours >= metric->size ? metric->size : hours);
-                                uint16_t index = metric->current_index + 1;
-                                for (uint16_t ii = 0; ii < max; ii++) {
-                                    metric->total_value -= metric->records[index].value;
-                                    metric->total_time -= metric->records[index].time;
+                        if (hours >= metric->size) {
+                            reset_hourly_metrics(metric);
+                        } else {
+                            uint16_t max = (hours >= metric->size ? metric->size : hours);
+                            uint16_t index = metric->current_index + 1;
+                            for (uint16_t ii = 0; ii < max; ii++) {
+                                metric->total_value -= metric->records[index].value;
+                                metric->total_time -= metric->records[index].time;
 
-                                    metric->records[index].index = ii;
-                                    metric->records[index].time = 0;
-                                    metric->records[index].value = 0;
-                                    index++;
-                                    if (index >= metric->size) {
-                                        index = 0;
-                                    }
+                                metric->records[index].index = ii;
+                                metric->records[index].time = 0;
+                                metric->records[index].value = 0;
+                                index++;
+                                if (index >= metric->size) {
+                                    index = 0;
                                 }
-                                metric->current_index++;
                             }
+                            metric->current_index++;
                         }
                         metric->total_value += value;
                         metric->total_time += time;

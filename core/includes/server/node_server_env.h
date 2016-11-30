@@ -55,6 +55,7 @@ namespace com {
 
                         ~node_server_env() {
                             CHECK_AND_DISPOSE(state);
+
                             if (!IS_EMPTY(callbacks)) {
                                 for (auto cb : callbacks) {
                                     if (!IS_NULL(cb)) {
@@ -62,6 +63,9 @@ namespace com {
                                         CHECK_AND_FREE(cb);
                                     }
                                 }
+                            }
+                            if (NOT_NULL(default_pool)) {
+                                default_pool->stop();
                             }
                             CHECK_AND_FREE(priority_manager);
                             CHECK_AND_FREE(default_pool);
@@ -92,6 +96,7 @@ namespace com {
                                 default_pool = new __thread_pool(DEFAULT_THREAD_POOL_NAME, p_size);
                                 CHECK_ALLOC(default_pool, TYPE_NAME(__thread_pool));
                                 default_pool->create_task_registry(DEFAULT_THREAD_POOL_SLEEP);
+                                default_pool->start();
 
                                 shared_lock_utils::create_manager(DEFAULT_LOCK_MODE, false);
                                 __runnable_callback *rwcb = new rw_lock_manager_callback(
