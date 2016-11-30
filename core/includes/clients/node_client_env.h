@@ -23,6 +23,7 @@
 #ifndef REACTFS_NODE_CLIENT_ENV_H
 #define REACTFS_NODE_CLIENT_ENV_H
 
+#include "common/includes/shared_lock_utils.h"
 #include "core/includes/node_env.h"
 #include "watergate/includes/init_utils.h"
 
@@ -38,6 +39,7 @@ namespace com {
                     class node_client_env : public __node_env {
                         const control_client *control = nullptr;
                         mount_client *m_client = nullptr;
+                        read_write_lock_client *lock_client = nullptr;
 
                     public:
                         node_client_env() : __node_env(false) {
@@ -46,12 +48,19 @@ namespace com {
 
                         ~node_client_env() {
                             CHECK_AND_FREE(m_client);
+                            shared_lock_utils::dispose();
+                            init_utils::dispose();
                         }
 
                         void init() {
                             create(false);
                             try {
+                                lock_client = shared_lock_utils::create_client();
+                                CHECK_NOT_NULL(lock_client);
+
                                 control = init_utils::init_control_client(env, CONTROL_CONFIG_PATH);
+                                CHECK_NOT_NULL(control);
+
                                 m_client = new mount_client();
                                 CHECK_ALLOC(m_client, TYPE_NAME(mount_client));
 

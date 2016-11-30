@@ -410,7 +410,7 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     void *d_ptr = get_data_ptr();
     uint64_t offset = header->write_offset;
     uint32_t added = 0;
-    while (offset <= rollback_info->write_offset) {
+    while (offset < rollback_info->write_offset) {
         void *ptr = common_utils::increment_data_ptr(d_ptr, offset);
         __record_header *header = static_cast<__record_header *>(ptr);
         header->state = __record_state::R_READABLE;
@@ -470,7 +470,7 @@ __block_check_record *com::wookler::reactfs::core::base_block::check_block_sanit
     uint32_t total_records = 0;
     uint32_t deleted_records = 0;
 
-    for (uint32_t ii = header->start_index; ii < header->total_records; ii++) {
+    for (uint32_t ii = header->start_index; ii <= (header->last_index - 1); ii++) {
         const __record_index_ptr *iptr = index_ptr->read_index(ii, true);
         if (IS_NULL(iptr)) {
             throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
@@ -499,10 +499,10 @@ __block_check_record *com::wookler::reactfs::core::base_block::check_block_sanit
     }
     if (block_checksum != header->block_checksum) {
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
-                             "[block id=%lu] Block checksum check failed. [expected=%lu][computed=%l]",
+                             "[block id=%lu] Block checksum check failed. [expected=%lu][computed=%d]",
                              header->block_id, header->block_checksum, block_checksum);
     }
-    TRACE("[block id=%lu] Block checksum check. [expected=%lu][computed=%l]",
+    TRACE("[block id=%lu] Block checksum check. [expected=%lu][computed=%lu]",
           header->block_id, header->block_checksum, block_checksum);
     if (total_records != header->total_records) {
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
@@ -519,7 +519,7 @@ __block_check_record *com::wookler::reactfs::core::base_block::check_block_sanit
     TRACE("[block id=%lu] Block deleted record count. [expected=%lu][computed=%lu]",
           header->block_id, header->deleted_records, deleted_records);
 
-    __block_check_record *bcr = (__block_check_record *)malloc(sizeof(__block_check_record));
+    __block_check_record *bcr = (__block_check_record *) malloc(sizeof(__block_check_record));
     CHECK_ALLOC(bcr, TYPE_NAME(__block_check_record));
     bcr->block_id = header->block_id;
     bcr->checksum = header->block_checksum;

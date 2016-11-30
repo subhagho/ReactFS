@@ -38,6 +38,10 @@ void com::wookler::watergate::core::io::filesystem_driver::setup() {
         throw CONFIG_ERROR("Missing filesystem configuration parameter. [param=%s]",
                            fs_driver_constants::CONFIG_PARAM_ROOT_PATH.c_str());
     }
+    if (rp.back() != '/') {
+        rp.append("/");
+    }
+
     root_path = new Path(rp);
     CHECK_ALLOC(root_path, TYPE_NAME(Path));
 

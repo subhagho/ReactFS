@@ -29,15 +29,16 @@ namespace com {
                      * @param block_size - Data size for this block.
                      * @param est_record_size - Estimated size for the records in this block. (to be used to estimate index size)
                      * @param start_index - Start index for the records in this block.
+                     * @param overwrite - Overwrite block data file, if already exists.
                      * @return - UUID of the new block created.
                      */
                     static string
-                    create_new_block(uint64_t block_id, string filename, __block_usage type, uint32_t block_size,
-                                     uint32_t est_record_size, uint64_t start_index) {
+                    create_new_block(uint64_t block_id, const string filename, __block_usage type, uint32_t block_size,
+                                     uint32_t est_record_size, uint64_t start_index, bool overwrite = false) {
                         base_block *block = new base_block();
                         CHECK_ALLOC(block, TYPE_NAME(base_block));
                         string uuid = block->create(block_id, filename, type, block_size, start_index, est_record_size,
-                                                    false);
+                                                    overwrite);
                         POSTCONDITION(!IS_EMPTY(uuid));
                         CHECK_AND_FREE(block);
 

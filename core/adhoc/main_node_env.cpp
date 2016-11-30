@@ -28,12 +28,14 @@ int main(int argc, char **argv) {
                 }
             }
         }
+        cout << "Running with reset mode = " << reset << "\n";
+
         node_init_manager::create_node_env(configf, reset);
         node_server_env *env = node_init_manager::get_server_env();
         CHECK_NOT_NULL(env);
 
         string input;
-        getline (cin, input);
+        getline(cin, input);
         node_init_manager::shutdown();
 
     } catch (const exception &e) {

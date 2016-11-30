@@ -46,6 +46,7 @@ namespace com {
                     char key[SIZE_KEY_MAX];
                     uint32_t size = 0;
                     void *data = nullptr;
+                    bool saved = false;
                 } __env_record;
 
                 typedef struct __env_header__ {

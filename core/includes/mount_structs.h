@@ -99,6 +99,9 @@ namespace com {
                      */
                     void add_mount_index(string name, uint16_t index) {
                         PRECONDITION(!IS_EMPTY(name));
+                        if (name.back() != '/') {
+                            name.append("/");
+                        }
                         mount_index.insert({name, index});
                     }
 
@@ -110,6 +113,9 @@ namespace com {
                      */
                     short get_mount_index(string name) {
                         PRECONDITION(!IS_EMPTY(name));
+                        if (name.back() != '/') {
+                            name.append("/");
+                        }
                         unordered_map<string, uint16_t>::iterator iter = mount_index.find(name);
                         if (iter != mount_index.end()) {
                             return iter->second;
@@ -128,6 +134,9 @@ namespace com {
                         PRECONDITION(NOT_NULL(lock));
 
                         string key(*name);
+                        if (key.back() != '/') {
+                            key.append("/");
+                        }
                         TRACE("Adding mount lock [key=%s]", key.c_str());
                         mount_locks.insert({key, lock});
                     }
@@ -141,6 +150,9 @@ namespace com {
                     exclusive_lock *get_mount_lock(string *name) {
                         PRECONDITION(!IS_EMPTY_P(name));
                         string key(*name);
+                        if (key.back() != '/') {
+                            key.append("/");
+                        }
                         unordered_map<string, exclusive_lock *>::iterator iter = mount_locks.find(key);
                         if (iter != mount_locks.end()) {
                             TRACE("Found mount lock for %s", key.c_str());

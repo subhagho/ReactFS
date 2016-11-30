@@ -10,7 +10,7 @@
 #include "core/includes/node_env.h"
 #include "common/includes/shared_lock_utils.h"
 
-#define REUSE_BLOCK_FILE "/tmp/block_reused.raw"
+#define REUSE_BLOCK_FILE "block_reused.raw"
 #define REUSE_BLOCK_ID 1024
 
 #define REUSE_BLOCK_FILE_COMP "/tmp/block_reused.comp"
@@ -30,23 +30,20 @@ typedef struct {
 } _test_typed;
 
 void test_raw() {
-    Path p(REUSE_BLOCK_FILE);
-    if (p.exists()) {
-        p.remove();
-    }
-    string ifile = common_utils::format("%s.index", REUSE_BLOCK_FILE);
-    Path ip(ifile);
-    if (ip.exists()) {
-        ip.remove();
-    }
+    node_client_env *c_env = node_init_client::get_client_env();
+    string s = block_utils::get_block_dir(c_env->get_mount_client(), DEFAULT_BLOCK_SIZE);
+    Path p(s);
+    p.append(REUSE_BLOCK_FILE);
 
-    string uuid = block_utils::create_new_block(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_usage::PRIMARY,
+    LOG_DEBUG("Using block file [%s]", p.get_path().c_str());
+
+    string uuid = block_utils::create_new_block(REUSE_BLOCK_ID, p.get_path(), __block_usage::PRIMARY,
                                                 DEFAULT_BLOCK_SIZE,
-                                                sizeof(_test_typed), RECORD_START_INDEX);
+                                                sizeof(_test_typed), RECORD_START_INDEX, true);
     POSTCONDITION(!IS_EMPTY(uuid));
 
     base_block *block = new base_block();
-    block->open(REUSE_BLOCK_ID, REUSE_BLOCK_FILE);
+    block->open(REUSE_BLOCK_ID, p.get_path());
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
     string txid = block->start_transaction();
@@ -76,7 +73,7 @@ void test_raw() {
 
     CHECK_AND_FREE(block);
     block = new base_block();
-    block->open(REUSE_BLOCK_ID, REUSE_BLOCK_FILE);
+    block->open(REUSE_BLOCK_ID, p.get_path());
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
     txid = block->start_transaction();
@@ -152,8 +149,6 @@ int main(int argc, char **argv) {
         CHECK_NOT_NULL(cf);
 
         string configf(cf);
-        env_utils::create_env(configf);
-
 
         node_init_client::create_node_env(configf);
         node_client_env *c_env = node_init_client::get_client_env();

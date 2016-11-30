@@ -132,15 +132,17 @@ namespace com {
 
                             __env_record *record = loader->load(node);
                             if (NOT_NULL(record)) {
-                                void *ptr = write(loader->get_key(), record->data, record->size);
-                                CHECK_NOT_NULL(ptr);
-                                header->records++;
-
                                 shared_mapped_ptr s_ptr = make_shared<__mapped_ptr>();
-                                (*s_ptr).set_data_ptr(ptr, record->size);
+                                if (!record->saved) {
+                                    void *ptr = write(loader->get_key(), record->data, record->size);
+                                    CHECK_NOT_NULL(ptr);
+                                    header->records++;
+                                    (*s_ptr).set_data_ptr(ptr, record->size);
 
-                                data_index.insert({*(loader->get_key()), s_ptr});
-
+                                    data_index.insert({*(loader->get_key()), s_ptr});
+                                } else {
+                                    (*s_ptr).set_data_ptr(record->data, record->size);
+                                }
                                 loader->load_finished(s_ptr);
 
                                 return true;

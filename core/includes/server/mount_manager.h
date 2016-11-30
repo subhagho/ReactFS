@@ -177,7 +177,8 @@ namespace com {
 
                         ~mount_manager() {
                             if (NOT_NULL(record)) {
-                                FREE_PTR(record->data);
+                                if (!record->saved)
+                                    FREE_PTR(record->data);
                                 CHECK_AND_FREE(record);
                             }
                             CHECK_AND_FREE(mount_map);
@@ -216,6 +217,7 @@ namespace com {
                                 record->data = malloc(sizeof(BYTE) * record->size);
                                 CHECK_ALLOC(record->data, TYPE_NAME(BYTE * ));
                                 memcpy(record->data, mm, record->size);
+                                record->saved = false;
 
                                 FREE_PTR(mm);
                                 for (auto mp : m_points) {
@@ -303,7 +305,19 @@ namespace com {
                                     CHECK_AND_FREE(mp->path);
                                     FREE_PTR(mp);
                                 }
-                                return nullptr;
+                                ptr = n_env->get_env_data(MOUNTS_KEY);
+                                CHECK_NOT_NULL(ptr);
+
+                                record = (__env_record *) malloc(sizeof(__env_record));
+                                CHECK_ALLOC(record, TYPE_NAME(__env_record));
+
+                                memset(record, 0, sizeof(__env_record));
+                                strncpy(record->key, this->key->c_str(), this->key->length());
+                                record->size = ptr->get()->get_size();
+                                record->data = ptr->get()->get_data_ptr();
+                                record->saved = true;
+
+                                return record;
                             }
                         }
 
@@ -333,6 +347,7 @@ namespace com {
                                 CREATE_LOCK_P(lock, &name_l, DEFAULT_LOCK_MODE);
                                 if (reset) {
                                     lock->reset();
+                                    LOG_INFO("Resetting mount lock [name=%s]", lock->get_name()->c_str());
                                 }
 
                                 if (mp->usage_limit < 0) {
@@ -347,13 +362,16 @@ namespace com {
                                 mount_map->add_mount_lock(lock->get_name(), lock);
                                 mount_map->add_mount_index(string(mp->path), ii);
                             }
-                            if (NOT_NULL(this->record)) {
-                                FREE_PTR(this->record->data);
-                                CHECK_AND_FREE(this->record);
-                            }
+
                             mount_metrics_logger *m_logger = new mount_metrics_logger(this->mounts);
                             CHECK_ALLOC(m_logger, TYPE_NAME(mount_metrics_logger));
                             n_env->add_runnable(m_logger);
+
+                            if (NOT_NULL(this->record)) {
+                                if (!this->record->saved)
+                                    FREE_PTR(this->record->data);
+                                CHECK_AND_FREE(this->record);
+                            }
                         }
 
                         __mount_data *get_mounts() {

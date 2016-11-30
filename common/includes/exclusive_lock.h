@@ -155,7 +155,7 @@ namespace com {
                     exclusive_lock(const string *name, mode_t mode) {
                         string ss = common_utils::get_normalized_name(*name);
                         PRECONDITION(!IS_EMPTY(ss));
-                        string n = get_lock_name(name);
+                        string n = get_lock_name(&ss);
                         this->name = new string(n);
                         CHECK_ALLOC(this->name, TYPE_NAME(string));
                         this->mode = mode;
@@ -196,19 +196,25 @@ namespace com {
                      */
                     void reset() {
                         CHECK_SEMAPHORE_PTR(semaphore, name);
-                        if (sem_trywait(semaphore) == 0) {
-                            if (sem_post(semaphore) != 0) {
-                                lock_error e = LOCK_ERROR("Error releaseing semaphore lock. [name=%s][errno=%s]",
-                                                          name->c_str(), strerror(errno));
-                                LOG_ERROR(e.what());
-                                throw e;
-                            }
-                        } else {
-                            if (sem_post(semaphore) != 0) {
-                                lock_error e = LOCK_ERROR("Error releaseing semaphore lock. [name=%s][errno=%s]",
-                                                          name->c_str(), strerror(errno));
-                                LOG_ERROR(e.what());
-                                throw e;
+                        int count = 0;
+                        while (true) {
+                            if (sem_trywait(semaphore) == 0) {
+                                if (sem_post(semaphore) != 0) {
+                                    lock_error e = LOCK_ERROR("Error releaseing semaphore lock. [name=%s][errno=%s]",
+                                                              name->c_str(), strerror(errno));
+                                    LOG_ERROR(e.what());
+                                    throw e;
+                                }
+                                LOG_DEBUG("[reset=%s][count=%d] Reset done for semaphore lock.", name->c_str(), count);
+                                break;
+                            } else {
+                                LOG_DEBUG("[reset=%s][count=%d] Reset required semaphore lock.", name->c_str(), count);
+                                if (sem_post(semaphore) != 0) {
+                                    lock_error e = LOCK_ERROR("Error releaseing semaphore lock. [name=%s][errno=%s]",
+                                                              name->c_str(), strerror(errno));
+                                    LOG_ERROR(e.what());
+                                    throw e;
+                                }
                             }
                         }
                         reset_locked();
