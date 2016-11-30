@@ -185,6 +185,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         const __env *env = init_utils::get_env();
+        REQUIRE(NOT_NULL(env));
 
         int priority = -1;
         o = options[PRIORITY];

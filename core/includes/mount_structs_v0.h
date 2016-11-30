@@ -10,6 +10,8 @@
 #include "common/includes/exclusive_lock.h"
 #include "common/includes/metrics.h"
 
+#include "usage_metric_defs.h"
+
 #define MAX_MOUNT_POINTS 32
 
 using namespace com::wookler::reactfs::common;

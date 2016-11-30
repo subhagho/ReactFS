@@ -39,37 +39,40 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
-                typedef struct __usage_array__ {
-                    uint16_t index;
-                    uint64_t value;
-                    uint64_t time;
-                } __usage_array;
 
-                template<uint16_t __SIZE__>
-                struct __usage_metric__ {
-                    uint16_t size = __SIZE__;
-                    uint64_t reset_time;
-                    uint64_t total_value;
-                    uint64_t total_time;
-                    uint16_t current_index;
-                    __usage_array records[__SIZE__];
-                };
-
-                typedef __usage_metric__<24> __hourly_usage_metric;
-
+                /*!
+                 * Enum to define the types of metrics.
+                 */
                 enum __metric_type_enum {
                     BasicMetric, AverageMetric
                 };
 
+                /*!
+                 * Base metrics class, captures a simple value metric.
+                 */
                 class __metric {
                 protected:
+                    /// Name of this metric
                     string *name = nullptr;
+
+                    /// Type of this metric.
                     __metric_type_enum type;
+
+                    /// Metric value
                     double value = 0.0f;
+
+                    /// Is this instance expected to be thread safe?
                     bool thread_safe = false;
+
+                    /// Max value this metric can have.
                     double max_value = 0;
 
                 public:
+                    /*!<constructor
+                     * Default constructor.
+                     *
+                     * @param name - Metric name.
+                     */
                     __metric(string name) {
                         PRECONDITION(!IS_EMPTY(name));
 
@@ -79,6 +82,12 @@ namespace com {
                         this->value = 0;
                     }
 
+                    /*!<constructor
+                     * Constructor with metric and thread safe parameter.
+                     *
+                     * @param name - Metric name
+                     * @param thread_safe - Is thread safe?
+                     */
                     __metric(string name, bool thread_safe) {
                         PRECONDITION(!IS_EMPTY(name));
 
@@ -89,18 +98,36 @@ namespace com {
                         this->thread_safe = thread_safe;
                     }
 
+                    /*!<destructor
+                     * Default desctructor.
+                     */
                     virtual ~__metric() {
                         CHECK_AND_FREE(name);
                     }
 
+                    /*!
+                     * Get the name of this metric.
+                     *
+                     * @return - Metric name
+                     */
                     string *get_name() {
                         return this->name;
                     }
 
+                    /*!
+                     * Get the type of this metric.
+                     *
+                     * @return - Metric type.
+                     */
                     __metric_type_enum get_type() {
                         return this->type;
                     }
 
+                    /*!
+                     * Get the metric type as string.
+                     *
+                     * @return - Metric type string.
+                     */
                     string get_type_string() {
                         switch (type) {
                             case BasicMetric:
@@ -108,53 +135,107 @@ namespace com {
                             case AverageMetric:
                                 return "AverageMetric";
                         }
+                        return EMPTY_STRING;
                     }
 
+                    /*!
+                     * Is this metric expected to be thread safe?
+                     *
+                     * @return - Is thread safe?
+                     */
                     bool is_thread_safe() {
                         return this->thread_safe;
                     }
 
-                    virtual void set_value(double value) {
+                    /*!
+                     * Overwrite the value of this metric.
+                     *
+                     * @param value - Value to overwrite with.
+                     */
+                    virtual double set_value(double value) {
                         this->value = value;
-                        if (this->value > max_value) {
-                            this->max_value = value;
-                        }
+                        return this->value;
                     }
 
+                    /*!
+                     * Get the value of this metric.
+                     *
+                     * @return - Metric value.
+                     */
                     virtual double get_value() {
                         return this->value;
                     }
 
-                    virtual void increment(double value) {
+                    /*!
+                     * Increment this metric value.
+                     *
+                     * @param value - Value to increment by.
+                     */
+                    virtual double increment(double value) {
                         this->value += value;
+                        if (value > max_value) {
+                            this->max_value = value;
+                        }
+                        return this->value;
                     }
 
+                    /*!
+                     * Print this metric to the log.
+                     */
                     virtual void print() {
                         if (NOT_EMPTY_P(this->name))
                             LOG_INFO("[name=%s][type=%s][value=%f][max value=%f]", this->name->c_str(),
                                      get_type_string().c_str(),
                                      get_value(), max_value);
                     }
+
                 };
 
+                /*!
+                 * Metric class capturing averages.
+                 */
                 class __avg_metric : public __metric {
                 private:
                     uint64_t count = 0;
 
                 public:
+                    /*!<constructor
+                     * Default constructor.
+                     *
+                     * @param name - Metric name.
+                     */
                     __avg_metric(string name) : __metric(name) {
                         this->type = AverageMetric;
                     }
 
+                    /*!<constructor
+                     * Constructor with metric and thread safe parameter.
+                     *
+                     * @param name - Metric name
+                     * @param thread_safe - Is thread safe?
+                     */
                     __avg_metric(string name, bool thread_safe) : __metric(name, thread_safe) {
                         this->type = AverageMetric;
                     }
 
-                    void increment(double value) override {
+                    /*!
+                     * Increment this metric value, will increment the denomintor count by 1.
+                     *
+                     * @param value - Value to increment this metric by.
+                     * @return - Incremented average value.
+                     */
+                    double increment(double value) override {
                         __metric::set_value(value);
                         this->count++;
+
+                        return get_value();
                     }
 
+                    /*!
+                     * Get the value average for this metric.
+                     *
+                     * @return - Average value.
+                     */
                     double get_value() override {
                         if (this->count > 0) {
                             return (this->value / this->count);
@@ -162,16 +243,40 @@ namespace com {
                         return 0.0;
                     }
 
-                    void set(double value, uint64_t div) {
+                    /*!
+                     * Overwrite this metric value with the specified values.
+                     *
+                     * @param value - Value to overwrite.
+                     * @param div - Denominator value to overwrite.
+                     * @return - New average value.
+                     */
+                    double set(double value, uint64_t div) {
                         __metric::set_value(value);
                         this->count = div;
+
+                        return get_value();
                     }
 
-                    void increment(double value, uint64_t div) {
+                    /*!
+                     * Increment the metric value with the specified value and denominator.
+                     *
+                     * @param value - Value to increment by.
+                     * @param div - Denominator value increment.
+                     * @return - New average value.
+                     */
+                    double increment(double value, uint64_t div) {
                         __metric::increment(value);
                         this->count += div;
+                        double a = value / div;
+                        if (a > max_value) {
+                            max_value = a;
+                        }
+                        return get_value();
                     }
 
+                    /*!
+                     * Print this metric to the log.
+                     */
                     void print() override {
                         if (NOT_EMPTY_P(this->name)) {
                             LOG_INFO("[name=%s][type=%s][total=%f][average=%f][max value=%f][count=%lu]",
@@ -182,19 +287,40 @@ namespace com {
                     }
                 };
 
+                typedef unordered_map<string, __metric *> __metrics_map;
+                /*!
+                 * Utility class to define and manage global metrics.
+                 */
                 class metrics_utils {
                 private:
+                    /// Lock to control concurrent updates.
                     static mutex g_lock;
-                    static unordered_map<string, __metric *> *metrics;
+
+                    /// Map containing all the defined global metrics.
+                    static __metrics_map *metrics;
+
+                    /// State of this metrics utility.
                     static __state__ state;
 
                 public:
+                    /*!
+                     * Initialize the metrics utility.
+                     */
                     static void init() {
                         std::lock_guard<std::mutex> guard(g_lock);
-
+                        metrics = new __metrics_map();
+                        CHECK_ALLOC(metrics, TYPE_NAME(unordered_map));
                         state.set_state(Available);
                     }
 
+                    /*!
+                     * Create a new metric with the specified parameters.
+                     *
+                     * @param name
+                     * @param type
+                     * @param thread_safe
+                     * @return
+                     */
                     static bool create_metric(string name, __metric_type_enum type, bool thread_safe) {
                         if (!state.is_available())
                             return false;
@@ -202,7 +328,7 @@ namespace com {
                         std::lock_guard<std::mutex> guard(g_lock);
 
                         if (NOT_NULL(metrics)) {
-                            unordered_map<string, __metric *>::iterator iter = metrics->find(name);
+                            __metrics_map::iterator iter = metrics->find(name);
                             if (iter != metrics->end()) {
                                 return true;
                             }
@@ -217,7 +343,7 @@ namespace com {
                             }
 
                             if (NOT_NULL(metric)) {
-                                metrics->insert(make_pair(*metric->get_name(), metric));
+                                metrics->insert(make_pair(*(metric->get_name()), metric));
                                 return true;
                             }
                         }
@@ -225,31 +351,28 @@ namespace com {
                     }
 
                     static void dispose() {
-                        if (!state.is_available())
-                            return;
-
                         std::lock_guard<std::mutex> guard(g_lock);
                         state.set_state(Disposed);
 
                         if (!IS_EMPTY_P(metrics)) {
-                            unordered_map<string, __metric *>::iterator iter;
+                            __metrics_map::iterator iter;
                             for (iter = metrics->begin(); iter != metrics->end(); iter++) {
                                 __metric *metric = iter->second;
                                 if (NOT_NULL(metric)) {
                                     delete (metric);
                                 }
                             }
-
                             metrics->clear();
-
                         }
+                        CHECK_AND_FREE(metrics);
                     }
 
                     static bool update(string name, double value) {
-                        CHECK_STATE_AVAILABLE(state);
+                        if (!state.is_available())
+                            return false;
 
                         if (NOT_NULL(metrics)) {
-                            unordered_map<string, __metric *>::iterator iter = metrics->find(name);
+                            __metrics_map::iterator iter = metrics->find(name);
                             if (iter != metrics->end()) {
                                 __metric *metric = iter->second;
                                 if (NOT_NULL(metric)) {
@@ -267,10 +390,11 @@ namespace com {
                     }
 
                     static bool update(string name, double value, double div) {
-                        CHECK_STATE_AVAILABLE(state);
+                        if (!state.is_available())
+                            return false;
 
                         if (NOT_NULL(metrics)) {
-                            unordered_map<string, __metric *>::iterator iter = metrics->find(name);
+                            __metrics_map::iterator iter = metrics->find(name);
                             if (iter != metrics->end()) {
                                 __metric *metric = iter->second;
                                 if (NOT_NULL(metric) && metric->get_type() == __metric_type_enum::AverageMetric) {
@@ -298,10 +422,11 @@ namespace com {
                     }
 
                     static void dump() {
-                        CHECK_STATE_AVAILABLE(state);
+                        if (!state.is_available())
+                            return;
 
                         if (!IS_EMPTY_P(metrics)) {
-                            unordered_map<string, __metric *>::iterator iter;
+                            __metrics_map::iterator iter;
                             for (iter = metrics->begin(); iter != metrics->end(); iter++) {
                                 __metric *metric = iter->second;
                                 if (NOT_NULL(metric)) {

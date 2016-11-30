@@ -40,7 +40,7 @@ void test_raw() {
         ip.remove();
     }
 
-    string uuid = block_utils::create_new_block(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_type::PRIMARY,
+    string uuid = block_utils::create_new_block(REUSE_BLOCK_ID, REUSE_BLOCK_FILE, __block_usage::PRIMARY,
                                                 DEFAULT_BLOCK_SIZE,
                                                 sizeof(_test_typed), RECORD_START_INDEX);
     POSTCONDITION(!IS_EMPTY(uuid));

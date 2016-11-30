@@ -99,15 +99,15 @@ namespace com {
                      *
                      * @param block_id - Unique block id for this data block.
                      * @param filename - Backing filename for this data block.
-                     * @param block_type - Type of this data block. (PRIMARY or REPLICATED)
-                     * @param record_type - Record type of the data stored in this block.
+                     * @param usage - Usage of this data block. (PRIMARY or REPLICATED)
+                     * @param type - Type of this data block.
                      * @param block_size - Maximum data size allowed for this block.
                      * @param start_index - Starting record index for this block.
                      * @param overwrite - Overwrite if data block file already exists?
                      * @return - UUID of the new block created.
                      */
-                    string __create_block(uint64_t block_id, string filename, __block_type block_type,
-                                          __block_record_type record_type, uint64_t block_size, uint64_t start_index,
+                    string __create_block(uint64_t block_id, string filename, __block_usage usage, __block_def type,
+                                          uint64_t block_size, uint64_t start_index,
                                           bool overwrite);
 
                     /*!
@@ -462,9 +462,9 @@ namespace com {
                      *
                      * @return - Block type.
                      */
-                    __block_type get_block_type() const {
+                    __block_usage get_block_type() const {
                         CHECK_STATE_AVAILABLE(state);
-                        return header->block_type;
+                        return header->usage;
                     }
 
                     /*!
@@ -533,7 +533,7 @@ namespace com {
                      *
                      * @param transaction_id - Transaction ID obtained via a start_transaction call.
                      */
-                    void commit(string transaction_id);
+                    virtual void commit(string transaction_id);
 
                     /*!
                      * Rollback the current transcation.
@@ -554,15 +554,15 @@ namespace com {
                      *
                      * @param block_id - Unique block id for this data block.
                      * @param filename - Backing filename for this data block.
-                     * @param block_type - Type of this data block. (PRIMARY or REPLICATED)
+                     * @param usage - Usage type of this data block. (PRIMARY or REPLICATED)
                      * @param block_size - Maximum data size allowed for this block.
                      * @param start_index - Starting record index for this block.
                      * @param overwrite - Overwrite if data block file already exists?
                      * @return - UUID of the new block created.
                      */
-                    string create(uint64_t block_id, string filename, __block_type block_type,
+                    virtual string create(uint64_t block_id, string filename, __block_usage usage,
                                   uint64_t block_size, uint64_t start_index, uint32_t est_record_size, bool overwrite) {
-                        string uuid = __create_block(block_id, filename, block_type, __block_record_type::RAW,
+                        string uuid = __create_block(block_id, filename, usage, __block_def::BASIC,
                                                      block_size, start_index, overwrite);
                         uint32_t estimated_records = (block_size / est_record_size);
 
@@ -585,7 +585,7 @@ namespace com {
                      * @param filename - Backing filename for this data block.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    void open(uint64_t block_id, string filename);
+                    virtual void open(uint64_t block_id, string filename);
 
                     /*!
                      * Write a data record to the block. Check should be done to ensure that
@@ -597,7 +597,7 @@ namespace com {
                      * @param transaction_id - Transaction ID.
                      * @return - Record index of the create record.
                      */
-                    uint64_t write(void *source, uint32_t length, string transaction_id);
+                    virtual uint64_t write(void *source, uint32_t length, string transaction_id);
 
                     /*!
                      * Delete the record at the specified index.
@@ -606,7 +606,7 @@ namespace com {
                      * @param transaction_id - Current transaction Id.
                      * @return - Is deleted?
                      */
-                    bool delete_record(uint64_t index, string transaction_id) {
+                    virtual bool delete_record(uint64_t index, string transaction_id) {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(is_writeable());
                         PRECONDITION(in_transaction());
@@ -639,7 +639,7 @@ namespace com {
                      * @param r_state - Type of records to read.
                      * @return - No. of records returned.
                      */
-                    uint32_t read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
+                    virtual uint32_t read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
                                   __record_state r_state = __record_state::R_READABLE);
 
                     /*!
@@ -664,7 +664,7 @@ namespace com {
                     /*!
                      * Validate the data sanity of this block.
                      */
-                    void validation_block();
+                    virtual void validation_block();
 
                     /*!
                      * Static utility funtion to get the lockname for the specified block id.

@@ -31,17 +31,16 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
-                typedef enum __block_record_type__ {
-                    RAW = 0, /// Raw data block.
-                    TYPED = 1 /// Blocked contains typed records.
-                } __block_record_type;
 
-                typedef enum __block_type__ {
+                typedef enum __block_usage__ {
                     PRIMARY = 0, /// Block is currently assigned to be the primary block.
                     REPLICA = 1, /// Block is currently assigned as a replica block.
                     DELETED = 2 /// Block has been marked as deleted.
-                } __block_type;
+                } __block_usage;
 
+                typedef enum __block_def__ {
+                    BASIC = 0, SORTED_LIST = 1, MAP = 2
+                } __block_def;
 
                 typedef enum __compression_type__ {
                     NO_COMPRESSION = -1, /// Data is not compressed.
@@ -139,8 +138,8 @@ namespace com {
                     __version_header version;
                     char block_uid[SIZE_UUID];
                     uint64_t source_id;
-                    __block_type block_type = __block_type::PRIMARY;
-                    __block_record_type record_type = __block_record_type::RAW;
+                    __block_usage usage = __block_usage::PRIMARY;
+                    __block_def type = __block_def::BASIC;
                     __block_state state = __block_state::AVAILABLE;
                     __write_state write_state = __write_state::WRITABLE;
                     uint64_t block_id;

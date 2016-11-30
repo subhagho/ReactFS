@@ -23,9 +23,9 @@
 using namespace com::wookler::reactfs::core;
 
 string
-com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, string filename, __block_type block_type,
-                                                        __block_record_type record_type, uint64_t block_size,
-                                                        uint64_t start_index, bool overwrite) {
+com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, string filename, __block_usage usage,
+                                                        __block_def type,
+                                                        uint64_t block_size, uint64_t start_index, bool overwrite) {
     try {
         Path p(filename);
         if (p.exists()) {
@@ -56,8 +56,8 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
         header->block_size = block_size;
         header->create_time = time_utils::now();
         header->update_time = header->create_time;
-        header->block_type = block_type;
-        header->record_type = record_type;
+        header->usage = usage;
+        header->type = type;
         header->write_state = __write_state::WRITABLE;
         header->compression.compressed = false;
         header->compression.type = __compression_type::NO_COMPRESSION;

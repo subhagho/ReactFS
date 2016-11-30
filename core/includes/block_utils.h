@@ -32,7 +32,7 @@ namespace com {
                      * @return - UUID of the new block created.
                      */
                     static string
-                    create_new_block(uint64_t block_id, string filename, __block_type type, uint32_t block_size,
+                    create_new_block(uint64_t block_id, string filename, __block_usage type, uint32_t block_size,
                                      uint32_t est_record_size, uint64_t start_index) {
                         base_block *block = new base_block();
                         CHECK_ALLOC(block, TYPE_NAME(base_block));

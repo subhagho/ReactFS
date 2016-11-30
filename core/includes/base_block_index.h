@@ -293,7 +293,7 @@ namespace com {
                      * @param filename - Backing filename for this data block.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    void open_index(uint64_t block_id, string block_uuid, string filename);
+                    virtual void open_index(uint64_t block_id, string block_uuid, string filename);
 
                     /*!
                      * Close this block index from further writes.
@@ -317,7 +317,7 @@ namespace com {
                      *
                      * @param transaction_id - Transaction ID obtained via a start_transaction call.
                      */
-                    void commit(string txid) {
+                    virtual void commit(string txid) {
                         PRECONDITION(in_transaction());
                         PRECONDITION(*rollback_info->transaction_id == txid);
 
@@ -381,7 +381,7 @@ namespace com {
                      * @param transaction_id - Current transaction ID.
                      * @return - Is deleted?
                      */
-                    bool delete_index(uint64_t index, string transaction_id);
+                    virtual bool delete_index(uint64_t index, string transaction_id);
 
                     /*!
                      * Get the list of indexes that have been deleted.
@@ -429,7 +429,7 @@ namespace com {
                      * @param transaction_id - Current transaction ID.
                      * @return - Created index pointer.
                      */
-                    const __record_index_ptr *
+                    virtual const __record_index_ptr *
                     write_index(uint64_t index, uint64_t offset, uint64_t size, string transaction_id) {
                         return __write_index(index, offset, size, transaction_id);
                     }
@@ -441,7 +441,7 @@ namespace com {
                      * @param all - Allow to read dirty/deleted records?
                      * @return - Index record pointer.
                      */
-                    const __record_index_ptr *read_index(uint64_t index, bool all = false) {
+                    virtual const __record_index_ptr *read_index(uint64_t index, bool all = false) {
                         return __read_index(index, all);
                     }
                 };

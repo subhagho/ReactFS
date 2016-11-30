@@ -168,7 +168,7 @@ namespace com {
                             r_index = block->get_last_index();
                             block->finish();
                         }
-                        string uuid = block_utils::create_new_block(index, p.get_path(), __block_type::PRIMARY,
+                        string uuid = block_utils::create_new_block(index, p.get_path(), __block_usage::PRIMARY,
                                                                     header->block_size,
                                                                     header->block_record_size, r_index);
                         POSTCONDITION(!IS_EMPTY(uuid));
