@@ -96,8 +96,7 @@ namespace com {
                     /// Rollback information (in case a write transaction is in progress)
                     __rollback_info *rollback_info = nullptr;
 
-                    /// Index pointer to load the data record
-                    base_block_index *index_ptr = nullptr;
+                    vector<uint64_t> rollback_info_deletes;
 
                     /// Compression handler instance (in case compression is turned on)
                     compression_handler *compression = nullptr;
@@ -138,6 +137,14 @@ namespace com {
                     __record *__read_record(uint64_t index, uint64_t offset, uint64_t size);
 
                     /*!
+                    * Read a record from this block at the specified index.
+                    *
+                    * @param index - Start index of the record.
+                    * @return - Fetched record.
+                    */
+                    __record *__read_record(uint64_t index);
+
+                    /*!
                      * Create a new data record and save it to the backing file.
                      *
                      * @param source - Source address to copy the data bytes from.
@@ -151,7 +158,7 @@ namespace com {
                     /*!
                      * Close this data block instance.
                      */
-                    void close();
+                    virtual void close();
 
                     /*!
                      * Get the base address pointing to where the block data starts.
@@ -281,6 +288,22 @@ namespace com {
                         }
                         return header->last_index;
                     }
+
+                    /*!
+                     * Write a data record to the block. Check should be done to ensure that
+                     * enough space is available in the block for the required data length, else
+                     * the call will throw an exception.
+                     *
+                     * @param source - Source buffer to copy data from.
+                     * @param length - Length of data to copy.
+                     * @param transaction_id - Transaction ID.
+                     * @return - Record index of the create record.
+                     */
+                    __record *write_record(void *source, uint32_t length, string transaction_id);
+
+                    void process_record_data(__record *ptr, temp_buffer *buffer,
+                                             temp_buffer *writebuff,
+                                             vector<shared_read_ptr> *data);
 
                 public:
                     base_block() {
@@ -511,7 +534,7 @@ namespace com {
                      *
                      * @return - Transaction UUID.
                      */
-                    string start_transaction() {
+                    virtual string start_transaction() {
                         return start_transaction(0);
                     }
 
@@ -544,7 +567,7 @@ namespace com {
                      *
                      * @return - Transaction UUID.
                      */
-                    string start_transaction(uint64_t timeout);
+                    virtual string start_transaction(uint64_t timeout);
 
                     /*!
                      * Commit the current transcation.
@@ -558,7 +581,7 @@ namespace com {
                      *
                      * @param transaction_id - Transaction ID obtained via a start_transaction call.
                      */
-                    void rollback(string transaction_id);
+                    virtual void rollback(string transaction_id);
 
                     /*!
                      * Force a transaction rollback.
@@ -584,12 +607,6 @@ namespace com {
                         string uuid = __create_block(block_id, filename, usage, __block_def::BASIC,
                                                      block_size, start_index, overwrite);
                         uint32_t estimated_records = (block_size / est_record_size);
-
-                        index_ptr = new base_block_index();
-                        CHECK_ALLOC(index_ptr, TYPE_NAME(base_block_index));
-
-                        index_ptr->create_index(header->block_id, header->block_uid, this->filename, estimated_records,
-                                                header->start_index, overwrite);
                         close();
 
                         POSTCONDITION(!IS_EMPTY(uuid));
@@ -632,23 +649,20 @@ namespace com {
                         PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
                         PRECONDITION(index >= header->start_index && index <= get_current_index());
 
-                        const __record_index_ptr *iptr = index_ptr->read_index(index, true);
-                        if (IS_NULL(iptr)) {
-                            throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_NOT_FOUND,
-                                                 "Index missing from block index. [index=%lu]", index);
-                        }
-                        __record *ptr = __read_record(index, iptr->offset, iptr->size);
+                        __record *ptr = __read_record(index);
                         if (IS_NULL(ptr)) {
                             throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_RECORD_NOT_FOUND,
                                                  "Record not found in block. [index=%lu]", index);
                         }
                         PRECONDITION(is_record_in_valid_state(ptr));
                         rollback_info->block_checksum -= ptr->header->checksum;
+                        rollback_info_deletes.push_back(index);
+
                         CHECK_AND_FREE(ptr);
 
                         header->update_time = time_utils::now();
 
-                        return index_ptr->delete_index(index, transaction_id);
+                        return true;
                     }
 
                     /*!
@@ -686,7 +700,7 @@ namespace com {
                     /*!
                      * Validate the data sanity of this block.
                      */
-                    virtual __block_check_record* check_block_sanity();
+                    virtual __block_check_record *check_block_sanity();
 
 
                     void dump_block_state() {

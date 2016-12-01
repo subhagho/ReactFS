@@ -138,7 +138,6 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
 void com::wookler::reactfs::core::base_block::close() {
     CHECK_AND_DISPOSE(state);
 
-    CHECK_AND_FREE(index_ptr);
     CHECK_AND_FREE(mm_data);
 
     if (NOT_NULL(block_lock)) {
@@ -238,6 +237,34 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint64_t 
     return record;
 }
 
+__record *
+com::wookler::reactfs::core::base_block::__read_record(uint64_t index) {
+    CHECK_STATE_AVAILABLE(state);
+    PRECONDITION(index >= header->start_index && index <= header->last_index);
+
+    void *ptr = get_data_ptr();
+    uint64_t ii = header->start_index;
+    while (ii < index) {
+        __record_header *r_header = static_cast<__record_header *>(ptr);
+        POSTCONDITION(r_header->index == ii);
+        uint64_t offset = r_header->data_size + sizeof(__record_header);
+        ptr = common_utils::increment_data_ptr(ptr, offset);
+        ii++;
+    }
+    __record *record = (__record *) malloc(sizeof(__record));
+    CHECK_ALLOC(record, TYPE_NAME(__record));
+    record->header = static_cast<__record_header *>(ptr);
+    ptr = common_utils::increment_data_ptr(ptr, sizeof(__record_header));
+    record->data_ptr = ptr;
+
+    POSTCONDITION(record->header->index == index);
+
+    uint32_t checksum = common_utils::crc32c(0, (BYTE *) record->data_ptr, record->header->data_size);
+    POSTCONDITION(checksum == record->header->checksum);
+
+    return record;
+}
+
 string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeout) {
     CHECK_STATE_AVAILABLE(state);
     string txid = EMPTY_STRING;
@@ -255,15 +282,10 @@ string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeo
         throw FS_BASE_ERROR("Error getting wait lock. [lock=%s]", block_lock->get_name().c_str());
     }
 
-    index_ptr->start_transaction(txid);
-
     return txid;
 }
 
-uint64_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t length, string transaction_id) {
-    CHECK_STATE_AVAILABLE(state);
-    CHECK_NOT_NULL(source);
-
+__record *com::wookler::reactfs::core::base_block::write_record(void *source, uint32_t length, string transaction_id) {
     temp_buffer buffer;
     bool use_buffer = false;
 
@@ -285,14 +307,53 @@ uint64_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t l
     void *data_ptr = (use_buffer ? buffer.get_ptr() : source);
     uint64_t size = (use_buffer ? buffer.get_used_size() : length);
 
-    __record *r_ptr = __write_record(data_ptr, size, transaction_id, uncompressed_size);
+    return __write_record(data_ptr, size, transaction_id, uncompressed_size);
+}
 
-    index_ptr->write_index(r_ptr->header->index, r_ptr->header->offset, r_ptr->header->data_size, transaction_id);
+uint64_t com::wookler::reactfs::core::base_block::write(void *source, uint32_t length, string transaction_id) {
+    CHECK_STATE_AVAILABLE(state);
+    CHECK_NOT_NULL(source);
 
+    __record *r_ptr = write_record(source, length, transaction_id);
     uint64_t index = r_ptr->header->index;
     CHECK_AND_FREE(r_ptr);
 
     return index;
+}
+
+void com::wookler::reactfs::core::base_block::process_record_data(__record *ptr, temp_buffer *buffer,
+                                                                  temp_buffer *writebuff,
+                                                                  vector<shared_read_ptr> *data) {
+    if (is_encrypted() || is_compressed()) {
+        bool use_buffer = false;
+        CHECK_NOT_NULL(buffer);
+        CHECK_NOT_NULL(writebuff);
+        CHECK_NOT_NULL(ptr);
+        if (is_encrypted()) {
+            use_buffer = true;
+            // TODO : Implement encryption handlers.
+        }
+        if (is_compressed()) {
+            CHECK_NOT_NULL(compression);
+
+            void *data_ptr = (use_buffer ? buffer->get_ptr() : ptr->data_ptr);
+            uint64_t data_size = (use_buffer ? buffer->get_used_size() : ptr->header->data_size);
+
+            temp_buffer *buff = (use_buffer ? writebuff : buffer);
+            int ret = compression->read_archive_data(data_ptr, ptr->header->uncompressed_size, buff);
+            POSTCONDITION(ret > 0);
+
+            shared_read_ptr s_ptr = make_shared<__read_ptr>(buff->get_used_size());
+            (*s_ptr).copy(buff->get_ptr());
+
+            data->push_back(s_ptr);
+        }
+    } else {
+        shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);
+        (*s_ptr).set_data_ptr(ptr->data_ptr, ptr->header->data_size);
+
+        data->push_back(s_ptr);
+    }
 }
 
 uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
@@ -300,12 +361,13 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(r_state != __record_state::R_FREE);
 
-    uint64_t si = index;
-    uint32_t c = 0;
+    uint64_t current_index = index;
+    uint32_t fetched_count = 0;
     temp_buffer *buffer = new temp_buffer();
     CHECK_ALLOC(buffer, TYPE_NAME(temp_buffer));
 
-    temp_buffer *writebuff = nullptr;
+    temp_buffer *writebuff = new temp_buffer();
+    CHECK_ALLOC(writebuff, TYPE_NAME(temp_buffer));
 
     bool r_type = false;
     switch (r_state) {
@@ -321,62 +383,24 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
     uint64_t read_bytes = 0;
     nano_timer t;
     t.start();
-    while (si < header->last_index && c < count) {
-        const __record_index_ptr *iptr = index_ptr->read_index(si, r_type);
-        if (IS_NULL(iptr)) {
-            si++;
-            continue;
-        }
-
-        __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
+    while (current_index < header->last_index && fetched_count < count) {
+        __record *ptr = __read_record(current_index);
         CHECK_NOT_NULL(ptr);
-        read_bytes += iptr->size;
+        read_bytes += ptr->header->data_size;
         switch (r_state) {
             case __record_state::R_DELETED:
             case __record_state::R_DIRTY:
                 if (ptr->header->state != r_state) {
-                    si++;
+                    current_index++;
                     continue;
                 }
                 break;
             default:
                 break;
         }
-
-        if (is_encrypted() || is_compressed()) {
-            bool use_buffer = false;
-            CHECK_NOT_NULL(ptr);
-            if (is_encrypted()) {
-                use_buffer = true;
-                // TODO : Implement encryption handlers.
-            }
-            if (is_compressed()) {
-                CHECK_NOT_NULL(compression);
-
-                void *data_ptr = (use_buffer ? buffer->get_ptr() : ptr->data_ptr);
-                uint64_t data_size = (use_buffer ? buffer->get_used_size() : ptr->header->data_size);
-
-                if (use_buffer && IS_NULL(writebuff)) {
-                    writebuff = new temp_buffer();
-                    CHECK_ALLOC(writebuff, TYPE_NAME(temp_buffer));
-                }
-                temp_buffer *buff = (use_buffer ? writebuff : buffer);
-                int ret = compression->read_archive_data(data_ptr, ptr->header->uncompressed_size, buff);
-                POSTCONDITION(ret > 0);
-
-                shared_read_ptr s_ptr = make_shared<__read_ptr>(buff->get_used_size());
-                (*s_ptr).copy(buff->get_ptr());
-
-                data->push_back(s_ptr);
-            }
-        } else {
-            shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);
-            (*s_ptr).set_data_ptr(ptr->data_ptr, ptr->header->data_size);
-
-            data->push_back(s_ptr);
-        }
-        si++;
-        c++;
+        process_record_data(ptr, buffer, writebuff, data);
+        current_index++;
+        fetched_count++;
     }
     t.stop();
 
@@ -393,20 +417,15 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
 
-    vector<uint64_t> deleted = index_ptr->get_deleted_indexes(transaction_id);
-    if (!IS_EMPTY(deleted)) {
-        for (uint64_t index : deleted) {
-            const __record_index_ptr *iptr = index_ptr->read_index(index, true);
-            CHECK_NOT_NULL(iptr);
-            __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
-            CHECK_NOT_NULL(ptr);
-            ptr->header->state = __record_state::R_DELETED;
-            header->deleted_records++;
+    if (!IS_EMPTY(rollback_info_deletes)) {
+        for (uint64_t index : rollback_info_deletes) {
+            __record *record = __read_record(index);
+            CHECK_NOT_NULL(record);
+            record->header->state = __record_state::R_DELETED;
+            CHECK_AND_FREE(record);
         }
+        rollback_info_deletes.clear();
     }
-    index_ptr->commit(transaction_id);
-    mm_data->flush();
-
     void *d_ptr = get_data_ptr();
     uint64_t offset = header->write_offset;
     uint32_t added = 0;
@@ -424,6 +443,7 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     header->commit_sequence++;
     header->total_records += added;
 
+    mm_data->flush();
     end_transaction();
 }
 
@@ -431,15 +451,13 @@ void com::wookler::reactfs::core::base_block::rollback(string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
-    index_ptr->rollback(transaction_id);
-
     force_rollback();
 }
 
 void com::wookler::reactfs::core::base_block::force_rollback() {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(in_transaction());
-
+    rollback_info_deletes.clear();
     end_transaction();
 }
 
@@ -456,10 +474,6 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
         write_ptr = nullptr;
     }
 
-    index_ptr = new base_block_index();
-    CHECK_ALLOC(index_ptr, TYPE_NAME(base_block_index));
-    index_ptr->open_index(header->block_id, header->block_uid, this->filename);
-
     state.set_state(__state_enum::Available);
 }
 
@@ -471,30 +485,24 @@ __block_check_record *com::wookler::reactfs::core::base_block::check_block_sanit
     uint32_t deleted_records = 0;
 
     for (uint32_t ii = header->start_index; ii <= (header->last_index - 1); ii++) {
-        const __record_index_ptr *iptr = index_ptr->read_index(ii, true);
-        if (IS_NULL(iptr)) {
+
+        __record *ptr = __read_record(ii);
+        CHECK_NOT_NULL(ptr);
+        uint32_t checksum = common_utils::crc32c(0, (BYTE *) ptr->data_ptr, ptr->header->data_size);
+        if (checksum != ptr->header->checksum) {
             throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
-                                 "[block id=%lu] Missing index record. [index=%lu]", header->block_id, ii);
+                                 "[block id=%lu][record id=%lu] Record checksum check failed. [expected=%lu][computed=%lu]",
+                                 header->block_id, ii, ptr->header->checksum, checksum);
         }
-        if (iptr->readable) {
-            __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
-            CHECK_NOT_NULL(ptr);
-            uint32_t checksum = common_utils::crc32c(0, (BYTE *) ptr->data_ptr, ptr->header->data_size);
-            if (checksum != ptr->header->checksum) {
-                throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
-                                     "[block id=%lu][record id=%lu] Record checksum check failed. [expected=%lu][computed=%lu]",
-                                     header->block_id, ii, ptr->header->checksum, checksum);
-            }
-            TRACE("[block id=%lu][record id=%lu] Record checksum check. [expected=%lu][computed=%lu]",
-                  header->block_id, ii, ptr->header->checksum, checksum);
-            if (ptr->header->state != __record_state::R_READABLE) {
-                block_checksum -= checksum;
-            } else {
-                block_checksum += checksum;
-            }
+        TRACE("[block id=%lu][record id=%lu] Record checksum check. [expected=%lu][computed=%lu]",
+              header->block_id, ii, ptr->header->checksum, checksum);
+        if (ptr->header->state != __record_state::R_READABLE) {
+            block_checksum -= checksum;
         } else {
+            block_checksum += checksum;
             deleted_records++;
         }
+
         total_records++;
     }
     if (block_checksum != header->block_checksum) {
