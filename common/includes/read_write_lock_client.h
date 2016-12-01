@@ -66,7 +66,7 @@ namespace com {
                      * Dispose this instance of the lock client.
                      * Will attempt to release lock(s) if they are still acquired.
                      */
-                    ~read_write_lock_client() {
+                    virtual ~read_write_lock_client() {
                         std::lock_guard<std::mutex> guard(thread_mutex);
                         state.set_state(__state_enum::Disposed);
                         if (!locks.empty()) {

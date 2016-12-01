@@ -44,7 +44,7 @@ namespace com {
                         this->use_manager_thread = use_manager_thread;
                     }
 
-                    ~read_write_lock_manager() {
+                    ~read_write_lock_manager() override {
                         state.set_state(__state_enum::Disposed);
                         if (NOT_NULL(manager_thread)) {
                             manager_thread->join();
@@ -53,7 +53,7 @@ namespace com {
                         }
                     }
 
-                    void init(mode_t mode);
+                    void init(mode_t mode, bool reset);
 
                     void reset();
 

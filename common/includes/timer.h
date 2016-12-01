@@ -37,7 +37,7 @@ namespace com {
         namespace reactfs {
             namespace common {
                 class timer {
-                private:
+                protected:
                     time_point<system_clock> _t = system_clock::now().min();
                     uint64_t elapsed = 0;
 
@@ -47,7 +47,7 @@ namespace com {
                         elapsed = 0;
                     }
 
-                    void pause() {
+                    virtual void pause() {
                         if (_t > system_clock::now().min()) {
                             milliseconds nt = duration_cast<milliseconds>(
                                     system_clock::now().time_since_epoch()
@@ -58,14 +58,14 @@ namespace com {
                             milliseconds d = nt - ot;
                             elapsed += d.count();
                         }
-                        _t = system_clock::now();
+                        _t = system_clock::now().min();
                     }
 
                     void restart() {
                         _t = system_clock::now();
                     }
 
-                    void stop() {
+                    virtual void stop() {
                         if (_t > system_clock::now().min()) {
                             milliseconds nt = duration_cast<milliseconds>(
                                     system_clock::now().time_since_epoch()
@@ -76,10 +76,10 @@ namespace com {
                             milliseconds d = nt - ot;
                             elapsed += d.count();
                         }
-                        _t = system_clock::now();
+                        _t = system_clock::now().min();
                     }
 
-                    uint64_t get_current_elapsed() {
+                    virtual uint64_t get_current_elapsed() {
                         if (_t > system_clock::now().min()) {
                             milliseconds nt = duration_cast<milliseconds>(
                                     system_clock::now().time_since_epoch()
@@ -98,6 +98,54 @@ namespace com {
                     uint64_t get_elapsed() {
                         return elapsed;
                     }
+                };
+
+                class nano_timer : public timer {
+                public:
+                    virtual void pause() override {
+                        if (_t > system_clock::now().min()) {
+                            nanoseconds nt = duration_cast<nanoseconds>(
+                                    system_clock::now().time_since_epoch()
+                            );
+                            nanoseconds ot = duration_cast<nanoseconds>(
+                                    _t.time_since_epoch()
+                            );
+                            nanoseconds d = nt - ot;
+                            elapsed += d.count();
+                        }
+                        _t = system_clock::now().min();
+                    }
+
+                    virtual void stop() override {
+                        if (_t > system_clock::now().min()) {
+                            nanoseconds nt = duration_cast<nanoseconds>(
+                                    system_clock::now().time_since_epoch()
+                            );
+                            nanoseconds ot = duration_cast<nanoseconds>(
+                                    _t.time_since_epoch()
+                            );
+                            nanoseconds d = nt - ot;
+                            elapsed += d.count();
+                        }
+                        _t = system_clock::now().min();
+                    }
+
+                    virtual uint64_t get_current_elapsed() override {
+                        if (_t > system_clock::now().min()) {
+                            nanoseconds nt = duration_cast<nanoseconds>(
+                                    system_clock::now().time_since_epoch()
+                            );
+                            nanoseconds ot = duration_cast<nanoseconds>(
+                                    _t.time_since_epoch()
+                            );
+                            nanoseconds d = nt - ot;
+                            uint64_t e = elapsed + d.count();
+
+                            return e;
+                        }
+                        return elapsed;
+                    }
+
                 };
             }
         }

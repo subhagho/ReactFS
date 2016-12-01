@@ -177,7 +177,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
 
     void *w_ptr = get_write_ptr();
 
-    timer t;
+    nano_timer t;
     t.start();
 
     __record *record = (__record *) malloc(sizeof(__record));
@@ -208,7 +208,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
     uint64_t write_bytes = (sizeof(__record_header) + size);
     node_client_env *n_env = node_init_client::get_client_env();
     mount_client *m_client = n_env->get_mount_client();
-    m_client->update_read_metrics(&filename, write_bytes, t.get_elapsed());
+    m_client->update_write_metrics(&filename, write_bytes, t.get_elapsed());
 
     header->update_time = record->header->timestamp;
 
@@ -319,7 +319,7 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
     }
 
     uint64_t read_bytes = 0;
-    timer t;
+    nano_timer t;
     t.start();
     while (si < header->last_index && c < count) {
         const __record_index_ptr *iptr = index_ptr->read_index(si, r_type);

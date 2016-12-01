@@ -16,7 +16,7 @@ TEST_CASE("Check basic shared lock operations", "[com::wookler::reactfs::common:
     const Config *config = env_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
-    shared_lock_utils::create_manager(0755, true);
+    shared_lock_utils::create_manager(0755, true, true);
     read_write_lock_manager *manager = shared_lock_utils::get_manager();
     CHECK_NOT_NULL(manager);
 

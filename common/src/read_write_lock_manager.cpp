@@ -5,10 +5,12 @@
 #include "common/includes/read_write_lock_manager.h"
 
 
-void com::wookler::reactfs::common::read_write_lock_manager::init(mode_t mode) {
+void com::wookler::reactfs::common::read_write_lock_manager::init(mode_t mode, bool reset) {
     try {
         create(mode, true);
-        reset();
+
+        if (reset)
+            this->reset();
 
         if (use_manager_thread) {
             manager_thread = new thread(read_write_lock_manager::run, this);

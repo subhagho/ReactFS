@@ -98,7 +98,7 @@ namespace com {
                                 default_pool->create_task_registry(DEFAULT_THREAD_POOL_SLEEP);
                                 default_pool->start();
 
-                                shared_lock_utils::create_manager(DEFAULT_LOCK_MODE, false);
+                                shared_lock_utils::create_manager(DEFAULT_LOCK_MODE, false, reset);
                                 __runnable_callback *rwcb = new rw_lock_manager_callback(
                                         shared_lock_utils::get_manager());
                                 CHECK_ALLOC(rwcb, TYPE_NAME(__runnable_callback));

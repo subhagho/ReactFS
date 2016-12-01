@@ -113,7 +113,7 @@ namespace com {
                 class shm_mapped_data : public mapped_data {
                 private:
                     int shm_fd = -1;
-
+                    bool is_server = false;
                 public:
                     shm_mapped_data(string filename, uint64_t size, bool is_server = false) : mapped_data(filename,
                                                                                                           size) {
@@ -141,11 +141,20 @@ namespace com {
                             LOG_ERROR(te.what());
                             throw te;
                         }
+                        this->is_server = is_server;
                     }
 
                     ~shm_mapped_data() override {
                         if (shm_fd >= 0 && NOT_NULL(base_ptr)) {
-                            shm_unlink(filename.c_str());
+                            if (is_server) {
+                                shm_unlink(filename.c_str());
+                                LOG_DEBUG("Un-linking SHM handle. [handle=%s][response=%s]", filename.c_str(),
+                                          strerror(errno));
+                            } else {
+                                close(shm_fd);
+                                LOG_DEBUG("Closing SHM handle. [handle=%s][response=%s]", filename.c_str(),
+                                          strerror(errno));
+                            }
                         }
                     }
                 };
