@@ -312,6 +312,7 @@ namespace com {
                 public:
 
                     static void reset_hourly_metrics(__hourly_usage_metric *metric) {
+                        metric->size = 24;
                         metric->reset_time = time_utils::now();
                         metric->current_index = 0;
                         metric->total_time = 0;
@@ -324,13 +325,13 @@ namespace com {
                     }
 
                     static void update_hourly_metrics(__hourly_usage_metric *metric, uint64_t value, uint64_t time) {
+                        uint32_t hour = time_utils::get_hour(nullptr);
                         uint32_t hours = time_utils::get_hour_diff(metric->reset_time);
                         if (hours >= metric->size) {
                             reset_hourly_metrics(metric);
-                        } else {
-                            uint16_t max = (hours >= metric->size ? metric->size : hours);
+                        } else if (hour != metric->current_index) {
                             uint16_t index = metric->current_index + 1;
-                            for (uint16_t ii = 0; ii < max; ii++) {
+                            for (uint16_t ii = 0; ii <= hour; ii++) {
                                 metric->total_value -= metric->records[index].value;
                                 metric->total_time -= metric->records[index].time;
 
@@ -342,7 +343,8 @@ namespace com {
                                     index = 0;
                                 }
                             }
-                            metric->current_index++;
+                            metric->current_index = hour;
+                            metric->reset_time = time_utils::now();
                         }
                         metric->total_value += value;
                         metric->total_time += time;
@@ -363,7 +365,7 @@ namespace com {
                     static void get_hourly_metric(__avg_metric *avg, __hourly_usage_metric *metric) {
                         uint32_t hour = time_utils::get_hour(nullptr);
                         POSTCONDITION(hour >= 0 && hour < 24);
-                        CHECK_ALLOC(metric, TYPE_NAME(_avg_metric));
+                        CHECK_NOT_NULL(avg);
                         avg->set(metric->records[hour].value, metric->records[hour].time);
                     }
                 };

@@ -48,19 +48,45 @@ namespace com {
                     class mount_metrics_logger : public __runnable_callback {
                     private:
                         __mount_data *mounts = nullptr;
-                        __avg_metric *read_metric = nullptr;
-                        __avg_metric *write_metric = nullptr;
+                        __avg_metric **read_metric = nullptr;
+                        __avg_metric **write_metric = nullptr;
 
                     public:
                         mount_metrics_logger(__mount_data *mounts) : __runnable_callback(MOUNT_METRICS_LOGGER_NAME) {
                             CHECK_NOT_NULL(mounts);
                             this->mounts = mounts;
-                            this->read_metric = new __avg_metric(MOUNT_METRIC_NAME_R, false);
-                            CHECK_ALLOC(this->read_metric, TYPE_NAME(__avg_metric));
-                            this->write_metric = new __avg_metric(MOUNT_METRIC_NAME_W, false);
-                            CHECK_ALLOC(this->write_metric, TYPE_NAME(__avg_metric));
+                            read_metric = (__avg_metric **) malloc(sizeof(__avg_metric *) * mounts->mount_count);
+                            CHECK_ALLOC(read_metric, TYPE_NAME(__avg_metric * ));
+                            memset(read_metric, 0, sizeof(__avg_metric *) * mounts->mount_count);
+                            write_metric = (__avg_metric **) malloc(sizeof(__avg_metric *) * mounts->mount_count);
+                            CHECK_ALLOC(write_metric, TYPE_NAME(__avg_metric * ));
+                            memset(write_metric, 0, sizeof(__avg_metric *) * mounts->mount_count);
+                            for (int ii = 0; ii < mounts->mount_count; ii++) {
+                                string name = string(mounts->mounts[ii].path);
+                                string r_name = common_utils::format("%s_%s", name.c_str(), MOUNT_METRIC_NAME_R);
+                                this->read_metric[ii] = new __avg_metric(r_name, false);
+                                CHECK_ALLOC(this->read_metric[ii], TYPE_NAME(__avg_metric));
+                                string w_name = common_utils::format("%s_%s", name.c_str(), MOUNT_METRIC_NAME_W);
+                                this->write_metric[ii] = new __avg_metric(w_name, false);
+                                CHECK_ALLOC(this->write_metric[ii], TYPE_NAME(__avg_metric));
+                            }
                         }
 
+                        ~mount_metrics_logger() {
+                            if (NOT_NULL(read_metric)) {
+                                for (int ii = 0; ii < mounts->mount_count; ii++) {
+                                    CHECK_AND_FREE(read_metric[ii]);
+                                }
+                                CHECK_AND_FREE(read_metric);
+                            }
+                            if (NOT_NULL(write_metric)) {
+                                for (int ii = 0; ii < mounts->mount_count; ii++) {
+                                    CHECK_AND_FREE(write_metric[ii]);
+                                }
+                                CHECK_AND_FREE(write_metric);
+                            }
+                            mounts = nullptr;
+                        }
 
                         bool can_run() {
                             uint64_t now = time_utils::now();
@@ -74,13 +100,13 @@ namespace com {
                                     __mount_point *mp = &mounts->mounts[ii];
                                     CHECK_NOT_NULL(mp);
                                     if (mp->state == __mount_state::MP_READ_WRITE) {
-                                        mount_metrics::get_hourly_metric(this->write_metric, &mp->bytes_written);
-                                        this->write_metric->print();
-                                        mount_metrics::get_hourly_metric(this->read_metric, &mp->bytes_read);
-                                        this->read_metric->print();
+                                        mount_metrics::get_hourly_metric(this->write_metric[ii], &(mp->bytes_written));
+                                        this->write_metric[ii]->print();
+                                        mount_metrics::get_hourly_metric(this->read_metric[ii], &(mp->bytes_read));
+                                        this->read_metric[ii]->print();
                                     } else if (mp->state == __mount_state::MP_READ_ONLY) {
-                                        mount_metrics::get_hourly_metric(this->read_metric, &mp->bytes_read);
-                                        this->read_metric->print();
+                                        mount_metrics::get_hourly_metric(this->read_metric[ii], &(mp->bytes_read));
+                                        this->read_metric[ii]->print();
                                     }
                                 }
                             } catch (const exception &e) {

@@ -44,6 +44,7 @@ namespace com {
                     class node_server_env : public __node_env {
                     private:
                         control_manager *priority_manager = nullptr;
+                        read_write_lock_manager *rw_lock_manager = nullptr;
                         vector<__runnable_callback *> callbacks;
 
                         __thread_pool *default_pool = nullptr;
@@ -68,6 +69,7 @@ namespace com {
                                 default_pool->stop();
                             }
                             CHECK_AND_FREE(priority_manager);
+                            CHECK_AND_FREE(rw_lock_manager);
                             CHECK_AND_FREE(default_pool);
 
                         }
@@ -98,7 +100,9 @@ namespace com {
                                 default_pool->create_task_registry(DEFAULT_THREAD_POOL_SLEEP);
                                 default_pool->start();
 
-                                shared_lock_utils::create_manager(DEFAULT_LOCK_MODE, false, reset);
+                                rw_lock_manager = shared_lock_utils::create_manager(DEFAULT_LOCK_MODE, false, reset);
+                                CHECK_NOT_NULL(rw_lock_manager);
+
                                 __runnable_callback *rwcb = new rw_lock_manager_callback(
                                         shared_lock_utils::get_manager());
                                 CHECK_ALLOC(rwcb, TYPE_NAME(__runnable_callback));

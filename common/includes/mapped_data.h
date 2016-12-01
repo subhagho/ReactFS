@@ -147,6 +147,9 @@ namespace com {
                     ~shm_mapped_data() override {
                         if (shm_fd >= 0 && NOT_NULL(base_ptr)) {
                             if (is_server) {
+                                close(shm_fd);
+                                LOG_DEBUG("Closing SHM handle. [handle=%s][response=%s]", filename.c_str(),
+                                          strerror(errno));
                                 shm_unlink(filename.c_str());
                                 LOG_DEBUG("Un-linking SHM handle. [handle=%s][response=%s]", filename.c_str(),
                                           strerror(errno));
