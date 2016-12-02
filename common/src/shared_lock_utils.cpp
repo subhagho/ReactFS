@@ -21,6 +21,4 @@
 #include "common/includes/shared_lock_utils.h"
 
 
-mutex com::wookler::reactfs::common::shared_lock_utils::shared_mutex;
-unordered_map<string, lock_client *> com::wookler::reactfs::common::shared_lock_utils::clients;
-unordered_map<string, lock_client *> com::wookler::reactfs::common::shared_lock_utils::managers;
+com::wookler::reactfs::common::shared_locks com::wookler::reactfs::common::shared_lock_utils::locks;

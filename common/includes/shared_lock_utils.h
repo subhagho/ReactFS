@@ -34,11 +34,11 @@ namespace com {
                 /*!
                  * Singleton class to manage shared lock groups.
                  */
-                class shared_lock_utils {
+                class shared_locks {
                 private:
-                    static mutex shared_mutex;
-                    static unordered_map<string, lock_client *> clients;
-                    static unordered_map<string, lock_client *> managers;
+                    mutex shared_mutex;
+                    unordered_map<string, lock_client *> clients;
+                    unordered_map<string, lock_client *> managers;
 
                     /*!
                      * Find if a lock client has already been registered for the specified lock group.
@@ -46,7 +46,7 @@ namespace com {
                      * @param group - Lock group.
                      * @return - Lock client if already registered.
                      */
-                    static lock_client *find_client(string group) {
+                    lock_client *find_client(string group) {
                         if (!IS_EMPTY(clients)) {
                             unordered_map<string, lock_client *>::iterator iter = clients.find(group);
                             if (iter != clients.end()) {
@@ -56,8 +56,8 @@ namespace com {
                         return nullptr;
                     }
 
-                    static lock_client *find_manager(string group) {
-                        if (!IS_EMPTY(clients)) {
+                    lock_client *find_manager(string group) {
+                        if (!IS_EMPTY(managers)) {
                             unordered_map<string, lock_client *>::iterator iter = managers.find(group);
                             if (iter != managers.end()) {
                                 return iter->second;
@@ -67,7 +67,7 @@ namespace com {
                     }
 
                 public:
-                    static read_write_lock_manager *
+                    read_write_lock_manager *
                     create_rw_manager(string group, mode_t mode, bool use_thread, bool reset) {
                         std::lock_guard<std::mutex> guard(shared_mutex);
                         read_write_lock_manager *manager = get_rw_manager(group);
@@ -81,7 +81,7 @@ namespace com {
                         return manager;
                     }
 
-                    static read_write_lock_client *create_rw_client(string group) {
+                    read_write_lock_client *create_rw_client(string group) {
                         std::lock_guard<std::mutex> guard(shared_mutex);
                         read_write_lock_client *client = get_rw_client(group);
                         if (IS_NULL(client)) {
@@ -92,7 +92,7 @@ namespace com {
                         return client;
                     }
 
-                    static read_write_lock_client *get_rw_client(string group) {
+                    read_write_lock_client *get_rw_client(string group) {
                         read_write_lock_client *client = nullptr;
                         lock_client *ptr = find_client(group);
                         if (NOT_NULL(ptr)) {
@@ -111,7 +111,7 @@ namespace com {
                         return client;
                     }
 
-                    static read_write_lock_manager *get_rw_manager(string group) {
+                    read_write_lock_manager *get_rw_manager(string group) {
                         read_write_lock_manager *manager = nullptr;
                         lock_client *ptr = find_manager(group);
                         if (NOT_NULL(ptr)) {
@@ -122,7 +122,7 @@ namespace com {
                         return manager;
                     }
 
-                    static write_lock_client *
+                    write_lock_manager *
                     create_w_manager(string group, mode_t mode, bool use_thread, bool reset) {
                         std::lock_guard<std::mutex> guard(shared_mutex);
                         write_lock_manager *manager = get_w_manager(group);
@@ -136,7 +136,7 @@ namespace com {
                         return manager;
                     }
 
-                    static write_lock_client *create_w_client(string group) {
+                    write_lock_client *create_w_client(string group) {
                         std::lock_guard<std::mutex> guard(shared_mutex);
                         write_lock_client *client = get_w_client(group);
                         if (IS_NULL(client)) {
@@ -147,7 +147,7 @@ namespace com {
                         return client;
                     }
 
-                    static write_lock_client *get_w_client(string group) {
+                    write_lock_client *get_w_client(string group) {
                         write_lock_client *client = nullptr;
                         lock_client *ptr = find_client(group);
                         if (NOT_NULL(ptr)) {
@@ -166,7 +166,7 @@ namespace com {
                         return client;
                     }
 
-                    static write_lock_manager *get_w_manager(string group) {
+                    write_lock_manager *get_w_manager(string group) {
                         write_lock_manager *manager = nullptr;
                         lock_client *ptr = find_manager(group);
                         if (NOT_NULL(ptr)) {
@@ -177,7 +177,7 @@ namespace com {
                         return manager;
                     }
 
-                    static void dispose() {
+                    void dispose() {
                         std::lock_guard<std::mutex> guard(shared_mutex);
                         if (!IS_EMPTY(clients)) {
                             unordered_map<string, lock_client *>::iterator iter;
@@ -193,6 +193,19 @@ namespace com {
                             }
                             managers.clear();
                         }
+                    }
+                };
+
+                class shared_lock_utils {
+                private:
+                    static shared_locks locks;
+                public:
+                    static shared_locks *get() {
+                        return &locks;
+                    }
+
+                    static void dispose() {
+                        locks.dispose();
                     }
                 };
             }

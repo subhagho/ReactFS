@@ -6,7 +6,6 @@
 
 
 void com::wookler::reactfs::common::read_write_lock_manager::init(mode_t mode, bool reset) {
-    CHECK_NOT_EMPTY(group);
     try {
         create(mode, true, reset);
 

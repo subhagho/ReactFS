@@ -41,9 +41,6 @@ namespace com {
                     /// Lock thread pointer
                     thread *manager_thread = nullptr;
 
-                    /// Lock group name.
-                    string group;
-
                     /// Method to be used by the local management thread.
                     static void run(read_write_lock_manager *manager);
 

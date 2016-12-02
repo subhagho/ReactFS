@@ -22,7 +22,6 @@
 
 void
 com::wookler::reactfs::common::read_write_lock_client::create(mode_t mode, bool is_manager, bool reset) {
-    CHECK_NOT_EMPTY(group);
     try {
         table = new rw_lock_table(group);
         CHECK_ALLOC(table, TYPE_NAME(rw_lock_table));
@@ -43,7 +42,6 @@ com::wookler::reactfs::common::read_write_lock_client::create(mode_t mode, bool 
 }
 
 void com::wookler::reactfs::common::read_write_lock_client::create() {
-    CHECK_NOT_EMPTY(group);
     std::lock_guard<std::mutex> guard(thread_mutex);
     try {
         table = new rw_lock_table(group);
