@@ -143,6 +143,8 @@ namespace com {
                             client = new write_lock_client(group);
                             CHECK_ALLOC(client, TYPE_NAME(write_lock_client));
                             client->create();
+
+                            clients.insert({group, client});
                         }
                         return client;
                     }

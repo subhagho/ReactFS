@@ -151,22 +151,6 @@ namespace com {
                     /// NUmber of lock references active.
                     uint32_t reference_count = 0;
 
-                    /*!
-                     * Check and clear any lock(s) acquired by this instance.
-                     */
-                    virtual void check_and_clear() {
-                        PRECONDITION(NOT_NULL(lock_struct));
-                        PRECONDITION(lock_struct->used);
-
-                        pid_t pid = getpid();
-
-                        // Check and release, if this instance currently holds a write lock.
-                        if (lock_struct->write_locked &&
-                            lock_struct->owner.process_id == pid) {
-                            release_lock();
-                        }
-                        table->remove_lock(name);
-                    }
 
                     /*!
                      * Check if this process has a valid lock record and the record hasn't expired.
@@ -188,6 +172,23 @@ namespace com {
                         }
                     }
 
+                    /*!
+                     * Check and clear any lock(s) acquired by this instance.
+                     */
+                    virtual void check_and_clear() {
+                        if (NOT_NULL(lock_struct)) {
+                            if (lock_struct->used) {
+
+                                pid_t pid = getpid();
+
+                                // Check and release, if this instance currently holds a write lock.
+                                if (lock_struct->write_locked &&
+                                    lock_struct->owner.process_id == pid) {
+                                    release_lock();
+                                }
+                            }
+                        }
+                    }
 
                 public:
                     /*!<constructor
@@ -238,6 +239,7 @@ namespace com {
                             throw le;
                         }
                     }
+
 
                     /*!
                      * Reset the exclusive lock.
@@ -389,15 +391,18 @@ namespace com {
                     /*!
                      * Increment the reference count for this lock instance.
                      */
-                    void increment_ref_count() {
-                        reference_count++;
+                    uint32_t increment_ref_count() {
+                        return ++reference_count;
                     }
 
                     /*!
                      * Decrement the reference count for this lock instance.
                      */
-                    void decrement_ref_count() {
-                        reference_count--;
+                    uint32_t decrement_ref_count() {
+                        if (reference_count > 0)
+                            reference_count--;
+                        TRACE("[name=%s] Updated lock reference count = %d", this->name.c_str(), reference_count);
+                        return reference_count;
                     }
 
                     /*!

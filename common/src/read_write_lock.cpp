@@ -46,9 +46,11 @@ com::wookler::reactfs::common::__rw_lock_struct *com::wookler::reactfs::common::
                     found_index = ii;
                     break;
                 }
-            } else if (free_index < 0) {
+            }
+            if (free_index < 0 && !ptr->w_lock_struct.used) {
                 free_index = ii;
             }
+            ptr++;
         }
         __rw_lock_struct *r_ptr = nullptr;
         if (found_index >= 0) {
@@ -94,6 +96,7 @@ bool com::wookler::reactfs::common::rw_lock_table::remove_lock(string name, uint
                     break;
                 }
             }
+            ptr++;
         }
 
         if (found_index >= 0) {
@@ -101,16 +104,28 @@ bool com::wookler::reactfs::common::rw_lock_table::remove_lock(string name, uint
             POSTCONDITION(NOT_NULL(r_ptr));
             POSTCONDITION(r_ptr->w_lock_struct.used);
 
-            r_ptr->w_lock_struct.ref_count--;
+            if (r_ptr->w_lock_struct.ref_count > 0)
+                r_ptr->w_lock_struct.ref_count--;
             if (r_ptr->w_lock_struct.ref_count <= 0) {
+                TRACE("Releasing lock record. [name=%s][count=%d]",
+                      r_ptr->w_lock_struct.name,
+                      r_ptr->w_lock_struct.ref_count);
                 memset(r_ptr, 0, sizeof(__rw_lock_struct));
                 r_ptr->w_lock_struct.used = false;
                 r_ptr->reader_count = 0;
                 r_ptr->w_lock_struct.write_locked = false;
 
                 header_ptr->used_count--;
+                ret = true;
+            } else {
+                TRACE("Lock record not released due to reference(s). [name=%s][count=%d]",
+                      r_ptr->w_lock_struct.name,
+                      r_ptr->w_lock_struct.ref_count);
             }
+        } else {
+            LOG_WARN("No lock record found for name. [name=%s]", name.c_str());
         }
+
     } catch (const exception &e) {
         throw LOCK_ERROR("Error creating lock table instance. [error=%s]", e.what());
     } catch (...) {

@@ -19,7 +19,7 @@ void test_rw_locks() {
     CHECK_NOT_NULL(manager);
 
     read_write_lock_client *client = shared_lock_utils::get()->get_rw_client(rw_group);
-    string name("test_lock_01");
+    string name("test_rw_lock_01");
     read_write_lock *lock = client->add_lock(name);
     lock->reset();
 
@@ -33,20 +33,20 @@ void test_rw_locks() {
     string uname(user_name);
     string txid = lock->write_lock(uname);
     POSTCONDITION(!IS_EMPTY(txid));
-    LOG_INFO("Acquired write lock. [transation id=%s]", txid.c_str());
+    LOG_INFO("Acquired write lock. [transaction id=%s]", txid.c_str());
     bool r = lock->release_write_lock();
     POSTCONDITION(r);
-    LOG_INFO("Released write lock. [transation id=%s]", txid.c_str());
+    LOG_INFO("Released write lock. [transaction id=%s]", txid.c_str());
 
     r = lock->read_lock();
     POSTCONDITION(r);
     LOG_INFO("Acquired read lock.");
     txid = lock->write_lock(uname, 1000);
     POSTCONDITION(IS_EMPTY(txid));
-    lock->release_read_lock();
+    POSTCONDITION(lock->release_read_lock());
     LOG_INFO("Released read lock.");
 
-    client->remove_lock(name);
+    POSTCONDITION(client->remove_lock(name));
 }
 
 void test_w_locks() {
@@ -56,9 +56,18 @@ void test_w_locks() {
     CHECK_NOT_NULL(manager);
 
     write_lock_client *client = shared_lock_utils::get()->get_w_client(w_group);
-    string name("test_lock_01");
+    string name("test_write_lock_01");
     write_lock *lock = client->add_lock(name);
     lock->reset();
+
+    vector<string>locks;
+
+    for (int ii = 0; ii < 10; ii++) {
+        string ln = common_utils::format("TEST_LOCK_%d", ii);
+        write_lock *lk = client->add_lock(ln);
+        CHECK_NOT_NULL(lk);
+        locks.push_back(ln);
+    }
 
     POSTCONDITION(NOT_NULL(lock));
 
@@ -70,12 +79,17 @@ void test_w_locks() {
     string uname(user_name);
     string txid = lock->get_lock(uname);
     POSTCONDITION(!IS_EMPTY(txid));
-    LOG_INFO("Acquired write lock. [transation id=%s]", txid.c_str());
+    LOG_INFO("Acquired write lock. [transaction id=%s]", txid.c_str());
     bool r = lock->release_lock();
     POSTCONDITION(r);
-    LOG_INFO("Released write lock. [transation id=%s]", txid.c_str());
+    LOG_INFO("Released write lock. [transaction id=%s]", txid.c_str());
 
-    client->remove_lock(name);
+    r = client->remove_lock(name);
+    POSTCONDITION(r);
+
+    for(string ln : locks) {
+        POSTCONDITION(client->remove_lock(ln));
+    }
 }
 
 int main(int argc, char **argv) {
@@ -92,8 +106,8 @@ int main(int argc, char **argv) {
         const __env *env = env_utils::get_env();
         CHECK_NOT_NULL(env);
 
-        test_rw_locks();
         test_w_locks();
+        test_rw_locks();
 
         shared_lock_utils::dispose();
         env_utils::dispose();

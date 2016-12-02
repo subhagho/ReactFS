@@ -13,6 +13,9 @@ using namespace com::wookler::reactfs::common;
 
 
 int main(int argc, char *argv[]) {
-    cout << "TYPE : " << TYPE_NAME(__callback) << "\n";
-    cout << "TYPE : " << TYPE_NAME(base_error) << "\n";
+    uint32_t ii = 5;
+    for(int jj=0; jj <= 5; jj++) {
+        ii--;
+        cout << "Current value " << ii << "\n";
+    }
 }

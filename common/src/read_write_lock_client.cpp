@@ -78,7 +78,8 @@ read_write_lock *com::wookler::reactfs::common::read_write_lock_client::add_lock
         lock->create(&name, table);
         locks[name] = lock;
     }
-    lock->increment_ref_count();
+    uint32_t rc = lock->increment_ref_count();
+    LOG_DEBUG("Lock instance available. [name=%s][reference count=%lu]", lock->get_name().c_str(), rc);
 
     return lock;
 }
@@ -93,6 +94,7 @@ bool com::wookler::reactfs::common::read_write_lock_client::remove_lock(string n
         lock = iter->second;
         CHECK_NOT_NULL(lock);
     }
+    bool ret = false;
     if (NOT_NULL(lock)) {
         string thread_id = thread_utils::get_current_thread();
         if (lock->has_write_lock(thread_id)) {
@@ -101,12 +103,15 @@ bool com::wookler::reactfs::common::read_write_lock_client::remove_lock(string n
         if (lock->has_thread_lock(thread_id)) {
             lock->release_read_lock();
         }
-        lock->decrement_ref_count();
-        if (lock->get_reference_count() <= 0) {
-            table->remove_lock(lock->get_name());
+        uint32_t rc = lock->decrement_ref_count();
+        if (rc == 0) {
+            ret = table->remove_lock(lock->get_name());
             locks.erase(lock->get_name());
-            delete (lock);
+            CHECK_AND_FREE(lock);
+        } else {
+            TRACE("Lock not removed due to references. [name=%s][ref count=%lu]", lock->get_name().c_str(),
+                      lock->get_reference_count());
         }
     }
-    return false;
+    return ret;
 }

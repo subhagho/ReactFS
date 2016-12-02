@@ -5,7 +5,7 @@
         "app.name": "test-config-app"
       },
       "logging": {
-        "level": "debug",
+        "level": "trace",
         "size": "5M",
         "max-files": "3",
         "mode": "debug",

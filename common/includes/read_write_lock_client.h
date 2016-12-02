@@ -70,6 +70,7 @@ namespace com {
                             unordered_map<string, read_write_lock *>::iterator iter;
                             for (iter = locks.begin(); iter != locks.end(); iter++) {
                                 read_write_lock *lock = iter->second;
+                                table->remove_lock(lock->get_name());
                                 CHECK_AND_FREE(lock);
                             }
                         }

@@ -170,39 +170,6 @@ namespace com {
                         return -1;
                     }
 
-                    /*!
-                     * Check and clear any lock(s) acquired by this instance.
-                     */
-                    void check_and_clear() {
-                        PRECONDITION(NOT_NULL(lock_struct));
-                        PRECONDITION(lock_struct->w_lock_struct.used);
-
-                        pid_t pid = getpid();
-
-                        // Check and release, if this instance currently holds a write lock.
-                        if (lock_struct->w_lock_struct.write_locked &&
-                            lock_struct->w_lock_struct.owner.process_id == pid) {
-                            release_write_lock();
-                        }
-                        // Check if this instance has acquired any read locks.
-                        if (!reader_threads.empty()) {
-                            vector<string> threads;
-                            for (auto it = reader_threads.begin(); it != reader_threads.end(); ++it) {
-                                int index = it->second;
-                                if (index >= 0) {
-                                    __lock_readers r = lock_struct->readers[index];
-                                    if (r.used) {
-                                        threads.push_back(string(r.thread_id));
-                                    }
-                                }
-                            }
-                            // Release all read locks acquired by this instance.
-                            for (vector<string>::iterator it = threads.begin(); it != threads.end(); ++it) {
-                                release_read_lock(*it);
-                            }
-                        }
-                        table->remove_lock(name);
-                    }
 
                     /*!
                      * Check if this process has a valid lock record and the record hasn't expired.
@@ -300,6 +267,41 @@ namespace com {
                             lock_error le = LOCK_ERROR("Error creating lock instance. [error=Unknown]");
                             state.set_error(&le);
                             throw le;
+                        }
+                    }
+
+                    /*!
+                     * Check and clear any lock(s) acquired by this instance.
+                     */
+                    void check_and_clear() {
+                        if(NOT_NULL(lock_struct)) {
+                            if (lock_struct->w_lock_struct.used) {
+
+                                pid_t pid = getpid();
+
+                                // Check and release, if this instance currently holds a write lock.
+                                if (lock_struct->w_lock_struct.write_locked &&
+                                    lock_struct->w_lock_struct.owner.process_id == pid) {
+                                    release_write_lock();
+                                }
+                                // Check if this instance has acquired any read locks.
+                                if (!reader_threads.empty()) {
+                                    vector<string> threads;
+                                    for (auto it = reader_threads.begin(); it != reader_threads.end(); ++it) {
+                                        int index = it->second;
+                                        if (index >= 0) {
+                                            __lock_readers r = lock_struct->readers[index];
+                                            if (r.used) {
+                                                threads.push_back(string(r.thread_id));
+                                            }
+                                        }
+                                    }
+                                    // Release all read locks acquired by this instance.
+                                    for (vector<string>::iterator it = threads.begin(); it != threads.end(); ++it) {
+                                        release_read_lock(*it);
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -578,15 +580,18 @@ namespace com {
                     /*!
                      * Increment the reference count for this lock instance.
                      */
-                    void increment_ref_count() {
-                        reference_count++;
+                    uint32_t increment_ref_count() {
+                        return ++reference_count;
                     }
 
                     /*!
                      * Decrement the reference count for this lock instance.
                      */
-                    void decrement_ref_count() {
-                        reference_count--;
+                    uint32_t decrement_ref_count() {
+                        if (reference_count > 0)
+                            return --reference_count;
+                        TRACE("[name=%s] Current lock reference count = %lu", this->name.c_str(), reference_count);
+                        return reference_count;
                     }
 
                     /*!

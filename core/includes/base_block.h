@@ -181,6 +181,7 @@ namespace com {
                             if (rollback_info->in_transaction) {
                                 string thread_id = thread_utils::get_current_thread();
                                 PRECONDITION(block_lock->has_write_lock(thread_id));
+                                return true;
                             }
                         }
                         return false;
@@ -732,13 +733,7 @@ namespace com {
                      * @return - Lock name associated with this block.
                      */
                     static string get_lock_name(uint64_t block_id, char *block_uid) {
-                        string ss(block_uid);
-                        vector<string> vs;
-                        string_utils::split(ss, '-', &vs);
-                        POSTCONDITION(!IS_EMPTY(vs));
-                        POSTCONDITION(!IS_EMPTY(vs[0]));
-
-                        return common_utils::format("b%s%lu", vs[0].c_str(), block_id);
+                        return common_utils::format("blk_%024lu", block_id);
                     }
                 };
             }

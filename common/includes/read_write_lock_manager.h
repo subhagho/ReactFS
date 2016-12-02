@@ -132,6 +132,7 @@ namespace com {
                      */
                     virtual void callback() override {
                         PRECONDITION(NOT_NULL(manager));
+                        LOG_DEBUG("Running read/write lock manager callback...");
                         try {
                             if (manager->get_state() == __state_enum::Available) {
                                 PRECONDITION(NOT_NULL(manager));
