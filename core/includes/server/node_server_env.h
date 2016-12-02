@@ -28,6 +28,7 @@
 #include "common/includes/shared_lock_utils.h"
 #include "watergate/includes/init_utils.h"
 #include "core/includes/node_env.h"
+#include "core/includes/block_shared_defs.h"
 
 
 #define DEFAULT_THREAD_POOL_NAME "__DEFAULT_THREAD_POOL_"
@@ -44,7 +45,7 @@ namespace com {
                     class node_server_env : public __node_env {
                     private:
                         control_manager *priority_manager = nullptr;
-                        read_write_lock_manager *rw_lock_manager = nullptr;
+                        write_lock_manager *block_lock_manager = nullptr;
                         vector<__runnable_callback *> callbacks;
 
                         __thread_pool *default_pool = nullptr;
@@ -69,9 +70,8 @@ namespace com {
                                 default_pool->stop();
                             }
                             CHECK_AND_FREE(priority_manager);
-                            CHECK_AND_FREE(rw_lock_manager);
                             CHECK_AND_FREE(default_pool);
-
+                            shared_lock_utils::dispose();
                         }
 
                         void init(bool reset) {
@@ -100,11 +100,13 @@ namespace com {
                                 default_pool->create_task_registry(DEFAULT_THREAD_POOL_SLEEP);
                                 default_pool->start();
 
-                                rw_lock_manager = shared_lock_utils::create_manager(DEFAULT_LOCK_MODE, false, reset);
-                                CHECK_NOT_NULL(rw_lock_manager);
+                                block_lock_manager = shared_lock_utils::get()->create_w_manager(BLOCK_LOCK_GROUP,
+                                                                                                DEFAULT_LOCK_MODE,
+                                                                                                false, reset);
+                                CHECK_NOT_NULL(block_lock_manager);
 
-                                __runnable_callback *rwcb = new rw_lock_manager_callback(
-                                        shared_lock_utils::get_manager());
+                                __runnable_callback *rwcb = new w_lock_manager_callback(
+                                        block_lock_manager);
                                 CHECK_ALLOC(rwcb, TYPE_NAME(__runnable_callback));
                                 default_pool->add_task(rwcb);
                                 callbacks.push_back(rwcb);

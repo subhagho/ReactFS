@@ -25,10 +25,10 @@
 
 #include "common/includes/shared_lock_utils.h"
 #include "core/includes/node_env.h"
+#include "core/includes/block_shared_defs.h"
 #include "watergate/includes/init_utils.h"
 
 #include "mount_client.h"
-
 using namespace com::wookler::reactfs::core;
 
 namespace com {
@@ -39,7 +39,7 @@ namespace com {
                     class node_client_env : public __node_env {
                         const control_client *control = nullptr;
                         mount_client *m_client = nullptr;
-                        read_write_lock_client *lock_client = nullptr;
+                        write_lock_client *block_lock_client = nullptr;
 
                     public:
                         node_client_env() : __node_env(false) {
@@ -55,8 +55,8 @@ namespace com {
                         void init() {
                             create(false);
                             try {
-                                lock_client = shared_lock_utils::create_client();
-                                CHECK_NOT_NULL(lock_client);
+                                block_lock_client = shared_lock_utils::get()->create_w_client(BLOCK_LOCK_GROUP);
+                                CHECK_NOT_NULL(block_lock_client);
 
                                 control = init_utils::init_control_client(env, CONTROL_CONFIG_PATH);
                                 CHECK_NOT_NULL(control);

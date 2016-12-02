@@ -73,7 +73,7 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, uint6
         header->deleted_records = 0;
 
         string lock_name = get_lock_name(header->block_id, header->block_uid);
-        read_write_lock_client *env = shared_lock_utils::get();
+        write_lock_client *env = shared_lock_utils::get()->get_w_client(BLOCK_LOCK_GROUP);
 
         block_lock = env->add_lock(lock_name);
         CHECK_NOT_NULL(block_lock);
@@ -122,9 +122,9 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
                              version_utils::get_version_string(version).c_str());
     }
 
-    if (IS_NULL(block_lock)) {
+    if (IS_NULL(block_lock) && header->write_state == __write_state::WRITABLE) {
         string lock_name = get_lock_name(header->block_id, header->block_uid);
-        read_write_lock_client *env = shared_lock_utils::get();
+        write_lock_client *env = shared_lock_utils::get()->get_w_client(BLOCK_LOCK_GROUP);
 
         block_lock = env->add_lock(lock_name);
         CHECK_NOT_NULL(block_lock);
@@ -145,12 +145,10 @@ void com::wookler::reactfs::core::base_block::close() {
     if (NOT_NULL(block_lock)) {
         string thread_id = thread_utils::get_current_thread();
         if (block_lock->has_write_lock(thread_id)) {
-            block_lock->release_write_lock();
+            block_lock->release_lock();
         }
-        if (block_lock->has_thread_lock(thread_id)) {
-            block_lock->release_read_lock();
-        }
-        read_write_lock_client *env = shared_lock_utils::get();
+
+        write_lock_client *env = shared_lock_utils::get()->get_w_client(BLOCK_LOCK_GROUP);
         env->remove_lock(block_lock->get_name());
 
         block_lock = nullptr;
@@ -277,7 +275,7 @@ string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeo
     PRECONDITION(NOT_NULL(user_name));
     string uname(user_name);
 
-    txid = block_lock->write_lock(uname, timeout);
+    txid = block_lock->get_lock(uname, timeout);
     if (!IS_EMPTY(txid)) {
         setup_transaction(txid);
     } else {

@@ -38,6 +38,7 @@
 #include "compression_factory.h"
 #include "base_block_index.h"
 #include "clients/node_client_env.h"
+#include "block_shared_defs.h"
 
 #define BLOCK_VERSION_MAJOR ((uint16_t) 0)
 #define BLOCK_VERSION_MINOR ((uint16_t) 1)
@@ -79,7 +80,7 @@ namespace com {
                     string filename;
 
                     //! Shared lock for writing
-                    read_write_lock *block_lock = nullptr;
+                    write_lock *block_lock = nullptr;
 
                     /// Memory-mapped file handle.
                     file_mapped_data *mm_data = nullptr;
@@ -177,7 +178,10 @@ namespace com {
                      */
                     bool in_transaction() const {
                         if (NOT_NULL(rollback_info)) {
-                            return rollback_info->in_transaction;
+                            if (rollback_info->in_transaction) {
+                                string thread_id = thread_utils::get_current_thread();
+                                PRECONDITION(block_lock->has_write_lock(thread_id));
+                            }
                         }
                         return false;
                     }
@@ -227,7 +231,7 @@ namespace com {
                         rollback_info->used_bytes = 0;
                         rollback_info->block_checksum = 0;
 
-                        block_lock->release_write_lock();
+                        block_lock->release_lock();
                     }
 
                     /*!
