@@ -6,8 +6,9 @@
 
 
 void com::wookler::reactfs::common::read_write_lock_manager::init(mode_t mode, bool reset) {
+    CHECK_NOT_EMPTY(group);
     try {
-        create(mode, true);
+        create(mode, true, reset);
 
         if (reset)
             this->reset();
@@ -52,16 +53,16 @@ void com::wookler::reactfs::common::read_write_lock_manager::check_lock_states()
     if (state.get_state() == __state_enum::Available) {
         uint32_t count = table->get_max_size();
         for (uint32_t ii = 0; ii < count; ii++) {
-            __lock_struct *ptr = table->get_at(ii);
+            __rw_lock_struct *ptr = table->get_at(ii);
             if (NOT_NULL(ptr)) {
-                if (ptr->write_locked) {
+                if (ptr->w_lock_struct.write_locked) {
                     uint64_t now = time_utils::now();
-                    if ((now - ptr->owner.lock_timestamp) > DEFAULT_WRITE_LOCK_TIMEOUT) {
-                        ptr->owner.lock_timestamp = 0;
-                        ptr->owner.process_id = -1;
-                        memset(ptr->owner.txn_id, 0, SIZE_UUID);
-                        memset(ptr->owner.owner, 0, SIZE_USER_NAME);
-                        ptr->write_locked = false;
+                    if ((now - ptr->w_lock_struct.owner.lock_timestamp) > DEFAULT_WRITE_LOCK_TIMEOUT) {
+                        ptr->w_lock_struct.owner.lock_timestamp = 0;
+                        ptr->w_lock_struct.owner.process_id = -1;
+                        memset(ptr->w_lock_struct.owner.txn_id, 0, SIZE_UUID + 1);
+                        memset(ptr->w_lock_struct.owner.owner, 0, SIZE_USER_NAME + 1);
+                        ptr->w_lock_struct.write_locked = false;
                     }
                 }
                 __lock_readers *r_ptr = ptr->readers;
@@ -74,9 +75,9 @@ void com::wookler::reactfs::common::read_write_lock_manager::check_lock_states()
                         }
                     }
                 }
-                uint64_t delta = (time_utils::now() - ptr->last_used);
-                if (ptr->ref_count <= 0 && delta >= DEFAULT_RW_LOCK_EXPIRY) {
-                    table->remove_lock(ptr->name);
+                uint64_t delta = (time_utils::now() - ptr->w_lock_struct.last_used);
+                if (ptr->w_lock_struct.ref_count <= 0 && delta >= DEFAULT_RW_LOCK_EXPIRY) {
+                    table->remove_lock(ptr->w_lock_struct.name);
                 }
             }
         }
@@ -88,24 +89,24 @@ void com::wookler::reactfs::common::read_write_lock_manager::reset() {
     std::lock_guard<std::mutex> guard(thread_mutex);
     uint32_t count = table->get_max_size();
     for (uint32_t ii = 0; ii < count; ii++) {
-        __lock_struct *ptr = table->get_at(ii);
+        __rw_lock_struct *ptr = table->get_at(ii);
         if (NOT_NULL(ptr)) {
-            if (ptr->write_locked) {
-                pid_t pid = ptr->owner.process_id;
+            if (ptr->w_lock_struct.write_locked) {
+                pid_t pid = ptr->w_lock_struct.owner.process_id;
                 if (!process_utils::check_process(pid)) {
-                    ptr->owner.lock_timestamp = 0;
-                    ptr->owner.process_id = -1;
-                    memset(ptr->owner.txn_id, 0, SIZE_UUID);
-                    memset(ptr->owner.owner, 0, SIZE_USER_NAME);
-                    ptr->write_locked = false;
+                    ptr->w_lock_struct.owner.lock_timestamp = 0;
+                    ptr->w_lock_struct.owner.process_id = -1;
+                    memset(ptr->w_lock_struct.owner.txn_id, 0, SIZE_UUID + 1);
+                    memset(ptr->w_lock_struct.owner.owner, 0, SIZE_USER_NAME + 1);
+                    ptr->w_lock_struct.write_locked = false;
                 } else {
                     uint64_t now = time_utils::now();
-                    if ((now - ptr->owner.lock_timestamp) > DEFAULT_WRITE_LOCK_TIMEOUT) {
-                        ptr->owner.lock_timestamp = 0;
-                        ptr->owner.process_id = -1;
-                        memset(ptr->owner.txn_id, 0, SIZE_UUID);
-                        memset(ptr->owner.owner, 0, SIZE_USER_NAME);
-                        ptr->write_locked = false;
+                    if ((now - ptr->w_lock_struct.owner.lock_timestamp) > DEFAULT_WRITE_LOCK_TIMEOUT) {
+                        ptr->w_lock_struct.owner.lock_timestamp = 0;
+                        ptr->w_lock_struct.owner.process_id = -1;
+                        memset(ptr->w_lock_struct.owner.txn_id, 0, SIZE_UUID + 1);
+                        memset(ptr->w_lock_struct.owner.owner, 0, SIZE_USER_NAME + 1);
+                        ptr->w_lock_struct.write_locked = false;
                     }
                 }
             }

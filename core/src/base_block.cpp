@@ -23,9 +23,9 @@
 using namespace com::wookler::reactfs::core;
 
 string
-com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, string filename, __block_usage usage,
-                                                        __block_def type, uint64_t block_size, uint64_t start_index,
-                                                        bool overwrite) {
+com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, uint64_t parent_id, string filename,
+                                                        __block_usage usage, __block_def type, uint64_t block_size,
+                                                        uint64_t start_index, bool overwrite) {
     try {
         Path p(filename);
         if (p.exists()) {
@@ -47,9 +47,11 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
 
         header = static_cast<__block_header *>(base_ptr);
         header->block_id = block_id;
-
+        header->parent_id = parent_id;
         string uuid = common_utils::uuid();
+        memset(header->block_uid, 0, SIZE_UUID + 1);
         memcpy(header->block_uid, uuid.c_str(), uuid.length());
+        LOG_DEBUG("Creating new block. [ID=%lu][UUID=%s]", header->block_id, header->block_uid);
 
         header->version.major = version.major;
         header->version.minor = version.minor;
@@ -70,7 +72,7 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, strin
         header->total_records = 0;
         header->deleted_records = 0;
 
-        string lock_name = get_lock_name(header->block_id);
+        string lock_name = get_lock_name(header->block_id, header->block_uid);
         read_write_lock_client *env = shared_lock_utils::get();
 
         block_lock = env->add_lock(lock_name);
@@ -121,7 +123,7 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
     }
 
     if (IS_NULL(block_lock)) {
-        string lock_name = get_lock_name(header->block_id);
+        string lock_name = get_lock_name(header->block_id, header->block_uid);
         read_write_lock_client *env = shared_lock_utils::get();
 
         block_lock = env->add_lock(lock_name);
@@ -185,7 +187,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
     uint32_t checksum = common_utils::crc32c(0, (BYTE *) source, size);
 
     record->header = static_cast<__record_header *>(w_ptr);
-
+    memset(record->header, 0, sizeof(__record_header));
     record->header->index = get_next_index();
     record->header->offset = get_write_offset();
     record->header->data_size = size;
@@ -423,6 +425,7 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
             CHECK_NOT_NULL(record);
             record->header->state = __record_state::R_DELETED;
             CHECK_AND_FREE(record);
+            header->deleted_records++;
         }
         rollback_info_deletes.clear();
     }
@@ -484,8 +487,7 @@ __block_check_record *com::wookler::reactfs::core::base_block::check_block_sanit
     uint32_t total_records = 0;
     uint32_t deleted_records = 0;
 
-    for (uint32_t ii = header->start_index; ii <= (header->last_index - 1); ii++) {
-
+    for (uint32_t ii = header->start_index; ii < header->last_index; ii++) {
         __record *ptr = __read_record(ii);
         CHECK_NOT_NULL(ptr);
         uint32_t checksum = common_utils::crc32c(0, (BYTE *) ptr->data_ptr, ptr->header->data_size);
@@ -497,21 +499,12 @@ __block_check_record *com::wookler::reactfs::core::base_block::check_block_sanit
         TRACE("[block id=%lu][record id=%lu] Record checksum check. [expected=%lu][computed=%lu]",
               header->block_id, ii, ptr->header->checksum, checksum);
         if (ptr->header->state != __record_state::R_READABLE) {
-            block_checksum -= checksum;
+            deleted_records++;
         } else {
             block_checksum += checksum;
-            deleted_records++;
         }
-
         total_records++;
     }
-    if (block_checksum != header->block_checksum) {
-        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
-                             "[block id=%lu] Block checksum check failed. [expected=%lu][computed=%d]",
-                             header->block_id, header->block_checksum, block_checksum);
-    }
-    TRACE("[block id=%lu] Block checksum check. [expected=%lu][computed=%lu]",
-          header->block_id, header->block_checksum, block_checksum);
     if (total_records != header->total_records) {
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
                              "[block id=%lu] Block record count mismatch. [expected=%lu][computed=%lu]",
@@ -526,6 +519,14 @@ __block_check_record *com::wookler::reactfs::core::base_block::check_block_sanit
     }
     TRACE("[block id=%lu] Block deleted record count. [expected=%lu][computed=%lu]",
           header->block_id, header->deleted_records, deleted_records);
+
+    if (block_checksum != header->block_checksum) {
+        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
+                             "[block id=%lu] Block checksum check failed. [expected=%lu][computed=%d]",
+                             header->block_id, header->block_checksum, block_checksum);
+    }
+    TRACE("[block id=%lu] Block checksum check. [expected=%lu][computed=%lu]",
+          header->block_id, header->block_checksum, block_checksum);
 
     __block_check_record *bcr = (__block_check_record *) malloc(sizeof(__block_check_record));
     CHECK_ALLOC(bcr, TYPE_NAME(__block_check_record));

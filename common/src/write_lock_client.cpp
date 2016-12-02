@@ -18,14 +18,14 @@
 // Created by Subhabrata Ghosh on 25/11/16.
 //
 
-#include "common/includes/read_write_lock_client.h"
+#include "common/includes/write_lock_client.h"
 
 void
-com::wookler::reactfs::common::read_write_lock_client::create(mode_t mode, bool is_manager, bool reset) {
+com::wookler::reactfs::common::write_lock_client::create(mode_t mode, bool is_manager, bool reset) {
     CHECK_NOT_EMPTY(group);
     try {
-        table = new rw_lock_table(group);
-        CHECK_ALLOC(table, TYPE_NAME(rw_lock_table));
+        table = new w_lock_table(group);
+        CHECK_ALLOC(table, TYPE_NAME(w_lock_table));
 
         table->create(mode, is_manager, reset);
 
@@ -42,11 +42,11 @@ com::wookler::reactfs::common::read_write_lock_client::create(mode_t mode, bool 
     }
 }
 
-void com::wookler::reactfs::common::read_write_lock_client::create() {
+void com::wookler::reactfs::common::write_lock_client::create() {
     CHECK_NOT_EMPTY(group);
     std::lock_guard<std::mutex> guard(thread_mutex);
     try {
-        table = new rw_lock_table(group);
+        table = new w_lock_table(group);
         CHECK_ALLOC(table, TYPE_NAME(rw_lock_table));
 
         table->create();
@@ -65,18 +65,18 @@ void com::wookler::reactfs::common::read_write_lock_client::create() {
 }
 
 
-read_write_lock *com::wookler::reactfs::common::read_write_lock_client::add_lock(string name) {
+write_lock *com::wookler::reactfs::common::write_lock_client::add_lock(string name) {
     CHECK_STATE_AVAILABLE(state);
     std::lock_guard<std::mutex> guard(thread_mutex);
 
-    read_write_lock *lock = nullptr;
-    unordered_map<std::string, read_write_lock *>::const_iterator iter = locks.find(name);
+    write_lock *lock = nullptr;
+    unordered_map<std::string, write_lock *>::const_iterator iter = locks.find(name);
     if (iter != locks.end()) {
         lock = iter->second;
         CHECK_NOT_NULL(lock);
     } else {
-        lock = new read_write_lock();
-        CHECK_ALLOC(lock, TYPE_NAME(read_write_lock));
+        lock = new write_lock();
+        CHECK_ALLOC(lock, TYPE_NAME(write_lock));
         lock->create(&name, table);
         locks[name] = lock;
     }
@@ -85,12 +85,12 @@ read_write_lock *com::wookler::reactfs::common::read_write_lock_client::add_lock
     return lock;
 }
 
-bool com::wookler::reactfs::common::read_write_lock_client::remove_lock(string name) {
+bool com::wookler::reactfs::common::write_lock_client::remove_lock(string name) {
     CHECK_STATE_AVAILABLE(state);
     std::lock_guard<std::mutex> guard(thread_mutex);
 
-    read_write_lock *lock = nullptr;
-    unordered_map<std::string, read_write_lock *>::const_iterator iter = locks.find(name);
+    write_lock *lock = nullptr;
+    unordered_map<std::string, write_lock *>::const_iterator iter = locks.find(name);
     if (iter != locks.end()) {
         lock = iter->second;
         CHECK_NOT_NULL(lock);
@@ -98,16 +98,14 @@ bool com::wookler::reactfs::common::read_write_lock_client::remove_lock(string n
     if (NOT_NULL(lock)) {
         string thread_id = thread_utils::get_current_thread();
         if (lock->has_write_lock(thread_id)) {
-            lock->release_write_lock();
+            lock->release_lock();
         }
-        if (lock->has_thread_lock(thread_id)) {
-            lock->release_read_lock();
-        }
+
         lock->decrement_ref_count();
         if (lock->get_reference_count() <= 0) {
             table->remove_lock(lock->get_name());
             locks.erase(lock->get_name());
-            delete (lock);
+            CHECK_AND_FREE(lock);
         }
     }
     return false;

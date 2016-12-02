@@ -21,68 +21,21 @@
 #ifndef REACTFS_READ_WRITE_LOCK_H
 #define REACTFS_READ_WRITE_LOCK_H
 
-#include <mutex>
-#include <fcntl.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <thread>
-#include <unordered_map>
+#include "shared_lock.h"
 
-#include "exclusive_lock.h"
-#include "timer.h"
-#include "__alarm.h"
-#include "process_utils.h"
-#include "unordered_map"
-#include "__bitset.h"
-#include "mapped_data.h"
-#include "rw_lock_structs_v0.h"
-
-
-#define DEFAULT_LOCK_MGR_SLEEP 30 * 1000
-#define DEFAULT_READ_LOCK_TIMEOUT 5 * 60 * 1000
-#define DEFAULT_WRITE_LOCK_TIMEOUT  60 * 1000
 #define DEFAULT_RW_LOCK_EXPIRY 10 * 60 * 1000
-
-#define RW_SHARED_LOCK_TABLE_NAME "LOCK_shared_table"
-#define RW_SHARED_LOCK_NAME "LOCK_shared_lock_table"
-
-#define SHARED_LOCK_MAJ_VERSION ((uint16_t) 0)
-#define SHARED_LOCK_MIN_VERSION ((uint16_t) 1)
 
 namespace com {
     namespace wookler {
         namespace reactfs {
             namespace common {
-                typedef __owner_v0 __owner;
                 typedef __lock_readers_v0 __lock_readers;
-                typedef __lock_struct_v0 __lock_struct;
-                typedef __shared_lock_data_v0 __shared_lock_data;
+                typedef __rw_lock_struct_v0 __rw_lock_struct;
 
-                class shared_lock_table {
+                class rw_lock_table : public base_lock_table {
                 private:
-                    /// Current version of the data structures being used.
-                    __version_header version;
-
-                    /// Memory-mapped file handle.
-                    shm_mapped_data *mm_data = nullptr;
-
-                    /// Shared lock handle to writing data.
-                    exclusive_lock *table_lock = nullptr;
-
                     /// Shared Locks registry pointer.
-                    __lock_struct *locks = nullptr;
-
-                    /// Persisted data header pointer.
-                    __shared_lock_data *header_ptr = nullptr;
-
-                    /*!
-                     * Create/Map the data file to the local instance.
-                     *
-                     * @param mode - File create mode.
-                     * @param manager - Is this a server instance.
-                     */
-                    void __create(mode_t mode, bool manager = false);
+                    __rw_lock_struct *locks = nullptr;
 
                 public:
                     /*! <constructor
@@ -90,7 +43,7 @@ namespace com {
                      *
                      * @return
                      */
-                    shared_lock_table() {
+                    rw_lock_table(string group) : base_lock_table(group) {
                         version.major = SHARED_LOCK_MAJ_VERSION;
                         version.minor = SHARED_LOCK_MIN_VERSION;
                     }
@@ -98,31 +51,8 @@ namespace com {
                     /*! <destructor
                      *  Instance destructor.
                      */
-                    ~shared_lock_table() {
-                        CHECK_AND_FREE(table_lock);
-                        CHECK_AND_FREE(mm_data);
+                    ~rw_lock_table() {
                         locks = nullptr;
-                        header_ptr = nullptr;
-                    }
-
-                    /*!
-                     * Get the max number of shared locks that can be registered.
-                     *
-                     * @return - Max shared locks.
-                     */
-                    uint32_t get_max_size() {
-                        PRECONDITION(NOT_NULL(header_ptr));
-                        return header_ptr->max_count;
-                    }
-
-                    /*!
-                     * Get the number of shared lock slots currently being used.
-                     *
-                     * @return - Used shared lock slots.
-                     */
-                    uint32_t get_used_size() {
-                        PRECONDITION(NOT_NULL(header_ptr));
-                        return header_ptr->used_count;
                     }
 
                     /*!
@@ -131,13 +61,13 @@ namespace com {
                      * @param index - Record index.
                      * @return - Lock record at index.
                      */
-                    __lock_struct *get_at(uint32_t index) {
+                    __rw_lock_struct *get_at(uint32_t index) {
                         PRECONDITION(NOT_NULL(locks));
                         PRECONDITION(NOT_NULL(header_ptr));
                         PRECONDITION(index >= 0 && index < header_ptr->max_count);
 
-                        __lock_struct *ptr = locks + index;
-                        if (ptr->used) {
+                        __rw_lock_struct *ptr = locks + index;
+                        if (ptr->w_lock_struct.used) {
                             return ptr;
                         }
                         return nullptr;
@@ -148,16 +78,29 @@ namespace com {
                      *
                      * @param mode - Shared lock file create mode.
                      * @param is_manager - Is this instance a server instance?
+                     * @param reset - Reset the lock table data.
                      */
-                    void create(mode_t mode, bool is_manager) {
-                        __create(mode, is_manager);
+                    void create(mode_t mode, bool is_manager, bool reset) {
+                        __create(MAX_RW_SHARED_LOCKS, sizeof(__rw_lock_struct), mode, is_manager, reset);
+                        void *ptr = get_data_ptr();
+                        CHECK_NOT_NULL(ptr);
+                        if (reset) {
+                            memset(ptr, 0, MAX_RW_SHARED_LOCKS * sizeof(__rw_lock_struct));
+                        }
+                        locks = static_cast<__rw_lock_struct *>(ptr);
+                        POSTCONDITION(NOT_NULL(locks));
                     }
 
                     /*!
                      * Map the shared lock data to this instance in client mode.
                      */
                     void create() {
-                        __create(0, false);
+                        __create(MAX_RW_SHARED_LOCKS, sizeof(__rw_lock_struct), 0, false, false);
+                        void *ptr = get_data_ptr();
+                        CHECK_NOT_NULL(ptr);
+
+                        locks = static_cast<__rw_lock_struct *>(ptr);
+                        POSTCONDITION(NOT_NULL(locks));
                     }
 
                     /*!
@@ -167,7 +110,7 @@ namespace com {
                      * @param timeout - Lock add timeout, defaults to DEFAULT_WRITE_LOCK_TIMEOUT
                      * @return - Allocated shared lock record.
                      */
-                    __lock_struct *add_lock(string name, uint64_t timeout = DEFAULT_WRITE_LOCK_TIMEOUT);
+                    __rw_lock_struct *add_lock(string name, uint64_t timeout = DEFAULT_WRITE_LOCK_TIMEOUT);
 
                     /*!
                      * Remove the shared lock record, already registered.
@@ -194,7 +137,7 @@ namespace com {
                     exclusive_lock *lock;
 
                     /// SHM mapped structure for this lock instance.
-                    __lock_struct *lock_struct;
+                    __rw_lock_struct *lock_struct;
 
                     /// Current transaction ID, if in a locked mode.
                     string txn_id;
@@ -203,7 +146,7 @@ namespace com {
                     unordered_map<string, int> reader_threads;
 
                     /// Pointer to the SHM mapped table.
-                    shared_lock_table *table = nullptr;
+                    rw_lock_table *table = nullptr;
 
                     /// Name of the shared lock.
                     string name;
@@ -232,12 +175,13 @@ namespace com {
                      */
                     void check_and_clear() {
                         PRECONDITION(NOT_NULL(lock_struct));
-                        PRECONDITION(lock_struct->used);
+                        PRECONDITION(lock_struct->w_lock_struct.used);
 
                         pid_t pid = getpid();
 
                         // Check and release, if this instance currently holds a write lock.
-                        if (lock_struct->write_locked && lock_struct->owner.process_id == pid) {
+                        if (lock_struct->w_lock_struct.write_locked &&
+                            lock_struct->w_lock_struct.owner.process_id == pid) {
                             release_write_lock();
                         }
                         // Check if this instance has acquired any read locks.
@@ -266,14 +210,14 @@ namespace com {
                      * that have expired due to inactivity.
                      */
                     void check_lock_valid() {
-                        if (!lock_struct->used) {
+                        if (!lock_struct->w_lock_struct.used) {
                             lock_error e = LOCK_ERROR("Lock has been released by manager.");
                             state.set_error(&e);
-                        } else if (strncmp(lock_struct->name, name.c_str(), name.length()) != 0) {
+                        } else if (strncmp(lock_struct->w_lock_struct.name, name.c_str(), name.length()) != 0) {
                             lock_error e = LOCK_ERROR("Lock has been released by manager and reassigned.");
                             state.set_error(&e);
                         }
-                        uint64_t delta = (time_utils::now() - lock_struct->last_used);
+                        uint64_t delta = (time_utils::now() - lock_struct->w_lock_struct.last_used);
                         if (delta >= DEFAULT_RW_LOCK_EXPIRY) {
                             lock_error e = LOCK_ERROR("Lock has expired.");
                             state.set_error(&e);
@@ -304,10 +248,9 @@ namespace com {
                                 throw LOCK_ERROR("Error getting lock. [name=%s]", lock->get_name()->c_str());
                             }
                         }
-                        lock_struct->last_used = time_utils::now();
+                        lock_struct->w_lock_struct.last_used = time_utils::now();
                         return locked;
                     }
-
 
 
                 public:
@@ -326,8 +269,6 @@ namespace com {
                     ~read_write_lock() {
                         state.set_state(__state_enum::Disposed);
                         check_and_clear();
-
-                        CHECK_AND_FREE(lock);
                         lock_struct = nullptr;
                     }
 
@@ -337,18 +278,18 @@ namespace com {
                      * @param name - Shared lock name.
                      * @param table - SHM based lock table pointer.
                      */
-                    void create(const string *name, shared_lock_table *table) {
+                    void create(const string *name, rw_lock_table *table) {
                         try {
                             CHECK_NOT_NULL(table);
                             CHECK_NOT_EMPTY_P(name);
 
                             this->name = string(*name);
-                            INIT_LOCK_P(lock, &(this->name));
+                            this->lock = table->get_lock();
 
                             this->table = table;
                             lock_struct = this->table->add_lock(*name);
                             POSTCONDITION(NOT_NULL(lock_struct));
-                            lock_struct->last_used = time_utils::now();
+                            lock_struct->w_lock_struct.last_used = time_utils::now();
 
                             state.set_state(__state_enum::Available);
                         } catch (const exception &e) {
@@ -394,11 +335,14 @@ namespace com {
                     bool has_write_lock(string thread_id) {
                         check_lock_valid();
                         CHECK_STATE_AVAILABLE(state);
-                        lock_struct->last_used = time_utils::now();
+                        lock_struct->w_lock_struct.last_used = time_utils::now();
                         pid_t pid = getpid();
-                        if (lock_struct->write_locked && lock_struct->owner.process_id == pid) {
-                            if (strncmp(lock_struct->owner.txn_id, txn_id.c_str(), txn_id.length()) == 0) {
-                                return (strncmp(lock_struct->owner.thread_id, thread_id.c_str(), thread_id.length()) ==
+                        if (lock_struct->w_lock_struct.write_locked &&
+                            lock_struct->w_lock_struct.owner.process_id == pid) {
+                            if (strncmp(lock_struct->w_lock_struct.owner.txn_id, txn_id.c_str(), txn_id.length()) ==
+                                0) {
+                                return (strncmp(lock_struct->w_lock_struct.owner.thread_id, thread_id.c_str(),
+                                                thread_id.length()) ==
                                         0);
                             }
                         }
@@ -414,7 +358,7 @@ namespace com {
                     bool has_thread_lock(string thread_id) {
                         check_lock_valid();
                         CHECK_STATE_AVAILABLE(state);
-                        lock_struct->last_used = time_utils::now();
+                        lock_struct->w_lock_struct.last_used = time_utils::now();
                         unordered_map<std::string, int>::const_iterator iter = reader_threads.find(thread_id);
                         if (iter != reader_threads.end()) {
                             int index = iter->second;
@@ -470,17 +414,18 @@ namespace com {
                             if (ret) {
                                 if (has_write_lock(thread_id)) {
                                     locked = true;
-                                } else if (!lock_struct->write_locked && lock_struct->reader_count == 0) {
-                                    lock_struct->write_locked = true;
-                                    lock_struct->owner.lock_timestamp = time_utils::now();
-                                    memset(lock_struct->owner.owner, 0, SIZE_USER_NAME);
-                                    strncpy(lock_struct->owner.owner, owner.c_str(), owner.length());
-                                    lock_struct->owner.process_id = getpid();
-                                    memset(lock_struct->owner.txn_id, 0, SIZE_UUID);
+                                } else if (!lock_struct->w_lock_struct.write_locked && lock_struct->reader_count == 0) {
+                                    lock_struct->w_lock_struct.write_locked = true;
+                                    lock_struct->w_lock_struct.owner.lock_timestamp = time_utils::now();
+                                    memset(lock_struct->w_lock_struct.owner.owner, 0, SIZE_USER_NAME);
+                                    strncpy(lock_struct->w_lock_struct.owner.owner, owner.c_str(), owner.length());
+                                    lock_struct->w_lock_struct.owner.process_id = getpid();
+                                    memset(lock_struct->w_lock_struct.owner.txn_id, 0, SIZE_UUID);
                                     txn_id = common_utils::uuid();
-                                    strncpy(lock_struct->owner.txn_id, txn_id.c_str(), txn_id.length());
-                                    memset(lock_struct->owner.thread_id, 0, SIZE_THREAD_ID);
-                                    strncpy(lock_struct->owner.thread_id, thread_id.c_str(), thread_id.length());
+                                    strncpy(lock_struct->w_lock_struct.owner.txn_id, txn_id.c_str(), txn_id.length());
+                                    memset(lock_struct->w_lock_struct.owner.thread_id, 0, SIZE_THREAD_ID);
+                                    strncpy(lock_struct->w_lock_struct.owner.thread_id, thread_id.c_str(),
+                                            thread_id.length());
 
                                     locked = true;
                                 }
@@ -527,7 +472,7 @@ namespace com {
                             bool ret = false;
                             TRY_LOCK(lock, 0, timeout, ret);
                             if (ret) {
-                                if (!lock_struct->write_locked) {
+                                if (!lock_struct->w_lock_struct.write_locked) {
                                     if (!has_thread_lock(thread_id)) {
                                         if (lock_struct->reader_count < MAX_READER_LOCKS) {
                                             int index = find_free_reader();
@@ -545,7 +490,7 @@ namespace com {
                                                 locked = true;
                                             } else {
                                                 throw BASE_ERROR("Error getting free read lock pointer. [name=%s]",
-                                                                 lock_struct->name);
+                                                                 lock_struct->w_lock_struct.name);
                                             }
                                         } else {
                                             locked = false;
@@ -590,15 +535,15 @@ namespace com {
 
                         TRY_LOCK_WITH_ERROR(lock, 0, DEFAULT_LOCK_TIMEOUT);
                         bool locked = false;
-                        if (lock_struct->write_locked) {
+                        if (lock_struct->w_lock_struct.write_locked) {
                             string thread_id = thread_utils::get_current_thread();
                             if (has_write_lock(thread_id)) {
-                                lock_struct->owner.process_id = -1;
-                                lock_struct->owner.lock_timestamp = 0;
-                                memset(lock_struct->owner.txn_id, 0, SIZE_UUID);
-                                memset(lock_struct->owner.owner, 0, SIZE_USER_NAME);
-                                memset(lock_struct->owner.thread_id, 0, SIZE_THREAD_ID);
-                                lock_struct->write_locked = false;
+                                lock_struct->w_lock_struct.owner.process_id = -1;
+                                lock_struct->w_lock_struct.owner.lock_timestamp = 0;
+                                memset(lock_struct->w_lock_struct.owner.txn_id, 0, SIZE_UUID);
+                                memset(lock_struct->w_lock_struct.owner.owner, 0, SIZE_USER_NAME);
+                                memset(lock_struct->w_lock_struct.owner.thread_id, 0, SIZE_THREAD_ID);
+                                lock_struct->w_lock_struct.write_locked = false;
                                 txn_id = EMPTY_STRING;
                                 locked = true;
                             }
@@ -630,21 +575,29 @@ namespace com {
                     }
 
 
+                    /*!
+                     * Increment the reference count for this lock instance.
+                     */
                     void increment_ref_count() {
                         reference_count++;
                     }
 
+                    /*!
+                     * Decrement the reference count for this lock instance.
+                     */
                     void decrement_ref_count() {
                         reference_count--;
                     }
 
+                    /*!
+                     * Get the reference count for this lock instance.
+                     *
+                     * @return - Reference count.
+                     */
                     uint32_t get_reference_count() {
                         return reference_count;
                     }
                 };
-
-
-
             }
         }
     }

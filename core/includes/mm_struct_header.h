@@ -84,6 +84,9 @@ namespace com {
                     /// Name of this instance of the memory manager.
                     string name;
 
+                    /// Unique ID of this structure.
+                    uint64_t id;
+
                     /// Base directory for storing mapped files.
                     Path *base_dir = nullptr;
 
@@ -104,6 +107,9 @@ namespace com {
 
                     /// Bit set representing available block records.
                     com::wookler::reactfs::common::__bitset *block_bitset;
+
+                    /// Type of blocks to create.
+                    __block_def block_type = __block_def::BASIC;
 
                     /*!
                      * Get a filename, relative to the base directory.
@@ -187,7 +193,7 @@ namespace com {
                             block->finish();
                         }
                         uint64_t block_id = header->last_block_index++;
-                        string uuid = block_utils::create_new_block(block_id, p.get_path(),
+                        string uuid = block_utils::create_new_block(block_id, id, p.get_path(), block_type,
                                                                     __block_usage::PRIMARY,
                                                                     header->block_size,
                                                                     header->block_record_size, r_index);
@@ -197,10 +203,10 @@ namespace com {
                         bi->block_id = block_id;
                         bi->block_start_index = r_index;
                         bi->block_last_index = r_index;
-                        memset(bi->filename, 0, SIZE_MAX_PATH);
+                        memset(bi->filename, 0, SIZE_MAX_PATH + 1);
                         memcpy(bi->filename, p.get_path().c_str(), p.get_path().length());
                         bi->deleted = false;
-                        memset(bi->block_uuid, 0, SIZE_UUID);
+                        memset(bi->block_uuid, 0, SIZE_UUID + 1);
                         memcpy(bi->block_uuid, uuid.c_str(), uuid.length());
                         bi->created_time = time_utils::now();
                         bi->updated_time = bi->created_time;
@@ -301,7 +307,7 @@ namespace com {
                     }
 
                 public:
-                    mm_struct_manager(string name, string base_dir) {
+                    mm_struct_manager(uint64_t id, string name, string base_dir, __block_def block_type) {
                         PRECONDITION(!IS_EMPTY(name));
                         PRECONDITION(!IS_EMPTY(base_dir));
 
@@ -313,6 +319,7 @@ namespace com {
                         this->base_dir->append(name);
 
                         this->name = name;
+                        this->block_type = block_type;
                     }
 
                     ~mm_struct_manager() {
@@ -532,7 +539,7 @@ namespace com {
                             mount_client *m_client = n_env->get_mount_client();
                             block_bitset->clear(bi->index);
 
-                            block_utils::delete_block(m_client, bi->block_id, string(bi->filename));
+                            block_utils::delete_block(m_client, bi->block_id, string(bi->filename), block_type);
 
                             r = true;
                         }

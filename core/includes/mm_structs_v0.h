@@ -37,7 +37,7 @@ namespace com {
                  */
                 typedef struct __mm_mount_v0__ {
                     /// Root path of the mount point. All files will be created under this root path.
-                    char path[SIZE_MAX_PATH];
+                    char path[SIZE_MAX_PATH + 1];
                     /// Number of blocks used by this block list on this mount point.
                     uint32_t blocks_used = 0;
                     /// Last timestamp when a block was created on this mount point.
@@ -53,11 +53,11 @@ namespace com {
                     /// Indicates if this block record is already used.
                     bool used = false;
                     /// Absolute block file path.
-                    char filename[SIZE_MAX_PATH];
+                    char filename[SIZE_MAX_PATH + 1];
                     /// Unique block id.
                     uint32_t block_id;
                     /// UUID of this block.
-                    char block_uuid[SIZE_UUID];
+                    char block_uuid[SIZE_UUID + 1];
                     /// Has this block been deleted.
                     bool deleted = false;
                     /// Start index of the records in this block.
@@ -79,11 +79,11 @@ namespace com {
                     /// Schema version of the saved data
                     __version_header version;
                     /// Unique name of this block list.
-                    char name[MM_STRUCT_NAME_SIZE];
+                    char name[MM_STRUCT_NAME_SIZE + 1];
                     /// Sub-directory prefix, used while creating block files under the mount points.
-                    char dir_prefix[MM_MAX_SUB_PATH];
+                    char dir_prefix[MM_MAX_SUB_PATH + 1];
                     /// File system filename that these blocks are mapped to.
-                    char filename[SIZE_MAX_PATH];
+                    char filename[SIZE_MAX_PATH + 1];
                     /// Size of the blocks to be created.
                     uint32_t block_size = 0;
                     /// Estimated block record size (used for estimating the index file size.)

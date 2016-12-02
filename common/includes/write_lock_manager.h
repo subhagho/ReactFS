@@ -18,10 +18,10 @@
 // Created by Subhabrata Ghosh on 25/11/16.
 //
 
-#ifndef REACTFS_READ_WRITE_LOCK_MANAGER_H
-#define REACTFS_READ_WRITE_LOCK_MANAGER_H
+#ifndef REACTFS_WRITE_LOCK_MANAGER_H
+#define REACTFS_WRITE_LOCK_MANAGER_H
 
-#include "read_write_lock_client.h"
+#include "write_lock_client.h"
 #include "__threads.h"
 
 #define RW_LOCK_MANAGER_THREAD "RW_LOCK_MANAGER_THREAD"
@@ -33,7 +33,7 @@ namespace com {
                 /*!
                  * Class defines the constructs for creating/managing lock groups.
                  */
-                class read_write_lock_manager : public read_write_lock_client {
+                class write_lock_manager : public write_lock_client {
                 private:
                     /// Use a local thread for lock management?
                     bool use_manager_thread = false;
@@ -45,7 +45,7 @@ namespace com {
                     string group;
 
                     /// Method to be used by the local management thread.
-                    static void run(read_write_lock_manager *manager);
+                    static void run(write_lock_manager *manager);
 
                 public:
                     /*!<constructor
@@ -54,14 +54,14 @@ namespace com {
                      * @param group - Lock group name.
                      * @param use_manager_thread - Use local thread for lock management?
                      */
-                    read_write_lock_manager(string group, bool use_manager_thread) : read_write_lock_client(group) {
+                    write_lock_manager(string group, bool use_manager_thread) : write_lock_client(group) {
                         this->use_manager_thread = use_manager_thread;
                     }
 
                     /*!<destructor
                      * Default destructor.
                      */
-                    ~read_write_lock_manager() override {
+                    ~write_lock_manager() override {
                         state.set_state(__state_enum::Disposed);
                         if (NOT_NULL(manager_thread)) {
                             manager_thread->join();
@@ -101,17 +101,17 @@ namespace com {
                 /*!
                  * Runnable instance to be used for managing shared locks via the environment thread pool.
                  */
-                class rw_lock_manager_callback : public __runnable_callback {
+                class w_lock_manager_callback : public __runnable_callback {
                 private:
                     /// Pointer to the lock manager.
-                    read_write_lock_manager *manager = nullptr;
+                    write_lock_manager *manager = nullptr;
                 public:
                     /*!
                      * Create a new instance of the lock manager runnable.
                      *
                      * @param manager - Pointer to the lock manager.
                      */
-                    rw_lock_manager_callback(read_write_lock_manager *manager) : __runnable_callback(
+                    w_lock_manager_callback(write_lock_manager *manager) : __runnable_callback(
                             RW_LOCK_MANAGER_THREAD) {
                         CHECK_NOT_NULL(manager);
                         PRECONDITION(manager->get_state() == __state_enum::Available);
@@ -170,4 +170,4 @@ namespace com {
         }
     }
 }
-#endif //REACTFS_READ_WRITE_LOCK_MANAGER_H
+#endif //REACTFS_WRITE_LOCK_MANAGER_H

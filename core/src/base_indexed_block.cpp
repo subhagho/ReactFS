@@ -168,7 +168,7 @@ __block_check_record *com::wookler::reactfs::core::base_indexed_block::check_blo
     uint32_t total_records = 0;
     uint32_t deleted_records = 0;
 
-    for (uint32_t ii = header->start_index; ii <= (header->last_index - 1); ii++) {
+    for (uint32_t ii = header->start_index; ii < header->last_index; ii++) {
         const __record_index_ptr *iptr = index_ptr->read_index(ii, true);
         if (IS_NULL(iptr)) {
             throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
@@ -185,11 +185,8 @@ __block_check_record *com::wookler::reactfs::core::base_indexed_block::check_blo
             }
             TRACE("[block id=%lu][record id=%lu] Record checksum check. [expected=%lu][computed=%lu]",
                   header->block_id, ii, ptr->header->checksum, checksum);
-            if (ptr->header->state != __record_state::R_READABLE) {
-                block_checksum -= checksum;
-            } else {
-                block_checksum += checksum;
-            }
+
+            block_checksum += checksum;
         } else {
             deleted_records++;
         }

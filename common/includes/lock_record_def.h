@@ -59,8 +59,8 @@ typedef enum {
 } __lock_state;
 
 typedef struct __app_handle__ {
-    char app_name[MAX_STRING_SIZE];
-    char app_id[MAX_STRING_SIZE];
+    char app_name[MAX_STRING_SIZE + 1];
+    char app_id[MAX_STRING_SIZE + 1];
     pid_t proc_id;
     uint64_t register_time = 0;
     uint64_t last_active_ts = 0;
@@ -298,8 +298,8 @@ namespace com {
 
                         // Reset App handle
                         record->app.proc_id = 0;
-                        memset(record->app.app_id, 0, MAX_STRING_SIZE);
-                        memset(record->app.app_name, 0, MAX_STRING_SIZE);
+                        memset(record->app.app_id, 0, MAX_STRING_SIZE + 1);
+                        memset(record->app.app_name, 0, MAX_STRING_SIZE + 1);
                         record->app.last_active_ts = 0;
                         record->app.register_time = 0;
 

@@ -32,22 +32,46 @@ namespace com {
         namespace reactfs {
             namespace core {
 
+                /*!
+                 * Enum defines how the specified data block is to be used.
+                 */
                 typedef enum __block_usage__ {
-                    PRIMARY = 0, /// Block is currently assigned to be the primary block.
-                    REPLICA = 1, /// Block is currently assigned as a replica block.
-                    DELETED = 2 /// Block has been marked as deleted.
+                    /// Block is currently assigned to be the primary block.
+                            PRIMARY = 0,
+                    /// Block is currently assigned as a replica block.
+                            REPLICA = 1,
+                    /// Block has been marked as deleted.
+                            DELETED = 2
                 } __block_usage;
 
+                /*!
+                 * Enum defines the type of the data block.
+                 */
                 typedef enum __block_def__ {
-                    BASIC = 0, SORTED_LIST = 1, MAP = 2
+                    /// Basic (unindexed data block)
+                            BASIC = 0,
+                    /// Row indexed data block.
+                            INDEXED = 1,
+                    /// Data block with sortable index.
+                            SORTABLE = 2,
+                    /// Data block with Map based index.
+                            MAP = 3
                 } __block_def;
 
+                /*!
+                 * Enum defines the compression type (if any) for the data block.
+                 */
                 typedef enum __compression_type__ {
-                    NO_COMPRESSION = -1, /// Data is not compressed.
-                    GZIP = 0, /// Data compressed using GZIP
-                    LZO, /// Data compressed using LZO
-                    ZLIB, /// Data compressed using GZIP
-                    SNAPPY /// Data compressed using Snappy
+                    /// Data is not compressed.
+                            NO_COMPRESSION = -1,
+                    /// Data compressed using GZIP
+                            GZIP = 0,
+                    /// Data compressed using LZO
+                            LZO,
+                    /// Data compressed using GZIP
+                            ZLIB,
+                    /// Data compressed using Snappy
+                            SNAPPY
                 } __compression_type;
 
                 typedef struct __compression_v0__ {
@@ -64,25 +88,46 @@ namespace com {
                     __encryption_type type = __encryption_type::NO_ENCRYPTION;
                 } __encryption_v0;
 
+                /*!
+                 * Enum defines the current state of the data block.
+                 */
                 typedef enum __block_state__ {
-                    AVAILABLE = 0, /// Data block is available for read/write
-                    LOCKED = 1, /// Data block is locked for writes
-                    OUT_OF_SYNC = 2, /// Data block is out-of-sync, needs to be synced
-                    COMMIT_PENDING = 3, /// Data block has commit pending.
-                    CORRUPTED = 4 /// Block is corrupted and needs to be re-synced.
+                    /// Data block is available for read/write
+                            AVAILABLE = 0,
+                    /// Data block is locked for writes
+                            LOCKED = 1,
+                    /// Data block is out-of-sync, needs to be synced
+                            OUT_OF_SYNC = 2,
+                    /// Data block has commit pending.
+                            COMMIT_PENDING = 3,
+                    /// Block is corrupted and needs to be re-synced.
+                            CORRUPTED = 4
                 } __block_state;
 
+                /*!
+                 * Enum defines the write state of the data block.
+                 */
                 typedef enum __write_state__ {
-                    WRITABLE = 1, /// Block is writable
-                    CLOSED = 2 /// Block has been closed for write.
+                    /// Block is writable
+                            WRITABLE = 1,
+                    /// Block has been closed for write.
+                            CLOSED = 2
                 } __write_state;
 
+                /*!
+                 * Enum defines the current state of the data record.
+                 */
                 typedef enum __record_state__ {
-                    R_FREE = 0, /// Record is unused
-                    R_READABLE = 1, /// Record is available to be read.
-                    R_DELETED = 2, /// Record has been deleted.
-                    R_DIRTY = 3, /// Record is dirty
-                    R_ALL = 4 /// Record fetch state (Read records in all states)
+                    /// Record is unused
+                            R_FREE = 0,
+                    /// Record is available to be read.
+                            R_READABLE = 1,
+                    /// Record has been deleted.
+                            R_DELETED = 2,
+                    /// Record is dirty
+                            R_DIRTY = 3,
+                    /// Record fetch state (Read records in all states)
+                            R_ALL = 4
                 } __record_state;
 
                 typedef struct __record_header__v0__ {
@@ -102,7 +147,7 @@ namespace com {
 
 
                 typedef struct __record_index_header_v0__ {
-                    char block_uid[SIZE_UUID];
+                    char block_uid[SIZE_UUID + 1];
                     __version_header version;
                     uint64_t block_id;
                     uint64_t create_time = 0;
@@ -136,8 +181,8 @@ namespace com {
 
                 typedef struct __block_header_v0__ {
                     __version_header version;
-                    char block_uid[SIZE_UUID];
-                    uint64_t source_id;
+                    char block_uid[SIZE_UUID + 1];
+                    uint64_t parent_id;
                     __block_usage usage = __block_usage::PRIMARY;
                     __block_def type = __block_def::BASIC;
                     __block_state state = __block_state::AVAILABLE;

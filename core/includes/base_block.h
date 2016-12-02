@@ -105,6 +105,7 @@ namespace com {
                      * Create a new file backed data block.
                      *
                      * @param block_id - Unique block id for this data block.
+                     * @param parent_id - Unique ID of the parent structure.
                      * @param filename - Backing filename for this data block.
                      * @param usage - Usage of this data block. (PRIMARY or REPLICATED)
                      * @param type - Type of this data block.
@@ -113,8 +114,8 @@ namespace com {
                      * @param overwrite - Overwrite if data block file already exists?
                      * @return - UUID of the new block created.
                      */
-                    string __create_block(uint64_t block_id, string filename, __block_usage usage, __block_def type,
-                                          uint64_t block_size, uint64_t start_index,
+                    string __create_block(uint64_t block_id, uint64_t parent_id, string filename, __block_usage usage,
+                                          __block_def type, uint64_t block_size, uint64_t start_index,
                                           bool overwrite);
 
                     /*!
@@ -594,6 +595,7 @@ namespace com {
                      * Create a new instance of a raw data block.
                      *
                      * @param block_id - Unique block id for this data block.
+                     * @param parent_id - Unique ID of the parent structure.
                      * @param filename - Backing filename for this data block.
                      * @param usage - Usage type of this data block. (PRIMARY or REPLICATED)
                      * @param block_size - Maximum data size allowed for this block.
@@ -601,10 +603,10 @@ namespace com {
                      * @param overwrite - Overwrite if data block file already exists?
                      * @return - UUID of the new block created.
                      */
-                    virtual string create(uint64_t block_id, string filename, __block_usage usage,
+                    virtual string create(uint64_t block_id, uint64_t parent_id, string filename, __block_usage usage,
                                           uint64_t block_size, uint64_t start_index, uint32_t est_record_size,
                                           bool overwrite) {
-                        string uuid = __create_block(block_id, filename, usage, __block_def::BASIC,
+                        string uuid = __create_block(block_id, parent_id, filename, usage, __block_def::BASIC,
                                                      block_size, start_index, overwrite);
                         uint32_t estimated_records = (block_size / est_record_size);
                         close();
@@ -721,11 +723,18 @@ namespace com {
                     /*!
                      * Static utility funtion to get the lockname for the specified block id.
                      *
+                     * @param parent_id - Parent ID
                      * @param block_id - Block ID
                      * @return - Lock name associated with this block.
                      */
-                    static string get_lock_name(uint64_t block_id) {
-                        return common_utils::format("block_%lu_lock", block_id);
+                    static string get_lock_name(uint64_t block_id, char *block_uid) {
+                        string ss(block_uid);
+                        vector<string> vs;
+                        string_utils::split(ss, '-', &vs);
+                        POSTCONDITION(!IS_EMPTY(vs));
+                        POSTCONDITION(!IS_EMPTY(vs[0]));
+
+                        return common_utils::format("b%s%lu", vs[0].c_str(), block_id);
                     }
                 };
             }

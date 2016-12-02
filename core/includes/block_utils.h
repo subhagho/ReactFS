@@ -10,6 +10,7 @@
 #include "common/includes/time_utils.h"
 #include "common_structs.h"
 #include "base_block.h"
+#include "base_indexed_block.h"
 #include "clients/mount_client.h"
 
 using namespace com::wookler::reactfs::core::client;
@@ -24,8 +25,10 @@ namespace com {
                      * Create a new basic block based on the specified parameters.
                      *
                      * @param block_id - Block id of the new block.
+                     * @param parent_id - Unique ID of the parent structure.
                      * @param filename - Filename to be used for this block.
-                     * @param type - Type of the block.
+                     * @param block_type - Type of the data block to create.
+                     * @param usage - Type of the block.
                      * @param block_size - Data size for this block.
                      * @param est_record_size - Estimated size for the records in this block. (to be used to estimate index size)
                      * @param start_index - Start index for the records in this block.
@@ -33,16 +36,32 @@ namespace com {
                      * @return - UUID of the new block created.
                      */
                     static string
-                    create_new_block(uint64_t block_id, const string filename, __block_usage type, uint32_t block_size,
+                    create_new_block(uint64_t block_id, uint64_t parent_id, const string filename,
+                                     __block_def block_type, __block_usage usage, uint32_t block_size,
                                      uint32_t est_record_size, uint64_t start_index, bool overwrite = false) {
-                        base_block *block = new base_block();
-                        CHECK_ALLOC(block, TYPE_NAME(base_block));
-                        string uuid = block->create(block_id, filename, type, block_size, start_index, est_record_size,
-                                                    overwrite);
-                        POSTCONDITION(!IS_EMPTY(uuid));
-                        CHECK_AND_FREE(block);
+                        if (block_type == __block_def::BASIC) {
+                            base_block *block = new base_block();
+                            CHECK_ALLOC(block, TYPE_NAME(base_block));
+                            string uuid = block->create(block_id, parent_id, filename, usage, block_size, start_index,
+                                                        est_record_size,
+                                                        overwrite);
+                            POSTCONDITION(!IS_EMPTY(uuid));
+                            CHECK_AND_FREE(block);
 
-                        return uuid;
+                            return uuid;
+                        } else if (block_type == __block_def::INDEXED) {
+                            base_block *block = new base_indexed_block();
+                            CHECK_ALLOC(block, TYPE_NAME(base_indexed_block));
+                            string uuid = block->create(block_id, parent_id, filename, usage, block_size, start_index,
+                                                        est_record_size,
+                                                        overwrite);
+                            POSTCONDITION(!IS_EMPTY(uuid));
+                            CHECK_AND_FREE(block);
+
+                            return uuid;
+                        }
+
+                        throw FS_BASE_ERROR("Un-supported block type. [type=%d]", block_type);
                     }
 
                     /*!
@@ -51,13 +70,23 @@ namespace com {
                      * @param m_client - Mount client handle.
                      * @param block_id - Block ID of the block to be deleted.
                      * @param filename - File name of the block file.
+                     * @param block_type - Type of block that is being deleted.
                      */
-                    static void delete_block(mount_client *m_client, uint64_t block_id, string filename) {
-                        base_block *block = new base_block();
-                        CHECK_ALLOC(block, TYPE_NAME(base_block));
-                        block->open(block_id, filename);
-                        CHECK_AND_FREE(block);
-
+                    static void
+                    delete_block(mount_client *m_client, uint64_t block_id, string filename, __block_def block_type) {
+                        if (block_type == __block_def::BASIC) {
+                            base_block *block = new base_block();
+                            CHECK_ALLOC(block, TYPE_NAME(base_block));
+                            block->open(block_id, filename);
+                            CHECK_AND_FREE(block);
+                        } else if (block_type == __block_def::INDEXED) {
+                            base_block *block = new base_indexed_block();
+                            CHECK_ALLOC(block, TYPE_NAME(base_indexed_block));
+                            block->open(block_id, filename);
+                            CHECK_AND_FREE(block);
+                        } else {
+                            throw FS_BASE_ERROR("Un-supported block type. [type=%d]", block_type);
+                        }
                         Path p(filename);
                         if (p.exists()) {
                             uint64_t f_size = file_utils::get_file_size(p.get_path());

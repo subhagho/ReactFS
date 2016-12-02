@@ -18,10 +18,10 @@
 // Created by Subhabrata Ghosh on 25/11/16.
 //
 
-#ifndef REACTFS_READ_WRITE_LOCK_CLIENT_H
-#define REACTFS_READ_WRITE_LOCK_CLIENT_H
+#ifndef REACTFS_WRITE_LOCK_CLIENT_H
+#define REACTFS_WRITE_LOCK_CLIENT_H
 
-#include "read_write_lock.h"
+#include "write_lock.h"
 
 namespace com {
     namespace wookler {
@@ -33,14 +33,14 @@ namespace com {
                  * and should not be created/disposed outside the context of the client.
                  *
                  */
-                class read_write_lock_client : public lock_client {
+                class write_lock_client : public lock_client {
                 protected:
 
                     /// Pointer to SHM based shared lock table.
-                    rw_lock_table *table = nullptr;
+                    w_lock_table *table = nullptr;
 
                     /// Registry for locks created in the process space.
-                    unordered_map<string, read_write_lock *> locks;
+                    unordered_map<string, write_lock *> locks;
 
                     virtual void create(mode_t mode, bool is_manager, bool reset) override;
 
@@ -49,13 +49,13 @@ namespace com {
                      *
                      * @return - Shared lock table pointer.
                      */
-                    rw_lock_table *get_lock_table() {
+                    w_lock_table *get_lock_table() {
                         CHECK_STATE_AVAILABLE(state);
                         return table;
                     }
 
                 public:
-                    read_write_lock_client(string group) : lock_client(group, __lock_type::LOCK_RW) {
+                    write_lock_client(string group) : lock_client(group, __lock_type::LOCK_W) {
 
                     }
 
@@ -63,13 +63,13 @@ namespace com {
                      * Dispose this instance of the lock client.
                      * Will attempt to release lock(s) if they are still acquired.
                      */
-                    virtual ~read_write_lock_client() {
+                    virtual ~write_lock_client() {
                         std::lock_guard<std::mutex> guard(thread_mutex);
                         state.set_state(__state_enum::Disposed);
                         if (!locks.empty()) {
-                            unordered_map<string, read_write_lock *>::iterator iter;
+                            unordered_map<string, write_lock *>::iterator iter;
                             for (iter = locks.begin(); iter != locks.end(); iter++) {
-                                read_write_lock *lock = iter->second;
+                                write_lock *lock = iter->second;
                                 CHECK_AND_FREE(lock);
                             }
                         }
@@ -90,7 +90,7 @@ namespace com {
                      * @param name - Shared lock name.
                      * @return - Read/Write lock handle.
                      */
-                    read_write_lock *add_lock(string name);
+                    write_lock *add_lock(string name);
 
                     /*!
                      * Remove this reference to the shared lock.
@@ -125,4 +125,4 @@ namespace com {
         }
     }
 }
-#endif //REACTFS_READ_WRITE_LOCK_CLIENT_H
+#endif //REACTFS_WRITE_LOCK_CLIENT_H
