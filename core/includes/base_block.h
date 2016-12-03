@@ -171,21 +171,6 @@ namespace com {
                         return common_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
                     }
 
-                    /*!
-                     * Check if there is a write transaction in progress.
-                     *
-                     * @return - Is transaction in progress?
-                     */
-                    bool in_transaction() const {
-                        if (NOT_NULL(rollback_info)) {
-                            if (rollback_info->in_transaction) {
-                                string thread_id = thread_utils::get_current_thread();
-                                PRECONDITION(block_lock->has_write_lock(thread_id));
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
 
                     /*!
                      * Setup a new transaction context.
@@ -595,6 +580,22 @@ namespace com {
                      * Should be used only in exception cases, such as transaction timeout.
                      */
                     void force_rollback();
+
+                    /*!
+                     * Check if there is a write transaction in progress.
+                     *
+                     * @return - Is transaction in progress?
+                     */
+                    bool in_transaction() const {
+                        if (NOT_NULL(rollback_info)) {
+                            if (rollback_info->in_transaction) {
+                                string thread_id = thread_utils::get_current_thread();
+                                PRECONDITION(block_lock->has_write_lock(thread_id));
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
 
                     /*!
                      * Create a new instance of a raw data block.

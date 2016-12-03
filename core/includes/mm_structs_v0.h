@@ -102,6 +102,71 @@ namespace com {
                     __mm_block_info_v0 block_array[MM_MAX_BLOCKS];
                 } __mm_data_header_v0;
 
+                class __mm_transaction_info {
+                private:
+                    bool in_transaction = false;
+                    string txid;
+                    uint64_t starttime = 0;
+                    base_block *block = nullptr;
+                public:
+                    __mm_transaction_info() {
+                    }
+
+                    ~__mm_transaction_info() {
+
+                    }
+
+                    string start_transaction(base_block *block, uint64_t timeout = 0) {
+                        if (!in_transaction) {
+                            CHECK_NOT_NULL(block);
+                            this->block = block;
+                            txid = block->start_transaction(timeout);
+                            if (!IS_EMPTY(txid)) {
+                                in_transaction = true;
+                                starttime = time_utils::now();
+                            }
+                        }
+                        return txid;
+                    }
+
+                    bool has_valid_transaction() {
+                        if (in_transaction) {
+                            CHECK_NOT_NULL(block);
+                            return block->in_transaction();
+                        }
+                        return false;
+                    }
+
+                    bool commit() {
+                        if (has_valid_transaction()) {
+                            block->commit(txid);
+                            in_transaction = false;
+                            block = nullptr;
+                            starttime = 0;
+                            txid = EMPTY_STRING;
+
+                            return true;
+                        }
+                        return false;
+                    }
+
+                    bool rollback() {
+                        if (has_valid_transaction()) {
+                            block->rollback(txid);
+                            in_transaction = false;
+                            block = nullptr;
+                            starttime = 0;
+                            txid = EMPTY_STRING;
+
+                            return true;
+                        }
+                        return false;
+                    }
+
+                    string get_transaction_id() {
+                        return txid;
+                    }
+                };
             }
         }
     }

@@ -159,7 +159,7 @@ void test_indexed() {
     POSTCONDITION(!IS_EMPTY(uuid));
 
     base_block *block = new base_indexed_block();
-    block->open(REUSE_BLOCK_ID, p.get_path());
+    block->open(REUSE_BLOCK_INDEX_ID, p.get_path());
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
     string txid = block->start_transaction();

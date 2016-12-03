@@ -64,13 +64,14 @@ namespace com {
                 typedef __mm_block_info_v0 __mm_block_info;
                 typedef __mm_data_header_v0 __mm_data_header;
 
+
                 /*!
                  * Shared data storage manager for loading and accessing
                  * node specific data structures.
                  *
                  * Both memory mapped and SHM based storage is provided my this manager.
                  */
-                class mm_struct_manager {
+                class mm_manager_struct {
                 private:
                     /// Data version header.
                     __version_header version;
@@ -110,6 +111,8 @@ namespace com {
 
                     /// Type of blocks to create.
                     __block_def block_type = __block_def::BASIC;
+
+                    __mm_transaction_info transaction_info;
 
                     /*!
                      * Get a filename, relative to the base directory.
@@ -307,7 +310,7 @@ namespace com {
                     }
 
                 public:
-                    mm_struct_manager(uint64_t id, string name, string base_dir, __block_def block_type) {
+                    mm_manager_struct(uint64_t id, string name, string base_dir, __block_def block_type) {
                         PRECONDITION(!IS_EMPTY(name));
                         PRECONDITION(!IS_EMPTY(base_dir));
 
@@ -322,7 +325,7 @@ namespace com {
                         this->block_type = block_type;
                     }
 
-                    ~mm_struct_manager() {
+                    virtual ~mm_manager_struct() {
                         CHECK_AND_DISPOSE(state);
                         if (NOT_NULL(data_lock)) {
                             if (data_lock->is_locked()) {
@@ -342,9 +345,9 @@ namespace com {
                         block_index.clear();
                     }
 
-                    void create(uint32_t record_size, string dir_prefix = EMPTY_STRING,
-                                uint64_t block_size = MM_SIZE_SMALL, uint64_t block_expiry = 0,
-                                bool overwrite = false) {
+                    virtual void create(uint32_t record_size, string dir_prefix = EMPTY_STRING,
+                                        uint64_t block_size = MM_SIZE_SMALL, uint64_t block_expiry = 0,
+                                        bool overwrite = false) {
 
                         string name_l = common_utils::format("%s%s", MM_LOCK_PREFIX, name.c_str());
                         CREATE_LOCK_P(data_lock, &name_l, DEFAULT_RESOURCE_MODE);
@@ -368,7 +371,7 @@ namespace com {
                         }
                     }
 
-                    void init() {
+                    virtual void open() {
                         PRECONDITION(base_dir->exists());
                         string h_filename = get_filename(MM_HEADER_FILENAME);
                         Path p(h_filename);
@@ -399,21 +402,51 @@ namespace com {
                         return header->block_count;
                     }
 
-                    const __mm_block_info *write(void *data, uint32_t size, uint64_t timeout = DEFAULT_LOCK_TIMEOUT) {
+                    bool start_transaction(uint64_t timeout = DEFAULT_LOCK_TIMEOUT) {
+                        TRY_LOCK_WITH_ERROR(data_lock, 0, timeout);
+                        base_block *w_block = get_block(header->write_block_index);
+                        string txid = transaction_info.start_transaction(w_block, timeout);
+                        if (IS_EMPTY(txid)) {
+                            return false;
+                        }
+                        return true;
+                    }
+
+                    bool commit() {
+                        return transaction_info.commit();
+                    }
+
+                    bool rollback() {
+                        return transaction_info.rollback();
+                    }
+
+                    string in_transaction() {
+                        if (transaction_info.has_valid_transaction()) {
+                            return transaction_info.get_transaction_id();
+                        }
+                        return EMPTY_STRING;
+                    }
+
+                    virtual const __mm_block_info *
+                    write(void *data, uint32_t size, uint64_t timeout = DEFAULT_LOCK_TIMEOUT) {
                         CHECK_STATE_AVAILABLE(state);
 
                         TRY_LOCK_WITH_ERROR(data_lock, 0, timeout);
+                        PRECONDITION(transaction_info.has_valid_transaction());
                         try {
                             base_block *w_block = get_block(header->write_block_index);
                             uint32_t free_space = w_block->get_free_space();
                             if (free_space < size) {
+                                transaction_info.commit();
                                 create_new_block();
                                 w_block = get_block(header->write_block_index);
+                                bool r = start_transaction();
+                                POSTCONDITION(r);
                             }
-                            string txid = w_block->start_transaction();
+                            string txid = transaction_info.get_transaction_id();
+                            CHECK_NOT_EMPTY(txid);
                             uint32_t i = w_block->write(data, size, txid);
                             POSTCONDITION(i >= 0);
-                            w_block->commit(txid);
 
                             header->last_written_index = i;
 
@@ -435,7 +468,7 @@ namespace com {
                         }
                     }
 
-                    shared_read_ptr read(uint64_t index, const __mm_block_info *block_info) {
+                    virtual shared_read_ptr read(uint64_t index, const __mm_block_info *block_info) {
                         CHECK_STATE_AVAILABLE(state);
                         CHECK_NOT_NULL(block_info);
                         PRECONDITION(index >= 0 && index <= header->last_written_index);
@@ -453,7 +486,7 @@ namespace com {
                         return nullptr;
                     }
 
-                    shared_read_ptr read(uint64_t index, const uint32_t block_index) {
+                    virtual shared_read_ptr read(uint64_t index, const uint32_t block_index) {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(block_index >= 0 && block_index < header->block_count);
                         PRECONDITION(index >= 0 && index <= header->last_written_index);
@@ -471,10 +504,14 @@ namespace com {
                         return nullptr;
                     }
 
-                    bool remove(uint64_t index, const uint32_t block_index) {
+                    virtual bool
+                    remove(uint64_t index, const uint32_t block_index, uint64_t timeout = DEFAULT_LOCK_TIMEOUT) {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(block_index >= 0 && block_index < header->block_count);
                         PRECONDITION(index >= 0 && index <= header->last_written_index);
+
+                        TRY_LOCK_WITH_ERROR(data_lock, 0, timeout);
+                        PRECONDITION(transaction_info.has_valid_transaction());
 
                         base_block *block = get_block(block_index);
                         CHECK_NOT_NULL(block);
