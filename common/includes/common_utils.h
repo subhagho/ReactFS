@@ -430,7 +430,7 @@ namespace com {
                         return elems->size();
                     }
 
-                    static string toupper(string &input) {
+                    static string toupper(const string &input) {
                         if (!IS_EMPTY(input)) {
                             stringstream ss;
                             std::locale loc;
@@ -443,7 +443,7 @@ namespace com {
                         return input;
                     }
 
-                    static string tolower(string &input) {
+                    static string tolower(const string &input) {
                         if (!IS_EMPTY(input)) {
                             stringstream ss;
                             std::locale loc;
