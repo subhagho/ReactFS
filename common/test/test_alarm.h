@@ -46,7 +46,7 @@ public:
         if (NOT_NULL(value)) {
             return *value;
         }
-        return EMPTY_STRING;
+        return common_consts::EMPTY_STRING;
     }
 };
 

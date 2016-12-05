@@ -32,10 +32,7 @@
 
 using namespace std::chrono;
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 class timer {
                 protected:
                     time_point<system_clock> _t = system_clock::now().min();
@@ -147,8 +144,5 @@ namespace com {
                     }
 
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //WATERGATE_TIMER_H_H

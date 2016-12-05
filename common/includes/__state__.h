@@ -44,10 +44,7 @@
     } \
 } while(0);
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 enum __state_enum {
                     Unknown, Initialized, Available, Disposed, Exception
                 };
@@ -75,7 +72,7 @@ namespace com {
                             case Exception:
                                 return "Exception";
                             default:
-                                return EMPTY_STRING;
+                                return common_consts::EMPTY_STRING;
                         }
                     }
 
@@ -124,9 +121,5 @@ namespace com {
                         return (state == Disposed);
                     }
                 };
-            }
-        }
-    }
-}
-
+REACTFS_NS_COMMON_END
 #endif //WATERGATE_STATE_H

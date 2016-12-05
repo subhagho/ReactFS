@@ -65,7 +65,7 @@ namespace com {
                             default:
                                 break;
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     static string get_compression_type(__compression_type type) {
@@ -81,7 +81,7 @@ namespace com {
                             default:
                                 break;
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
                 };
             }

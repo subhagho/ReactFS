@@ -59,10 +59,7 @@
 
 using namespace com::wookler::reactfs::common;
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Utility class to perform file/directory related operations.
                  */
@@ -194,7 +191,7 @@ namespace com {
                      * @param path - Path of directory.
                      * @param r - Vector of content paths.
                      */
-                    static void get_dir_content(const string &path, vector <string> *r) {
+                    static void get_dir_content(const string &path, vector<string> *r) {
                         DIR *dir = opendir(path.c_str());
                         struct dirent *dent;
                         if (dir != NULL) {
@@ -315,8 +312,9 @@ namespace com {
                      * @return - Path to created file.
                      */
                     static string
-                    create_temp_file(string ext, mode_t mode, bool overwrite, string filename = EMPTY_STRING,
-                                     string path = EMPTY_STRING) {
+                    create_temp_file(string ext, mode_t mode, bool overwrite,
+                                     string filename = common_consts::EMPTY_STRING,
+                                     string path = common_consts::EMPTY_STRING) {
                         PRECONDITION(!path.empty());
 
                         if (!IS_EMPTY(path)) {
@@ -362,8 +360,8 @@ namespace com {
                      * @return - Path to created file.
                      */
                     static string
-                    create_temp_file(string ext, mode_t mode, string filename = EMPTY_STRING,
-                                     string path = EMPTY_STRING) {
+                    create_temp_file(string ext, mode_t mode, string filename = common_consts::EMPTY_STRING,
+                                     string path = common_consts::EMPTY_STRING) {
                         return create_temp_file(ext, mode, true, filename, path);
                     }
 
@@ -398,7 +396,7 @@ namespace com {
                         path = cannonical_path(path);
 
                         string s;
-                        vector <string> parts;
+                        vector<string> parts;
 
                         string_utils::split(path, '/', &parts);
                         if (parts.size() > 0) {
@@ -572,7 +570,7 @@ namespace com {
                      * @return - Parent directory, or empty string if root.
                      */
                     const string get_parent_dir() const {
-                        vector <string> parts;
+                        vector<string> parts;
                         string_utils::split(*path, '/', &parts);
                         if (parts.size() > 1) {
                             string ss = string();
@@ -585,7 +583,7 @@ namespace com {
                             }
                             return ss;
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     /*!
@@ -594,12 +592,12 @@ namespace com {
                      * @return - File name
                      */
                     const string get_filename() const {
-                        vector <string> parts;
+                        vector<string> parts;
                         string_utils::split(*path, '/', &parts);
                         if (parts.size() > 0) {
                             return string(parts[parts.size() - 1]);
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     /*!
@@ -610,17 +608,17 @@ namespace com {
                      */
                     const string get_extension(bool check = false) const {
                         if (check && !is_file()) {
-                            return EMPTY_STRING;
+                            return common_consts::EMPTY_STRING;
                         }
                         const string file = get_filename();
                         if (!IS_EMPTY(file)) {
-                            vector <string> parts;
+                            vector<string> parts;
                             string_utils::split(file, '.', &parts);
                             if (parts.size() > 0) {
                                 return string(parts[parts.size() - 1]);
                             }
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     /*!
@@ -729,7 +727,7 @@ namespace com {
                      * @param empty_lines - Read empty lines?
                      * @return
                      */
-                    static void copy_lines(const Path& source, vector <string> *lines, bool empty_lines = true) {
+                    static void copy_lines(const Path &source, vector<string> *lines, bool empty_lines = true) {
                         std::ifstream infile(source.get_path());
                         std::string line;
                         while (std::getline(infile, line)) {
@@ -748,7 +746,7 @@ namespace com {
                      * @param empty_lines - Read empty lines?
                      * @return - Number of lines read.
                      */
-                    static uint64_t readlines(ifstream *file, vector <string> *v, bool empty_lines = true) {
+                    static uint64_t readlines(ifstream *file, vector<string> *v, bool empty_lines = true) {
                         if (!file->is_open()) {
                             throw BASE_ERROR("Input stream is not open.");
                         }
@@ -765,9 +763,6 @@ namespace com {
                         return v->size();
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 
 #endif //WATERGATE_FILEUTILS_H

@@ -16,10 +16,7 @@
 #include "log_utils.h"
 #include "fmstream.h"
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 class mapped_data {
                 protected:
                     string filename;
@@ -161,8 +158,5 @@ namespace com {
                         }
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_MAPPED_DATA_H

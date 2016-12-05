@@ -35,10 +35,7 @@
 #include "process_utils.h"
 #include "timer.h"
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
 
                 /*!
                  * Enum defines the thread states for managed threads.
@@ -94,7 +91,7 @@ namespace com {
                             case TS_EXCEPTION:
                                 return "Exception";
                             default:
-                                return EMPTY_STRING;
+                                return common_consts::EMPTY_STRING;
                         }
                     }
 
@@ -722,9 +719,6 @@ namespace com {
                         return q->remove_task(name);
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 
 #endif //REACTFS_THREADS_H

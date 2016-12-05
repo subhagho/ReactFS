@@ -12,10 +12,7 @@
 
 #define SIZE_THREAD_ID 64
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Utility class for defining thread releated methods.
                  */
@@ -51,8 +48,5 @@ namespace com {
                         return false;
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_PROCESS_UTILS_H

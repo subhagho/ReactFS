@@ -106,10 +106,7 @@ typedef struct __lock_id__ {
 using namespace std;
 
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
 
                 struct thread_lock_ptr {
                     string thread_id;
@@ -129,7 +126,7 @@ namespace com {
                     thread_lock_record(thread_lock_ptr *thread_ptr, int priorities) {
                         this->thread_id = thread_ptr->thread_id;
                         this->p_counts = (int *) malloc(priorities * sizeof(int));
-                        CHECK_ALLOC(this->p_counts, TYPE_NAME(int *));
+                        CHECK_ALLOC(this->p_counts, TYPE_NAME(int * ));
                         this->priorities = priorities;
                         for (int ii = 0; ii < this->priorities; ii++) {
                             p_counts[ii] = 0;
@@ -313,10 +310,7 @@ namespace com {
                         }
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 
 #define RESET_RECORD(rec) com::wookler::reactfs::common::record_utils::reset_record(rec)
 

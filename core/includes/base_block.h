@@ -211,7 +211,7 @@ namespace com {
                         rollback_info->in_transaction = false;
                         rollback_info->last_index = 0;
                         rollback_info->start_time = 0;
-                        rollback_info->transaction_id->assign(EMPTY_STRING);
+                        rollback_info->transaction_id->clear();
                         rollback_info->write_offset = 0;
                         rollback_info->start_index = nullptr;
                         rollback_info->used_bytes = 0;

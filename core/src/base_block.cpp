@@ -267,7 +267,7 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index) {
 
 string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeout) {
     CHECK_STATE_AVAILABLE(state);
-    string txid = EMPTY_STRING;
+    string txid;
     char *user_name = getenv("USER");
     if (IS_NULL(user_name)) {
         user_name = getenv("USERNAME");

@@ -28,10 +28,7 @@ namespace spd = spdlog;
 
 extern com::wookler::reactfs::common::__log *LOG;
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 class log_utils {
                 public:
                     static bool check_log_level(spd::level::level_enum level) {
@@ -149,10 +146,7 @@ namespace com {
                         }
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 
 
 #define LOG_DEBUG(fmt, ...) do { \

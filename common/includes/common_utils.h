@@ -53,11 +53,7 @@ extern "C"
 #define G_BYTES M_BYTES * 1024
 #define T_BYTES G_BYTES * 1024
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
-
+REACTFS_NS_COMMON
                 class common_utils {
                 public:
                     static string get_normalized_name(const string name) {
@@ -75,7 +71,7 @@ namespace com {
                             buff[name.length()] = 0;
                             return string(buff);
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     static long parse_duration(string input) {
@@ -160,7 +156,7 @@ namespace com {
 
                     static string *format_time(const time_t time, string fmt) {
                         if (IS_EMPTY(fmt)) {
-                            fmt = DEFAULT_DATETIME_FORMAT;
+                            fmt = common_consts::DEFAULT_DATE_FORMAT;
                         }
 
                         char buff[DEFAULT_DATETIME_BUFFSIZE];
@@ -171,13 +167,13 @@ namespace com {
                     }
 
                     static string *format_time(const time_t time) {
-                        return format_time(time, DEFAULT_DATETIME_FORMAT);
+                        return format_time(time, common_consts::DEFAULT_DATE_FORMAT);
                     }
 
                     static time_t get_time(const string time, string fmt) {
                         assert(!IS_EMPTY(time));
                         if (IS_EMPTY(fmt)) {
-                            fmt = DEFAULT_DATETIME_FORMAT;
+                            fmt = common_consts::DEFAULT_DATE_FORMAT;
                         }
                         struct tm t;
                         memset(&t, 0, sizeof(struct tm));
@@ -208,7 +204,7 @@ namespace com {
                     }
 
                     static time_t get_time(const string time) {
-                        return get_time(time, DEFAULT_DATETIME_FORMAT);
+                        return get_time(time, common_consts::DEFAULT_DATE_FORMAT);
                     }
 
                     static std::string format(const string fmt_str, ...) {
@@ -456,9 +452,6 @@ namespace com {
                         return input;
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 
 #endif // _CORE_H_

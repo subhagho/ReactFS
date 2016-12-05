@@ -13,10 +13,7 @@
 #define MAX_RW_SHARED_LOCKS 4096
 #define MAX_W_SHARED_LOCKS 4096 * 10
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 typedef struct __owner_v0__ {
                     char owner[SIZE_USER_NAME + 1];
                     char txn_id[SIZE_UUID + 1];
@@ -54,8 +51,5 @@ namespace com {
                     uint32_t max_count = 0;
                     uint32_t used_count = 0;
                 } __shared_lock_data_v0;
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_RW_LOCK_STRUCTS_V0_H

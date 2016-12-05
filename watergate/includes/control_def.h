@@ -130,7 +130,7 @@ namespace com {
                             }
                         }
 
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     uint64_t get_quota(const string name) const {

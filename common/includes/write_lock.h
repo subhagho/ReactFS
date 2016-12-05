@@ -25,10 +25,7 @@
 
 #define DEFAULT_W_LOCK_EXPIRY 10 * 60 * 1000
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 typedef __lock_readers_v0 __lock_readers;
                 typedef __rw_lock_struct_v0 __rw_lock_struct;
 
@@ -371,7 +368,7 @@ namespace com {
                                 memset(lock_struct->owner.owner, 0, SIZE_USER_NAME);
                                 memset(lock_struct->owner.thread_id, 0, SIZE_THREAD_ID);
                                 lock_struct->write_locked = false;
-                                txn_id = EMPTY_STRING;
+                                txn_id = common_consts::EMPTY_STRING;
                                 locked = true;
                             }
                         }
@@ -414,8 +411,5 @@ namespace com {
                         return reference_count;
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_WRITE_LOCK_H

@@ -31,10 +31,7 @@
 
 using namespace std;
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 template<class _Key, class _Type>
                 class __registry {
                 private:
@@ -63,10 +60,7 @@ namespace com {
 
                     void clear();
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 
 template<class _Key, class _Type>
 void com::wookler::reactfs::common::__registry<_Key, _Type>::add(_Key key, _Type *type, bool configure) {

@@ -26,10 +26,7 @@
 #include "read_write_lock_manager.h"
 #include "write_lock_manager.h"
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
 
                 /*!
                  * Singleton class to manage shared lock groups.
@@ -210,8 +207,5 @@ namespace com {
                         locks.dispose();
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_SHARED_LOCK_UTILS_H

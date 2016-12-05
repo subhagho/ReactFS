@@ -51,10 +51,7 @@
     } \
 } while(0);
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Exception type raised due to lock related errors.
                  */
@@ -125,7 +122,7 @@ namespace com {
                      */
                     void reset_locked() {
                         locked = false;
-                        lock_owner = EMPTY_STRING;
+                        lock_owner = common_consts::EMPTY_STRING;
                     }
 
                 public:
@@ -413,10 +410,7 @@ namespace com {
                         return *(lock->get_name());
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 
 #define WAIT_LOCK_GUARD(lock, i) com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, true);
 

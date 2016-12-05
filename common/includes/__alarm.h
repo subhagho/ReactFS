@@ -72,10 +72,7 @@
 #define NEW_ALARM_WITH_CALLBACK(t, c, i) \
     com::wookler::reactfs::common::__alarm _a_##i(t, c);
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Default interrupt signal handler class for alarms.
                  */
@@ -217,8 +214,5 @@ namespace com {
                         return true;
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //WATERGATE_ALARM_H

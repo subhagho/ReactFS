@@ -23,10 +23,7 @@
 
 #include "write_lock.h"
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Class creates the client environment to manager read/write locks.
                  * Locks are excepted to be shared amongst all threads within a process space
@@ -122,8 +119,5 @@ namespace com {
                         return nullptr;
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_WRITE_LOCK_CLIENT_H

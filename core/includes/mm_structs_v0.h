@@ -143,7 +143,7 @@ namespace com {
                             in_transaction = false;
                             block = nullptr;
                             starttime = 0;
-                            txid = EMPTY_STRING;
+                            txid.clear();
 
                             return true;
                         }
@@ -156,7 +156,7 @@ namespace com {
                             in_transaction = false;
                             block = nullptr;
                             starttime = 0;
-                            txid = EMPTY_STRING;
+                            txid.clear();
 
                             return true;
                         }

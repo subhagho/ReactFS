@@ -26,10 +26,7 @@
 #include "common.h"
 #include "common_utils.h"
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Class defines the application context.
                  */
@@ -125,11 +122,8 @@ namespace com {
                         if (!IS_EMPTY(name)) {
                             return common_utils::get_normalized_name(name);
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //WATERGATE_APP_H

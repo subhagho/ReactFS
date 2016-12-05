@@ -35,10 +35,7 @@
 
 #define END_TIMER(m, n) com::wookler::reactfs::common::metrics_utils::timed_metric(m, _t_##n);
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
 
                 /*!
                  * Enum to define the types of metrics.
@@ -135,7 +132,7 @@ namespace com {
                             case AverageMetric:
                                 return "AverageMetric";
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     /*!
@@ -288,6 +285,7 @@ namespace com {
                 };
 
                 typedef unordered_map<string, __metric *> __metrics_map;
+
                 /*!
                  * Utility class to define and manage global metrics.
                  */
@@ -436,8 +434,5 @@ namespace com {
                         }
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //WATERGATE_METRICS_H

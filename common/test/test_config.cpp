@@ -83,10 +83,10 @@ TEST_CASE("Configuration Lookup Test : 1", "[com::watergate::common::Config]") {
     LOG_DEBUG("STRING [key5=%s]", dtv.c_str());
 
     const time_t tv = config->get_time_value("/configuration/nested/params[key5]",
-                                             DEFAULT_DATETIME_FORMAT,
+                                             common_consts::DEFAULT_DATE_FORMAT,
                                              0);
     REQUIRE(tv > 0);
-    string *ts = common_utils::format_time(tv, DEFAULT_DATETIME_FORMAT);
+    string *ts = common_utils::format_time(tv, common_consts::DEFAULT_DATE_FORMAT);
     REQUIRE(NOT_NULL(ts));
     LOG_DEBUG("TIME [key5=%s]", ts->c_str());
     CHECK_AND_FREE(ts);

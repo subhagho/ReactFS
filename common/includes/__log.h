@@ -39,10 +39,7 @@
 
 namespace spd = spdlog;
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 class __log {
                 private:
 
@@ -218,9 +215,9 @@ namespace com {
                             case spd::level::level_enum::trace:
                                 return "trace";
                             default:
-                                return EMPTY_STRING;
+                                return common_consts::EMPTY_STRING;
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     void
@@ -263,8 +260,5 @@ namespace com {
                             console->set_level(level);
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //WATERGATE_LOG_H

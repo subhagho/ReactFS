@@ -14,8 +14,8 @@
  *       limitations under the License. 
  * 
  */
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef _REACTFS_COMMON_CONFIG_H_
+#define _REACTFS_COMMON_CONFIG_H_
 
 #include <stdexcept>
 #include <string>
@@ -44,10 +44,7 @@
 
 using namespace json11;
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 class config_error : public base_error {
                 public:
                     config_error(char const *file, const int line, string mesg) : base_error(file, line,
@@ -265,7 +262,7 @@ namespace com {
                     }
 
                     const time_t get_time_value(time_t def_value) const {
-                        return get_time_value(DEFAULT_DATETIME_FORMAT, def_value);
+                        return get_time_value(common_consts::DEFAULT_DATE_FORMAT, def_value);
                     }
 
                     const ConfigValue *find(vector<string> path, uint32_t offset) const override {
@@ -348,7 +345,7 @@ namespace com {
 
                             return bv->get_value();
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     const int get_int(string key, int def_value) const {
@@ -412,7 +409,7 @@ namespace com {
                     }
 
                     const time_t get_time(string key, time_t def_value) const {
-                        return get_time(key, DEFAULT_DATETIME_FORMAT, def_value);
+                        return get_time(key, common_consts::DEFAULT_DATE_FORMAT, def_value);
                     }
 
                     const ConfigValue *find(vector<string> path, uint32_t offset) const override {
@@ -720,7 +717,7 @@ namespace com {
 
                     time_t get_time_value(string path, time_t def_value) const {
                         CHECK_STATE_AVAILABLE(this->state);
-                        return get_time_value(path, DEFAULT_DATETIME_FORMAT, def_value);
+                        return get_time_value(path, common_consts::DEFAULT_DATE_FORMAT, def_value);
                     }
 
                     static const ParamConfigValue *get_params(const ConfigValue *node) {
@@ -777,8 +774,5 @@ namespace com {
                         }
                     }
                 };
-            }
-        }
-    }
-}
-#endif // _CONFIG_H_
+REACTFS_NS_COMMON_END
+#endif // _REACTFS_COMMON_CONFIG_H_

@@ -24,10 +24,7 @@
 #include "common.h"
 #include "common_utils.h"
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Enumeration for defining the call-stack state prior to invoking the callback(s)
                  */
@@ -216,9 +213,5 @@ namespace com {
                      */
                     virtual void error(exception *err) = 0;
                 };
-            }
-        }
-    }
-}
-
+REACTFS_NS_COMMON_END
 #endif //WATERGATE_CALLBACK_H

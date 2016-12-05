@@ -31,10 +31,7 @@
 
 using namespace std::chrono;
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 class time_utils {
                 public:
                     static uint64_t now() {
@@ -44,33 +41,45 @@ namespace com {
                         return nt.count();
                     }
 
-                    static long get_delta_time(long start) {
+                    static long get_delta_time(uint64_t start) {
                         milliseconds nt = duration_cast<milliseconds>(
                                 system_clock::now().time_since_epoch()
                         );
                         return (nt.count() - start);
                     }
 
-                    static string get_time_string(long ts, string fmt) {
-                        if (ts >= 0) {
-                            long t = ts / 1000;
-                            auto tm = *std::localtime(&t);
+                    static string get_time_string(uint64_t ts, string fmt) {
+                        long t = ts / 1000;
+                        auto tm = *std::localtime(&t);
 
-                            std::ostringstream oss;
-                            oss << std::put_time(&tm, fmt.c_str());
-                            string str = string(oss.str());
+                        std::ostringstream oss;
+                        oss << std::put_time(&tm, fmt.c_str());
+                        string str = string(oss.str());
 
-                            long ms = ts % 1000;
-                            str.append(".");
-                            str.append(to_string(ms));
+                        long ms = ts % 1000;
+                        str.append(".");
+                        str.append(to_string(ms));
 
-                            return str;
-                        }
-                        return EMPTY_STRING;
+                        return str;
                     }
 
                     static string get_time_string(uint64_t ts) {
-                        return get_time_string(ts, DEFAULT_TIMESTAMP_FORMAT);
+                        return get_time_string(ts, common_consts::DEFAULT_TIMESTAMP_FORMAT);
+                    }
+
+                    static uint64_t parse_time(const string &str, const string &format) {
+                        if (!IS_EMPTY(str) && !IS_EMPTY(format)) {
+                            std::tm tm = {};
+                            strptime(str.c_str(), format.c_str(), &tm);
+                            auto tp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+                            return tp.time_since_epoch().count();
+                        }
+                        return 0;
+                    }
+
+                    static uint64_t parse_time(const string &str) {
+                        string format(common_consts::DEFAULT_TIMESTAMP_FORMAT);
+                        return parse_time(str, format);
                     }
 
                     static string get_hour_dir() {
@@ -186,8 +195,5 @@ namespace com {
                         return hours;
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_TIME_UTILS_H

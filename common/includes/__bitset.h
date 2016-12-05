@@ -14,10 +14,7 @@
 #define BIT_INDEX(o) (o % 32)
 #define ARRAY_SIZE(s) (s / sizeof(uint32_t))
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Expandable bitset implementation for use with memory mapped storage. Can also be used
                  * as a standalone bitset similar to std::bitset.
@@ -51,7 +48,7 @@ namespace com {
                         this->_size = get_byte_size(count);
 
                         this->_data = (uint32_t *) malloc(this->_size);
-                        CHECK_ALLOC(this->_data, TYPE_NAME(uint32_t *));
+                        CHECK_ALLOC(this->_data, TYPE_NAME(uint32_t * ));
 
                         mapped = false;
                     }
@@ -284,8 +281,5 @@ namespace com {
                         return 0;
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_BITSET_H

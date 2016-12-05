@@ -345,7 +345,7 @@ namespace com {
                         block_index.clear();
                     }
 
-                    virtual void create(uint32_t record_size, string dir_prefix = EMPTY_STRING,
+                    virtual void create(uint32_t record_size, string dir_prefix = common_consts::EMPTY_STRING,
                                         uint64_t block_size = MM_SIZE_SMALL, uint64_t block_expiry = 0,
                                         bool overwrite = false) {
 
@@ -424,7 +424,7 @@ namespace com {
                         if (transaction_info.has_valid_transaction()) {
                             return transaction_info.get_transaction_id();
                         }
-                        return EMPTY_STRING;
+                        return common_consts::EMPTY_STRING;
                     }
 
                     virtual const __mm_block_info *

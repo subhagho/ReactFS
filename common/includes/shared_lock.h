@@ -49,10 +49,7 @@
 #define SHARED_LOCK_MAJ_VERSION ((uint16_t) 0)
 #define SHARED_LOCK_MIN_VERSION ((uint16_t) 1)
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 typedef __shared_lock_data_v0 __shared_lock_data;
                 typedef __owner_v0 __owner;
 
@@ -240,10 +237,6 @@ namespace com {
                         return this->lock_type;
                     }
                 };
-            }
-        }
-    }
-}
-
+REACTFS_NS_COMMON_END
 
 #endif //REACTFS_SHARED_LOCK_H

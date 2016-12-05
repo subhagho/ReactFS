@@ -46,10 +46,7 @@
 
 using namespace com::wookler::reactfs::common;
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 class __env {
                 private:
                     __state__ state;
@@ -92,7 +89,7 @@ namespace com {
                     ~__env();
 
                     void create(string filename) {
-                        create(filename, EMPTY_STRING);
+                        create(filename, common_consts::EMPTY_STRING);
                     }
 
                     void create(string filename, string app_name);
@@ -119,9 +116,5 @@ namespace com {
 
                     Path *get_temp_dir(string name, mode_t mode) const;
                 };
-            }
-        }
-    }
-}
-
+REACTFS_NS_COMMON_END
 #endif //WATERGATE_ENV_H

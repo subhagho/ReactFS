@@ -26,10 +26,7 @@
 
 #define RW_LOCK_MANAGER_THREAD "RW_LOCK_MANAGER_THREAD"
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Class defines the constructs for creating/managing lock groups.
                  */
@@ -164,8 +161,5 @@ namespace com {
                         manager->set_error(err);
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_WRITE_LOCK_MANAGER_H

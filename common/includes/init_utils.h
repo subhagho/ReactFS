@@ -26,10 +26,7 @@
 
 using namespace com::wookler::reactfs::common;
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 class env_utils {
                 private:
                     static __env *env;
@@ -70,8 +67,5 @@ namespace com {
                         env = nullptr;
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //WATERGATE_ENV_UTILS_H

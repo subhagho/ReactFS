@@ -154,7 +154,7 @@ namespace com {
                                     return m_path;
                                 }
                             }
-                            return EMPTY_STRING;
+                            return common_consts::EMPTY_STRING;
                         }
 
                         /*!

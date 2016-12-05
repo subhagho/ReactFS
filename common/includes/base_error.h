@@ -27,10 +27,7 @@
 #define CONST_ALLOC_ERROR_PREFIX "Error allocating memory : "
 #define CONST_CAST_ERROR_PREFIX "Error casting types : "
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Base exception class to be used, added functionality of capturing source information.
                  */
@@ -127,11 +124,7 @@ namespace com {
 
                     }
                 };
-            }
-        }
-    }
-}
-
+REACTFS_NS_COMMON_END
 
 /// Convinience macros to create exception(s)
 #define BASE_ERROR(fmt, ...) base_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))

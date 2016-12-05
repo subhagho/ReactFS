@@ -48,13 +48,13 @@
 #define BOOL_TRUE "true"
 #define BOOL_FALSE "false"
 
-#define EMPTY_STRING ""
+#define __EMPTY_STRING__ ""
 
 #define RETURN_SUCESS 0
 #define RETURN_ERROR_UNKNOWN -1
 
-#define DEFAULT_DATETIME_FORMAT "%Y-%m-%d %H:%M"
-#define DEFAULT_TIMESTAMP_FORMAT "%Y-%m-%d %X"
+#define __DEFAULT_DATETIME_FORMAT__ "%Y-%m-%d %H:%M"
+#define __DEFAULT_TIMESTAMP_FORMAT__ "%Y-%m-%d %X"
 
 #define DEFAULT_DATETIME_BUFFSIZE 32
 
@@ -102,11 +102,25 @@ namespace com {
                     }
                 };
 
+                class common_consts {
+                public:
+                    static const string EMPTY_STRING;
+                    static string DEFAULT_DATE_FORMAT;
+                    static string DEFAULT_TIMESTAMP_FORMAT;
+                };
+
             }
         }
     }
 }
 
 #define TYPE_NAME(X) #X
+#define REACTFS_NS namespace com { namespace wookler { namespace reactfs {
+#define REACTFS_NS_END }}}
+#define REACTFS_NS_COMMON REACTFS_NS namespace common {
+#define REACTFS_NS_COMMON_END REACTFS_NS_END }
+
+#define REACTFS_NS_PREFIX com::wookler::reactfs
+#define REACTFS_NS_COMMON_PREFIX REACTFS_NS_PREFIX::common
 
 #endif

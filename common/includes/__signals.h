@@ -14,10 +14,7 @@
 #include "log_utils.h"
 #include "__callback.h"
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace common {
+REACTFS_NS_COMMON
                 /*!
                  * Struct to define a chain of callback(s) to be invoked in sequence.
                  */
@@ -59,7 +56,7 @@ namespace com {
                             while (NOT_NULL(ptr)) {
                                 if (NOT_NULL(ptr->callback)) {
                                     TRACE("Invoking signal handler delegate. [uuid=%s]",
-                                              ptr->callback->get_uuid().c_str());
+                                          ptr->callback->get_uuid().c_str());
                                     ptr->callback->set_state(__callback_state_enum::ERROR);
                                     ptr->callback->error();
                                 }
@@ -192,8 +189,5 @@ namespace com {
                         }
                     }
                 };
-            }
-        }
-    }
-}
+REACTFS_NS_COMMON_END
 #endif //REACTFS_SIGNALS_H
