@@ -169,11 +169,7 @@ REACTFS_NS_CORE
                         uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint8_t), offset, max_length);
-                            if (NOT_NULL(value))
-                                memcpy(ptr, value, sizeof(uint8_t));
-                            else {
-                                memcpy(ptr, 0, sizeof(uint8_t));
-                            }
+                            memcpy(ptr, value, sizeof(uint8_t));
                             return sizeof(uint8_t);
                         }
 
@@ -196,11 +192,7 @@ REACTFS_NS_CORE
 
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(char), offset, max_length);
-                            if (NOT_NULL(value))
-                                memcpy(ptr, value, sizeof(char));
-                            else {
-                                memcpy(ptr, 0, sizeof(uint8_t));
-                            }
+                            memcpy(ptr, 0, sizeof(uint8_t));
                             return sizeof(char);
                         }
 
@@ -223,11 +215,7 @@ REACTFS_NS_CORE
 
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(bool), offset, max_length);
-                            if (NOT_NULL(value))
-                                memcpy(ptr, value, sizeof(bool));
-                            else {
-                                memcpy(ptr, 0, sizeof(uint8_t));
-                            }
+                            memcpy(ptr, value, sizeof(bool));
                             return sizeof(bool);
                         }
 
@@ -250,12 +238,7 @@ REACTFS_NS_CORE
 
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(short), offset, max_length);
-                            if (NOT_NULL(value))
-                                memcpy(ptr, value, sizeof(short));
-                            else {
-                                short v = SHRT_MIN;
-                                memcpy(ptr, &v, sizeof(short));
-                            }
+                            memcpy(ptr, value, sizeof(short));
                             return sizeof(short);
                         }
 
@@ -895,7 +878,7 @@ REACTFS_NS_CORE
                         __type_def_enum type;
                         __base_datatype *handler = nullptr;
                         uint32_t max_size = 0;
-
+                        bool nullable = true;
 
                     public:
                         __type(const string &name, __type_def_enum type, __type *parent = nullptr) {
@@ -921,6 +904,16 @@ REACTFS_NS_CORE
                             this->name = string(type->name);
                             this->type = type->type;
                             this->max_size = type->max_size;
+                            this->nullable = type->nullable;
+                        }
+
+                        __type(const __type &type) {
+                            this->parent = type.parent;
+                            this->handler = type.handler;
+                            this->name = string(type.name);
+                            this->type = type.type;
+                            this->max_size = type.max_size;
+                            this->nullable = type.nullable;
                         }
 
                         void set_max_size(uint32_t max_size) {
@@ -947,6 +940,14 @@ REACTFS_NS_CORE
                             return this->parent;
                         }
 
+                        void set_nullable(bool nullable) {
+                            this->nullable = nullable;
+                        }
+
+                        bool is_nullable() {
+                            return this->nullable;
+                        }
+
                         string get_canonical_name() {
                             if (IS_NULL(parent)) {
                                 return name;
@@ -964,12 +965,11 @@ REACTFS_NS_CORE
                         __version_header *version;
                         vector<__type *> fields;
 
-                        void *data(unordered_map<string, void *> *map, __type *type) {
+                        void *get_field_value(unordered_map<string, void *> *map, __type *type) {
                             CHECK_NOT_NULL(type);
                             unordered_map<string, void *>::iterator iter = map->find(type->get_canonical_name());
                             if (iter == map->end())
-                                throw NOT_FOUND_ERROR("Specified column not found in source. [column=%s]",
-                                                      type->get_canonical_name().c_str());
+                                return nullptr;
                             return iter->second;
                         }
 
@@ -992,8 +992,19 @@ REACTFS_NS_CORE
                             FREE_PTR(this->version);
                         }
 
-                        void add_field(__type *type) {
-                            fields.push_back(type);
+                        void add_field(uint16_t index, __type *type) {
+                            CHECK_NOT_NULL(type);
+                            if (index == fields.size()) {
+                                fields.push_back(type);
+                            } else if (index > fields.size()) {
+                                for (uint16_t ii = fields.size(); ii <= index; ii++) {
+                                    fields.push_back(nullptr);
+                                }
+                                fields[index] = type;
+                            } else {
+                                PRECONDITION(IS_NULL(fields[index]));
+                                fields[index] = type;
+                            }
                         }
 
                         bool remove_field(string name) {
@@ -1027,18 +1038,25 @@ REACTFS_NS_CORE
                             vector<__type *>::iterator iter;
                             uint64_t r_offset = offset + sizeof(__version_header);
                             uint64_t t_size = sizeof(__version_header);
-                            for (iter = fields.begin(); iter != fields.end(); iter++) {
-                                void *value = nullptr;
-                                __base_datatype *handler = (*iter)->get_handler();
+                            while (r_offset < max_length) {
+                                ptr = common_utils::increment_data_ptr(buffer, r_offset);
+                                uint8_t *ci = (uint8_t *) ptr;
+                                POSTCONDITION(*ci < fields.size());
+                                __type *type = fields[*ci];
+                                CHECK_NOT_NULL(type);
+                                __base_datatype *handler = type->get_handler();
                                 CHECK_NOT_NULL(handler);
+                                r_offset += sizeof(uint8_t);
+                                t_size += sizeof(uint8_t);
                                 uint64_t r = 0;
-                                if ((*iter)->get_type() == __type_def_enum::TYPE_ARRAY) {
-                                    uint32_t a_size = (*iter)->get_max_size();
+                                void *value = nullptr;
+                                if (type->get_type() == __type_def_enum::TYPE_ARRAY) {
+                                    uint32_t a_size = type->get_max_size();
                                     r = handler->read(buffer, &value, r_offset, max_length, a_size);
                                 } else {
                                     r = handler->read(buffer, &value, r_offset, max_length);
                                 }
-                                (*T)->insert({(*iter)->get_canonical_name(), value});
+                                (*T)->insert({type->get_canonical_name(), value});
                                 t_size += r;
                                 r_offset += r;
                             }
@@ -1058,10 +1076,18 @@ REACTFS_NS_CORE
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
                                 __base_datatype *handler = (*iter)->get_handler();
                                 CHECK_NOT_NULL(handler);
-                                void *d = data(map, *iter);
-
+                                void *d = get_field_value(map, *iter);
+                                if (IS_NULL(d) && !(*iter)->is_nullable()) {
+                                    throw NOT_FOUND_ERROR("Null/Missing required field value. [field=%s]",
+                                                          (*iter)->get_canonical_name().c_str());
+                                } else if (IS_NULL(d)) {
+                                    continue;
+                                }
+                                uint64_t r = handler->write(buffer, d, r_offset, max_length);
+                                r_offset += r;
+                                t_size += r;
                             }
-                            return 0;
+                            return t_size;
                         }
                     };
                 }

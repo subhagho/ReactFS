@@ -87,18 +87,26 @@ namespace com {
 
                 class version_utils {
                 public:
-                    static bool equals(__version_header v1, __version_header v2) {
-                        return ((v1.major == v2.major) && (v1.minor == v2.minor));
+                    static bool equals(const __version_header &v1, const __version_header &v2) {
+                        return (compare(v1, v2) == 0);
                     }
 
-                    static bool compatible(__version_header v1, __version_header v2) {
+                    static bool compatible(const __version_header &v1, const __version_header &v2) {
                         return (v1.major == v2.major);
                     }
 
-                    static string get_version_string(__version_header v) {
+                    static string get_version_string(const __version_header &v) {
                         char buff[64];
                         sprintf(buff, "%04d.%04d", v.major, v.minor);
                         return string(buff);
+                    }
+
+                    static int compare(const __version_header &v1, const __version_header &v2) {
+                        int r = v1.major - v2.major;
+                        if (r == 0) {
+                            r = v1.minor - v2.minor;
+                        }
+                        return r;
                     }
                 };
 
