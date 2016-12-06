@@ -72,8 +72,6 @@ REACTFS_NS_CORE
                                 TYPE_LIST,
                         /// Key/Value Map of basic types.
                                 TYPE_MAP,
-                        /// Set of basic datatypes.
-                                TYPE_SET,
                         /// A complex structure.
                                 TYPE_STRUCT
                     } __type_def_enum;
@@ -160,6 +158,7 @@ REACTFS_NS_CORE
                         }
 
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             uint8_t **T = (uint8_t **) t;
 
                             void *ptr = get_data_ptr(buffer, sizeof(uint8_t), offset, max_length);
@@ -170,7 +169,11 @@ REACTFS_NS_CORE
                         uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint8_t), offset, max_length);
-                            memcpy(ptr, value, sizeof(uint8_t));
+                            if (NOT_NULL(value))
+                                memcpy(ptr, value, sizeof(uint8_t));
+                            else {
+                                memcpy(ptr, 0, sizeof(uint8_t));
+                            }
                             return sizeof(uint8_t);
                         }
 
@@ -184,6 +187,7 @@ REACTFS_NS_CORE
                         }
 
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             char **T = (char **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(char), offset, max_length);
                             *T = (char *) ptr;
@@ -192,7 +196,11 @@ REACTFS_NS_CORE
 
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(char), offset, max_length);
-                            memcpy(ptr, value, sizeof(char));
+                            if (NOT_NULL(value))
+                                memcpy(ptr, value, sizeof(char));
+                            else {
+                                memcpy(ptr, 0, sizeof(uint8_t));
+                            }
                             return sizeof(char);
                         }
 
@@ -206,6 +214,7 @@ REACTFS_NS_CORE
                         }
 
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             bool **T = (bool **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(bool), offset, max_length);
                             *T = (bool *) ptr;
@@ -214,7 +223,11 @@ REACTFS_NS_CORE
 
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(bool), offset, max_length);
-                            memcpy(ptr, value, sizeof(bool));
+                            if (NOT_NULL(value))
+                                memcpy(ptr, value, sizeof(bool));
+                            else {
+                                memcpy(ptr, 0, sizeof(uint8_t));
+                            }
                             return sizeof(bool);
                         }
 
@@ -228,6 +241,7 @@ REACTFS_NS_CORE
                         }
 
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             short **T = (short **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(short), offset, max_length);
                             *T = (short *) ptr;
@@ -236,7 +250,12 @@ REACTFS_NS_CORE
 
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(short), offset, max_length);
-                            memcpy(ptr, value, sizeof(short));
+                            if (NOT_NULL(value))
+                                memcpy(ptr, value, sizeof(short));
+                            else {
+                                short v = SHRT_MIN;
+                                memcpy(ptr, &v, sizeof(short));
+                            }
                             return sizeof(short);
                         }
 
@@ -250,6 +269,7 @@ REACTFS_NS_CORE
                         }
 
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             int **T = (int **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(int), offset, max_length);
                             *T = (int *) ptr;
@@ -272,6 +292,7 @@ REACTFS_NS_CORE
                         }
 
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             long **T = (long **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(long), offset, max_length);
                             *T = (long *) ptr;
@@ -294,6 +315,7 @@ REACTFS_NS_CORE
                         }
 
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             uint64_t **T = (uint64_t **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             *T = (uint64_t *) ptr;
@@ -349,6 +371,7 @@ REACTFS_NS_CORE
                         }
 
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             float **T = (float **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(float), offset, max_length);
                             *T = (float *) ptr;
@@ -371,6 +394,7 @@ REACTFS_NS_CORE
                         }
 
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             double **T = (double **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(double), offset, max_length);
                             *T = (double *) ptr;
@@ -386,14 +410,16 @@ REACTFS_NS_CORE
 
                     };
 
-                    class __dt_string : public __datatype<string> {
+                    class __dt_text : public __datatype<string> {
 
                     public:
-                        __dt_string() : __datatype(__type_def_enum::TYPE_STRING) {
+                        __dt_text() : __datatype(__type_def_enum::TYPE_STRING) {
 
                         }
 
-                        uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                        virtual uint64_t
+                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             string **T = (string **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             uint64_t size = 0;
@@ -410,7 +436,7 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
-                        uint64_t
+                        virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             string *s = (string *) value;
@@ -425,6 +451,46 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                    };
+
+                    class __dt_string : public __dt_text {
+
+                    public:
+
+                        virtual uint64_t
+                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
+                            string **T = (string **) t;
+                            void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
+                            uint16_t size = 0;
+                            memcpy(&size, ptr, sizeof(uint16_t));
+                            if (size > 0) {
+                                uint64_t d_size = (size * sizeof(char));
+                                ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
+                                PRECONDITION((offset + d_size + sizeof(uint64_t)) < max_length);
+                                char *cptr = (char *) ptr;
+                                *T = new string(cptr, d_size);
+                                CHECK_ALLOC(*T, TYPE_NAME(string));
+                                return (d_size + sizeof(uint16_t));
+                            }
+                            return sizeof(uint16_t);
+                        }
+
+                        virtual uint64_t
+                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
+                            string *s = (string *) value;
+                            PRECONDITION(s->length() <= USHRT_MAX);
+                            uint16_t size = (s->length() * sizeof(char));
+                            memcpy(ptr, &size, sizeof(uint16_t));
+                            if (size > 0) {
+                                PRECONDITION((offset + sizeof(uint16_t) + size) < max_length);
+                                ptr = common_utils::increment_data_ptr(ptr, sizeof(uint16_t));
+                                memcpy(ptr, s->c_str(), s->length());
+                                return (size + sizeof(uint16_t));
+                            }
+                            return sizeof(uint16_t);
+                        }
                     };
 
                     class __type_defs_utils {
@@ -487,8 +553,8 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(t, TYPE_NAME(__dt_byte));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    t = new __dt_string();
-                                    CHECK_ALLOC(t, TYPE_NAME(__dt_string));
+                                    t = new __dt_text();
+                                    CHECK_ALLOC(t, TYPE_NAME(__dt_text));
                                     break;
                                 case __type_def_enum::TYPE_TIMESTAMP:
                                     t = new __dt_timestamp();
@@ -529,8 +595,6 @@ REACTFS_NS_CORE
                                     return "LONG";
                                 case __type_def_enum::TYPE_MAP:
                                     return "MAP";
-                                case __type_def_enum::TYPE_SET:
-                                    return "SET";
                                 case __type_def_enum::TYPE_SHORT:
                                     return "SHORT";
                                 case __type_def_enum::TYPE_STRING:
@@ -581,8 +645,6 @@ REACTFS_NS_CORE
                                 return __type_def_enum::TYPE_SHORT;
                             } else if (t == get_type_string(__type_def_enum::TYPE_BOOL)) {
                                 return __type_def_enum::TYPE_BOOL;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_SET)) {
-                                return __type_def_enum::TYPE_SET;
                             } else if (t == get_type_string(__type_def_enum::TYPE_STRUCT)) {
                                 return __type_def_enum::TYPE_STRUCT;
                             } else if (t == get_type_string(__type_def_enum::TYPE_DATETIME)) {
@@ -609,6 +671,7 @@ REACTFS_NS_CORE
 
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             __base_datatype *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
 
@@ -662,6 +725,77 @@ REACTFS_NS_CORE
 
                     };
 
+                    template<typename __T>
+                    class __dt_list : public __datatype<__T> {
+                    protected:
+                        __type_def_enum inner_type;
+
+                    public:
+                        __dt_list(__type_def_enum inner_type) : __datatype<__T>(
+                                __type_def_enum::TYPE_LIST) {
+                            this->inner_type = inner_type;
+                        }
+
+                        __type_def_enum get_inner_type() {
+                            return this->inner_type;
+                        }
+
+                        virtual uint64_t
+                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
+                            __base_datatype *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            CHECK_NOT_NULL(type_handler);
+
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint64_t r_count = *((uint64_t *) ptr);
+                            vector<__T *> **list = (vector<__T *> **) t;
+
+                            if (r_count > 0) {
+                                *list = new vector<__T *>(r_count);
+                                CHECK_ALLOC(*list, TYPE_NAME(vector));
+
+                                uint64_t r_offset = offset + sizeof(uint64_t);
+                                uint64_t t_size = sizeof(uint64_t);
+                                for (uint64_t ii = 0; ii < r_count; ii++) {
+                                    __T *t = nullptr;
+                                    uint64_t r = type_handler->read(buffer, &t, r_offset, max_length);
+                                    CHECK_NOT_NULL(t);
+                                    list[ii] = t;
+                                    r_offset += r;
+                                    t_size += r;
+                                }
+                                return t_size;
+                            }
+                            return sizeof(uint64_t);
+                        }
+
+                        virtual uint64_t
+                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            __base_datatype *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            CHECK_NOT_NULL(type_handler);
+
+                            vector<__T *> *list = (vector<__T *>) value;
+
+                            uint64_t a_size = list->size();
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            memcpy(ptr, &a_size, sizeof(uint64_t));
+
+                            if (a_size > 0) {
+                                __T **d_ptr = (__T **) value;
+                                uint64_t r_offset = offset + sizeof(uint64_t);
+                                uint64_t t_size = sizeof(uint64_t);
+                                for (uint64_t ii = 0; ii < a_size; ii++) {
+                                    uint64_t r = type_handler->write(buffer, list[ii], r_offset, max_length);
+                                    r_offset += r;
+                                    t_size += r;
+                                }
+                                return t_size;
+                            }
+                            return sizeof(uint64_t);
+                        }
+
+                    };
+
                     template<typename __K, typename __V>
                     class __dt_map : public __datatype<__V> {
                     private:
@@ -686,6 +820,7 @@ REACTFS_NS_CORE
 
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             uint64_t r_count = *((uint64_t *) ptr);
                             if (r_count > 0) {
@@ -750,6 +885,183 @@ REACTFS_NS_CORE
                                 return t_size;
                             }
                             return sizeof(uint64_t);
+                        }
+                    };
+
+                    class __type {
+                    protected:
+                        __type *parent = nullptr;
+                        string name;
+                        __type_def_enum type;
+                        __base_datatype *handler = nullptr;
+                        uint32_t max_size = 0;
+
+
+                    public:
+                        __type(const string &name, __type_def_enum type, __type *parent = nullptr) {
+                            PRECONDITION(__type_enum_helper::is_native(type));
+                            this->parent = parent;
+                            this->name = string(name);
+                            this->handler = __type_defs_utils::get_type_handler(type);
+                            this->type = type;
+                        }
+
+                        __type(const string &name, __type_def_enum type, __base_datatype *handler,
+                               __type *parent = nullptr) {
+                            CHECK_NOT_NULL(handler);
+                            this->parent = parent;
+                            this->name = string(name);
+                            this->handler = handler;
+                            this->type = type;
+                        }
+
+                        __type(const __type *type) {
+                            this->parent = type->parent;
+                            this->handler = type->handler;
+                            this->name = string(type->name);
+                            this->type = type->type;
+                            this->max_size = type->max_size;
+                        }
+
+                        void set_max_size(uint32_t max_size) {
+                            this->max_size = max_size;
+                        }
+
+                        uint32_t get_max_size() {
+                            return this->max_size;
+                        }
+
+                        string get_name() {
+                            return this->name;
+                        }
+
+                        __type_def_enum get_type() {
+                            return this->type;
+                        }
+
+                        __base_datatype *get_handler() {
+                            return this->handler;
+                        }
+
+                        __type *get_parent() {
+                            return this->parent;
+                        }
+
+                        string get_canonical_name() {
+                            if (IS_NULL(parent)) {
+                                return name;
+                            } else {
+                                string p_name = parent->get_canonical_name();
+                                CHECK_NOT_EMPTY(p_name);
+                                return common_utils::format("%s.%s", p_name.c_str(), name.c_str());
+                            }
+                        }
+
+                    };
+
+                    class __dt_struct : public __base_datatype {
+                    private:
+                        __version_header *version;
+                        vector<__type *> fields;
+
+                        void *data(unordered_map<string, void *> *map, __type *type) {
+                            CHECK_NOT_NULL(type);
+                            unordered_map<string, void *>::iterator iter = map->find(type->get_canonical_name());
+                            if (iter == map->end())
+                                throw NOT_FOUND_ERROR("Specified column not found in source. [column=%s]",
+                                                      type->get_canonical_name().c_str());
+                            return iter->second;
+                        }
+
+                    public:
+                        __dt_struct(__version_header version) : __base_datatype(__type_def_enum::TYPE_STRUCT) {
+                            this->version = (__version_header *) malloc(sizeof(__version_header));
+                            CHECK_ALLOC(this->version, TYPE_NAME(__version_header));
+                            this->version->major = version.major;
+                            this->version->minor = version.minor;
+                        }
+
+                        ~__dt_struct() {
+                            if (!IS_EMPTY(fields)) {
+                                vector<__type *>::iterator iter;
+                                for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                    CHECK_AND_FREE(*iter);
+                                }
+                                fields.clear();
+                            }
+                            FREE_PTR(this->version);
+                        }
+
+                        void add_field(__type *type) {
+                            fields.push_back(type);
+                        }
+
+                        bool remove_field(string name) {
+                            if (!IS_EMPTY(fields)) {
+                                vector<__type *>::iterator iter;
+                                for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                    __type *t = *iter;
+                                    if (t->get_canonical_name() == name) {
+                                        break;
+                                    }
+                                }
+                                if (iter != fields.end()) {
+                                    fields.erase(iter);
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+
+                        virtual uint64_t
+                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            __version_header *v = static_cast<__version_header *>(ptr);
+                            CHECK_NOT_NULL(v);
+
+                            POSTCONDITION(version_utils::compatible(*(this->version), *v));
+                            unordered_map<string, void *> **T = (unordered_map<string, void *> **) t;
+                            *T = new unordered_map<string, void *>();
+
+                            vector<__type *>::iterator iter;
+                            uint64_t r_offset = offset + sizeof(__version_header);
+                            uint64_t t_size = sizeof(__version_header);
+                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                void *value = nullptr;
+                                __base_datatype *handler = (*iter)->get_handler();
+                                CHECK_NOT_NULL(handler);
+                                uint64_t r = 0;
+                                if ((*iter)->get_type() == __type_def_enum::TYPE_ARRAY) {
+                                    uint32_t a_size = (*iter)->get_max_size();
+                                    r = handler->read(buffer, &value, r_offset, max_length, a_size);
+                                } else {
+                                    r = handler->read(buffer, &value, r_offset, max_length);
+                                }
+                                (*T)->insert({(*iter)->get_canonical_name(), value});
+                                t_size += r;
+                                r_offset += r;
+                            }
+                            return t_size;
+                        }
+
+                        virtual uint64_t
+                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            unordered_map<string, void *> *map = (unordered_map<string, void *> *) value;
+                            CHECK_NOT_EMPTY_P(map);
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            memcpy(ptr, this->version, sizeof(__version_header));
+                            uint64_t r_offset = offset + sizeof(__version_header);
+                            uint64_t t_size = sizeof(__version_header);
+
+                            vector<__type *>::iterator iter;
+                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                __base_datatype *handler = (*iter)->get_handler();
+                                CHECK_NOT_NULL(handler);
+                                void *d = data(map, *iter);
+
+                            }
+                            return 0;
                         }
                     };
                 }
