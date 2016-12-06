@@ -31,6 +31,7 @@
 #include "common/includes/time_utils.h"
 #include "common/includes/base_error.h"
 #include "core/includes/core.h"
+#include "core/includes/types/type_errors.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
@@ -76,8 +77,19 @@ REACTFS_NS_CORE
                                 TYPE_STRUCT
                     } __type_def_enum;
 
+                    /*!
+                     * Helper class for datatype enums.
+                     */
                     class __type_enum_helper {
                     public:
+                        /*!
+                         * Check if the type enum represents a native type.
+                         *
+                         * Note: String is also considered a native type.
+                         *
+                         * @param type - Data type enum to check
+                         * @return - Is native type?
+                         */
                         static bool is_native(__type_def_enum type) {
                             switch (type) {
                                 case __type_def_enum::TYPE_TIMESTAMP:
@@ -97,6 +109,13 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        /*!
+                         * Check if the specified type enum represents a type that can be used as an
+                         * inner type for lists and maps.
+                         *
+                         * @param type - Data type enum to check
+                         * @return - Can be inner type?
+                         */
                         static bool is_inner_type_valid(__type_def_enum type) {
                             if (is_native(type)) {
                                 return true;
@@ -107,34 +126,87 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class __base_datatype {
+                    /*!
+                     * Base class for defining data type handlers. Handlers implement the interfaces
+                     * defined to read/write data into binary formats.
+                     */
+                    class __base_datatype_io {
                     protected:
+                        /// Data type this type handler manages.
                         __type_def_enum type = __type_def_enum::TYPE_UNKNOWN;
 
-                        __base_datatype(__type_def_enum type) {
+                        /*!
+                         * Protected constructor.
+                         *
+                         * @param type - Data type enum.
+                         */
+                        __base_datatype_io(__type_def_enum type) {
                             PRECONDITION(type != __type_def_enum::TYPE_UNKNOWN);
                             this->type = type;
                         }
 
                     public:
+                        /*!
+                         * Get the data time enum of this handler.
+                         *
+                         * @return - Data type enum.
+                         */
                         __type_def_enum get_type() {
                             return this->type;
                         }
 
+                        /*!
+                         * Read (de-serialize) data from the binary format for the represented data type.
+                         *
+                         * @param buffer - Source data buffer (binary data)
+                         * @param t - Pointer to map the output data to.
+                         * @param offset - Start offset where the buffer is to be read from.
+                         * @param max_length - Max length of the data in the buffer.
+                         * @return - Total bytes consumed by this read.
+                         */
                         virtual uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) =0;
 
+                        /*!
+                         * Write (serialize) data for the represented data type to the binary output buffer.
+                         *
+                         * @param buffer - Output data buffer the data is to be copied to.
+                         * @param value - Data value pointer to copy from.
+                         * @param offset - Offset in the output buffer to start writing from.
+                         * @param max_length - Max lenght of the output buffer.
+                         * @return - Total number of bytes written.
+                         */
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...)  = 0;
 
                     };
 
+                    /*!
+                     * Typed template for representing native type handlers.
+                     *
+                     *
+                     * @tparam __T - supported data type.
+                     */
                     template<typename __T>
-                    class __datatype : public __base_datatype {
+                    class __datatype_io : public __base_datatype_io {
                     protected:
 
-                        __datatype(__type_def_enum type) : __base_datatype(type) {
+                        /*!<constructor
+                         * Base constructor for native type handlers.
+                         *
+                         * @param type - Data type enum.
+                         */
+                        __datatype_io(__type_def_enum type) : __base_datatype_io(type) {
                         }
 
+                        /*!
+                         * Check and increment the buffer pointer.
+                         *
+                         * @param source - Source/Target data buffer.
+                         * @param size - Size of the requested bytes.
+                         * @param offset - Start offset in the data buffer.
+                         * @param max_length - Max length of the data buffer.
+                         * @return - Void pointer pointing to the incremented offset.
+                         */
                         void *get_data_ptr(void *source, uint64_t size, uint64_t offset, uint64_t max_length) {
                             CHECK_NOT_NULL(source);
                             PRECONDITION((offset + size) < max_length);
@@ -143,20 +215,54 @@ REACTFS_NS_CORE
 
                     public:
 
+                        /*!
+                         * Read (de-serialize) data from the binary format for the represented native data type.
+                         *
+                         * @param buffer - Source data buffer (binary data)
+                         * @param t - Pointer to map the output data to.
+                         * @param offset - Start offset where the buffer is to be read from.
+                         * @param max_length - Max length of the data in the buffer.
+                         * @return - Total bytes consumed by this read.
+                         */
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override =0;
 
+                        /*!
+                         * Write (serialize) data for the represented native data type to the binary output buffer.
+                         *
+                         * @param buffer - Output data buffer the data is to be copied to.
+                         * @param value - Data value pointer to copy from.
+                         * @param offset - Offset in the output buffer to start writing from.
+                         * @param max_length - Max lenght of the output buffer.
+                         * @return - Total number of bytes written.
+                         */
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override = 0;
 
                     };
 
-                    class __dt_byte : public __datatype<uint8_t> {
+                    /*!
+                     * Data handler for single byte data type. (uint8_t)
+                     */
+                    class __dt_byte : public __datatype_io<uint8_t> {
 
                     public:
-                        __dt_byte() : __datatype(__type_def_enum::TYPE_BYTE) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_byte() : __datatype_io(__type_def_enum::TYPE_BYTE) {
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the byte data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             uint8_t **T = (uint8_t **) t;
@@ -166,6 +272,15 @@ REACTFS_NS_CORE
                             return sizeof(uint8_t);
                         }
 
+                        /*!
+                         * Write (serialize) data for the byte data type to the binary output buffer.
+                         *
+                         * @param buffer - Output data buffer the data is to be copied to.
+                         * @param value - Data value pointer to copy from.
+                         * @param offset - Offset in the output buffer to start writing from.
+                         * @param max_length - Max lenght of the output buffer.
+                         * @return - Total number of bytes written.
+                         */
                         uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint8_t), offset, max_length);
@@ -175,13 +290,29 @@ REACTFS_NS_CORE
 
                     };
 
-                    class __dt_char : public __datatype<char> {
+                    /*!
+                     * Data handler for single character data type. (char)
+                     */
+                    class __dt_char : public __datatype_io<char> {
 
                     public:
-                        __dt_char() : __datatype(__type_def_enum::TYPE_CHAR) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_char() : __datatype_io(__type_def_enum::TYPE_CHAR) {
 
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the char data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             char **T = (char **) t;
@@ -190,6 +321,15 @@ REACTFS_NS_CORE
                             return sizeof(char);
                         }
 
+                        /*!
+                         * Write (serialize) data for the char data type to the binary output buffer.
+                         *
+                         * @param buffer - Output data buffer the data is to be copied to.
+                         * @param value - Data value pointer to copy from.
+                         * @param offset - Offset in the output buffer to start writing from.
+                         * @param max_length - Max lenght of the output buffer.
+                         * @return - Total number of bytes written.
+                         */
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(char), offset, max_length);
                             memcpy(ptr, 0, sizeof(uint8_t));
@@ -198,13 +338,29 @@ REACTFS_NS_CORE
 
                     };
 
-                    class __dt_bool : public __datatype<bool> {
+                    /*!
+                     * Data handler for boolean data type. (bool)
+                     */
+                    class __dt_bool : public __datatype_io<bool> {
 
                     public:
-                        __dt_bool() : __datatype(__type_def_enum::TYPE_BOOL) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_bool() : __datatype_io(__type_def_enum::TYPE_BOOL) {
 
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the boolean data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             bool **T = (bool **) t;
@@ -213,6 +369,15 @@ REACTFS_NS_CORE
                             return sizeof(bool);
                         }
 
+                        /*!
+                         * Write (serialize) data for the boolean data type to the binary output buffer.
+                         *
+                         * @param buffer - Output data buffer the data is to be copied to.
+                         * @param value - Data value pointer to copy from.
+                         * @param offset - Offset in the output buffer to start writing from.
+                         * @param max_length - Max lenght of the output buffer.
+                         * @return - Total number of bytes written.
+                         */
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(bool), offset, max_length);
                             memcpy(ptr, value, sizeof(bool));
@@ -221,13 +386,29 @@ REACTFS_NS_CORE
 
                     };
 
-                    class __dt_short : public __datatype<short> {
+                    /*!
+                     * Data handler for SHORT data type. (short)
+                     */
+                    class __dt_short : public __datatype_io<short> {
 
                     public:
-                        __dt_short() : __datatype(__type_def_enum::TYPE_SHORT) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_short() : __datatype_io(__type_def_enum::TYPE_SHORT) {
 
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the short data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             short **T = (short **) t;
@@ -236,6 +417,15 @@ REACTFS_NS_CORE
                             return sizeof(short);
                         }
 
+                        /*!
+                         * Write (serialize) data for the short data type to the binary output buffer.
+                         *
+                         * @param buffer - Output data buffer the data is to be copied to.
+                         * @param value - Data value pointer to copy from.
+                         * @param offset - Offset in the output buffer to start writing from.
+                         * @param max_length - Max lenght of the output buffer.
+                         * @return - Total number of bytes written.
+                         */
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(short), offset, max_length);
                             memcpy(ptr, value, sizeof(short));
@@ -244,13 +434,29 @@ REACTFS_NS_CORE
 
                     };
 
-                    class __dt_int : public __datatype<int> {
+                    /*!
+                     * Data handler for INTEGER data type. (int)
+                     */
+                    class __dt_int : public __datatype_io<int> {
 
                     public:
-                        __dt_int() : __datatype(__type_def_enum::TYPE_INTEGER) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_int() : __datatype_io(__type_def_enum::TYPE_INTEGER) {
 
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the integer data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             int **T = (int **) t;
@@ -259,6 +465,15 @@ REACTFS_NS_CORE
                             return sizeof(int);
                         }
 
+                        /*!
+                         * Write (serialize) data for the integer data type to the binary output buffer.
+                         *
+                         * @param buffer - Output data buffer the data is to be copied to.
+                         * @param value - Data value pointer to copy from.
+                         * @param offset - Offset in the output buffer to start writing from.
+                         * @param max_length - Max lenght of the output buffer.
+                         * @return - Total number of bytes written.
+                         */
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(int), offset, max_length);
                             memcpy(ptr, value, sizeof(int));
@@ -267,13 +482,29 @@ REACTFS_NS_CORE
 
                     };
 
-                    class __dt_long : public __datatype<long> {
+                    /*!
+                     * Data handler for LONG data type. (long)
+                     */
+                    class __dt_long : public __datatype_io<long> {
 
                     public:
-                        __dt_long() : __datatype(__type_def_enum::TYPE_LONG) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_long() : __datatype_io(__type_def_enum::TYPE_LONG) {
 
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the long data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             long **T = (long **) t;
@@ -282,6 +513,15 @@ REACTFS_NS_CORE
                             return sizeof(long);
                         }
 
+                        /*!
+                        * Write (serialize) data for the long data type to the binary output buffer.
+                        *
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @return - Total number of bytes written.
+                        */
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(long), offset, max_length);
                             memcpy(ptr, value, sizeof(long));
@@ -290,13 +530,29 @@ REACTFS_NS_CORE
 
                     };
 
-                    class __dt_timestamp : public __datatype<uint64_t> {
+                    /*!
+                     * Data handler for TIMESTAMP data type. (uint64_t)
+                     */
+                    class __dt_timestamp : public __datatype_io<uint64_t> {
 
                     public:
-                        __dt_timestamp() : __datatype(__type_def_enum::TYPE_TIMESTAMP) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_timestamp() : __datatype_io(__type_def_enum::TYPE_TIMESTAMP) {
 
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the timestamp data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             uint64_t **T = (uint64_t **) t;
@@ -305,6 +561,15 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                        * Write (serialize) data for the timestamp data type to the binary output buffer.
+                        *
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @return - Total number of bytes written.
+                        */
                         uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
@@ -314,13 +579,33 @@ REACTFS_NS_CORE
 
                     };
 
+                    /*!
+                     * Data handler for DATETIME data type. (uint64_t)
+                     */
                     class __dt_datetime : public __dt_timestamp {
 
                     public:
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
                         __dt_datetime() {
 
                         }
 
+                        /*!
+                         * Read the date/time field into the specified string buffer.
+                         *
+                         * Note: This method assumes the string buffer has been allocated.
+                         *
+                         * @param buffer - Source data buffer (binary data)
+                         * @param str - Pre-allocated string buffer to copy into.
+                         * @param offset - Start offset where the buffer is to be read from.
+                         * @param max_length - Max length of the data in the buffer.
+                         * @param format - Date/Time format to format the output string.
+                         *                  (if EMPTY will use the global format)
+                         * @return - Total bytes consumed by this read.
+                         */
                         uint64_t readstr(void *buffer, string *str, uint64_t offset, uint64_t max_length,
                                          const string &format = common_consts::EMPTY_STRING) {
                             uint64_t *ts = nullptr;
@@ -334,6 +619,17 @@ REACTFS_NS_CORE
                             return r;
                         }
 
+                        /*!
+                         * Write the date/time field value by parsing the specified date/time string.
+                         *
+                         * @param buffer - Output data buffer the data is to be copied to.
+                         * @param value - Date/Time string buffer to copy from.
+                         * @param offset - Offset in the output buffer to start writing from.
+                         * @param max_length - Max lenght of the output buffer.
+                         * @param format - Date/Time format to parse the input string.
+                         *                  (if EMPTY will use the global format)
+                         * @return - Total number of bytes written.
+                         */
                         uint64_t writestr(void *buffer, string *value, uint64_t offset, uint64_t max_length,
                                           const string &format = common_consts::EMPTY_STRING) {
                             CHECK_NOT_EMPTY_P(value);
@@ -346,13 +642,29 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class __dt_float : public __datatype<float> {
+                    /*!
+                     * Data handler for FLOAT data type. (float)
+                     */
+                    class __dt_float : public __datatype_io<float> {
 
                     public:
-                        __dt_float() : __datatype(__type_def_enum::TYPE_FLOAT) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_float() : __datatype_io(__type_def_enum::TYPE_FLOAT) {
 
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the float data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             float **T = (float **) t;
@@ -361,6 +673,15 @@ REACTFS_NS_CORE
                             return sizeof(float);
                         }
 
+                        /*!
+                        * Write (serialize) data for the float data type to the binary output buffer.
+                        *
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @return - Total number of bytes written.
+                        */
                         uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(float), offset, max_length);
                             memcpy(ptr, value, sizeof(float));
@@ -369,13 +690,29 @@ REACTFS_NS_CORE
 
                     };
 
-                    class __dt_double : public __datatype<double> {
+                    /*!
+                     * Data handler for DOUBLE data type. (double)
+                     */
+                    class __dt_double : public __datatype_io<double> {
 
                     public:
-                        __dt_double() : __datatype(__type_def_enum::TYPE_DOUBLE) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_double() : __datatype_io(__type_def_enum::TYPE_DOUBLE) {
 
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the double data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             double **T = (double **) t;
@@ -384,6 +721,15 @@ REACTFS_NS_CORE
                             return sizeof(double);
                         }
 
+                        /*!
+                        * Write (serialize) data for the double data type to the binary output buffer.
+                        *
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @return - Total number of bytes written.
+                        */
                         uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(double), offset, max_length);
@@ -393,20 +739,41 @@ REACTFS_NS_CORE
 
                     };
 
-                    class __dt_text : public __datatype<string> {
+                    /*!
+                     * Data handler for TEXT data type. (string)
+                     *
+                     * Note: The difference between TEXT and STRING types is that STRING
+                     * has to be defined with a max-size and is limited to a max of USHRT_MAX.
+                     */
+                    class __dt_text : public __datatype_io<string> {
 
                     public:
-                        __dt_text() : __datatype(__type_def_enum::TYPE_STRING) {
+                        /*!<constructor
+                         *
+                         * Default construtor.
+                         */
+                        __dt_text() : __datatype_io(__type_def_enum::TYPE_STRING) {
 
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the string data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             string **T = (string **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
+                            // Get the size of the string data (uint64_t)
                             uint64_t size = 0;
                             memcpy(&size, ptr, sizeof(uint64_t));
+                            // If size if 0, then the string is null.
                             if (size > 0) {
                                 uint64_t d_size = (size * sizeof(char));
                                 ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
@@ -419,12 +786,23 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                        * Write (serialize) data for the string data type to the binary output buffer.
+                        *
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @return - Total number of bytes written.
+                        */
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             string *s = (string *) value;
                             uint64_t size = (s->length() * sizeof(char));
+                            // Write the size of the string buffer. (uint64_t)
                             memcpy(ptr, &size, sizeof(uint64_t));
+                            // If size is greater than 0, write the string buffer.
                             if (size > 0) {
                                 PRECONDITION((offset + sizeof(uint64_t) + size) < max_length);
                                 ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
@@ -436,17 +814,34 @@ REACTFS_NS_CORE
 
                     };
 
+                    /*!
+                     * Data handler for STRING data type. (string)
+                     *
+                     * Note: The difference between TEXT and STRING types is that STRING
+                     * has to be defined with a max-size and is limited to a max of USHRT_MAX.
+                     */
                     class __dt_string : public __dt_text {
 
                     public:
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the string data type.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             string **T = (string **) t;
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             uint16_t size = 0;
+                            // Get the size of the string data (uint16_t)
                             memcpy(&size, ptr, sizeof(uint16_t));
+                            // If size if 0, then the string is null.
                             if (size > 0) {
                                 uint64_t d_size = (size * sizeof(char));
                                 ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
@@ -459,13 +854,24 @@ REACTFS_NS_CORE
                             return sizeof(uint16_t);
                         }
 
+                        /*!
+                        * Write (serialize) data for the string data type to the binary output buffer.
+                        *
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @return - Total number of bytes written.
+                        */
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             string *s = (string *) value;
                             PRECONDITION(s->length() <= USHRT_MAX);
                             uint16_t size = (s->length() * sizeof(char));
+                            // Write the size of the string buffer. (uint16_t)
                             memcpy(ptr, &size, sizeof(uint16_t));
+                            // If size if 0, then the string is null.
                             if (size > 0) {
                                 PRECONDITION((offset + sizeof(uint16_t) + size) < max_length);
                                 ptr = common_utils::increment_data_ptr(ptr, sizeof(uint16_t));
@@ -476,28 +882,47 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    /*!
+                     * Singleton utility class for managing data type IO handlers.
+                     */
                     class __type_defs_utils {
                     private:
-                        static unordered_map<string, __base_datatype *> type_handlers;
+                        /// Static map of the registered data type IO handlers.
+                        static unordered_map<string, __base_datatype_io *> type_handlers;
 
                     public:
 
-                        static __base_datatype *get_type_handler(__type_def_enum type) {
+                        /*!
+                         * Get the datatype IO handler for the specified datatype enum.
+                         *
+                         * Note: Only valid inner type datatype handlers are registered.
+                         *
+                         * @param type - Datatype enum
+                         * @return - Datatype IO handler
+                         */
+                        static __base_datatype_io *get_type_handler(__type_def_enum type) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(type));
                             string type_n = get_type_string(type);
-                            unordered_map<string, __base_datatype *>::iterator iter = type_handlers.find(type_n);
+                            unordered_map<string, __base_datatype_io *>::iterator iter = type_handlers.find(type_n);
                             if (iter != type_handlers.end()) {
                                 return iter->second;
                             } else {
-                                __base_datatype *ptr = create_type_handler(type);
+                                // If not available, create a new instance.
+                                __base_datatype_io *ptr = create_type_handler(type);
                                 CHECK_NOT_NULL(ptr);
                                 type_handlers.insert({type_n, ptr});
                                 return ptr;
                             }
                         }
 
-                        static __base_datatype *create_type_handler(__type_def_enum type) {
-                            __base_datatype *t = nullptr;
+                        /*!
+                         * Create a new instance of the IO handler.
+                         *
+                         * @param type - Datatype enum
+                         * @return - Datatype IO handler
+                         */
+                        static __base_datatype_io *create_type_handler(__type_def_enum type) {
+                            __base_datatype_io *t = nullptr;
                             switch (type) {
                                 case __type_def_enum::TYPE_BYTE:
                                     t = new __dt_byte();
@@ -558,6 +983,12 @@ REACTFS_NS_CORE
                             return t;
                         }
 
+                        /*!
+                         * Get the string value of the datatype enum.
+                         *
+                         * @param type - Datatype enum.
+                         * @return - String value of the enum.
+                         */
                         static string get_type_string(__type_def_enum type) {
                             switch (type) {
                                 case __type_def_enum::TYPE_ARRAY:
@@ -597,6 +1028,12 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        /*!
+                         * Parse the string value as a datatype enum. The parse is case-insensitive.
+                         *
+                         * @param type - String value of enum.
+                         * @return - Parsed datatype enum.
+                         */
                         static __type_def_enum parse_type(const string &type) {
                             CHECK_NOT_EMPTY(type);
                             string t = string_utils::toupper(type);
@@ -638,12 +1075,12 @@ REACTFS_NS_CORE
                     };
 
                     template<typename __T>
-                    class __dt_array : public __datatype<__T> {
+                    class __dt_array : public __datatype_io<__T> {
                     protected:
                         __type_def_enum inner_type;
 
                     public:
-                        __dt_array(__type_def_enum inner_type) : __datatype<__T>(
+                        __dt_array(__type_def_enum inner_type) : __datatype_io<__T>(
                                 __type_def_enum::TYPE_ARRAY) {
                             this->inner_type = inner_type;
                         }
@@ -655,7 +1092,7 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
-                            __base_datatype *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
 
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -682,7 +1119,7 @@ REACTFS_NS_CORE
 
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            __base_datatype *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
                             va_list vl;
                             va_start(vl, max_length);
@@ -709,12 +1146,12 @@ REACTFS_NS_CORE
                     };
 
                     template<typename __T>
-                    class __dt_list : public __datatype<__T> {
+                    class __dt_list : public __datatype_io<__T> {
                     protected:
                         __type_def_enum inner_type;
 
                     public:
-                        __dt_list(__type_def_enum inner_type) : __datatype<__T>(
+                        __dt_list(__type_def_enum inner_type) : __datatype_io<__T>(
                                 __type_def_enum::TYPE_LIST) {
                             this->inner_type = inner_type;
                         }
@@ -726,7 +1163,7 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
-                            __base_datatype *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
 
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -754,7 +1191,7 @@ REACTFS_NS_CORE
 
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            __base_datatype *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
 
                             vector<__T *> *list = (vector<__T *>) value;
@@ -780,12 +1217,12 @@ REACTFS_NS_CORE
                     };
 
                     template<typename __K, typename __V>
-                    class __dt_map : public __datatype<__V> {
+                    class __dt_map : public __datatype_io<__V> {
                     private:
                         __type_def_enum key_type;
                         __type_def_enum value_type;
                     public:
-                        __dt_map(__type_def_enum key_type, __type_def_enum value_type) : __datatype<__V>(
+                        __dt_map(__type_def_enum key_type, __type_def_enum value_type) : __datatype_io<__V>(
                                 __type_def_enum::TYPE_MAP) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(value_type));
                             PRECONDITION(__type_enum_helper::is_native(key_type));
@@ -810,9 +1247,9 @@ REACTFS_NS_CORE
                                 unordered_map<__K, __V *> **T = (unordered_map<__K, __V *> **) t;
                                 *T = new unordered_map<__K, __V *>();
 
-                                __base_datatype *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
+                                __base_datatype_io *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
                                 CHECK_NOT_NULL(kt_handler);
-                                __base_datatype *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
+                                __base_datatype_io *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
                                 CHECK_NOT_NULL(vt_handler);
 
                                 uint64_t r_offset = offset + sizeof(uint64_t);
@@ -849,9 +1286,9 @@ REACTFS_NS_CORE
                             memcpy(ptr, &m_size, sizeof(uint64_t));
 
                             if (!map->empty()) {
-                                __base_datatype *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
+                                __base_datatype_io *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
                                 CHECK_NOT_NULL(kt_handler);
-                                __base_datatype *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
+                                __base_datatype_io *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
                                 CHECK_NOT_NULL(vt_handler);
 
                                 uint64_t r_offset = offset + sizeof(uint64_t);
@@ -871,101 +1308,160 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class __type {
+                    class __constraint {
+                    public:
+
+                        virtual bool validate(void *value) const = 0;
+                    };
+
+                    class __native_type {
                     protected:
-                        __type *parent = nullptr;
                         string name;
-                        __type_def_enum type;
-                        __base_datatype *handler = nullptr;
-                        uint32_t max_size = 0;
-                        bool nullable = true;
+                        __type_def_enum datatype;
+                        __constraint *constraint = nullptr;
+                        void *default_value = nullptr;
 
                     public:
-                        __type(const string &name, __type_def_enum type, __type *parent = nullptr) {
-                            PRECONDITION(__type_enum_helper::is_native(type));
-                            this->parent = parent;
+                        __native_type(const string &name, const __type_def_enum datatype) {
                             this->name = string(name);
-                            this->handler = __type_defs_utils::get_type_handler(type);
+                            this->datatype = datatype;
+                        }
+
+                        virtual ~__native_type() {
+                            CHECK_AND_FREE(constraint);
+                            CHECK_AND_FREE(default_value);
+                        }
+
+                        const string get_name() const {
+                            return this->name;
+                        }
+
+                        const __type_def_enum get_datatype() const {
+                            return this->datatype;
+                        }
+
+                        void set_constraint(__constraint *constraint) {
+                            this->constraint = constraint;
+                        }
+
+                        const __constraint *get_constraint() const {
+                            return this->constraint;
+                        }
+
+                        void set_default_value(void *default_value) {
+                            this->default_value = default_value;
+                        }
+
+                        const void *get_default_value() const {
+                            return this->default_value;
+                        }
+
+                        bool is_valid_value(void *value) {
+                            if (NOT_NULL(constraint)) {
+                                return constraint->validate(value);
+                            }
+                            return true;
+                        }
+                    };
+
+                    class __sized_type : public __native_type {
+                    private:
+                        uint32_t max_size = 0;
+
+                    public:
+                        __sized_type(const string &name, const __type_def_enum datatype, const uint32_t max_size)
+                                : __native_type(name, datatype) {
+                            PRECONDITION(max_size > 0);
+                            this->max_size = max_size;
+                        }
+
+                        const uint32_t get_max_size() const {
+                            return this->max_size;
+                        }
+                    };
+
+                    class __complex_type : public __native_type {
+                    private:
+                        unordered_map<string, __native_type *> fields;
+                    public:
+                        __complex_type(const string &name) : __native_type(name, __type_def_enum::TYPE_STRUCT) {
+
+                        }
+
+                        void add_field(string &name, __native_type *type) {
+                            CHECK_NOT_EMPTY(name);
+                            CHECK_NOT_NULL(type);
+                            fields.insert({name, type});
+                        }
+
+                        __native_type *get_type(string &name) {
+                            unordered_map<string, __native_type *>::iterator iter = fields.find(name);
+                            if (iter != fields.end()) {
+                                return iter->second;
+                            }
+                            return nullptr;
+                        }
+                    };
+
+                    class __type_instance {
+                    protected:
+                        __type_instance *parent = nullptr;
+                        __native_type *type;
+                        __base_datatype_io *handler;
+
+                    public:
+                        __type_instance(__native_type *type, __type_instance *parent = nullptr) {
+                            CHECK_NOT_NULL(type);
+                            PRECONDITION(__type_enum_helper::is_native(type->get_datatype()));
+                            this->parent = parent;
+                            this->handler = __type_defs_utils::get_type_handler(type->get_datatype());
                             this->type = type;
                         }
 
-                        __type(const string &name, __type_def_enum type, __base_datatype *handler,
-                               __type *parent = nullptr) {
+                        __type_instance(__native_type *type, __base_datatype_io *handler,
+                                        __type_instance *parent = nullptr) {
+                            CHECK_NOT_NULL(type);
                             CHECK_NOT_NULL(handler);
                             this->parent = parent;
-                            this->name = string(name);
                             this->handler = handler;
                             this->type = type;
                         }
 
-                        __type(const __type *type) {
-                            this->parent = type->parent;
-                            this->handler = type->handler;
-                            this->name = string(type->name);
-                            this->type = type->type;
-                            this->max_size = type->max_size;
-                            this->nullable = type->nullable;
+                        ~__type_instance() {
+                            CHECK_AND_FREE(type);
                         }
 
-                        __type(const __type &type) {
-                            this->parent = type.parent;
-                            this->handler = type.handler;
-                            this->name = string(type.name);
-                            this->type = type.type;
-                            this->max_size = type.max_size;
-                            this->nullable = type.nullable;
-                        }
-
-                        void set_max_size(uint32_t max_size) {
-                            this->max_size = max_size;
-                        }
-
-                        uint32_t get_max_size() {
-                            return this->max_size;
-                        }
-
-                        string get_name() {
-                            return this->name;
-                        }
-
-                        __type_def_enum get_type() {
+                        __native_type *get_type() {
                             return this->type;
                         }
 
-                        __base_datatype *get_handler() {
+                        __base_datatype_io *get_handler() {
                             return this->handler;
                         }
 
-                        __type *get_parent() {
+                        __type_instance *get_parent() {
                             return this->parent;
                         }
 
-                        void set_nullable(bool nullable) {
-                            this->nullable = nullable;
-                        }
-
-                        bool is_nullable() {
-                            return this->nullable;
-                        }
 
                         string get_canonical_name() {
                             if (IS_NULL(parent)) {
-                                return name;
+                                return type->get_name();
                             } else {
                                 string p_name = parent->get_canonical_name();
                                 CHECK_NOT_EMPTY(p_name);
-                                return common_utils::format("%s.%s", p_name.c_str(), name.c_str());
+                                return common_utils::format("%s.%s", p_name.c_str(), type->get_name().c_str());
                             }
                         }
 
                     };
 
-                    class __dt_struct : public __base_datatype {
+                    class __dt_struct : public __base_datatype_io {
                     private:
                         __version_header *version;
-                        vector<__type *> fields;
+                        vector<__type_instance *> fields;
 
-                        void *get_field_value(unordered_map<string, void *> *map, __type *type) {
+                        void *get_field_value(unordered_map<string, void *> *map, __type_instance *type) {
                             CHECK_NOT_NULL(type);
                             unordered_map<string, void *>::iterator iter = map->find(type->get_canonical_name());
                             if (iter == map->end())
@@ -974,7 +1470,7 @@ REACTFS_NS_CORE
                         }
 
                     public:
-                        __dt_struct(__version_header version) : __base_datatype(__type_def_enum::TYPE_STRUCT) {
+                        __dt_struct(__version_header version) : __base_datatype_io(__type_def_enum::TYPE_STRUCT) {
                             this->version = (__version_header *) malloc(sizeof(__version_header));
                             CHECK_ALLOC(this->version, TYPE_NAME(__version_header));
                             this->version->major = version.major;
@@ -983,7 +1479,7 @@ REACTFS_NS_CORE
 
                         ~__dt_struct() {
                             if (!IS_EMPTY(fields)) {
-                                vector<__type *>::iterator iter;
+                                vector<__type_instance *>::iterator iter;
                                 for (iter = fields.begin(); iter != fields.end(); iter++) {
                                     CHECK_AND_FREE(*iter);
                                 }
@@ -992,7 +1488,7 @@ REACTFS_NS_CORE
                             FREE_PTR(this->version);
                         }
 
-                        void add_field(uint16_t index, __type *type) {
+                        void add_field(uint16_t index, __type_instance *type) {
                             CHECK_NOT_NULL(type);
                             if (index == fields.size()) {
                                 fields.push_back(type);
@@ -1009,9 +1505,9 @@ REACTFS_NS_CORE
 
                         bool remove_field(string name) {
                             if (!IS_EMPTY(fields)) {
-                                vector<__type *>::iterator iter;
+                                vector<__type_instance *>::iterator iter;
                                 for (iter = fields.begin(); iter != fields.end(); iter++) {
-                                    __type *t = *iter;
+                                    __type_instance *t = *iter;
                                     if (t->get_canonical_name() == name) {
                                         break;
                                     }
@@ -1035,23 +1531,24 @@ REACTFS_NS_CORE
                             unordered_map<string, void *> **T = (unordered_map<string, void *> **) t;
                             *T = new unordered_map<string, void *>();
 
-                            vector<__type *>::iterator iter;
+                            vector<__type_instance *>::iterator iter;
                             uint64_t r_offset = offset + sizeof(__version_header);
                             uint64_t t_size = sizeof(__version_header);
                             while (r_offset < max_length) {
                                 ptr = common_utils::increment_data_ptr(buffer, r_offset);
                                 uint8_t *ci = (uint8_t *) ptr;
                                 POSTCONDITION(*ci < fields.size());
-                                __type *type = fields[*ci];
+                                __type_instance *type = fields[*ci];
                                 CHECK_NOT_NULL(type);
-                                __base_datatype *handler = type->get_handler();
+                                __base_datatype_io *handler = type->get_handler();
                                 CHECK_NOT_NULL(handler);
                                 r_offset += sizeof(uint8_t);
                                 t_size += sizeof(uint8_t);
                                 uint64_t r = 0;
                                 void *value = nullptr;
-                                if (type->get_type() == __type_def_enum::TYPE_ARRAY) {
-                                    uint32_t a_size = type->get_max_size();
+                                if (type->get_type()->get_datatype() == __type_def_enum::TYPE_ARRAY) {
+                                    __sized_type *st = static_cast<__sized_type *>(type);
+                                    const uint32_t a_size = st->get_max_size();
                                     r = handler->read(buffer, &value, r_offset, max_length, a_size);
                                 } else {
                                     r = handler->read(buffer, &value, r_offset, max_length);
@@ -1072,15 +1569,16 @@ REACTFS_NS_CORE
                             uint64_t r_offset = offset + sizeof(__version_header);
                             uint64_t t_size = sizeof(__version_header);
 
-                            vector<__type *>::iterator iter;
+                            vector<__type_instance *>::iterator iter;
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
-                                __base_datatype *handler = (*iter)->get_handler();
+                                __base_datatype_io *handler = (*iter)->get_handler();
                                 CHECK_NOT_NULL(handler);
                                 void *d = get_field_value(map, *iter);
-                                if (IS_NULL(d) && !(*iter)->is_nullable()) {
-                                    throw NOT_FOUND_ERROR("Null/Missing required field value. [field=%s]",
-                                                          (*iter)->get_canonical_name().c_str());
-                                } else if (IS_NULL(d)) {
+                                if (!(*iter)->get_type()->is_valid_value(d)) {
+                                    throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
+                                                           (*iter)->get_type()->get_name().c_str());
+                                }
+                                if (IS_NULL(d)) {
                                     continue;
                                 }
                                 uint64_t r = handler->write(buffer, d, r_offset, max_length);

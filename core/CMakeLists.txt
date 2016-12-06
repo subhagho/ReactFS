@@ -5,7 +5,7 @@ project(reactfs-core VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-INCLUDE(../makefiles/CMakeInclude.txt)
+INCLUDE(../makefiles/CMakeInclude.txt /usr/local/opt/flex/include)
 
 LINK_DIRECTORIES(/usr/lib ../common/cmake ../watergate/cmake)
 

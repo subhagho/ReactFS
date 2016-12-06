@@ -4,7 +4,7 @@
 
 
 /*
- * Copyright [yyyy] [name of copyright owner]
+ * Copyright [2016] [Subhabrata Ghosh]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@
 #include "common/includes/base_error.h"
 #include "core/includes/core.h"
 
-#include "type_defs.h"
+#include "core/includes/types/type_defs.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
