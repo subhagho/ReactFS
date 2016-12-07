@@ -129,6 +129,9 @@ REACTFS_NS_CORE
                     /*!
                      * Base class for defining data type handlers. Handlers implement the interfaces
                      * defined to read/write data into binary formats.
+                     *
+                     * The interfaces defined are type unsafe, as they use (void *) pointers. Callers must be careful
+                     * to instantiate the correct datatype pointers before calling these methods.
                      */
                     class __base_datatype_io {
                     protected:
@@ -1194,7 +1197,7 @@ REACTFS_NS_CORE
                             __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
 
-                            vector<__T *> *list = (vector<__T *>) value;
+                            vector<__T *> *list = static_cast<vector<__T *> *>( value);
 
                             uint64_t a_size = list->size();
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -1205,7 +1208,7 @@ REACTFS_NS_CORE
                                 uint64_t r_offset = offset + sizeof(uint64_t);
                                 uint64_t t_size = sizeof(uint64_t);
                                 for (uint64_t ii = 0; ii < a_size; ii++) {
-                                    uint64_t r = type_handler->write(buffer, list[ii], r_offset, max_length);
+                                    uint64_t r = type_handler->write(buffer, (*list)[ii], r_offset, max_length);
                                     r_offset += r;
                                     t_size += r;
                                 }
@@ -1310,7 +1313,7 @@ REACTFS_NS_CORE
 
                     class __constraint {
                     public:
-
+                        virtual ~__constraint() {}
                         virtual bool validate(void *value) const = 0;
                     };
 
@@ -1329,7 +1332,7 @@ REACTFS_NS_CORE
 
                         virtual ~__native_type() {
                             CHECK_AND_FREE(constraint);
-                            CHECK_AND_FREE(default_value);
+                            FREE_PTR(default_value);
                         }
 
                         const string get_name() const {
@@ -1547,7 +1550,7 @@ REACTFS_NS_CORE
                                 uint64_t r = 0;
                                 void *value = nullptr;
                                 if (type->get_type()->get_datatype() == __type_def_enum::TYPE_ARRAY) {
-                                    __sized_type *st = static_cast<__sized_type *>(type);
+                                    __sized_type *st = static_cast<__sized_type *>(type->get_type());
                                     const uint32_t a_size = st->get_max_size();
                                     r = handler->read(buffer, &value, r_offset, max_length, a_size);
                                 } else {

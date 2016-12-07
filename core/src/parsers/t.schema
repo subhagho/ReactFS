@@ -1,0 +1,4 @@
+TYPE test_type {
+	DOUBLE dd;
+	STRING ss;
+};

@@ -47,10 +47,10 @@ REACTFS_NS_CORE
                 }
 REACTFS_NS_CORE_END
 
-#define TYPE_VALID_ERROR(fmt, ...) type_validation_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define TYPE_VALID_ERROR_PTR(fmt, ...) new type_validation_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+#define TYPE_VALID_ERROR(fmt, ...) REACTFS_NS_CORE_PREFIX::types::type_validation_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+#define TYPE_VALID_ERROR_PTR(fmt, ...) new REACTFS_NS_CORE_PREFIX::types::type_validation_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
-#define TYPE_PARSER_ERROR(fmt, ...) type_parser_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define TYPE_PARSER_ERROR_PTR(fmt, ...) new type_parser_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+#define TYPE_PARSER_ERROR(fmt, ...) REACTFS_NS_CORE_PREFIX::types::type_parser_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+#define TYPE_PARSER_ERROR_PTR(fmt, ...) new REACTFS_NS_CORE_PREFIX::types::type_parser_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
 #endif //REACTFS_TYPE_ERRORS_H

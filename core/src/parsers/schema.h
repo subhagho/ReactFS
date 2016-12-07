@@ -13,17 +13,18 @@
 #include "common/includes/base_error.h"
 #include "core/includes/core.h"
 
-#include "core/includes/types/type_defs.h"
-
 using namespace REACTFS_NS_COMMON_PREFIX;
 
-REACTFS_NS_CORE
-    namespace types {
-        class __schema {
-        private:
-            string name;
-            __complex_type *types;
-        };
-    }
-REACTFS_NS_CORE_END
+typedef struct __declare__ {
+    bool is_reference = false;
+    string type;
+    string varname;
+    __declare__ *next = nullptr;
+} __declare;
+
+typedef struct __reference_type__ {
+    string name;
+    __declare *members = nullptr;
+} __reference_type;
+
 #endif //REACTFS_SCHEMA_H

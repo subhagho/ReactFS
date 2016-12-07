@@ -31,14 +31,14 @@
 
 #if !defined(yyFlexLexerOnce)
 
-#include <FlexLexer.h>
+#include "FlexLexer.h"
 
 #endif
 
 #include "core/includes/types/type_defs.h"
 
-#include "schema_parser.tab.hh"
-#include "schmae_location.hh"
+#include "schema.tab.hh"
+#include "location.hh"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
@@ -49,22 +49,23 @@ REACTFS_NS_CORE
                         /* yyval ptr */
                         com::wookler::reactfs::core::parsers::schema_parser::semantic_type *yylval = nullptr;
                         /* location ptr */
-                        com::wookler::reactfs::core::parsers::schema_parser::location_type *loc    = nullptr;
+                        com::wookler::reactfs::core::parsers::schema_parser::location_type *loc = nullptr;
 
                     public:
                         schema_scanner(std::istream *in) : yyFlexLexer(in) {
-
+                            loc = new com::wookler::reactfs::core::parsers::schema_parser::location_type();
                         }
+
                         //get rid of override virtual function warning
                         using FlexLexer::yylex;
 
                         virtual ~schema_scanner() {
-
+                            delete (loc);
                         }
 
                         virtual
-                        int yylex( com::wookler::reactfs::core::parsers::schema_parser::semantic_type * const lval,
-                                   com::wookler::reactfs::core::parsers::schema_parser::location_type *location );
+                        int yylex(com::wookler::reactfs::core::parsers::schema_parser::semantic_type *const lval,
+                                  com::wookler::reactfs::core::parsers::schema_parser::location_type *loc);
                         // YY_DECL defined in mc_lexer.l
                         // Method body created by flex in mc_lexer.yy.cc
                     };
