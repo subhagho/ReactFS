@@ -15,6 +15,8 @@
    #include "core/includes/types/type_errors.h"
    #include "parsers/includes/schema.h"
 
+   #define DEFAULT_BUFFER_SIZE 64
+
    using namespace std;
 	namespace com {
 		namespace wookler {
@@ -98,7 +100,7 @@ void debug_r(const char *s, ...);
 %token			PRIMARY_KEY
 %token			INDEX	
 %token			SCHEMA
-%token			CONSTRAINT
+%left			CONSTRAINT
 %token			REGEX	
 %token			IN
 %token			BETWEEN
@@ -117,6 +119,12 @@ void debug_r(const char *s, ...);
 
 %%
 
+
+opt_types:
+		/* null */
+	|	types
+	;
+
 types:
 		type
 	|	types type
@@ -132,13 +140,13 @@ type_declare:
 							driver.add_type(ss); 
 						}
 declarations:
-		declare				
-	|	declarations COMMA declare	
+		declare	 
+	|	declarations COMMA declare 
 	;
 
 
 declare:
-		datatype variable		{ 
+		datatype variable opt_constraint		{ 
 							debug_r("[type=%s] varname=%s", $$, $1, $2);
 							std::string t($1);
 							std::string n($2);
@@ -146,13 +154,13 @@ declare:
 							FREE_PTR($1);
 							FREE_PTR($2);
 						}							
-	|	DATATYPE variable variable	{ 
+	|	DATATYPE variable variable opt_constraint	{ 
 							debug_r("[type=%s] varname=%s", $2, $3);
 							std::string t($2);
 							std::string n($3);
 							driver.add_declaration(n, t, true); 
 						}	
-	|	ARRAY LINTYPBRACE datatype RINTYPBRACE  variable size_def	{
+	|	ARRAY LINTYPBRACE datatype RINTYPBRACE  variable size_def opt_constraint	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $3, $5, $6);
 									std::string t($3);
 									std::string n($5);
@@ -161,7 +169,7 @@ declare:
 									FREE_PTR($3);
 									FREE_PTR($5);
 								}
-	|	ARRAY LINTYPBRACE DATATYPE variable RINTYPBRACE variable size_def	{
+	|	ARRAY LINTYPBRACE DATATYPE variable RINTYPBRACE variable size_def opt_constraint	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $4, $6, $7);
 									std::string t($4);
 									std::string n($6);
@@ -171,7 +179,7 @@ declare:
 									FREE_PTR($6);
 	
 								}
-	|	LIST LINTYPBRACE datatype RINTYPBRACE variable	{
+	|	LIST LINTYPBRACE datatype RINTYPBRACE variable opt_constraint	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $3, $5);
 									std::string t($3);
 									std::string n($5);
@@ -180,7 +188,7 @@ declare:
 									FREE_PTR($5);
 
 								}
-	|	LIST LINTYPBRACE DATATYPE variable RINTYPBRACE variable	{
+	|	LIST LINTYPBRACE DATATYPE variable RINTYPBRACE variable opt_constraint	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $4, $6);
 									std::string t($4);
 									std::string n($6);
@@ -188,7 +196,7 @@ declare:
 									FREE_PTR($4);
 									FREE_PTR($6);	
 									}
-	|	MAP LINTYPBRACE datatype COMMA datatype RINTYPBRACE variable		{
+	|	MAP LINTYPBRACE datatype COMMA datatype RINTYPBRACE variable opt_constraint		{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $5, $7);
 									std::string kt($3);
 									std::string vt($5);
@@ -198,7 +206,7 @@ declare:
 									FREE_PTR($5);
 									FREE_PTR($7);
 											}
-	|	MAP LINTYPBRACE datatype COMMA DATATYPE variable RINTYPBRACE variable	{
+	|	MAP LINTYPBRACE datatype COMMA DATATYPE variable RINTYPBRACE variable opt_constraint	{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $6, $8);
 									std::string kt($3);
 									std::string vt($6);
@@ -210,6 +218,11 @@ declare:
 											}
 
 
+	;
+
+opt_constraint:
+		/* null */
+	| 	constraint
 	;
 
 
@@ -237,37 +250,114 @@ size_def:
 
 declare_finish:
 	TYPE_END	{ driver.finish_def(); }
-/*
 
 constraint:
-	CONSTRAINT LINBRACE constraint_type RINBRACE		{ driver.create_constraint(); };
-	
+	CONSTRAINT LINBRACE constraint_type RINBRACE		
 
 constraint_type:
-		REGEX COLON STRING				{ driver.set_constraint(false, "REGEX", $3);}
-	|	NOT REGEX COLON STRING				{ driver.set_constraint(true, "REGEX", $4);}
-	|	IN LSZBRACE values RSZBRACE 			{ driver.set_constraint(false, "IN", $3);} 
-	|	NOT IN LSZBRACE values RSZBRACE 		{ driver.set_constraint(true, "IN", $4);}
-	|	BETWEEN LSZBRACE values RSZBRACE 		{ driver.set_constraint(false, "BETWEEN", $3);}
-	|	NOT BETWEEN LSZBRACE values RSZBRACE 		{ driver.set_constraint(true, "BETWEEN", $4);}
-	|	LT LSZBRACE value RSZBRACE 			{ driver.set_constraint(false, "LT", $3);}
-	|	NOT LT LSZBRACE value RSZBRACE 			{ driver.set_constraint(true, "LT", $4);}
-	|	GT LSZBRACE value RSZBRACE 			{ driver.set_constraint(false, "GT", $3);}
-	|	NOT GT LSZBRACE value RSZBRACE 			{ driver.set_constraint(true, "GT", $4);}
+		REGEX COLON STRING				{ 
+									const std::string p("REGEX"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, $3);
+									FREE_PTR($3);
+								}
+	|	NOT REGEX COLON STRING				{ 
+									const std::string p("REGEX"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, $4);
+									FREE_PTR($4);
+								}
+	|	IN LSZBRACE values RSZBRACE 			{ 
+									const std::string p("IN"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, $3);
+									FREE_PTR($3);
+								}
+	|	NOT IN LSZBRACE values RSZBRACE 		{ 
+									const std::string p("IN"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, $4);
+									FREE_PTR($4);
+								}
+	|	BETWEEN LSZBRACE values RSZBRACE 		{ 
+									const std::string p("BETWEEN"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, $3);
+									FREE_PTR($3);
+								}
+	|	NOT BETWEEN LSZBRACE values RSZBRACE 		{ 
+									const std::string p("BETWEEN"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, $4);
+									FREE_PTR($4);
+								}
+	|	LT LSZBRACE value RSZBRACE 			{ 
+									const std::string p("LT"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, $3);
+									FREE_PTR($3);
+								}
+	|	NOT LT LSZBRACE value RSZBRACE 			{ 
+									const std::string p("LT"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, $4);
+									FREE_PTR($4);
+								}
+	|	GT LSZBRACE value RSZBRACE 			{ 
+									const std::string p("GT"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, $3);
+									FREE_PTR($3);
+								}
+	|	NOT GT LSZBRACE value RSZBRACE 			{ 
+									const std::string p("GT"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, $4);
+									FREE_PTR($4);
+								}
 	;
 
-*/
-
 values:
-		value 		
-	|	values COMMA value	{ debug_r("VALUES {%s}", $1); $$ = $1; }
+		value 			{ 
+						int size = strlen($1);
+						char *ptr = (char *)malloc(sizeof(char) * size);
+						CHECK_ALLOC(ptr, TYPE_NAME(char));
+						memset(ptr, 0, size);
+						sprintf(ptr, "%s", $1);
+						FREE_PTR($1);
+						$$ = ptr;
+						debug_r("VALUES {%s}", $$); 
+ 					}	
+	|	values COMMA value	{ 
+						int size = strlen($1) + strlen($3) + 4;
+						char *ptr = (char *)malloc(sizeof(char) * size);
+						CHECK_ALLOC(ptr, TYPE_NAME(char));
+						memset(ptr, 0, size);
+						sprintf(ptr, "%s,%s", $1, $3);
+						FREE_PTR($1);
+						FREE_PTR($3);
+						$$ = ptr;
+						debug_r("VALUES {%s}", $$); 
+ 					}
 	;
 
 
 value:
-		IVALUE 		{ debug_r("Integer value [%d]", $1); $$ = to_string($1); }
-	| 	DVALUE 		{ debug_r("Double value [%f]", $1); $$ = to_string($1); }
-	| 	SVALUE		{ debug_r("String value [%s]", $1); $$ = $1; }
+		IVALUE 		{ 	
+					char *ptr = (char *)malloc(sizeof(char) * DEFAULT_BUFFER_SIZE);
+					CHECK_ALLOC(ptr, TYPE_NAME(char));
+					memset(ptr, 0, DEFAULT_BUFFER_SIZE);
+					sprintf(ptr, "%ld", $1);
+					$$ = ptr; 
+				}
+	| 	DVALUE 		{ 	
+					char *ptr = (char *)malloc(sizeof(char) * DEFAULT_BUFFER_SIZE);
+					CHECK_ALLOC(ptr, TYPE_NAME(char));
+					memset(ptr, 0, DEFAULT_BUFFER_SIZE);
+					sprintf(ptr, "%f", $1);
+					$$ = ptr; 
+				}
+	| 	SVALUE		{ debug_r("String value [%s]", $1); $$ = strdup($1); }
 	;
 
 

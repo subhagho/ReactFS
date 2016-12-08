@@ -51,6 +51,8 @@
    #include "core/includes/types/type_errors.h"
    #include "parsers/includes/schema.h"
 
+   #define DEFAULT_BUFFER_SIZE 64
+
    using namespace std;
 	namespace com {
 		namespace wookler {
@@ -74,7 +76,7 @@
 # endif
 
 
-#line 78 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 80 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 # include <cassert>
 # include <cstdlib> // std::abort
@@ -146,7 +148,7 @@
 
 #line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 namespace com { namespace wookler { namespace reactfs { namespace core { namespace parsers {
-#line 150 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 152 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 
@@ -160,13 +162,13 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     /// Symbol semantic values.
     union semantic_type
     {
-    #line 58 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
+    #line 60 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 
 	long lval;
 	double dval;
 	char* str;
 
-#line 170 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 172 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
     };
 #else
     typedef YYSTYPE semantic_type;
@@ -401,7 +403,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     // Tables.
   // YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
   // STATE-NUM.
-  static const signed char yypact_[];
+  static const short int yypact_[];
 
   // YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
   // Performed when YYTABLE does not specify something else to do.  Zero
@@ -409,7 +411,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   static const unsigned char yydefact_[];
 
   // YYPGOTO[NTERM-NUM].
-  static const signed char yypgoto_[];
+  static const short int yypgoto_[];
 
   // YYDEFGOTO[NTERM-NUM].
   static const signed char yydefgoto_[];
@@ -419,7 +421,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   // number is the opposite.  If YYTABLE_NINF, syntax error.
   static const unsigned char yytable_[];
 
-  static const unsigned char yycheck_[];
+  static const signed char yycheck_[];
 
   // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
   // symbol of state STATE-NUM.
@@ -437,7 +439,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     static const char* const yytname_[];
 
   // YYRLINE[YYN] -- Source line where rule number YYN was defined.
-  static const unsigned char yyrline_[];
+  static const unsigned short int yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
     virtual void yy_reduce_print_ (int r);
     /// Print the state stack on the debug stream.
@@ -536,8 +538,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     enum
     {
       yyeof_ = 0,
-      yylast_ = 106,     ///< Last index in yytable_.
-      yynnts_ = 10,  ///< Number of nonterminal symbols.
+      yylast_ = 166,     ///< Last index in yytable_.
+      yynnts_ = 15,  ///< Number of nonterminal symbols.
       yyfinal_ = 6, ///< Termination state number.
       yyterror_ = 1,
       yyerrcode_ = 256,
@@ -553,7 +555,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 
 #line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 } } } } } // com::wookler::reactfs::core::parsers
-#line 557 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 559 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 

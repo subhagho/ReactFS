@@ -57,6 +57,7 @@ REACTFS_NS_CORE
                         vector<__declare *> declares;
                         unordered_map<string, __reference_type *> types;
                         __reference_type *current_type = nullptr;
+                        __constraint_def *current_constraint = nullptr;
 
                         __schema_parse_state state = __schema_parse_state::SPS_NONE;
 
@@ -98,6 +99,8 @@ REACTFS_NS_CORE
                         void
                         add_map_decl(const string &varname, const string &ktype, const string &vtype,
                                      bool is_ref = false);
+
+                        void set_constraint(bool is_not, const string &constraint, const string &values);
 
                         void finish_def();
 

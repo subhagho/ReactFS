@@ -1,6 +1,6 @@
 TYPE test_type {
     STRING ss,
-    DOUBLE dd,
+    DOUBLE dd CONSTRAINT (IN [2120.0, 1293.3, 98439.88, 980202.77]),
     ARRAY<INTEGER> arr[256],
     LIST<STRING>   ll
 };

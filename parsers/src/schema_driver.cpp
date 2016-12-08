@@ -26,6 +26,9 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_type(const string 
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const string &varname, const string &type,
                                                                           bool is_ref) {
+    CHECK_NOT_EMPTY(varname);
+    CHECK_NOT_EMPTY(type);
+
     if (state == __schema_parse_state::SPS_IN_TYPE)
         LOG_DEBUG("[type=%s] Adding declaration. [type=%s][name=%s]", current_type->name.c_str(), type.c_str(),
                   varname.c_str());
@@ -42,11 +45,20 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const 
     d->variable = new string(varname);
     d->type = new string(type);
 
+    if (NOT_NULL(current_constraint)) {
+        current_constraint->type = new string(type);
+        d->constraint = current_constraint;
+        current_constraint = nullptr;
+    }
     declares.push_back(d);
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_array_decl(const string &varname, uint16_t size,
                                                                          const string &type, bool is_ref) {
+    CHECK_NOT_EMPTY(varname);
+    CHECK_NOT_EMPTY(type);
+    PRECONDITION(size > 0);
+
     if (is_ref) {
         check_reference_type(type);
     }
@@ -65,11 +77,19 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_array_decl(const s
     d->inner_types->type = new string(type);
     d->inner_types->is_reference = is_ref;
 
+    if (NOT_NULL(current_constraint)) {
+        current_constraint->type = new string(type);
+        d->constraint = current_constraint;
+        current_constraint = nullptr;
+    }
     declares.push_back(d);
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_list_decl(const string &varname, const string &type,
                                                                         bool is_ref) {
+    CHECK_NOT_EMPTY(varname);
+    CHECK_NOT_EMPTY(type);
+
     if (is_ref) {
         check_reference_type(type);
     }
@@ -87,11 +107,20 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_list_decl(const st
     d->inner_types->type = new string(type);
     d->inner_types->is_reference = is_ref;
 
+    if (NOT_NULL(current_constraint)) {
+        current_constraint->type = new string(type);
+        d->constraint = current_constraint;
+        current_constraint = nullptr;
+    }
     declares.push_back(d);
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_map_decl(const string &varname, const string &ktype,
                                                                        const string &vtype, bool is_ref) {
+    CHECK_NOT_EMPTY(varname);
+    CHECK_NOT_EMPTY(ktype);
+    CHECK_NOT_EMPTY(vtype);
+
     if (is_ref) {
         check_reference_type(vtype);
     }
@@ -120,7 +149,27 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_map_decl(const str
 
     d->inner_types->next = dv;
 
+    if (NOT_NULL(current_constraint)) {
+        current_constraint->type = new string(vtype);
+        d->constraint = current_constraint;
+        current_constraint = nullptr;
+    }
     declares.push_back(d);
+}
+
+void com::wookler::reactfs::core::parsers::schema_driver::set_constraint(bool is_not, const string &constraint,
+                                                                         const string &values) {
+    CHECK_NOT_EMPTY(constraint);
+    CHECK_NOT_EMPTY(values);
+
+    LOG_DEBUG("Constraint called. [type=%s][values=%s]", constraint.c_str(), values.c_str());
+    current_constraint = (__constraint_def *) malloc(sizeof(__constraint_def));
+    CHECK_ALLOC(current_constraint, TYPE_NAME(__constraint_def));
+    memset(current_constraint, 0, sizeof(__constraint_def));
+
+    current_constraint->is_not = is_not;
+    current_constraint->type = new string(constraint);
+    current_constraint->values = new string(values);
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::finish_def() {

@@ -14,6 +14,12 @@
 #include "core/includes/core.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
+typedef struct __constraint_def__ {
+    bool is_not = false;
+    string *constraint = nullptr;
+    string *type = nullptr;
+    string *values = nullptr;
+} __constraint_def;
 
 typedef struct __declare__ {
     bool is_reference = false;
@@ -22,6 +28,7 @@ typedef struct __declare__ {
     __declare__ *next = nullptr;
     uint32_t size = 0;
     __declare__ *inner_types = nullptr;
+    __constraint_def *constraint = nullptr;
 } __declare;
 
 typedef struct __reference_type__ {
