@@ -37,19 +37,48 @@
 #include "schema.h"
 #include "schema_scanner.h"
 
+#define TYPE_NAME_ARRAY "ARRAY"
+#define TYPE_NAME_LIST "LIST"
+#define TYPE_NAME_MAP "MAP"
+
 using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
                 namespace parsers {
+                    typedef enum __schema_parse_state__ {
+                        SPS_NONE = 0, SPS_IN_TYPE, SPS_IN_SCHEMA, SPS_IN_DECLARE
+                    } __schema_parse_state;
+
                     class schema_driver {
                     private:
                         schema_parser *parser = nullptr;
                         schema_scanner *scanner = nullptr;
 
                         vector<__declare *> declares;
-                        vector<__reference_type *> types;
+                        unordered_map<string, __reference_type *> types;
+                        __reference_type *current_type = nullptr;
+
+                        __schema_parse_state state = __schema_parse_state::SPS_NONE;
 
                         void parse_helper(std::istream &stream);
+
+                        void finish_type();
+
+                        void finish_schema();
+
+                        void check_new_type(const string &name) {
+                            unordered_map<string, __reference_type *>::iterator iter = types.find(name);
+                            if (iter != types.end()) {
+                                throw TYPE_PARSER_ERROR("Duplicate type defined. [name=%s]", name.c_str());
+                            }
+                        }
+
+                        void check_reference_type(const string &name) {
+                            unordered_map<string, __reference_type *>::iterator iter = types.find(name);
+                            if (iter == types.end()) {
+                                throw TYPE_PARSER_ERROR("Reference type not defined. [name=%s]", name.c_str());
+                            }
+                        }
 
                     public:
                         schema_driver() = default;
@@ -59,6 +88,18 @@ REACTFS_NS_CORE
                         void add_type(const string &name);
 
                         void add_declaration(const string &varname, const string &type, bool is_ref = false);
+
+                        void
+                        add_array_decl(const string &varname, uint16_t size, const string &type, bool is_ref = false);
+
+                        void
+                        add_list_decl(const string &varname, const string &type, bool is_ref = false);
+
+                        void
+                        add_map_decl(const string &varname, const string &ktype, const string &vtype,
+                                     bool is_ref = false);
+
+                        void finish_def();
 
                         /**
                         * parse - parse from a file

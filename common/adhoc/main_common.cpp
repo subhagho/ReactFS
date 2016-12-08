@@ -16,7 +16,7 @@ using namespace com::wookler::reactfs::common;
 int main(int argc, char **argv) {
     try {
 
-        PRECONDITION(argc > 0);
+        PRECONDITION(argc > 1);
         char *cf = argv[1];
         CHECK_NOT_NULL(cf);
 

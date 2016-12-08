@@ -1,4 +1,11 @@
 TYPE test_type {
-	DOUBLE dd;
-	STRING ss;
+    STRING ss,
+    DOUBLE dd,
+    ARRAY<INTEGER> arr[256],
+    LIST<STRING>   ll
+};
+
+TYPE test_ref_type {
+    STRING name,
+    MAP<STRING, DATATYPE test_type> r_map
 };

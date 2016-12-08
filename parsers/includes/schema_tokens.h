@@ -160,7 +160,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     /// Symbol semantic values.
     union semantic_type
     {
-    #line 56 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
+    #line 58 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 
 	long lval;
 	double dval;
@@ -188,9 +188,9 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
       {
         END = 0,
         SVALUE = 258,
-        VARNAME = 259,
-        IVALUE = 260,
-        DVALUE = 261,
+        IVALUE = 259,
+        DVALUE = 260,
+        VARNAME = 261,
         TYPE = 262,
         DATATYPE = 263,
         BYTE = 264,
@@ -214,23 +214,24 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
         RINBRACE = 282,
         LSZBRACE = 283,
         RSZBRACE = 284,
-        COMMA = 285,
-        DEFAULT = 286,
-        REF = 287,
-        TYPE_END = 288,
-        PRIMARY_KEY = 289,
-        INDEX = 290,
-        SCHEMA = 291,
-        CONSTRAINT = 292,
-        REGEX = 293,
-        IN = 294,
-        BETWEEN = 295,
-        NOT = 296,
-        LT = 297,
-        GT = 298,
-        COLON = 299,
-        SEMICOLON = 300,
-        NEWLINE = 301
+        LINTYPBRACE = 285,
+        RINTYPBRACE = 286,
+        COMMA = 287,
+        DEFAULT = 288,
+        REF = 289,
+        TYPE_END = 290,
+        PRIMARY_KEY = 291,
+        INDEX = 292,
+        SCHEMA = 293,
+        CONSTRAINT = 294,
+        REGEX = 295,
+        IN = 296,
+        BETWEEN = 297,
+        NOT = 298,
+        LT = 299,
+        GT = 300,
+        COLON = 301,
+        NEWLINE = 302
       };
     };
 
@@ -535,12 +536,12 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     enum
     {
       yyeof_ = 0,
-      yylast_ = 26,     ///< Last index in yytable_.
-      yynnts_ = 5,  ///< Number of nonterminal symbols.
-      yyfinal_ = 4, ///< Termination state number.
+      yylast_ = 106,     ///< Last index in yytable_.
+      yynnts_ = 10,  ///< Number of nonterminal symbols.
+      yyfinal_ = 6, ///< Termination state number.
       yyterror_ = 1,
       yyerrcode_ = 256,
-      yyntokens_ = 47  ///< Number of tokens.
+      yyntokens_ = 48  ///< Number of tokens.
     };
 
 
@@ -552,7 +553,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 
 #line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 } } } } } // com::wookler::reactfs::core::parsers
-#line 556 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 557 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 
