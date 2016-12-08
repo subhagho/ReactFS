@@ -11,3 +11,5 @@ add_subdirectory(watergate/test)
 
 add_subdirectory(core)
 add_subdirectory(core/test)
+
+add_subdirectory(parsers)

@@ -31,18 +31,18 @@
 // version 2.2 of Bison.
 
 /**
- ** \file location.hh
+ ** \file /work/dev/wookler/ReactFS/parsers/src/location.hh
  ** Define the com::wookler::reactfs::core::parsers::location class.
  */
 
-#ifndef YY_YY_LOCATION_HH_INCLUDED
-# define YY_YY_LOCATION_HH_INCLUDED
+#ifndef YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_SRC_LOCATION_HH_INCLUDED
+# define YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_SRC_LOCATION_HH_INCLUDED
 
 # include "position.hh"
 
-#line 5 "../../parsers/schema.yy" // location.cc:296
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // location.cc:296
 namespace com { namespace wookler { namespace reactfs { namespace core { namespace parsers {
-#line 46 "location.hh" // location.cc:296
+#line 46 "/work/dev/wookler/ReactFS/parsers/src/location.hh" // location.cc:296
   /// Abstract a location.
   class location
   {
@@ -186,7 +186,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     return ostr;
   }
 
-#line 5 "../../parsers/schema.yy" // location.cc:296
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // location.cc:296
 } } } } } // com::wookler::reactfs::core::parsers
-#line 192 "location.hh" // location.cc:296
-#endif // !YY_YY_LOCATION_HH_INCLUDED
+#line 192 "/work/dev/wookler/ReactFS/parsers/src/location.hh" // location.cc:296
+#endif // !YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_SRC_LOCATION_HH_INCLUDED

@@ -31,18 +31,18 @@
 // version 2.2 of Bison.
 
 /**
- ** \file stack.hh
+ ** \file /work/dev/wookler/ReactFS/parsers/src/stack.hh
  ** Define the com::wookler::reactfs::core::parsers::stack class.
  */
 
-#ifndef YY_YY_STACK_HH_INCLUDED
-# define YY_YY_STACK_HH_INCLUDED
+#ifndef YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_SRC_STACK_HH_INCLUDED
+# define YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_SRC_STACK_HH_INCLUDED
 
 # include <vector>
 
-#line 5 "../../parsers/schema.yy" // stack.hh:132
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // stack.hh:132
 namespace com { namespace wookler { namespace reactfs { namespace core { namespace parsers {
-#line 46 "stack.hh" // stack.hh:132
+#line 46 "/work/dev/wookler/ReactFS/parsers/src/stack.hh" // stack.hh:132
   template <class T, class S = std::vector<T> >
   class stack
   {
@@ -150,8 +150,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     unsigned int range_;
   };
 
-#line 5 "../../parsers/schema.yy" // stack.hh:132
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // stack.hh:132
 } } } } } // com::wookler::reactfs::core::parsers
-#line 156 "stack.hh" // stack.hh:132
+#line 156 "/work/dev/wookler/ReactFS/parsers/src/stack.hh" // stack.hh:132
 
-#endif // !YY_YY_STACK_HH_INCLUDED
+#endif // !YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_SRC_STACK_HH_INCLUDED

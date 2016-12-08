@@ -31,12 +31,12 @@
 // version 2.2 of Bison.
 
 /**
- ** \file position.hh
+ ** \file /work/dev/wookler/ReactFS/parsers/src/position.hh
  ** Define the com::wookler::reactfs::core::parsers::position class.
  */
 
-#ifndef YY_YY_POSITION_HH_INCLUDED
-# define YY_YY_POSITION_HH_INCLUDED
+#ifndef YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_SRC_POSITION_HH_INCLUDED
+# define YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_SRC_POSITION_HH_INCLUDED
 
 # include <algorithm> // std::max
 # include <iostream>
@@ -50,9 +50,9 @@
 #  endif
 # endif
 
-#line 5 "../../parsers/schema.yy" // location.cc:296
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // location.cc:296
 namespace com { namespace wookler { namespace reactfs { namespace core { namespace parsers {
-#line 56 "position.hh" // location.cc:296
+#line 56 "/work/dev/wookler/ReactFS/parsers/src/position.hh" // location.cc:296
   /// Abstract a position.
   class position
   {
@@ -174,7 +174,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     return ostr << pos.line << '.' << pos.column;
   }
 
-#line 5 "../../parsers/schema.yy" // location.cc:296
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // location.cc:296
 } } } } } // com::wookler::reactfs::core::parsers
-#line 180 "position.hh" // location.cc:296
-#endif // !YY_YY_POSITION_HH_INCLUDED
+#line 180 "/work/dev/wookler/ReactFS/parsers/src/position.hh" // location.cc:296
+#endif // !YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_SRC_POSITION_HH_INCLUDED

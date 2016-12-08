@@ -31,16 +31,16 @@
 // version 2.2 of Bison.
 
 /**
- ** \file schema.tab.hh
+ ** \file /work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h
  ** Define the com::wookler::reactfs::core::parsers::parser class.
  */
 
 // C++ LALR(1) parser skeleton written by Akim Demaille.
 
-#ifndef YY_YY_SCHEMA_TAB_HH_INCLUDED
-# define YY_YY_SCHEMA_TAB_HH_INCLUDED
+#ifndef YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_INCLUDES_SCHEMA_TOKENS_H_INCLUDED
+# define YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_INCLUDES_SCHEMA_TOKENS_H_INCLUDED
 // //                    "%code requires" blocks.
-#line 8 "../../parsers/schema.yy" // lalr1.cc:377
+#line 8 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 
    #include <iostream>
    #include <cstdlib>
@@ -49,7 +49,7 @@
    /* include for all driver functions */
    #include "core/includes/types/type_defs.h"
    #include "core/includes/types/type_errors.h"
-   #include "schema.h"
+   #include "parsers/includes/schema.h"
 
    using namespace std;
 	namespace com {
@@ -74,7 +74,7 @@
 # endif
 
 
-#line 78 "schema.tab.hh" // lalr1.cc:377
+#line 78 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 # include <cassert>
 # include <cstdlib> // std::abort
@@ -144,9 +144,9 @@
 # define YYDEBUG 1
 #endif
 
-#line 5 "../../parsers/schema.yy" // lalr1.cc:377
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 namespace com { namespace wookler { namespace reactfs { namespace core { namespace parsers {
-#line 150 "schema.tab.hh" // lalr1.cc:377
+#line 150 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 
@@ -160,13 +160,13 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     /// Symbol semantic values.
     union semantic_type
     {
-    #line 56 "../../parsers/schema.yy" // lalr1.cc:377
+    #line 56 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 
 	long lval;
 	double dval;
 	char* str;
 
-#line 170 "schema.tab.hh" // lalr1.cc:377
+#line 170 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
     };
 #else
     typedef YYSTYPE semantic_type;
@@ -550,11 +550,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   };
 
 
-#line 5 "../../parsers/schema.yy" // lalr1.cc:377
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 } } } } } // com::wookler::reactfs::core::parsers
-#line 556 "schema.tab.hh" // lalr1.cc:377
+#line 556 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 
 
-#endif // !YY_YY_SCHEMA_TAB_HH_INCLUDED
+#endif // !YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_INCLUDES_SCHEMA_TOKENS_H_INCLUDED

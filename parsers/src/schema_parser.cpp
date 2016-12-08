@@ -33,7 +33,7 @@
 
 // First part of user declarations.
 
-#line 37 "schema.tab.cc" // lalr1.cc:404
+#line 37 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:404
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -43,20 +43,20 @@
 #  endif
 # endif
 
-#include "schema.tab.hh"
+#include "schema_tokens.h"
 
 // User implementation prologue.
 
-#line 51 "schema.tab.cc" // lalr1.cc:412
+#line 51 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:412
 // Unqualified %code blocks.
-#line 42 "../../parsers/schema.yy" // lalr1.cc:413
+#line 42 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:413
 
 #include "schema_driver.h"
 
 #undef yylex
 #define yylex scanner.yylex
 
-#line 60 "schema.tab.cc" // lalr1.cc:413
+#line 60 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:413
 
 
 #ifndef YY_
@@ -140,9 +140,9 @@
 #define YYERROR         goto yyerrorlab
 #define YYRECOVERING()  (!!yyerrstatus_)
 
-#line 5 "../../parsers/schema.yy" // lalr1.cc:479
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:479
 namespace com { namespace wookler { namespace reactfs { namespace core { namespace parsers {
-#line 146 "schema.tab.cc" // lalr1.cc:479
+#line 146 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:479
 
   /// Build a parser object.
   schema_parser::schema_parser (schema_scanner  &scanner_yyarg, schema_driver  &driver_yyarg)
@@ -583,36 +583,36 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
           switch (yyn)
             {
   case 2:
-#line 119 "../../parsers/schema.yy" // lalr1.cc:859
+#line 119 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 											std::string ss((yystack_[4].value.str));
 											driver.add_type(ss); 
 										}
-#line 592 "schema.tab.cc" // lalr1.cc:859
+#line 592 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 5:
-#line 130 "../../parsers/schema.yy" // lalr1.cc:859
+#line 130 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 							std::string t((yystack_[0].value.str));
 							std::string n((yystack_[1].value.str));
 							driver.add_declaration(t, n); 
 						}
-#line 602 "schema.tab.cc" // lalr1.cc:859
+#line 602 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 6:
-#line 135 "../../parsers/schema.yy" // lalr1.cc:859
+#line 135 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 							std::string t((yystack_[0].value.str));
 							std::string n((yystack_[1].value.str));
 							driver.add_declaration(t, n); 
 						}
-#line 612 "schema.tab.cc" // lalr1.cc:859
+#line 612 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
 
-#line 616 "schema.tab.cc" // lalr1.cc:859
+#line 616 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
             default:
               break;
             }
@@ -960,10 +960,10 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
       return undef_token_;
   }
 
-#line 5 "../../parsers/schema.yy" // lalr1.cc:1167
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:1167
 } } } } } // com::wookler::reactfs::core::parsers
-#line 966 "schema.tab.cc" // lalr1.cc:1167
-#line 199 "../../parsers/schema.yy" // lalr1.cc:1168
+#line 966 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:1167
+#line 199 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:1168
 
 
 void com::wookler::reactfs::core::parsers::schema_parser::error( const location_type &l, const std::string &err_message ) {

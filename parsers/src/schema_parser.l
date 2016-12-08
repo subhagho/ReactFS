@@ -1,6 +1,6 @@
 %{
 #include <string>
-#include "schema.tab.hh"
+#include "schema_tokens.h"
 #include "schema_scanner.h"
 #include "schema.h"
 
@@ -28,7 +28,9 @@ using namespace std;
 %option c++
 
 %%
+
 %{          /** Code executed at the beginning of yylex **/
+            yylval = lval;
 %}
 
 [0-9]+ 		{

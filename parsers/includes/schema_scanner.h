@@ -37,8 +37,8 @@
 
 #include "core/includes/types/type_defs.h"
 
-#include "schema.tab.hh"
-#include "location.hh"
+#include "schema_tokens.h"
+#include "parsers/src/location.hh"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 

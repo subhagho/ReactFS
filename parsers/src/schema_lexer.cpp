@@ -1,6 +1,6 @@
-#line 2 "schema_lexer.yy.cc"
+#line 2 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
 
-#line 4 "schema_lexer.yy.cc"
+#line 4 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -633,11 +633,11 @@ static yyconst flex_int16_t yy_chk[379] =
 
 static yyconst flex_int16_t yy_rule_linenum[47] =
     {   0,
-       34,   39,   43,   49,   55,   60,   61,   62,   63,   64,
-       65,   66,   67,   68,   69,   70,   71,   72,   73,   74,
-       75,   76,   77,   78,   79,   80,   81,   82,   83,   84,
-       85,   86,   87,   88,   89,   90,   91,   92,   93,   94,
-       95,   96,   97,   98,   99,  101
+       36,   41,   45,   51,   57,   62,   63,   64,   65,   66,
+       67,   68,   69,   70,   71,   72,   73,   74,   75,   76,
+       77,   78,   79,   80,   81,   82,   83,   84,   85,   86,
+       87,   88,   89,   90,   91,   92,   93,   94,   95,   96,
+       97,   98,   99,  100,  101,  103
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -647,10 +647,10 @@ static yyconst flex_int16_t yy_rule_linenum[47] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "../../parsers/schema.l"
-#line 2 "../../parsers/schema.l"
+#line 1 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 2 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 #include <string>
-#include "schema.tab.hh"
+#include "schema_tokens.h"
 #include "schema_scanner.h"
 #include "schema.h"
 
@@ -669,7 +669,7 @@ using namespace std;
 /* update location on matching */
 #define YY_USER_ACTION location->step(); location->columns(yyleng);
 	
-#line 673 "schema_lexer.yy.cc"
+#line 673 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
 
 #define INITIAL 0
 
@@ -866,12 +866,14 @@ YY_DECL
 
 	{
 /* %% [7.0] user's declarations go here */
-#line 30 "../../parsers/schema.l"
+#line 30 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+
 
           /** Code executed at the beginning of yylex **/
+            yylval = lval;
 
 
-#line 875 "schema_lexer.yy.cc"
+#line 877 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -952,7 +954,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 34 "../../parsers/schema.l"
+#line 36 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 		yylval->lval = atol(yytext);
 		return (token::IVALUE);
@@ -960,7 +962,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 39 "../../parsers/schema.l"
+#line 41 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 					yylval->dval = atof(yytext);
 					return (token::DVALUE);
@@ -968,7 +970,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 43 "../../parsers/schema.l"
+#line 45 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 		char *c = strdup(yytext);
 		yylval->str = c;
@@ -978,7 +980,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 49 "../../parsers/schema.l"
+#line 51 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 		char *c = strdup(yytext);
 		yylval->str = c;
@@ -988,7 +990,7 @@ YY_RULE_SETUP
 case 5:
 /* rule 5 can match eol */
 YY_RULE_SETUP
-#line 55 "../../parsers/schema.l"
+#line 57 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 		location->lines();
 		return (token::NEWLINE);
@@ -996,216 +998,216 @@ YY_RULE_SETUP
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 60 "../../parsers/schema.l"
+#line 62 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::TYPE);
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 61 "../../parsers/schema.l"
+#line 63 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::DATATYPE);
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 62 "../../parsers/schema.l"
+#line 64 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::BYTE);
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 63 "../../parsers/schema.l"
+#line 65 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::CHAR);
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 64 "../../parsers/schema.l"
+#line 66 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::BOOL);
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 65 "../../parsers/schema.l"
+#line 67 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::SHORT);
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 66 "../../parsers/schema.l"
+#line 68 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::INTEGER);
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 67 "../../parsers/schema.l"
+#line 69 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::LONG);
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 68 "../../parsers/schema.l"
+#line 70 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::FLOAT);
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 69 "../../parsers/schema.l"
+#line 71 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::DOUBLE);
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 70 "../../parsers/schema.l"
+#line 72 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::TIMESTAMP);
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 71 "../../parsers/schema.l"
+#line 73 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::DATETIME);
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 72 "../../parsers/schema.l"
+#line 74 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::STRING);
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 73 "../../parsers/schema.l"
+#line 75 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::TEXT);
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 74 "../../parsers/schema.l"
+#line 76 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::ARRAY);
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 75 "../../parsers/schema.l"
+#line 77 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::LIST);
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 76 "../../parsers/schema.l"
+#line 78 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::MAP);
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 77 "../../parsers/schema.l"
+#line 79 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::LTYPEBRACE);
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 78 "../../parsers/schema.l"
+#line 80 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::RTYPEBRACE);
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 79 "../../parsers/schema.l"
+#line 81 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::LINBRACE);
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 80 "../../parsers/schema.l"
+#line 82 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::RINBRACE);
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 81 "../../parsers/schema.l"
+#line 83 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::LSZBRACE);
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 82 "../../parsers/schema.l"
+#line 84 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::RSZBRACE);
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 83 "../../parsers/schema.l"
+#line 85 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::COMMA);
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 84 "../../parsers/schema.l"
+#line 86 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::DEFAULT);
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 85 "../../parsers/schema.l"
+#line 87 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::REF);
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 86 "../../parsers/schema.l"
+#line 88 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::TYPE_END);
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 87 "../../parsers/schema.l"
+#line 89 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::PRIMARY_KEY);
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 88 "../../parsers/schema.l"
+#line 90 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::INDEX);
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 89 "../../parsers/schema.l"
+#line 91 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::SCHEMA);	
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 90 "../../parsers/schema.l"
+#line 92 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::CONSTRAINT);
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 91 "../../parsers/schema.l"
+#line 93 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::REGEX);
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 92 "../../parsers/schema.l"
+#line 94 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::IN);
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 93 "../../parsers/schema.l"
+#line 95 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::BETWEEN);
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 94 "../../parsers/schema.l"
+#line 96 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::NOT);
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 95 "../../parsers/schema.l"
+#line 97 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::LT);
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 96 "../../parsers/schema.l"
+#line 98 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::GT);
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 97 "../../parsers/schema.l"
+#line 99 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::COLON);
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 98 "../../parsers/schema.l"
+#line 100 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::SEMICOLON);
 	YY_BREAK
 case 45:
 /* rule 45 can match eol */
 YY_RULE_SETUP
-#line 99 "../../parsers/schema.l"
+#line 101 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::NEWLINE);
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 101 "../../parsers/schema.l"
+#line 103 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 /* ignore whitespace */;
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 102 "../../parsers/schema.l"
+#line 104 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 1209 "schema_lexer.yy.cc"
+#line 1211 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2317,7 +2319,7 @@ void yyfree (void * ptr )
 
 /* %ok-for-header */
 
-#line 102 "../../parsers/schema.l"
+#line 104 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 
 
 
