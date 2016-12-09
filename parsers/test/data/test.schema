@@ -1,11 +1,19 @@
-TYPE test_type {
-    STRING ss,
-    DOUBLE dd CONSTRAINT (IN [2120.0, 1293.3, 98439.88, 980202.77]),
-    ARRAY<INTEGER> arr[256],
-    LIST<STRING>   ll
+type test_type {
+    string ss,
+    double dd constraint (in [2120.0, 1293.3, 98439.88, 980202.77]),
+    float   fv  default 8883.99,
+    array<integer> arr[256],
+    list<string>   ll
 };
 
-TYPE test_ref_type {
-    STRING name,
-    MAP<STRING, DATATYPE test_type> r_map
+type test_ref_type {
+    string name,
+    map<string, ref test_type> r_map
 };
+
+schema test_schema {
+    string key,
+    double dkey,
+    ref test_ref_type __map,
+    ref test_type __ref
+} set_key_fields(key, dkey);

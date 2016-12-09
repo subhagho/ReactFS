@@ -52,103 +52,103 @@ void debug_r(const char *s, ...);
 
 	}
 
-"TYPE"		{
+"type"		{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::TYPE);
 
             	}
-"DATATYPE"		{
+"ref"		{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::DATATYPE);
 
             	}
-"BYTE" 			{
+"byte" 			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::BYTE);
 
             	}
-"CHAR"			{
+"char"			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::CHAR);
 
             	}
-"BOOLEAN"		{
+"boolean"		{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::BOOL);
 
             	}
-"SHORT"			{
+"short"			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::SHORT);
 
             	}
-"INTEGER"		{
+"integer"		{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::INTEGER);
 
             	}
-"LONG"			{
+"long"			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::LONG);
 
             	}
-"FLOAT"			{
+"float"			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::FLOAT);
 
             	}
-"DOUBLE"		{
+"double"		{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::DOUBLE);
 
             	}
-"TIMESTAMP"		{
+"timestamp"		{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::TIMESTAMP);
 
             	}
-"DATETIME"		{
+"datetime"		{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::DATETIME);
 
             	}
-"STRING"		{
+"string"		{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::STRING);
 
             	}
-"TEXT"			{
+"text"			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::TEXT);
 
             	}
-"ARRAY"			{
+"array"			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::ARRAY);
 
             	}
-"LIST"			{
+"list"			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::LIST);
 
             	}
-"MAP"			{
+"map"			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
             		return (token::MAP);
@@ -163,79 +163,81 @@ void debug_r(const char *s, ...);
 "<" 		{ debug_r("[lexer] token : %s", yytext); return (token::LINTYPBRACE); }
 ">" 		{ debug_r("[lexer] token : %s", yytext); return (token::RINTYPBRACE); }
 ","		{ debug_r("[lexer] token : %s", yytext); return (token::COMMA); }
-"DEFAULT"		{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"default"		{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::DEFAULT);
 
             	}
-"REF"			{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::REF);
+"typeref"			{
+			debug_r("[lexer]  token : %s", yytext);
+            		return (token::DATATYPE);
 
             	}
-";"		return (token::TYPE_END);
-"PRIMARY KEY"		{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::PRIMARY_KEY);
+";"			return (token::TYPE_END);
+"set_key_fields"		{
+			debug_r("[lexer]  token : %s", yytext);
+            		return (token::KEY_FIELDS);
 
             	}
-"INDEX"			{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"index"			{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::INDEX);
 
             	}
-"SCHEMA"		{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"schema"		{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::SCHEMA);
 
             	}
-"CONSTRAINT"		{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"constraint"		{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::CONSTRAINT);
 
             	}
-"REGEX"			{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"regex"			{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::REGEX);
 
             	}
-"IN"			{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"in"			{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::IN);
 
             	}
-"BETWEEN"		{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"between"		{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::BETWEEN);
 
             	}
-"NOT"			{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"not"			{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::NOT);
 
             	}
-"LESS THAN"		{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"less than"		{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::LT);
 
             	}
-"GREATER THAN"		{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
+"greater than"		{
+			debug_r("[lexer]  token : %s", yytext);
             		return (token::GT);
 
             	}
+"ASC"		{
+            		yylval->str = yytext;
+			debug_r("[lexer]  token : %s", yylval->str);
+            		return (token::ASC);
+
+            	}
+"DESC"		{
+            		yylval->str = yytext;
+			debug_r("[lexer]  token : %s", yylval->str);
+            		return (token::DESC);
+
+            	}
+
+
 ":"		{ debug_r("[lexer] token : %s", yytext); return (token::COLON); }
 
 [_a-zA-Z0-9][_a-zA-Z0-9]+ 	{

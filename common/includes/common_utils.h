@@ -426,6 +426,18 @@ REACTFS_NS_COMMON
                         return elems->size();
                     }
 
+                    static uint32_t split(const string &s, char delim, string *array, uint32_t a_size) {
+                        stringstream ss;
+                        ss.str(s);
+                        string item;
+                        uint32_t count = 0;
+                        while (getline(ss, item, delim) && count < a_size) {
+                            array[count] = item;
+                            count++;
+                        }
+                        return count;
+                    }
+
                     static string toupper(const string &input) {
                         if (!IS_EMPTY(input)) {
                             stringstream ss;

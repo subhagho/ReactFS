@@ -29,11 +29,34 @@ typedef struct __declare__ {
     uint32_t size = 0;
     __declare__ *inner_types = nullptr;
     __constraint_def *constraint = nullptr;
+    string *default_value = nullptr;
 } __declare;
 
 typedef struct __reference_type__ {
     string name;
+    int declare_count = 0;
     __declare *members = nullptr;
 } __reference_type;
 
+typedef struct __key_column__ {
+    string name;
+    int index;
+    bool sort_asc = true;
+    __key_column__ *next = nullptr;
+} __key_column;
+
+typedef struct __index_def__ {
+    string name;
+    int column_count = 0;
+    __key_column *columns;
+    __index_def__ *next = nullptr;
+} __index_def;
+
+typedef struct __schema_def__ {
+    string name;
+    int column_count = 0;
+    __declare *members = nullptr;
+    __key_column *pk_columns = nullptr;
+    __index_def *indexes = nullptr;
+} __schema_def;
 #endif //REACTFS_SCHEMA_H

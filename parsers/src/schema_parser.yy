@@ -95,9 +95,8 @@ void debug_r(const char *s, ...);
 %token			RINTYPBRACE
 %token			COMMA
 %token			DEFAULT
-%token			REF
 %token			TYPE_END
-%token			PRIMARY_KEY
+%token			KEY_FIELDS
 %token			INDEX	
 %token			SCHEMA
 %left			CONSTRAINT
@@ -107,18 +106,105 @@ void debug_r(const char *s, ...);
 %token			NOT
 %token			LT
 %token			GT
+%token			ASC
+%token			DESC
 %token			COLON
 %token 			NEWLINE
 %type<dval>		DVALUE
 %type<lval>		IVALUE size_def
-%type<str>		SVALUE VARNAME STRING DOUBLE BYTE CHAR BOOL SHORT INTEGER LONG FLOAT TIMESTAMP DATETIME  TEXT ARRAY LIST MAP
-%type<str>		value values datatype declare variable
+%type<str>		SVALUE VARNAME STRING DOUBLE BYTE CHAR BOOL SHORT INTEGER LONG FLOAT TIMESTAMP DATETIME  TEXT ARRAY LIST MAP ASC DESC
+%type<str>		value values datatype variable opt_sort column columns key_fields sort
+%type<str>		declare declare_native declare_ref declare_native_arr declare_ref_arr declare_native_list declare_ref_list declare_netive_map declare_ref_map
 
 
 %locations
 
 %%
 
+parse:
+		opt_types schema
+	;
+
+schema:
+		schema_declare LTYPEBRACE declarations RTYPEBRACE opt_key_fields declare_finish
+	;
+
+schema_declare:	
+		SCHEMA variable			{
+							std::string ss($2);
+							debug_r("new schema [%s]", ss.c_str());
+							driver.create_schema(ss);
+							FREE_PTR($2);
+						}
+
+opt_key_fields:
+		/* null */				
+	|	key_fields
+	;
+
+key_fields:
+		KEY_FIELDS LINBRACE columns RINBRACE	{
+								debug_r("KEY FIELDS: (%s)", $3);
+								std::string keys($3);
+								driver.set_primary_key(keys);
+								FREE_PTR($3);
+							}
+	;
+
+columns:
+		column				{
+							$$ = strdup($1);
+						}
+	|	columns COMMA column 		{
+							int s = strlen($1) + strlen($3) + 3;
+							char *p = (char *)malloc(sizeof(char) * s);
+							CHECK_ALLOC(p, TYPE_NAME(char));
+							memset(p, 0, s);
+							sprintf(p, "%s,%s", $1, $3);	
+							$$ = p;
+							FREE_PTR($1);
+							FREE_PTR($3);
+							debug_r("COLUMNS [%s]", $$);
+							
+						}
+	;
+column:
+		variable opt_sort		{
+							debug_r("COLUMN [%s] SORT[%s]", $1, $2);
+							int s = strlen($1 + 1);
+							if (NOT_NULL($2)) {	
+								s += strlen($2);
+								char *p = (char *)malloc(s * sizeof(char));
+								CHECK_ALLOC(p, TYPE_NAME(char));
+								memset(p, 0, s);
+								sprintf(p, "%s %s", $1, $2);
+								FREE_PTR($2);
+								$$ = p;
+							} else {
+								$$ = strdup($1);
+							}
+							FREE_PTR($1);
+						}
+	;
+
+opt_sort:
+		/* null */			{
+							$$ = nullptr;
+						}
+	|	sort				{ 
+							$$ = strdup($1);
+							FREE_PTR($1);
+						}
+	;
+
+sort:
+		ASC				{
+							$$ = strdup($1);
+						}
+	|	DESC				{
+							$$ = strdup($1);
+						}
+	;	
 
 opt_types:
 		/* null */
@@ -134,10 +220,11 @@ type:
 											
 										};
 type_declare:	
-		TYPE VARNAME			{
+		TYPE variable			{
 							std::string ss($2);
 							debug_r("new type [%s]", ss.c_str());
 							driver.add_type(ss); 
+							FREE_PTR($2);
 						}
 declarations:
 		declare	 
@@ -146,21 +233,38 @@ declarations:
 
 
 declare:
-		datatype variable opt_constraint		{ 
-							debug_r("[type=%s] varname=%s", $$, $1, $2);
+		declare_native	
+	|	declare_ref
+	|	declare_native_arr
+	|	declare_ref_arr
+	|	declare_native_list
+	|	declare_ref_list
+	|	declare_netive_map
+	|	declare_ref_map
+	;
+
+declare_native:
+		datatype variable opt_constraint opt_default		{ 
+							debug_r("[type=%s] varname=%s", $1, $2);
 							std::string t($1);
 							std::string n($2);
 							driver.add_declaration(n, t); 
 							FREE_PTR($1);
 							FREE_PTR($2);
-						}							
-	|	DATATYPE variable variable opt_constraint	{ 
+						}				
+	;
+
+declare_ref:
+		DATATYPE variable variable opt_constraint opt_default	{ 
 							debug_r("[type=%s] varname=%s", $2, $3);
 							std::string t($2);
 							std::string n($3);
 							driver.add_declaration(n, t, true); 
-						}	
-	|	ARRAY LINTYPBRACE datatype RINTYPBRACE  variable size_def opt_constraint	{
+						}
+	;
+
+declare_native_arr:
+		ARRAY LINTYPBRACE datatype RINTYPBRACE  variable size_def opt_constraint opt_default	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $3, $5, $6);
 									std::string t($3);
 									std::string n($5);
@@ -169,7 +273,10 @@ declare:
 									FREE_PTR($3);
 									FREE_PTR($5);
 								}
-	|	ARRAY LINTYPBRACE DATATYPE variable RINTYPBRACE variable size_def opt_constraint	{
+	;
+
+declare_ref_arr:
+		ARRAY LINTYPBRACE DATATYPE variable RINTYPBRACE variable size_def opt_constraint opt_default	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $4, $6, $7);
 									std::string t($4);
 									std::string n($6);
@@ -179,7 +286,10 @@ declare:
 									FREE_PTR($6);
 	
 								}
-	|	LIST LINTYPBRACE datatype RINTYPBRACE variable opt_constraint	{
+	;
+
+declare_native_list:
+		LIST LINTYPBRACE datatype RINTYPBRACE variable opt_constraint opt_default	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $3, $5);
 									std::string t($3);
 									std::string n($5);
@@ -188,15 +298,20 @@ declare:
 									FREE_PTR($5);
 
 								}
-	|	LIST LINTYPBRACE DATATYPE variable RINTYPBRACE variable opt_constraint	{
+	;
+
+declare_ref_list:
+		LIST LINTYPBRACE DATATYPE variable RINTYPBRACE variable opt_constraint opt_default	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $4, $6);
 									std::string t($4);
 									std::string n($6);
 									driver.add_list_decl(n, t, true);
 									FREE_PTR($4);
 									FREE_PTR($6);	
-									}
-	|	MAP LINTYPBRACE datatype COMMA datatype RINTYPBRACE variable opt_constraint		{
+								}
+	;
+declare_netive_map:
+		MAP LINTYPBRACE datatype COMMA datatype RINTYPBRACE variable opt_constraint opt_default		{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $5, $7);
 									std::string kt($3);
 									std::string vt($5);
@@ -205,8 +320,11 @@ declare:
 									FREE_PTR($3);
 									FREE_PTR($5);
 									FREE_PTR($7);
-											}
-	|	MAP LINTYPBRACE datatype COMMA DATATYPE variable RINTYPBRACE variable opt_constraint	{
+								}
+	;
+
+declare_ref_map:
+		MAP LINTYPBRACE datatype COMMA DATATYPE variable RINTYPBRACE variable opt_constraint opt_default	{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $6, $8);
 									std::string kt($3);
 									std::string vt($6);
@@ -215,11 +333,16 @@ declare:
 									FREE_PTR($3);
 									FREE_PTR($6);
 									FREE_PTR($8);
-											}
-
-
+								}
 	;
-
+opt_default:
+		/* null */
+	|	DEFAULT	value			{
+							debug_r("Defualt : %s", $2);
+							std::string v($2);
+							driver.set_default_value(v);
+							FREE_PTR($2);
+						}
 opt_constraint:
 		/* null */
 	| 	constraint

@@ -220,20 +220,21 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
         RINTYPBRACE = 286,
         COMMA = 287,
         DEFAULT = 288,
-        REF = 289,
-        TYPE_END = 290,
-        PRIMARY_KEY = 291,
-        INDEX = 292,
-        SCHEMA = 293,
-        CONSTRAINT = 294,
-        REGEX = 295,
-        IN = 296,
-        BETWEEN = 297,
-        NOT = 298,
-        LT = 299,
-        GT = 300,
-        COLON = 301,
-        NEWLINE = 302
+        TYPE_END = 289,
+        KEY_FIELDS = 290,
+        INDEX = 291,
+        SCHEMA = 292,
+        CONSTRAINT = 293,
+        REGEX = 294,
+        IN = 295,
+        BETWEEN = 296,
+        NOT = 297,
+        LT = 298,
+        GT = 299,
+        ASC = 300,
+        DESC = 301,
+        COLON = 302,
+        NEWLINE = 303
       };
     };
 
@@ -414,14 +415,14 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   static const short int yypgoto_[];
 
   // YYDEFGOTO[NTERM-NUM].
-  static const signed char yydefgoto_[];
+  static const short int yydefgoto_[];
 
   // YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
   // positive, shift that token.  If negative, reduce the rule whose
   // number is the opposite.  If YYTABLE_NINF, syntax error.
   static const unsigned char yytable_[];
 
-  static const signed char yycheck_[];
+  static const unsigned char yycheck_[];
 
   // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
   // symbol of state STATE-NUM.
@@ -538,12 +539,12 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     enum
     {
       yyeof_ = 0,
-      yylast_ = 166,     ///< Last index in yytable_.
-      yynnts_ = 15,  ///< Number of nonterminal symbols.
-      yyfinal_ = 6, ///< Termination state number.
+      yylast_ = 185,     ///< Last index in yytable_.
+      yynnts_ = 34,  ///< Number of nonterminal symbols.
+      yyfinal_ = 9, ///< Termination state number.
       yyterror_ = 1,
       yyerrcode_ = 256,
-      yyntokens_ = 48  ///< Number of tokens.
+      yyntokens_ = 49  ///< Number of tokens.
     };
 
 
@@ -555,7 +556,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 
 #line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 } } } } } // com::wookler::reactfs::core::parsers
-#line 559 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 560 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 
