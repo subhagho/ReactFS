@@ -58,12 +58,6 @@ void debug_r(const char *s, ...);
             		return (token::TYPE);
 
             	}
-"ref"		{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::DATATYPE);
-
-            	}
 "byte" 			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
@@ -173,6 +167,12 @@ void debug_r(const char *s, ...);
             		return (token::DATATYPE);
 
             	}
+"on"			{
+			debug_r("[lexer]  token : %s", yytext);
+            		return (token::ON);
+
+            	}
+
 ";"			return (token::TYPE_END);
 "set_key_fields"		{
 			debug_r("[lexer]  token : %s", yytext);
@@ -224,6 +224,11 @@ void debug_r(const char *s, ...);
             		return (token::GT);
 
             	}
+"nullable"		{
+			debug_r("[lexer]  token : %s", yytext);
+            		return (token::NULLABLE);
+
+            	}
 "ASC"		{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
@@ -236,9 +241,28 @@ void debug_r(const char *s, ...);
             		return (token::DESC);
 
             	}
+"FULLTEXT"		{
+            		yylval->str = yytext;
+			debug_r("[lexer]  token : %s", yylval->str);
+            		return (token::FULLTEXT_INDEX);
 
+            	}
+"HASH" 		{
+            		yylval->str = yytext;
+			debug_r("[lexer]  token : %s", yylval->str);
+            		return (token::HASH_INDEX);
+
+            	}
+"TREE"		{
+            		yylval->str = yytext;
+			debug_r("[lexer]  token : %s", yylval->str);
+            		return (token::TREE_INDEX);
+
+            	}
 
 ":"		{ debug_r("[lexer] token : %s", yytext); return (token::COLON); }
+
+"\."		{ debug_r("[lexer] token : %s", yytext); return (token::DOT); }
 
 [_a-zA-Z0-9][_a-zA-Z0-9]+ 	{
 				yylval->str = yytext;

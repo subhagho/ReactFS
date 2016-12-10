@@ -94,6 +94,7 @@ void debug_r(const char *s, ...);
 %token			LINTYPBRACE
 %token			RINTYPBRACE
 %token			COMMA
+%token			ON
 %token			DEFAULT
 %token			TYPE_END
 %token			KEY_FIELDS
@@ -103,17 +104,23 @@ void debug_r(const char *s, ...);
 %token			REGEX	
 %token			IN
 %token			BETWEEN
+%token			NULLABLE
 %token			NOT
 %token			LT
 %token			GT
 %token			ASC
 %token			DESC
 %token			COLON
+%token			DOT
 %token 			NEWLINE
+%token 			FULLTEXT_INDEX
+%token 			HASH_INDEX
+%token 			TREE_INDEX
 %type<dval>		DVALUE
-%type<lval>		IVALUE size_def
+%type<lval>		IVALUE size_def opt_nullable
+%type<str>		FULLTEXT_INDEX HASH_INDEX TREE_INDEX
 %type<str>		SVALUE VARNAME STRING DOUBLE BYTE CHAR BOOL SHORT INTEGER LONG FLOAT TIMESTAMP DATETIME  TEXT ARRAY LIST MAP ASC DESC
-%type<str>		value values datatype variable opt_sort column columns key_fields sort
+%type<str>		value values datatype variable nested_variable opt_sort column columns key_fields sort
 %type<str>		declare declare_native declare_ref declare_native_arr declare_ref_arr declare_native_list declare_ref_list declare_netive_map declare_ref_map
 
 
@@ -122,7 +129,7 @@ void debug_r(const char *s, ...);
 %%
 
 parse:
-		opt_types schema
+		opt_types schema opt_indexes
 	;
 
 schema:
@@ -136,6 +143,51 @@ schema_declare:
 							driver.create_schema(ss);
 							FREE_PTR($2);
 						}
+opt_indexes:
+		/* null */
+	|	indexes
+	;
+
+indexes:
+		index
+	| indexes index
+	;
+
+index:
+		index_declare index_fields opt_index_type declare_finish	{
+
+						}
+	;
+
+index_fields:
+		LINBRACE columns RINBRACE	{
+								debug_r("KEY FIELDS: (%s)", $2);
+								std::string keys($2);
+								driver.set_index_fields(keys);
+								FREE_PTR($2);
+							}
+	;
+opt_index_type:
+		/* null */
+	|	index_type
+	;
+
+index_type:
+		FULLTEXT_INDEX			{ driver.set_index_type($1); }
+	|	HASH_INDEX			{ driver.set_index_type($1); }
+	|	TREE_INDEX			{ driver.set_index_type($1); }
+	;
+
+index_declare:
+		INDEX variable ON variable	{
+							std::string n($2);
+							std::string s($4);
+							debug_r("Creating index [%s] on schema [%s]", n.c_str(), s.c_str());
+							driver.create_index(n, s);
+							FREE_PTR($2);
+							FREE_PTR($4);
+						}
+	;
 
 opt_key_fields:
 		/* null */				
@@ -169,7 +221,7 @@ columns:
 						}
 	;
 column:
-		variable opt_sort		{
+		nested_variable opt_sort		{
 							debug_r("COLUMN [%s] SORT[%s]", $1, $2);
 							int s = strlen($1 + 1);
 							if (NOT_NULL($2)) {	
@@ -244,44 +296,48 @@ declare:
 	;
 
 declare_native:
-		datatype variable opt_constraint opt_default		{ 
+		datatype variable opt_constraint opt_default opt_nullable		{ 
 							debug_r("[type=%s] varname=%s", $1, $2);
 							std::string t($1);
 							std::string n($2);
-							driver.add_declaration(n, t); 
+							bool nullable = ($5 == 0 ? true : false);
+							driver.add_declaration(n, t, false, nullable); 
 							FREE_PTR($1);
 							FREE_PTR($2);
 						}				
 	;
 
 declare_ref:
-		DATATYPE variable variable opt_constraint opt_default	{ 
+		DATATYPE variable variable opt_constraint opt_default opt_nullable	{ 
 							debug_r("[type=%s] varname=%s", $2, $3);
 							std::string t($2);
 							std::string n($3);
-							driver.add_declaration(n, t, true); 
+							bool nullable = ($6 == 0 ? true : false);
+							driver.add_declaration(n, t, true, nullable); 
 						}
 	;
 
 declare_native_arr:
-		ARRAY LINTYPBRACE datatype RINTYPBRACE  variable size_def opt_constraint opt_default	{
+		ARRAY LINTYPBRACE datatype RINTYPBRACE  variable size_def opt_constraint opt_default opt_nullable	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $3, $5, $6);
 									std::string t($3);
 									std::string n($5);
 									int s = $6;
-									driver.add_array_decl(n, s, t, false);
+									bool nullable = ($9 == 0 ? true : false);
+									driver.add_array_decl(n, s, t, false, nullable);
 									FREE_PTR($3);
 									FREE_PTR($5);
 								}
 	;
 
 declare_ref_arr:
-		ARRAY LINTYPBRACE DATATYPE variable RINTYPBRACE variable size_def opt_constraint opt_default	{
+		ARRAY LINTYPBRACE DATATYPE variable RINTYPBRACE variable size_def opt_constraint opt_default opt_nullable	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $4, $6, $7);
 									std::string t($4);
 									std::string n($6);
 									int s = $7;
-									driver.add_array_decl(n, s, t, true);
+									bool nullable = ($10 == 0 ? true : false);
+									driver.add_array_decl(n, s, t, true, nullable);
 									FREE_PTR($4);
 									FREE_PTR($6);
 	
@@ -289,11 +345,12 @@ declare_ref_arr:
 	;
 
 declare_native_list:
-		LIST LINTYPBRACE datatype RINTYPBRACE variable opt_constraint opt_default	{
+		LIST LINTYPBRACE datatype RINTYPBRACE variable opt_constraint opt_default opt_nullable	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $3, $5);
 									std::string t($3);
 									std::string n($5);
-									driver.add_list_decl(n, t, false);
+									bool nullable = ($8 == 0 ? true : false);
+									driver.add_list_decl(n, t, false, nullable);
 									FREE_PTR($3);
 									FREE_PTR($5);
 
@@ -301,22 +358,24 @@ declare_native_list:
 	;
 
 declare_ref_list:
-		LIST LINTYPBRACE DATATYPE variable RINTYPBRACE variable opt_constraint opt_default	{
+		LIST LINTYPBRACE DATATYPE variable RINTYPBRACE variable opt_constraint opt_default opt_nullable	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $4, $6);
 									std::string t($4);
 									std::string n($6);
-									driver.add_list_decl(n, t, true);
+									bool nullable = ($9 == 0 ? true : false);
+									driver.add_list_decl(n, t, true, nullable);
 									FREE_PTR($4);
 									FREE_PTR($6);	
 								}
 	;
 declare_netive_map:
-		MAP LINTYPBRACE datatype COMMA datatype RINTYPBRACE variable opt_constraint opt_default		{
+		MAP LINTYPBRACE datatype COMMA datatype RINTYPBRACE variable opt_constraint opt_default	opt_nullable	{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $5, $7);
 									std::string kt($3);
 									std::string vt($5);
 									std::string n($7);
-									driver.add_map_decl(n, kt, vt, false);
+									bool nullable = ($10 == 0 ? true : false);
+									driver.add_map_decl(n, kt, vt, false, nullable);
 									FREE_PTR($3);
 									FREE_PTR($5);
 									FREE_PTR($7);
@@ -324,17 +383,24 @@ declare_netive_map:
 	;
 
 declare_ref_map:
-		MAP LINTYPBRACE datatype COMMA DATATYPE variable RINTYPBRACE variable opt_constraint opt_default	{
+		MAP LINTYPBRACE datatype COMMA DATATYPE variable RINTYPBRACE variable opt_constraint opt_default opt_nullable	{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $6, $8);
 									std::string kt($3);
 									std::string vt($6);
 									std::string n($8);
-									driver.add_map_decl(n, kt, vt, true);
+									bool nullable = ($11 == 0 ? true : false);
+									driver.add_map_decl(n, kt, vt, true, nullable);
 									FREE_PTR($3);
 									FREE_PTR($6);
 									FREE_PTR($8);
 								}
 	;
+
+opt_nullable:
+		/* null */			{ 	$$ = 0; }
+	|	NULLABLE			{ 	$$ = 1; }
+	;
+
 opt_default:
 		/* null */
 	|	DEFAULT	value			{
@@ -348,7 +414,24 @@ opt_constraint:
 	| 	constraint
 	;
 
+nested_variable:
+		variable			{ 
+							$$ = strdup($1);
+							FREE_PTR($1);
+						}
+	|	nested_variable DOT variable 	{
+							int s = strlen($1) + strlen($3) + 2;
+							char *p = (char *)malloc(s * sizeof(char));
+							CHECK_ALLOC(p, TYPE_NAME(char));
+							memset(p, 0, s);
+							sprintf(p, "%s.%s", $1, $3);
+							FREE_PTR($1);
+							FREE_PTR($3);
+							$$ = p;
+						}
+	;
 
+							
 variable:
 	VARNAME					{ debug_r("varaible=%s", $1); $$ = strdup($1); };
 

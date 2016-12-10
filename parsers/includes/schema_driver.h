@@ -48,7 +48,7 @@ using namespace REACTFS_NS_COMMON_PREFIX;
 REACTFS_NS_CORE
                 namespace parsers {
                     typedef enum __schema_parse_state__ {
-                        SPS_NONE = 0, SPS_IN_TYPE, SPS_IN_SCHEMA, SPS_IN_DECLARE
+                        SPS_NONE = 0, SPS_IN_TYPE, SPS_IN_SCHEMA, SPS_IN_INDEX
                     } __schema_parse_state;
 
                     typedef struct __declare_stack__ {
@@ -81,15 +81,12 @@ REACTFS_NS_CORE
                         __schema_def *current_schema = nullptr;
                         vector<__declare *> declares;
                         __declare_stack declare;
-                        vector<__index_def *> indexes;
                         string *pk_columns = nullptr;
-                        __index_def *current_index = nullptr;
 
                         __schema_stack() {
                             this->current_schema = nullptr;
                             this->declare.current_constraint = nullptr;
                             this->declare.default_value = nullptr;
-                            this->current_index = nullptr;
                             CHECK_AND_FREE(pk_columns);
                         }
 
@@ -99,7 +96,25 @@ REACTFS_NS_CORE
                             FREE_PTR(this->declare.current_constraint);
                             this->current_schema = nullptr;
                             this->pk_columns = nullptr;
+                        }
+                    };
+
+                    class __index_stack {
+                    public:
+                        __index_def *current_index = nullptr;
+                        string *fields = nullptr;
+                        string *index_type = nullptr;
+
+                        __index_stack() {
                             this->current_index = nullptr;
+                            this->fields = nullptr;
+                            this->index_type = nullptr;
+                        }
+
+                        ~__index_stack() {
+                            CHECK_AND_FREE(fields);
+                            CHECK_AND_FREE(index_type);
+                            current_index = nullptr;
                         }
                     };
 
@@ -109,8 +124,10 @@ REACTFS_NS_CORE
                         schema_scanner *scanner = nullptr;
                         __type_stack *type_stack = nullptr;
                         __schema_stack *schema_stack = nullptr;
+                        __index_stack *index_stack = nullptr;
 
                         unordered_map<string, __reference_type *> types;
+                        unordered_map<string, __index_def *> indexes;
 
                         __schema_parse_state state = __schema_parse_state::SPS_NONE;
 
@@ -120,9 +137,22 @@ REACTFS_NS_CORE
 
                         void finish_schema();
 
+                        void finish_index();
+
                         void clear_type_stack() {
                             if (NOT_NULL(type_stack)) {
-                                CHECK_AND_FREE(type_stack);
+                                type_stack->current_type = nullptr;
+                                type_stack->declare.current_constraint = nullptr;
+                                type_stack->declare.default_value = nullptr;
+                                type_stack->declares.clear();
+                            }
+                        }
+
+                        void clear_index_stack() {
+                            if (NOT_NULL(index_stack)) {
+                                index_stack->current_index = nullptr;
+                                CHECK_AND_FREE(index_stack->index_type);
+                                CHECK_AND_FREE(index_stack->fields);
                             }
                         }
 
@@ -131,6 +161,15 @@ REACTFS_NS_CORE
                                 free_schema_def(schema_stack->current_schema);
                                 CHECK_AND_FREE(schema_stack->pk_columns);
                                 CHECK_AND_FREE(schema_stack);
+                            }
+                        }
+
+                        void free_index_def(__index_def *index) {
+                            if (NOT_NULL(index)) {
+                                free_key_column(index->columns);
+                                CHECK_AND_FREE(index->name);
+                                CHECK_AND_FREE(index->schema_name);
+                                FREE_PTR(index);
                             }
                         }
 
@@ -144,31 +183,18 @@ REACTFS_NS_CORE
                                         ptr = next;
                                     }
                                 }
+                                CHECK_AND_FREE(schema->name);
                                 schema->members = nullptr;
                                 free_key_column(schema->pk_columns);
-                                free_index_defs(schema->indexes);
-                            }
-                        }
-
-                        void free_index_defs(__index_def *index) {
-                            if (NOT_NULL(index)) {
-                                __index_def *ptr = index;
-                                while (NOT_NULL(ptr)) {
-                                    __index_def *next = ptr->next;
-                                    free_key_column(ptr->columns);
-                                    FREE_PTR(ptr);
-                                    ptr = next;
-                                }
                             }
                         }
 
                         void free_key_column(__key_column *c) {
-                            if (NOT_NULL(c)) {
-                                while (NOT_NULL(c)) {
-                                    __key_column *next = c->next;
-                                    FREE_PTR(c);
-                                    c = next;
-                                }
+                            while (NOT_NULL(c)) {
+                                __key_column *next = c->next;
+                                CHECK_AND_FREE(c->name);
+                                FREE_PTR(c);
+                                c = next;
                             }
                         }
 
@@ -183,6 +209,7 @@ REACTFS_NS_CORE
                                     }
                                     type->members = nullptr;
                                 }
+                                CHECK_AND_FREE(type->name);
                                 FREE_PTR(type);
                             }
                             type = nullptr;
@@ -273,13 +300,15 @@ REACTFS_NS_CORE
                             CHECK_ALLOC(kc, TYPE_NAME(__key_column));
                             memset(kc, 0, sizeof(__key_column));
 
-                            kc->name = string(array[0]);
+                            kc->name = new string(array[0]);
                             if (c > 1) {
                                 if (array[1] == COLUMN_SORT_DIR_ASC) {
                                     kc->sort_asc = true;
                                 } else if (array[1] == COLUMN_SORT_DIR_DESC) {
                                     kc->sort_asc = false;
                                 }
+                            } else {
+                                kc->sort_asc = true;
                             }
                             kc->next = nullptr;
                             return kc;
@@ -299,6 +328,13 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        void check_new_index(const string &name) {
+                            unordered_map<string, __index_def *>::iterator iter = indexes.find(name);
+                            if (iter != indexes.end()) {
+                                throw TYPE_PARSER_ERROR("Duplicate index defined. [name=%s]", name.c_str());
+                            }
+                        }
+
                     public:
                         schema_driver() = default;
 
@@ -308,17 +344,26 @@ REACTFS_NS_CORE
 
                         void create_schema(const string &name);
 
-                        void add_declaration(const string &varname, const string &type, bool is_ref = false);
+                        void create_index(const string &name, const string &schema);
+
+                        void set_index_fields(const string &fields);
+
+                        void set_index_type(const string &type);
+
+                        void add_declaration(const string &varname, const string &type, bool is_ref = false,
+                                             bool nullable = false);
 
                         void
-                        add_array_decl(const string &varname, uint16_t size, const string &type, bool is_ref = false);
+                        add_array_decl(const string &varname, uint16_t size, const string &type, bool is_ref = false,
+                                       bool nullable = false);
 
                         void
-                        add_list_decl(const string &varname, const string &type, bool is_ref = false);
+                        add_list_decl(const string &varname, const string &type, bool is_ref = false,
+                                      bool nullable = false);
 
                         void
                         add_map_decl(const string &varname, const string &ktype, const string &vtype,
-                                     bool is_ref = false);
+                                     bool is_ref = false, bool nullable = false);
 
                         void set_constraint(bool is_not, const string &constraint, const string &values);
 

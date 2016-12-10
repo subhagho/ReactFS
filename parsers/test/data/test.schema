@@ -1,5 +1,5 @@
 type test_type {
-    string ss,
+    string ss nullable,
     double dd constraint (in [2120.0, 1293.3, 98439.88, 980202.77]),
     float   fv  default 8883.99,
     array<integer> arr[256],
@@ -8,12 +8,15 @@ type test_type {
 
 type test_ref_type {
     string name,
-    map<string, ref test_type> r_map
+    map<string, typeref test_type> r_map
 };
 
 schema test_schema {
     string key,
     double dkey,
-    ref test_ref_type __map,
-    ref test_type __ref
+    typeref test_ref_type __map,
+    typeref test_type __ref
 } set_key_fields(key, dkey);
+
+index i_test_schema_01 on test_schema (key, dkey DESC, __map.name) FULLTEXT;
+index i_test_schema_02 on test_schema (key, dkey DESC, __ref.ss) FULLTEXT;

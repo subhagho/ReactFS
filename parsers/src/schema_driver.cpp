@@ -10,18 +10,29 @@ com::wookler::reactfs::core::parsers::schema_driver::~schema_driver() {
     CHECK_AND_FREE(scanner);
     CHECK_AND_FREE(parser);
 
-    unordered_map<string, __reference_type *>::iterator iter;
-    for (iter = types.begin(); iter != types.end(); iter++) {
+    for (auto iter = types.begin(); iter != types.end(); iter++) {
         free_type(iter->second);
     }
     types.clear();
 
     free_schema();
+
+    for(auto iter = indexes.begin(); iter != indexes.end(); iter++) {
+        free_index_def(iter->second);
+    }
+    indexes.clear();
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::create_schema(const string &name) {
-    PRECONDITION(IS_NULL(type_stack));
-    PRECONDITION(IS_NULL(schema_stack));
+    if (NOT_NULL(type_stack) && NOT_NULL(type_stack->current_type)) {
+        throw TYPE_PARSER_ERROR("Previous type definition not terminated correctly.");
+    }
+    if (NOT_NULL(type_stack)) {
+        CHECK_AND_FREE(type_stack);
+    }
+    if (NOT_NULL(schema_stack)) {
+        throw TYPE_PARSER_ERROR("Expected schema stack to be null. Multiple schema definitions not allowed.");
+    }
 
     schema_stack = new __schema_stack();
     CHECK_ALLOC(schema_stack, TYPE_NAME(__schema_stack));
@@ -30,38 +41,48 @@ void com::wookler::reactfs::core::parsers::schema_driver::create_schema(const st
     CHECK_ALLOC(schema_stack->current_schema, TYPE_NAME(__schema_def));
     memset(schema_stack->current_schema, 0, sizeof(__schema_def));
 
-    schema_stack->current_schema->name = string(name);
+    schema_stack->current_schema->name = new string(name);
+    CHECK_ALLOC(schema_stack->current_schema->name, TYPE_NAME(string));
 
     state = __schema_parse_state::SPS_IN_SCHEMA;
 
-    LOG_DEBUG("Added schema definition. [name=%s]", schema_stack->current_schema->name.c_str());
+    LOG_DEBUG("Added schema definition. [name=%s]", schema_stack->current_schema->name->c_str());
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_type(const string &name) {
     LOG_DEBUG("Adding new datatype. [name=%s]", name.c_str());
 
+    if (NOT_NULL(type_stack)) {
+        PRECONDITION(IS_NULL(type_stack->current_type));
+        PRECONDITION(IS_NULL(type_stack->declare.current_constraint));
+        PRECONDITION(IS_NULL(type_stack->declare.default_value));
+    }
+
     __reference_type *type = (__reference_type *) malloc(sizeof(__reference_type));
     CHECK_ALLOC(type, TYPE_NAME(__reference_type));
     memset(type, 0, sizeof(__reference_type));
 
-    type->name = string(name);
+    type->name = new string(name);
+    CHECK_ALLOC(type->name, TYPE_NAME(string));
 
     clear_type_stack();
 
-    type_stack = new __type_stack();
-    CHECK_ALLOC(type_stack, TYPE_NAME(__type_stack));
+    if (IS_NULL(type_stack)) {
+        type_stack = new __type_stack();
+        CHECK_ALLOC(type_stack, TYPE_NAME(__type_stack));
+    }
     type_stack->current_type = type;
 
     state = __schema_parse_state::SPS_IN_TYPE;
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const string &varname, const string &type,
-                                                                          bool is_ref) {
+                                                                          bool is_ref, bool nullable) {
     CHECK_NOT_EMPTY(varname);
     CHECK_NOT_EMPTY(type);
 
     if (state == __schema_parse_state::SPS_IN_TYPE)
-        LOG_DEBUG("[type=%s] Adding declaration. [type=%s][name=%s]", type_stack->current_type->name.c_str(),
+        LOG_DEBUG("[type=%s] Adding declaration. [type=%s][name=%s]", type_stack->current_type->name->c_str(),
                   type.c_str(),
                   varname.c_str());
 
@@ -74,6 +95,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const 
     memset(d, 0, sizeof(__declare));
 
     d->is_reference = is_ref;
+    d->is_nullable = nullable;
     d->variable = new string(varname);
     d->type = new string(type);
 
@@ -99,7 +121,8 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const 
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_array_decl(const string &varname, uint16_t size,
-                                                                         const string &type, bool is_ref) {
+                                                                         const string &type, bool is_ref,
+                                                                         bool nullable) {
     CHECK_NOT_EMPTY(varname);
     CHECK_NOT_EMPTY(type);
     PRECONDITION(size > 0);
@@ -113,6 +136,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_array_decl(const s
     memset(d, 0, sizeof(__declare));
 
     d->is_reference = false;
+    d->is_nullable = nullable;
     d->variable = new string(varname);
     d->type = new string(TYPE_NAME_ARRAY);
     d->size = size;
@@ -144,7 +168,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_array_decl(const s
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_list_decl(const string &varname, const string &type,
-                                                                        bool is_ref) {
+                                                                        bool is_ref, bool nullable) {
     CHECK_NOT_EMPTY(varname);
     CHECK_NOT_EMPTY(type);
 
@@ -157,6 +181,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_list_decl(const st
     memset(d, 0, sizeof(__declare));
 
     d->is_reference = false;
+    d->is_nullable = nullable;
     d->variable = new string(varname);
     d->type = new string(TYPE_NAME_LIST);
 
@@ -187,7 +212,8 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_list_decl(const st
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_map_decl(const string &varname, const string &ktype,
-                                                                       const string &vtype, bool is_ref) {
+                                                                       const string &vtype, bool is_ref,
+                                                                       bool nullable) {
     CHECK_NOT_EMPTY(varname);
     CHECK_NOT_EMPTY(ktype);
     CHECK_NOT_EMPTY(vtype);
@@ -201,6 +227,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_map_decl(const str
     memset(d, 0, sizeof(__declare));
 
     d->is_reference = false;
+    d->is_nullable = nullable;
     d->variable = new string(varname);
     d->type = new string(TYPE_NAME_MAP);
 
@@ -277,6 +304,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::set_default_value(cons
     }
 }
 
+
 void com::wookler::reactfs::core::parsers::schema_driver::set_primary_key(const string &keys) {
     CHECK_NOT_EMPTY(keys);
     CHECK_NOT_NULL(schema_stack);
@@ -285,11 +313,94 @@ void com::wookler::reactfs::core::parsers::schema_driver::set_primary_key(const 
     schema_stack->pk_columns = new string(keys);
 }
 
+void com::wookler::reactfs::core::parsers::schema_driver::create_index(const string &name, const string &schema) {
+    CHECK_NOT_EMPTY(name);
+    CHECK_NOT_EMPTY(schema);
+
+    if (NOT_NULL(index_stack)) {
+        PRECONDITION(IS_NULL(index_stack->current_index));
+        PRECONDITION(IS_NULL(index_stack->fields));
+        PRECONDITION(IS_NULL(index_stack->index_type));
+    }
+
+    PRECONDITION(NOT_NULL(schema_stack));
+    PRECONDITION(*(schema_stack->current_schema->name) == schema);
+
+    __index_def *ci = (__index_def *) malloc(sizeof(__index_def));
+    CHECK_ALLOC(ci, TYPE_NAME(__index_def));
+    ci->name = new string(name);
+    CHECK_ALLOC(ci->name, TYPE_NAME(string));
+    ci->schema_name = new string(schema);
+    CHECK_ALLOC(ci->schema_name, TYPE_NAME(string));
+
+    if (IS_NULL(index_stack)) {
+        index_stack = new __index_stack();
+        CHECK_ALLOC(index_stack, TYPE_NAME(__index_stack));
+    }
+    index_stack->current_index = ci;
+
+    state = __schema_parse_state::SPS_IN_INDEX;
+
+    LOG_DEBUG("Added schema definition. [name=%s][schema=%s]", index_stack->current_index->name->c_str(),
+              index_stack->current_index->schema_name->c_str());
+}
+
+void com::wookler::reactfs::core::parsers::schema_driver::set_index_fields(const string &fields) {
+    CHECK_NOT_EMPTY(fields);
+    CHECK_NOT_NULL(index_stack);
+    CHECK_NOT_NULL(index_stack->current_index);
+    index_stack->fields = new string(fields);
+}
+
+void com::wookler::reactfs::core::parsers::schema_driver::set_index_type(const string &type) {
+    CHECK_NOT_EMPTY(type);
+    CHECK_NOT_NULL(index_stack);
+    CHECK_NOT_NULL(index_stack->current_index);
+    index_stack->index_type = new string(type);
+}
+
+void com::wookler::reactfs::core::parsers::schema_driver::finish_index() {
+    CHECK_NOT_NULL(index_stack);
+    CHECK_NOT_NULL(index_stack->current_index);
+    CHECK_NOT_EMPTY_P(index_stack->fields);
+
+    check_new_index(*(index_stack->current_index->name));
+
+    vector<string> columns;
+    string_utils::split(*(index_stack->fields), ',', &columns);
+    POSTCONDITION(!IS_EMPTY(columns));
+
+    __key_column *kc = nullptr;
+    uint16_t index = 0;
+    for (string c : columns) {
+        __key_column *nkc = get_key_column(c);
+        nkc->index = index++;
+        CHECK_NOT_NULL(nkc);
+        if (IS_NULL(kc)) {
+            kc = nkc;
+            index_stack->current_index->columns = kc;
+        } else {
+            kc->next = nkc;
+            kc = nkc;
+        }
+        index_stack->current_index->field_count++;
+    }
+    if (!IS_EMPTY_P(index_stack->index_type)) {
+        index_stack->current_index->type = index_type_utils::get_index_type(*(index_stack->index_type));
+    }
+    __index_def *def = index_stack->current_index;
+    clear_index_stack();
+
+    indexes.insert({*(def->name), def});
+}
+
 void com::wookler::reactfs::core::parsers::schema_driver::finish_def() {
     if (state == __schema_parse_state::SPS_IN_TYPE) {
         this->finish_type();
     } else if (state == __schema_parse_state::SPS_IN_SCHEMA) {
         this->finish_schema();
+    } else if (state == __schema_parse_state::SPS_IN_INDEX) {
+        this->finish_index();
     } else {
         throw TYPE_PARSER_ERROR("Invalid state at finish. [state=%d]", state);
     }
@@ -310,12 +421,13 @@ void com::wookler::reactfs::core::parsers::schema_driver::finish_type() {
             d->next = *iter;
             d = d->next;
         }
+        type_stack->current_type->field_count++;
     }
     __reference_type *type = type_stack->current_type;
 
-    check_new_type(type->name);
-    types.insert({type->name, type});
-    LOG_DEBUG("[type=%s] Finished type declaration...", type->name.c_str());
+    check_new_type(*(type->name));
+    types.insert({*(type->name), type});
+    LOG_DEBUG("[type=%s] Finished type declaration...", type->name->c_str());
 
     clear_type_stack();
 }
@@ -327,6 +439,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::finish_schema() {
 
     vector<__declare *>::iterator iter;
     __declare *d = nullptr;
+
     for (iter = schema_stack->declares.begin(); iter != schema_stack->declares.end(); iter++) {
         if (IS_NULL(d)) {
             d = *iter;
@@ -335,6 +448,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::finish_schema() {
             d->next = *iter;
             d = d->next;
         }
+        schema_stack->current_schema->field_count++;
     }
 
     if (NOT_EMPTY_P(schema_stack->pk_columns)) {
@@ -357,7 +471,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::finish_schema() {
             }
         }
     }
-    LOG_DEBUG("Finished schema declaration. [name=%s]", schema_stack->current_schema->name.c_str());
+    LOG_DEBUG("Finished schema declaration. [name=%s]", schema_stack->current_schema->name->c_str());
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::parse(const char *const filename) {

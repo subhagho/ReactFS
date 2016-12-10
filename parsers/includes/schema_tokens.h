@@ -219,22 +219,28 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
         LINTYPBRACE = 285,
         RINTYPBRACE = 286,
         COMMA = 287,
-        DEFAULT = 288,
-        TYPE_END = 289,
-        KEY_FIELDS = 290,
-        INDEX = 291,
-        SCHEMA = 292,
-        CONSTRAINT = 293,
-        REGEX = 294,
-        IN = 295,
-        BETWEEN = 296,
-        NOT = 297,
-        LT = 298,
-        GT = 299,
-        ASC = 300,
-        DESC = 301,
-        COLON = 302,
-        NEWLINE = 303
+        ON = 288,
+        DEFAULT = 289,
+        TYPE_END = 290,
+        KEY_FIELDS = 291,
+        INDEX = 292,
+        SCHEMA = 293,
+        CONSTRAINT = 294,
+        REGEX = 295,
+        IN = 296,
+        BETWEEN = 297,
+        NULLABLE = 298,
+        NOT = 299,
+        LT = 300,
+        GT = 301,
+        ASC = 302,
+        DESC = 303,
+        COLON = 304,
+        DOT = 305,
+        NEWLINE = 306,
+        FULLTEXT_INDEX = 307,
+        HASH_INDEX = 308,
+        TREE_INDEX = 309
       };
     };
 
@@ -395,7 +401,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     /// \param yyvalue   the value to check
     static bool yy_table_value_is_error_ (int yyvalue);
 
-    static const signed char yypact_ninf_;
+    static const short int yypact_ninf_;
     static const signed char yytable_ninf_;
 
     /// Convert a scanner token number \a t to a symbol number.
@@ -422,7 +428,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   // number is the opposite.  If YYTABLE_NINF, syntax error.
   static const unsigned char yytable_[];
 
-  static const unsigned char yycheck_[];
+  static const short int yycheck_[];
 
   // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
   // symbol of state STATE-NUM.
@@ -539,12 +545,12 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     enum
     {
       yyeof_ = 0,
-      yylast_ = 185,     ///< Last index in yytable_.
-      yynnts_ = 34,  ///< Number of nonterminal symbols.
+      yylast_ = 209,     ///< Last index in yytable_.
+      yynnts_ = 43,  ///< Number of nonterminal symbols.
       yyfinal_ = 9, ///< Termination state number.
       yyterror_ = 1,
       yyerrcode_ = 256,
-      yyntokens_ = 49  ///< Number of tokens.
+      yyntokens_ = 55  ///< Number of tokens.
     };
 
 
@@ -556,7 +562,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 
 #line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 } } } } } // com::wookler::reactfs::core::parsers
-#line 560 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 566 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 
