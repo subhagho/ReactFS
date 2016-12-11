@@ -181,6 +181,13 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...)  = 0;
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type.
+                         * @return - Return storage size.
+                         */
+                        virtual uint64_t compute_size(const void *data, int size) = 0;
                     };
 
                     /*!
@@ -248,7 +255,7 @@ REACTFS_NS_CORE
                          * @param data - Value of the type.
                          * @return - Return storage size.
                          */
-                        virtual uint64_t compute_size(const __T *data, int size) = 0;
+                        virtual uint64_t compute_size(const void *data, int size) override = 0;
                     };
 
                     /*!
@@ -298,7 +305,7 @@ REACTFS_NS_CORE
                             return sizeof(uint8_t);
                         }
 
-                        virtual uint64_t compute_size(const uint8_t *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
@@ -352,7 +359,7 @@ REACTFS_NS_CORE
                             return sizeof(char);
                         }
 
-                        virtual uint64_t compute_size(const char *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
@@ -406,7 +413,7 @@ REACTFS_NS_CORE
                             return sizeof(bool);
                         }
 
-                        virtual uint64_t compute_size(const bool *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
@@ -460,7 +467,7 @@ REACTFS_NS_CORE
                             return sizeof(short);
                         }
 
-                        virtual uint64_t compute_size(const short *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
@@ -514,7 +521,7 @@ REACTFS_NS_CORE
                             return sizeof(int);
                         }
 
-                        virtual uint64_t compute_size(const int *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
@@ -568,7 +575,7 @@ REACTFS_NS_CORE
                             return sizeof(long);
                         }
 
-                        virtual uint64_t compute_size(const long *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
@@ -623,7 +630,7 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
-                        virtual uint64_t compute_size(const uint64_t *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
@@ -740,7 +747,7 @@ REACTFS_NS_CORE
                             return sizeof(float);
                         }
 
-                        virtual uint64_t compute_size(const float *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
@@ -795,7 +802,7 @@ REACTFS_NS_CORE
                             return sizeof(double);
                         }
 
-                        virtual uint64_t compute_size(const double *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
@@ -876,11 +883,13 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
-                        virtual uint64_t compute_size(const string *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
-                            return (sizeof(uint64_t) + (sizeof(char) * data->length()));
+                            const string *d = static_cast<const string *>(data);
+                            CHECK_NOT_NULL(data);
+                            return (sizeof(uint64_t) + (sizeof(char) * d->length()));
                         }
                     };
 
@@ -951,11 +960,13 @@ REACTFS_NS_CORE
                             return sizeof(uint16_t);
                         }
 
-                        virtual uint64_t compute_size(const string *data, int size = 0) override {
+                        virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
                             }
-                            return (sizeof(uint16_t) + (sizeof(char) * data->length()));
+                            const string *d = static_cast<const string *>(data);
+                            CHECK_NOT_NULL(data);
+                            return (sizeof(uint16_t) + (sizeof(char) * d->length()));
                         }
                     };
 
@@ -1220,11 +1231,13 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
-                        virtual uint64_t compute_size(const __T **data, int size = -1) override {
-                            if (IS_NULL(data)) {
+                        virtual uint64_t compute_size(const void *value, int size = -1) override {
+                            if (IS_NULL(value)) {
                                 return 0;
                             }
 
+                            const __T **data = static_cast<const __T **>(value);
+                            CHECK_NOT_NULL(data);
                             __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             if (size < 0) {
                                 size = (sizeof(data) / sizeof(__T *));
@@ -1312,11 +1325,15 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
-                        virtual uint64_t compute_size(const vector<__T *> *data, int size = -1) override {
-                            if (IS_NULL(data) || data->empty()) {
+                        virtual uint64_t compute_size(const void *value, int size = -1) override {
+                            if (IS_NULL(value)) {
                                 return 0;
                             }
-
+                            const vector<__T *> *data = static_cast< const vector<__T *>>(value);
+                            CHECK_NOT_NULL(data);
+                            if (IS_EMPTY_P(data)) {
+                                return 0;
+                            }
                             __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
 
                             CHECK_NOT_NULL(type_handler);
@@ -1424,8 +1441,13 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
-                        virtual uint64_t compute_size(const unordered_map<__K, __V *> *data, int size = -1) override {
-                            if (IS_NULL(data) || data->empty()) {
+                        virtual uint64_t compute_size(const void *value, int size = -1) override {
+                            if (IS_NULL(value)) {
+                                return 0;
+                            }
+                            const unordered_map<__K, __V *> *data = static_cast<const unordered_map<__K, __V *> *>(value);
+                            CHECK_NOT_NULL(data);
+                            if (IS_EMPTY_P(data)) {
                                 return 0;
                             }
                             uint64_t t_size = sizeof(uint64_t);
