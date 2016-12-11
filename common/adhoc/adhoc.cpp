@@ -20,38 +20,13 @@ public:
     }
 };
 
-void add_field(vector<int *> *fields, uint16_t index, int *type) {
-    if (index == fields->size()) {
-        fields->push_back(type);
-    } else if (index > fields->size()) {
-        for (uint16_t ii = fields->size(); ii <= index; ii++) {
-            fields->push_back(nullptr);
-        }
-        (*fields)[index] = type;
-    } else {
-        assert((*fields)[index] == nullptr);
-        (*fields)[index] = type;
-    }
-}
 
 int main(int argc, char *argv[]) {
-    vector<int *> v;
-    int jj[10];
-    for (int ii = 0; ii < 10; ii++) {
-        if (ii % 2 == 0) {
-            jj[ii] = ii;
-            add_field(&v, ii, &jj[ii]);
-            cout << "Added " << ii << "\n";
-        }
-    }
-    for (int ii = 0; ii < 10; ii++) {
-        if (ii % 2 != 0) {
-            jj[ii] = ii;
-            add_field(&v, ii, &jj[ii]);
-            cout << "Added " << ii << "\n";
-        }
-    }
-    for (int ii = 0; ii < v.size(); ii++) {
-        cout << "INDEX[" << ii << "] : " << *(v[ii]) << "\n";
-    }
+    char **data = (char **) malloc(100 * sizeof(char *));
+    char *d2[256];
+
+    int as = (sizeof(data) / sizeof(char *));
+    cout << "DATA SIZE = " << as << "\n";
+    as = (sizeof(d2) / sizeof(char *));
+    cout << "D2 SIZE = " << as << "\n";
 }

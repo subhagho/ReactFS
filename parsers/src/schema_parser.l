@@ -37,20 +37,21 @@ void debug_r(const char *s, ...);
 
 [ \t]+                  /* ignore whitespace */;
 
-[0-9]+ 		{
-		yylval->lval = atol(yytext);
-		return (token::IVALUE);
-	}
+-?[0-9]+ 		{
+			yylval->lval = atol(yytext);
+			return (token::IVALUE);
+		}
 
-(([0-9]+(\.[0-9]*)?)|([0-9]*\.[0-9]+)) {
-					yylval->dval = atof(yytext);
-					return (token::DVALUE);
-	}
-\".*\"		{
-		yylval->str = yytext;
-		return (token::SVALUE);
+-?(([0-9]+(\.[0-9]*)?)|([0-9]*\.[0-9]+)) {
+			yylval->dval = atof(yytext);
+			return (token::DVALUE);
+		}
+\"(\\.|[^\\"])*\"		{
+			yylval->str = yytext;
+			debug_r("[lexer]  token : %s", yylval->str);
+			return (token::SVALUE);
 
-	}
+		}
 
 "type"		{
             		yylval->str = yytext;
@@ -264,14 +265,15 @@ void debug_r(const char *s, ...);
 
 "\."		{ debug_r("[lexer] token : %s", yytext); return (token::DOT); }
 
+"//".*		{ location->lines(); }
+
+\n		{ location->lines(); }
+
 [_a-zA-Z0-9][_a-zA-Z0-9]+ 	{
 				yylval->str = yytext;
 				debug_r("[lexer]  varname : %s", yylval->str);
 				return (token::VARNAME);
 			}
 
-\n		{
-		location->lines();
-	}
 
 %%

@@ -757,7 +757,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   case 43:
 #line 299 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-							debug_r("[type=%s] varname=%s", (yystack_[4].value.str), (yystack_[3].value.str));
+							debug_r("[type=%s] varname=%s nullable=%d", (yystack_[4].value.str), (yystack_[3].value.str), (yystack_[0].value.lval));
 							std::string t((yystack_[4].value.str));
 							std::string n((yystack_[3].value.str));
 							bool nullable = ((yystack_[0].value.lval) == 0 ? true : false);

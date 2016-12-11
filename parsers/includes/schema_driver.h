@@ -54,6 +54,7 @@ REACTFS_NS_CORE
                     typedef struct __declare_stack__ {
                         __constraint_def *current_constraint = nullptr;
                         string *default_value = nullptr;
+                        bool nullable = false;
                     } __declare_stack;
 
                     class __type_stack {
@@ -368,6 +369,8 @@ REACTFS_NS_CORE
                         void set_constraint(bool is_not, const string &constraint, const string &values);
 
                         void set_default_value(const string &value);
+
+                        void set_nullable();
 
                         void set_primary_key(const string &keys);
 

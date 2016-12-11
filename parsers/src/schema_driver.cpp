@@ -304,6 +304,16 @@ void com::wookler::reactfs::core::parsers::schema_driver::set_default_value(cons
     }
 }
 
+void com::wookler::reactfs::core::parsers::schema_driver::set_nullable() {
+
+    LOG_DEBUG("Setting nullable. ");
+
+    if (state == __schema_parse_state::SPS_IN_TYPE) {
+        type_stack->declare.nullable = true;
+    } else if (state == __schema_parse_state::SPS_IN_SCHEMA) {
+        schema_stack->declare.nullable = true;
+    }
+}
 
 void com::wookler::reactfs::core::parsers::schema_driver::set_primary_key(const string &keys) {
     CHECK_NOT_EMPTY(keys);

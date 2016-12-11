@@ -297,7 +297,7 @@ declare:
 
 declare_native:
 		datatype variable opt_constraint opt_default opt_nullable		{ 
-							debug_r("[type=%s] varname=%s", $1, $2);
+							debug_r("[type=%s] varname=%s nullable=%d", $1, $2, $5);
 							std::string t($1);
 							std::string n($2);
 							bool nullable = ($5 == 0 ? true : false);
@@ -398,7 +398,7 @@ declare_ref_map:
 
 opt_nullable:
 		/* null */			{ 	$$ = 0; }
-	|	NULLABLE			{ 	$$ = 1; }
+	|	NULLABLE			{ 	$$ = 1; driver.set_nullable(); }
 	;
 
 opt_default:

@@ -242,6 +242,13 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override = 0;
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type.
+                         * @return - Return storage size.
+                         */
+                        virtual uint64_t compute_size(const __T *data, int size) = 0;
                     };
 
                     /*!
@@ -291,6 +298,12 @@ REACTFS_NS_CORE
                             return sizeof(uint8_t);
                         }
 
+                        virtual uint64_t compute_size(const uint8_t *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return sizeof(uint8_t);
+                        }
                     };
 
                     /*!
@@ -339,6 +352,12 @@ REACTFS_NS_CORE
                             return sizeof(char);
                         }
 
+                        virtual uint64_t compute_size(const char *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return sizeof(char);
+                        }
                     };
 
                     /*!
@@ -387,6 +406,12 @@ REACTFS_NS_CORE
                             return sizeof(bool);
                         }
 
+                        virtual uint64_t compute_size(const bool *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return sizeof(bool);
+                        }
                     };
 
                     /*!
@@ -435,6 +460,12 @@ REACTFS_NS_CORE
                             return sizeof(short);
                         }
 
+                        virtual uint64_t compute_size(const short *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return sizeof(short);
+                        }
                     };
 
                     /*!
@@ -483,6 +514,12 @@ REACTFS_NS_CORE
                             return sizeof(int);
                         }
 
+                        virtual uint64_t compute_size(const int *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return sizeof(int);
+                        }
                     };
 
                     /*!
@@ -531,6 +568,12 @@ REACTFS_NS_CORE
                             return sizeof(long);
                         }
 
+                        virtual uint64_t compute_size(const long *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return sizeof(long);
+                        }
                     };
 
                     /*!
@@ -580,6 +623,12 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        virtual uint64_t compute_size(const uint64_t *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return sizeof(uint64_t);
+                        }
                     };
 
                     /*!
@@ -691,6 +740,12 @@ REACTFS_NS_CORE
                             return sizeof(float);
                         }
 
+                        virtual uint64_t compute_size(const float *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return sizeof(float);
+                        }
                     };
 
                     /*!
@@ -740,6 +795,12 @@ REACTFS_NS_CORE
                             return sizeof(double);
                         }
 
+                        virtual uint64_t compute_size(const double *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return sizeof(double);
+                        }
                     };
 
                     /*!
@@ -815,6 +876,12 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        virtual uint64_t compute_size(const string *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return (sizeof(uint64_t) + (sizeof(char) * data->length()));
+                        }
                     };
 
                     /*!
@@ -882,6 +949,13 @@ REACTFS_NS_CORE
                                 return (size + sizeof(uint16_t));
                             }
                             return sizeof(uint16_t);
+                        }
+
+                        virtual uint64_t compute_size(const string *data, int size = 0) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            return (sizeof(uint16_t) + (sizeof(char) * data->length()));
                         }
                     };
 
@@ -1078,12 +1152,12 @@ REACTFS_NS_CORE
                     };
 
                     template<typename __T>
-                    class __dt_array : public __datatype_io<__T> {
+                    class __dt_array : public __datatype_io<__T *> {
                     protected:
                         __type_def_enum inner_type;
 
                     public:
-                        __dt_array(__type_def_enum inner_type) : __datatype_io<__T>(
+                        __dt_array(__type_def_enum inner_type) : __datatype_io<__T *>(
                                 __type_def_enum::TYPE_ARRAY) {
                             this->inner_type = inner_type;
                         }
@@ -1146,10 +1220,31 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        virtual uint64_t compute_size(const __T **data, int size = -1) override {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+
+                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            if (size < 0) {
+                                size = (sizeof(data) / sizeof(__T *));
+                            }
+                            CHECK_NOT_NULL(type_handler);
+                            uint64_t t_size = sizeof(uint64_t);
+                            for (int ii = 0; ii < size; ii++) {
+                                if (type_handler->get_type() != __type_def_enum::TYPE_STRUCT) {
+                                    __datatype_io<__T> *h = dynamic_cast<__datatype_io<__T> *>(type_handler);
+                                    CHECK_NOT_NULL(h);
+                                    t_size += h->compute_size(data[ii], -1);
+                                } else {
+                                    throw BASE_ERROR("Cannot determine size for struct array.");
+                                }
+                            }
+                        }
                     };
 
                     template<typename __T>
-                    class __dt_list : public __datatype_io<__T> {
+                    class __dt_list : public __datatype_io<vector<__T *>> {
                     protected:
                         __type_def_enum inner_type;
 
@@ -1217,10 +1312,29 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        virtual uint64_t compute_size(const vector<__T *> *data, int size = -1) override {
+                            if (IS_NULL(data) || data->empty()) {
+                                return 0;
+                            }
+
+                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+
+                            CHECK_NOT_NULL(type_handler);
+                            uint64_t t_size = sizeof(uint64_t);
+                            for (int ii = 0; ii < data->size(); ii++) {
+                                if (type_handler->get_type() != __type_def_enum::TYPE_STRUCT) {
+                                    __datatype_io<__T> *h = dynamic_cast<__datatype_io<__T> *>(type_handler);
+                                    CHECK_NOT_NULL(h);
+                                    t_size += h->compute_size((*data)[ii], -1);
+                                } else {
+                                    throw BASE_ERROR("Cannot determine size for struct array.");
+                                }
+                            }
+                        }
                     };
 
                     template<typename __K, typename __V>
-                    class __dt_map : public __datatype_io<__V> {
+                    class __dt_map : public __datatype_io<unordered_map<__K, __V *>> {
                     private:
                         __type_def_enum key_type;
                         __type_def_enum value_type;
@@ -1309,11 +1423,35 @@ REACTFS_NS_CORE
                             }
                             return sizeof(uint64_t);
                         }
+
+                        virtual uint64_t compute_size(const unordered_map<__K, __V *> *data, int size = -1) override {
+                            if (IS_NULL(data) || data->empty()) {
+                                return 0;
+                            }
+                            uint64_t t_size = sizeof(uint64_t);
+                            __base_datatype_io *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
+                            CHECK_NOT_NULL(kt_handler);
+                            __base_datatype_io *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
+                            CHECK_NOT_NULL(vt_handler);
+                            __datatype_io<__K> *key_h = dynamic_cast<__datatype_io<__K> *>(kt_handler);
+                            CHECK_NOT_NULL(key_h);
+                            if (vt_handler->get_type() == __type_def_enum::TYPE_STRUCT) {
+                                throw BASE_ERROR("Cannot determine size for struct array.");
+                            }
+                            __datatype_io<__V> *value_h = dynamic_cast<__datatype_io<__V> *>(vt_handler);
+                            CHECK_NOT_NULL(value_h);
+                            for (auto iter = data->begin(); iter != data->end(); iter++) {
+                                t_size += key_h->compute_size(iter->first, -1);
+                                t_size += value_h->compute_size(iter->second, -1);
+                            }
+                            return t_size;
+                        }
                     };
 
                     class __constraint {
                     public:
                         virtual ~__constraint() {}
+
                         virtual bool validate(void *value) const = 0;
                     };
 
@@ -1587,6 +1725,35 @@ REACTFS_NS_CORE
                                 uint64_t r = handler->write(buffer, d, r_offset, max_length);
                                 r_offset += r;
                                 t_size += r;
+                            }
+                            return t_size;
+                        }
+
+                        uint64_t compute_size(const void *data) {
+                            if (IS_NULL(data)) {
+                                return 0;
+                            }
+                            unordered_map<string, void *> *map = (unordered_map<string, void *> *) data;
+                            CHECK_NOT_EMPTY_P(map);
+                            uint64_t t_size = sizeof(__version_header);
+                            vector<__type_instance *>::iterator iter;
+                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                __base_datatype_io *handler = (*iter)->get_handler();
+                                CHECK_NOT_NULL(handler);
+                                void *d = get_field_value(map, *iter);
+                                if (!(*iter)->get_type()->is_valid_value(d)) {
+                                    throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
+                                                           (*iter)->get_type()->get_name().c_str());
+                                }
+                                if (handler->get_type() != __type_def_enum::TYPE_STRUCT) {
+                                    __datatype_io *h = dynamic_cast<__datatype_io *>(handler);
+                                    CHECK_NOT_NULL(h);
+                                    t_size += h->compute_size(d, -1);
+                                } else {
+                                    __dt_struct *dts = dynamic_cast<__dt_struct *>(handler);
+                                    CHECK_NOT_NULL(dts);
+                                    t_size += dts->compute_size(d);
+                                }
                             }
                             return t_size;
                         }
