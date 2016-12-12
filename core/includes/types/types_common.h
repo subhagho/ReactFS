@@ -5,13 +5,20 @@
 #ifndef REACTFS_TYPES_COMMON_H
 #define REACTFS_TYPES_COMMON_H
 
+#include <unordered_map>
+
 #include "common/includes/common.h"
+#include "common/includes/common_utils.h"
+#include "common/includes/time_utils.h"
+#include "common/includes/base_error.h"
 #include "core/includes/core.h"
 
 #define SIZE_MAX_TYPE_STRING 256
 
 #define BIT_TYPE_CONSTRAINT 1
 #define BIT_TYPE_DEFAULT_VALUE 2
+
+using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
                 namespace types {

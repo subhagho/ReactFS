@@ -23,6 +23,7 @@
 #define REACTFS_CONSTRAINTS_H
 
 #include <regex>
+#include <vector>
 
 #include "common/includes/common.h"
 #include "common/includes/common_utils.h"
@@ -518,11 +519,6 @@ REACTFS_NS_CORE
                                 __T *t = (__T *) value;
                                 CHECK_NOT_NULL(t);
                                 vector<__T>::const_iterator iter;
-                                for (iter = values.begin(); iter != values.end(); iter++) {
-                                    if (*t == (*iter)) {
-                                        return true;
-                                    }
-                                }
                             }
                             return false;
                         }

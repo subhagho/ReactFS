@@ -26,6 +26,7 @@
 #include "core/includes/core.h"
 
 #include "types_common.h"
+#include "__constraints.h"
 
 REACTFS_NS_CORE
                 namespace types {
@@ -179,6 +180,7 @@ REACTFS_NS_CORE
                             if (bitset_utils::check_uint8_bit(*bits, BIT_TYPE_CONSTRAINT)) {
 
                             }
+                            return r_size;
                         }
                     };
 
