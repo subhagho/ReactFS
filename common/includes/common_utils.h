@@ -54,8 +54,68 @@ extern "C"
 #define T_BYTES G_BYTES * 1024
 
 REACTFS_NS_COMMON
+                class bitset_utils {
+                public:
+                    static bool check_uint8_bit(uint8_t bits, uint8_t value) {
+                        return (bits >> value) & 1;;
+                    }
+
+                    static uint8_t clear_uint8_bit(uint8_t bits, uint8_t value) {
+                        bits &= ~(1 << value);
+                        return bits;
+                    }
+
+                    static uint8_t set_uint8_bit(uint8_t bits, uint8_t value) {
+                        bits |= 1 << value;
+                        return bits;
+                    }
+
+                    static bool check_uint16_bit(uint16_t bits, uint8_t value) {
+                        return (bits >> value) & 1;;
+                    }
+
+                    static uint16_t clear_uint16_bit(uint16_t bits, uint8_t value) {
+                        bits &= ~(1 << value);
+                        return bits;
+                    }
+
+                    static uint16_t set_uint16_bit(uint16_t bits, uint8_t value) {
+                        bits |= 1 << value;
+                        return bits;
+                    }
+
+                    static bool check_uint32_bit(uint32_t bits, uint8_t value) {
+                        return (bits >> value) & 1;;
+                    }
+
+                    static uint32_t clear_uint32_bit(uint32_t bits, uint8_t value) {
+                        bits &= ~(1 << value);
+                        return bits;
+                    }
+
+                    static uint32_t set_uint32_bit(uint32_t bits, uint8_t value) {
+                        bits |= 1 << value;
+                        return bits;
+                    }
+
+                    static bool check_uint64_bit(uint64_t bits, uint8_t value) {
+                        return (bits >> value) & 1;;
+                    }
+
+                    static uint64_t clear_uint64_bit(uint64_t bits, uint8_t value) {
+                        bits &= ~(1 << value);
+                        return bits;
+                    }
+
+                    static uint64_t set_uint64_bit(uint64_t bits, uint8_t value) {
+                        bits |= 1 << value;
+                        return bits;
+                    }
+                };
+
                 class common_utils {
                 public:
+
                     static string get_normalized_name(const string name) {
                         if (!IS_EMPTY(name)) {
                             char buff[name.length() + 1];

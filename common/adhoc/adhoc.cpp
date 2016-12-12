@@ -20,13 +20,25 @@ public:
     }
 };
 
+#define BIT_TYPE_CONSTRAINT 1
+#define DEFAULT_VALUE_BIT 2
 
 int main(int argc, char *argv[]) {
-    char **data = (char **) malloc(100 * sizeof(char *));
-    char *d2[256];
+    uint32_t bit = 0;
+    bit = bitset_utils::set_uint32_bit(bit, BIT_TYPE_CONSTRAINT);
+    cout << "WITH CONSTRAINT BIT : " << bit << "\n";
+    bit = bitset_utils::set_uint32_bit(bit, DEFAULT_VALUE_BIT);
+    cout << "WITH CONSTRAINT & VALUE BIT : " << bit << "\n";
 
-    int as = (sizeof(data) / sizeof(char *));
-    cout << "DATA SIZE = " << as << "\n";
-    as = (sizeof(d2) / sizeof(char *));
-    cout << "D2 SIZE = " << as << "\n";
+    if (bitset_utils::check_uint32_bit(bit, BIT_TYPE_CONSTRAINT)) {
+        cout << "CONSTRAINT BIT SET\n";
+    }
+
+    if (bitset_utils::check_uint32_bit(bit, DEFAULT_VALUE_BIT)) {
+        cout << "VALUE BIT SET\n";
+    }
+
+    if (bitset_utils::check_uint32_bit(bit, 4)) {
+        cout << "BIT SET ERROR\n";
+    }
 }

@@ -1,3 +1,20 @@
+
+/*
+ * Copyright [2016] [Subhabrata Ghosh]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 //
 // Created by Subhabrata Ghosh on 06/12/16.
 //
@@ -13,7 +30,7 @@
 #include "common/includes/base_error.h"
 #include "core/includes/core.h"
 
-#include "core/includes/types/type_defs.h"
+#include "types_common.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
@@ -24,56 +41,64 @@ REACTFS_NS_CORE
                      */
                     typedef enum __constraint_type__ {
                         /// Check if a value is not null.
-                                NOT_NULLABLE = 0,
+                                CONSTRAINT_NOT_NULLABLE = 0,
                         /// Check if the value is within the constraint range.
-                                RANGE = 2,
+                                CONSTRAINT_RANGE = 1,
                         /// Check if the value is in the constraint list.
-                                IN = 3,
+                                CONSTRAINT_IN = 2,
                         /// Check if the value matches the constraint regex.
-                                REGEX = 4,
+                                CONSTRAINT_REGEX = 3,
                         /// Check if the value is greater than the constraint value
-                                GT = 5,
+                                CONSTRAINT_GT = 4,
                         /// Check if the value is lesser than the constraint value
-                                LT = 6,
+                                CONSTRAINT_LT = 5,
                         /// Check if the value is greater than the constraint value
-                                GTEQ = 7,
+                                CONSTRAINT_GTEQ = 6,
                         /// Check if the value is lesser than the constraint value
-                                LTEQ = 8,
+                                CONSTRAINT_LTEQ = 7,
                     } __constraint_type;
 
                     class __constraint_type_utils {
                     public:
                         static uint8_t get_number_value(__constraint_type type) {
                             switch (type) {
-                                case __constraint_type::GT:
-                                    return 5;
-                                case __constraint_type::IN:
-                                    return 3;
-                                case __constraint_type::LT:
-                                    return 6;
-                                case __constraint_type::NOT_NULLABLE:
+                                case __constraint_type::CONSTRAINT_NOT_NULLABLE:
                                     return 0;
-                                case __constraint_type::RANGE:
+                                case __constraint_type::CONSTRAINT_RANGE:
+                                    return 1;
+                                case __constraint_type::CONSTRAINT_IN:
                                     return 2;
-                                case __constraint_type::REGEX:
+                                case __constraint_type::CONSTRAINT_REGEX:
+                                    return 3;
+                                case __constraint_type::CONSTRAINT_GT:
                                     return 4;
+                                case __constraint_type::CONSTRAINT_LT:
+                                    return 5;
+                                case __constraint_type::CONSTRAINT_GTEQ:
+                                    return 6;
+                                case __constraint_type::CONSTRAINT_LTEQ:
+                                    return 7;
                             }
                         }
 
                         static string get_string(__constraint_type type) {
                             switch (type) {
-                                case __constraint_type::GT:
-                                    return "greater than";
-                                case __constraint_type::IN:
-                                    return "in";
-                                case __constraint_type::LT:
-                                    return "less than";
-                                case __constraint_type::NOT_NULLABLE:
+                                case __constraint_type::CONSTRAINT_NOT_NULLABLE:
                                     return "not nullable";
-                                case __constraint_type::RANGE:
+                                case __constraint_type::CONSTRAINT_RANGE:
                                     return "between";
-                                case __constraint_type::REGEX:
+                                case __constraint_type::CONSTRAINT_IN:
+                                    return "in";
+                                case __constraint_type::CONSTRAINT_REGEX:
                                     return "regex";
+                                case __constraint_type::CONSTRAINT_GT:
+                                    return "greater than";
+                                case __constraint_type::CONSTRAINT_LT:
+                                    return "less than";
+                                case __constraint_type::CONSTRAINT_GTEQ:
+                                    return "greater than equals";
+                                case __constraint_type::CONSTRAINT_LTEQ:
+                                    return "less than equals";
                             }
                         }
                     };
@@ -88,7 +113,8 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(buffer);
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
 
-                            uint8_t type = __constraint_type_utils::get_number_value(__constraint_type::NOT_NULLABLE);
+                            uint8_t type = __constraint_type_utils::get_number_value(
+                                    __constraint_type::CONSTRAINT_NOT_NULLABLE);
                             memcpy(ptr, &type, sizeof(uint8_t));
 
                             return sizeof(uint8_t);
@@ -99,7 +125,8 @@ REACTFS_NS_CORE
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             uint8_t *type = static_cast<uint8_t *>(ptr);
                             POSTCONDITION(*type ==
-                                          __constraint_type_utils::get_number_value(__constraint_type::NOT_NULLABLE));
+                                          __constraint_type_utils::get_number_value(
+                                                  __constraint_type::CONSTRAINT_NOT_NULLABLE));
 
                             return sizeof(uint8_t);
                         }
@@ -111,7 +138,7 @@ REACTFS_NS_CORE
                         __base_datatype_io *handler = nullptr;
                     public:
                         __regex() {
-                            handler = __type_defs_utils::get_type_handler(__type_def_enum::TYPE_TEXT);
+                            handler = __type_defs_utils::get_type_handler(__type_def_enum::TYPE_STRING);
                             CHECK_NOT_NULL(handler);
                         }
 
@@ -128,7 +155,8 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(buffer);
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
 
-                            uint8_t type = __constraint_type_utils::get_number_value(__constraint_type::REGEX);
+                            uint8_t type = __constraint_type_utils::get_number_value(
+                                    __constraint_type::CONSTRAINT_REGEX);
                             memcpy(ptr, &type, sizeof(uint8_t));
                             uint16_t w_size = sizeof(uint8_t);
                             w_size += handler->write(buffer, &value, (offset + w_size), ULONG_MAX);
@@ -141,7 +169,8 @@ REACTFS_NS_CORE
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             uint8_t *type = static_cast<uint8_t *>(ptr);
                             POSTCONDITION(*type ==
-                                          __constraint_type_utils::get_number_value(__constraint_type::REGEX));
+                                          __constraint_type_utils::get_number_value(
+                                                  __constraint_type::CONSTRAINT_REGEX));
                             string *value = nullptr;
                             uint16_t r_size = sizeof(uint8_t);
                             r_size += handler->read(buffer, &value, (offset + r_size), ULONG_MAX);
@@ -194,7 +223,7 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(handler);
 
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t type = __constraint_type_utils::get_number_value(__constraint_type::IN);
+                            uint8_t type = __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN);
                             memcpy(ptr, &type, sizeof(uint8_t));
 
                             uint16_t count = values.size();
@@ -215,7 +244,8 @@ REACTFS_NS_CORE
 
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             uint8_t *type = static_cast<uint8_t *>(ptr);
-                            POSTCONDITION(*type == __constraint_type_utils::get_number_value(__constraint_type::IN));
+                            POSTCONDITION(*type ==
+                                          __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN));
                             ptr = common_utils::increment_data_ptr(ptr, sizeof(uint8_t));
 
                             uint16_t *count = static_cast<uint16_t *>(ptr);
@@ -285,7 +315,7 @@ REACTFS_NS_CORE
 
                     class string_value_constraint : public __value_constraint<string> {
                     public:
-                        string_value_constraint() : __value_constraint<string>(__type_def_enum::TYPE_TEXT) {
+                        string_value_constraint() : __value_constraint<string>(__type_def_enum::TYPE_STRING) {
 
                         }
                     };
@@ -333,7 +363,8 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(handler);
 
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t type = __constraint_type_utils::get_number_value(__constraint_type::RANGE);
+                            uint8_t type = __constraint_type_utils::get_number_value(
+                                    __constraint_type::CONSTRAINT_RANGE);
                             memcpy(ptr, &type, sizeof(uint8_t));
 
                             uint64_t w_size = sizeof(uint8_t);
@@ -354,7 +385,8 @@ REACTFS_NS_CORE
 
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             uint8_t *type = static_cast<uint8_t *>(ptr);
-                            POSTCONDITION(*type == __constraint_type_utils::get_number_value(__constraint_type::RANGE));
+                            POSTCONDITION(*type == __constraint_type_utils::get_number_value(
+                                    __constraint_type::CONSTRAINT_RANGE));
                             ptr = common_utils::increment_data_ptr(ptr, sizeof(uint8_t));
 
                             uint64_t r_size = sizeof(uint8_t);
@@ -428,7 +460,7 @@ REACTFS_NS_CORE
 
                     class string_range_constraint : public __range_constraint<string> {
                     public:
-                        string_range_constraint() : __range_constraint<string>(__type_def_enum::TYPE_TEXT) {
+                        string_range_constraint() : __range_constraint<string>(__type_def_enum::TYPE_STRING) {
 
                         }
                     };
@@ -453,13 +485,13 @@ REACTFS_NS_CORE
                         __constraint_type get_constraint_type() {
                             switch (oper) {
                                 case __constraint_operator::LTEQ:
-                                    return __constraint_type::LTEQ;
+                                    return __constraint_type::CONSTRAINT_LTEQ;
                                 case __constraint_operator::LT:
-                                    return __constraint_type::LT;
+                                    return __constraint_type::CONSTRAINT_LT;
                                 case __constraint_operator::GTEQ:
-                                    return __constraint_type::GTEQ;
+                                    return __constraint_type::CONSTRAINT_GTEQ;
                                 case __constraint_operator::GT:
-                                    return __constraint_type::GT;
+                                    return __constraint_type::CONSTRAINT_GT;
                                 default:
                                     throw BASE_ERROR("Unsupported constraint operator. [operator=%d]", oper);
                             }
@@ -583,8 +615,15 @@ REACTFS_NS_CORE
                     class string_oper_constraint : public __oper_constraint<string> {
                     public:
                         string_oper_constraint(__constraint_operator oper) : __oper_constraint<string>(
-                                __type_def_enum::TYPE_TEXT, oper) {
+                                __type_def_enum::TYPE_STRING, oper) {
 
+                        }
+                    };
+
+                    class __constraint_loader {
+                    public:
+                        static __constraint *read(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                            return nullptr;
                         }
                     };
                 }

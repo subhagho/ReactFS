@@ -1,3 +1,20 @@
+
+/*
+ * Copyright [2016] [Subhabrata Ghosh]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 //
 // Created by Subhabrata Ghosh on 11/12/16.
 //
@@ -8,388 +25,69 @@
 #include "common/includes/common.h"
 #include "core/includes/core.h"
 
+#include "types_common.h"
+
 REACTFS_NS_CORE
                 namespace types {
-                    /*!
-                     * Enum defines the supported data types.
-                     */
-                    typedef enum __type_def_enum__ {
-                        /// Unknown data type.
-                                TYPE_UNKNOWN,
-                        /// Boolean data type.
-                                TYPE_BOOL,
-                        /// Basic byte data type (8-bits)
-                                TYPE_BYTE,
-                        /// Basic char data type (8-bits)
-                                TYPE_CHAR,
-                        /// Short data type (16-bits)
-                                TYPE_SHORT,
-                        /// Integer data type (32-bits)
-                                TYPE_INTEGER,
-                        /// Long data type (64-bits)
-                                TYPE_LONG,
-                        /// Float data type
-                                TYPE_FLOAT,
-                        /// Double data type
-                                TYPE_DOUBLE,
-                        /// Timestamp data type (LONG)
-                                TYPE_TIMESTAMP,
-                        /// Date/time data type.
-                                TYPE_DATETIME,
-                        /// String data type (max size limited)
-                                TYPE_STRING,
-                        /// Text string datatype (no size limit)
-                                TYPE_TEXT,
-                        /// Array of Basic datatypes. (max size limited)
-                                TYPE_ARRAY,
-                        /// List of Basic datatypes. (no size limit)
-                                TYPE_LIST,
-                        /// Key/Value Map of basic types.
-                                TYPE_MAP,
-                        /// A complex structure.
-                                TYPE_STRUCT
-                    } __type_def_enum;
 
-                    /*!
-                     * Helper class for datatype enums.
-                     */
-                    class __type_enum_helper {
+                    typedef enum __field_type__ {
+                        /// Field type is a native type.
+                                NATIVE = 0,
+                        /// Field type is a sized type.
+                                SIZED = 1,
+                        /// Field type is a complex type.
+                                COMPLEX = 2
+                    } __field_type;
+
+                    class __field_type_helper {
                     public:
-                        /*!
-                         * Check if the type enum represents a native type.
-                         *
-                         * Note: String is also considered a native type.
-                         *
-                         * @param type - Data type enum to check
-                         * @return - Is native type?
-                         */
-                        static bool is_native(__type_def_enum type) {
+                        static uint8_t get_type_number(__field_type type) {
                             switch (type) {
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                case __type_def_enum::TYPE_BOOL:
-                                case __type_def_enum::TYPE_BYTE:
-                                case __type_def_enum::TYPE_DOUBLE:
-                                case __type_def_enum::TYPE_SHORT:
-                                case __type_def_enum::TYPE_CHAR:
-                                case __type_def_enum::TYPE_FLOAT:
-                                case __type_def_enum::TYPE_INTEGER:
-                                case __type_def_enum::TYPE_LONG:
-                                case __type_def_enum::TYPE_STRING:
-                                case __type_def_enum::TYPE_DATETIME:
-                                    return true;
-                                default:
-                                    return false;
+                                case __field_type::NATIVE:
+                                    return 0;
+                                case __field_type::SIZED:
+                                    return 1;
+                                case __field_type::COMPLEX:
+                                    return 2;
                             }
                         }
 
-                        /*!
-                         * Check if the specified type enum represents a type that can be used as an
-                         * inner type for lists and maps.
-                         *
-                         * @param type - Data type enum to check
-                         * @return - Can be inner type?
-                         */
-                        static bool is_inner_type_valid(__type_def_enum type) {
-                            if (is_native(type)) {
-                                return true;
-                            } else if (type == __type_def_enum::TYPE_STRUCT) {
-                                return true;
+                        static __field_type get_type(uint8_t ii) {
+                            if (ii == 0) {
+                                return __field_type::NATIVE;
+                            } else if (ii == 1) {
+                                return __field_type::SIZED;
+                            } else if (ii == 2) {
+                                return __field_type::COMPLEX;
                             }
-                            return false;
+                            throw BASE_ERROR("Not field type defined for value. [value=%d]", ii);
                         }
-
-
-                        /*!
-                         * Get the string value of the datatype enum.
-                         *
-                         * @param type - Datatype enum.
-                         * @return - String value of the enum.
-                         */
-                        static string get_type_string(__type_def_enum type) {
-                            switch (type) {
-                                case __type_def_enum::TYPE_ARRAY:
-                                    return "array";
-                                case __type_def_enum::TYPE_BYTE:
-                                    return "byte";
-                                case __type_def_enum::TYPE_CHAR:
-                                    return "char";
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    return "double";
-                                case __type_def_enum::TYPE_FLOAT:
-                                    return "float";
-                                case __type_def_enum::TYPE_INTEGER:
-                                    return "integer";
-                                case __type_def_enum::TYPE_LIST:
-                                    return "list";
-                                case __type_def_enum::TYPE_LONG:
-                                    return "long";
-                                case __type_def_enum::TYPE_MAP:
-                                    return "map";
-                                case __type_def_enum::TYPE_SHORT:
-                                    return "short";
-                                case __type_def_enum::TYPE_STRING:
-                                    return "string";
-                                case __type_def_enum::TYPE_STRUCT:
-                                    return "struct";
-                                case __type_def_enum::TYPE_TEXT:
-                                    return "text";
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                    return "timestamp";
-                                case __type_def_enum::TYPE_BOOL:
-                                    return "boolean";
-                                case __type_def_enum::TYPE_DATETIME:
-                                    return "datetime";
-                                default:
-                                    return "unkown";
-                            }
-                        }
-
-                        /*!
-                         * Parse the string value as a datatype enum. The parse is case-insensitive.
-                         *
-                         * @param type - String value of enum.
-                         * @return - Parsed datatype enum.
-                         */
-                        static __type_def_enum parse_type(const string &type) {
-                            CHECK_NOT_EMPTY(type);
-                            string t = string_utils::toupper(type);
-                            if (t == get_type_string(__type_def_enum::TYPE_STRING)) {
-                                return __type_def_enum::TYPE_STRING;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_INTEGER)) {
-                                return __type_def_enum::TYPE_INTEGER;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_LONG)) {
-                                return __type_def_enum::TYPE_LONG;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_DOUBLE)) {
-                                return __type_def_enum::TYPE_DOUBLE;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_TIMESTAMP)) {
-                                return __type_def_enum::TYPE_TIMESTAMP;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_TEXT)) {
-                                return __type_def_enum::TYPE_TEXT;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_ARRAY)) {
-                                return __type_def_enum::TYPE_ARRAY;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_BYTE)) {
-                                return __type_def_enum::TYPE_BYTE;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_CHAR)) {
-                                return __type_def_enum::TYPE_CHAR;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_FLOAT)) {
-                                return __type_def_enum::TYPE_FLOAT;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_LIST)) {
-                                return __type_def_enum::TYPE_LIST;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_MAP)) {
-                                return __type_def_enum::TYPE_MAP;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_SHORT)) {
-                                return __type_def_enum::TYPE_SHORT;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_BOOL)) {
-                                return __type_def_enum::TYPE_BOOL;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_STRUCT)) {
-                                return __type_def_enum::TYPE_STRUCT;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_DATETIME)) {
-                                return __type_def_enum::TYPE_DATETIME;
-                            }
-                            return __type_def_enum::TYPE_UNKNOWN;
-                        }
-                    };
-
-
-                    typedef enum __constraint_operator__ {
-                        /// Greater than operator
-                                GT = 0,
-                        /// Greater than/equals operator
-                                GTEQ,
-                        /// Less than operator
-                                LT,
-                        /// Less than/equals operator
-                                LTEQ,
-                        /// Equals operator
-                                EQ
-                    } __constraint_operator;
-
-                    /*!
-                     * Base class for defining data type handlers. Handlers implement the interfaces
-                     * defined to read/write data into binary formats.
-                     *
-                     * The interfaces defined are type unsafe, as they use (void *) pointers. Callers must be careful
-                     * to instantiate the correct datatype pointers before calling these methods.
-                     */
-                    class __base_datatype_io {
-                    protected:
-                        /// Data type this type handler manages.
-                        __type_def_enum type = __type_def_enum::TYPE_UNKNOWN;
-
-                        /*!
-                         * Protected constructor.
-                         *
-                         * @param type - Data type enum.
-                         */
-                        __base_datatype_io(__type_def_enum type) {
-                            PRECONDITION(type != __type_def_enum::TYPE_UNKNOWN);
-                            this->type = type;
-                        }
-
-                    public:
-                        /*!
-                         * Get the data time enum of this handler.
-                         *
-                         * @return - Data type enum.
-                         */
-                        __type_def_enum get_type() {
-                            return this->type;
-                        }
-
-                        /*!
-                         * Read (de-serialize) data from the binary format for the represented data type.
-                         *
-                         * @param buffer - Source data buffer (binary data)
-                         * @param t - Pointer to map the output data to.
-                         * @param offset - Start offset where the buffer is to be read from.
-                         * @param max_length - Max length of the data in the buffer.
-                         * @return - Total bytes consumed by this read.
-                         */
-                        virtual uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) =0;
-
-                        /*!
-                         * Write (serialize) data for the represented data type to the binary output buffer.
-                         *
-                         * @param buffer - Output data buffer the data is to be copied to.
-                         * @param value - Data value pointer to copy from.
-                         * @param offset - Offset in the output buffer to start writing from.
-                         * @param max_length - Max lenght of the output buffer.
-                         * @return - Total number of bytes written.
-                         */
-                        virtual uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...)  = 0;
-
-                        /*!
-                         * Compute the storage size of the given type value.
-                         *
-                         * @param data - Value of the type.
-                         * @return - Return storage size.
-                         */
-                        virtual uint64_t compute_size(const void *data, int size) = 0;
-
-                        /*!
-                         * Compare the source and target base on the specified operator.
-                         *
-                         * @param source - Source value pointer
-                         * @param target - Target value pointer
-                         * @return - Is comparision true?
-                         */
-                        virtual bool compare(const void *source, const void *target, __constraint_operator oper) = 0;
-                    };
-
-                    /*!
-                     * Typed template for representing native type handlers.
-                     *
-                     *
-                     * @tparam __T - supported data type.
-                     */
-                    template<typename __T>
-                    class __datatype_io : public __base_datatype_io {
-                    protected:
-
-                        /*!<constructor
-                         * Base constructor for native type handlers.
-                         *
-                         * @param type - Data type enum.
-                         */
-                        __datatype_io(__type_def_enum type) : __base_datatype_io(type) {
-                        }
-
-                        /*!
-                         * Check and increment the buffer pointer.
-                         *
-                         * @param source - Source/Target data buffer.
-                         * @param size - Size of the requested bytes.
-                         * @param offset - Start offset in the data buffer.
-                         * @param max_length - Max length of the data buffer.
-                         * @return - Void pointer pointing to the incremented offset.
-                         */
-                        void *get_data_ptr(void *source, uint64_t size, uint64_t offset, uint64_t max_length) {
-                            CHECK_NOT_NULL(source);
-                            PRECONDITION((offset + size) < max_length);
-                            return common_utils::increment_data_ptr(source, offset);
-                        }
-
-                    public:
-
-                        /*!
-                         * Read (de-serialize) data from the binary format for the represented native data type.
-                         *
-                         * @param buffer - Source data buffer (binary data)
-                         * @param t - Pointer to map the output data to.
-                         * @param offset - Start offset where the buffer is to be read from.
-                         * @param max_length - Max length of the data in the buffer.
-                         * @return - Total bytes consumed by this read.
-                         */
-                        virtual uint64_t
-                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override =0;
-
-                        /*!
-                         * Write (serialize) data for the represented native data type to the binary output buffer.
-                         *
-                         * @param buffer - Output data buffer the data is to be copied to.
-                         * @param value - Data value pointer to copy from.
-                         * @param offset - Offset in the output buffer to start writing from.
-                         * @param max_length - Max lenght of the output buffer.
-                         * @return - Total number of bytes written.
-                         */
-                        virtual uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override = 0;
-
-                        /*!
-                         * Compute the storage size of the given type value.
-                         *
-                         * @param data - Value of the type.
-                         * @return - Return storage size.
-                         */
-                        virtual uint64_t compute_size(const void *data, int size) override = 0;
-
-                        /*!
-                         * Compare the source and target base on the specified operator.
-                         *
-                         * @param source - Source value pointer
-                         * @param target - Target value pointer
-                         * @return - Is comparision true?
-                         */
-                        virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override = 0;
-                    };
-
-
-                    class __constraint {
-                    public:
-                        virtual ~__constraint() {}
-
-                        virtual bool validate(const void *value) const = 0;
-
-                        virtual uint32_t write(void *buffer, uint64_t offset) = 0;
-
-                        virtual uint32_t read(void *buffer, uint64_t offset) = 0;
                     };
 
                     class __native_type {
                     protected:
                         string name;
                         uint8_t index;
+                        __field_type type;
                         __type_def_enum datatype;
                         __constraint *constraint = nullptr;
-                        void *default_value = nullptr;
+                        __default *default_value = nullptr;
+                        __base_datatype_io *string_handler = nullptr;
 
                     public:
                         __native_type(const uint8_t index, const string &name, const __type_def_enum datatype) {
                             this->index = index;
                             this->name = string(name);
                             this->datatype = datatype;
-                        }
+                            this->type = __field_type::NATIVE;
 
-                        __native_type(const uint8_t index, const __type_def_enum datatype) {
-                            this->index = index;
-                            this->datatype = datatype;
+                            string_handler = __type_defs_utils::get_type_handler(__type_def_enum::TYPE_STRING);
+                            CHECK_NOT_NULL(string_handler);
                         }
 
                         virtual ~__native_type() {
                             CHECK_AND_FREE(constraint);
-                            FREE_PTR(default_value);
+                            CHECK_AND_FREE(default_value);
                         }
 
                         const string get_name() const {
@@ -408,11 +106,11 @@ REACTFS_NS_CORE
                             return this->constraint;
                         }
 
-                        void set_default_value(void *default_value) {
+                        void set_default_value(__default *default_value) {
                             this->default_value = default_value;
                         }
 
-                        const void *get_default_value() const {
+                        const __default *get_default_value() const {
                             return this->default_value;
                         }
 
@@ -421,6 +119,66 @@ REACTFS_NS_CORE
                                 return constraint->validate(value);
                             }
                             return true;
+                        }
+
+                        virtual uint32_t write(void *buffer, uint64_t offset) {
+                            CHECK_NOT_NULL(buffer);
+
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint8_t ft = __field_type_helper::get_type_number(this->type);
+                            memcpy(ptr, &ft, sizeof(uint8_t));
+                            uint32_t w_size = sizeof(uint8_t);
+
+                            ptr = common_utils::increment_data_ptr(ptr, w_size);
+                            memcpy(ptr, &index, sizeof(uint8_t));
+                            w_size += sizeof(uint8_t);
+
+                            w_size += string_handler->write(buffer, &name, (offset + w_size), ULONG_MAX);
+                            uint8_t bits = 0;
+                            if (NOT_NULL(constraint)) {
+                                bits = bitset_utils::set_uint8_bit(bits, BIT_TYPE_CONSTRAINT);
+                            }
+                            if (NOT_NULL(default_value)) {
+                                bits = bitset_utils::set_uint8_bit(bits, BIT_TYPE_DEFAULT_VALUE);
+                            }
+                            ptr = common_utils::increment_data_ptr(ptr, w_size);
+                            memcpy(ptr, &bits, sizeof(uint8_t));
+                            w_size += sizeof(uint8_t);
+                            if (NOT_NULL(constraint)) {
+                                w_size += this->constraint->write(buffer, (offset + w_size));
+                            }
+                            if (NOT_NULL(default_value)) {
+                                w_size += this->default_value->write(buffer, (offset + w_size));
+                            }
+                            return w_size;
+                        }
+
+                        virtual uint32_t read(void *buffer, uint64_t offset) {
+                            CHECK_NOT_NULL(buffer);
+
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint8_t *ft = static_cast<uint8_t *>(ptr);
+                            POSTCONDITION(*ft == __field_type_helper::get_type_number(this->type));
+
+                            uint32_t r_size = sizeof(uint8_t);
+                            ptr = common_utils::increment_data_ptr(ptr, r_size);
+                            uint16_t *index = static_cast<uint16_t *>(ptr);
+                            this->index = *index;
+                            r_size += sizeof(uint16_t);
+
+                            string *sp = nullptr;
+                            r_size += string_handler->read(buffer, &sp, (offset + r_size), ULONG_MAX);
+                            CHECK_NOT_NULL(sp);
+
+                            this->name = string(*sp);
+                            CHECK_AND_FREE(sp);
+
+                            ptr = common_utils::increment_data_ptr(ptr, r_size);
+                            uint8_t *bits = static_cast<uint8_t *>(ptr);
+
+                            if (bitset_utils::check_uint8_bit(*bits, BIT_TYPE_CONSTRAINT)) {
+
+                            }
                         }
                     };
 
@@ -434,13 +192,7 @@ REACTFS_NS_CORE
                                 : __native_type(index, name, datatype) {
                             PRECONDITION(max_size > 0);
                             this->max_size = max_size;
-                        }
-
-                        __sized_type(const uint8_t index, const __type_def_enum datatype,
-                                     const uint32_t max_size)
-                                : __native_type(index, datatype) {
-                            PRECONDITION(max_size > 0);
-                            this->max_size = max_size;
+                            this->type = __field_type::SIZED;
                         }
 
                         const uint32_t get_max_size() const {
@@ -454,12 +206,15 @@ REACTFS_NS_CORE
                     public:
                         __complex_type(const uint8_t index, const string &name) : __native_type(index, name,
                                                                                                 __type_def_enum::TYPE_STRUCT) {
-
+                            this->type = __field_type::COMPLEX;
                         }
 
-                        __complex_type(const uint8_t index) : __native_type(index,
-                                                                            __type_def_enum::TYPE_STRUCT) {
-
+                        ~__complex_type() {
+                            unordered_map<string, __native_type *>::iterator iter;
+                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                CHECK_AND_FREE(iter->second);
+                            }
+                            fields.clear();
                         }
 
                         void add_field(string &name, __native_type *type) {
