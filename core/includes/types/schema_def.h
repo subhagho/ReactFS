@@ -97,7 +97,112 @@ REACTFS_NS_CORE
                             }
                             return false;
                         }
+
+
+                        /*!
+                         * Get the string value of the datatype enum.
+                         *
+                         * @param type - Datatype enum.
+                         * @return - String value of the enum.
+                         */
+                        static string get_type_string(__type_def_enum type) {
+                            switch (type) {
+                                case __type_def_enum::TYPE_ARRAY:
+                                    return "array";
+                                case __type_def_enum::TYPE_BYTE:
+                                    return "byte";
+                                case __type_def_enum::TYPE_CHAR:
+                                    return "char";
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    return "double";
+                                case __type_def_enum::TYPE_FLOAT:
+                                    return "float";
+                                case __type_def_enum::TYPE_INTEGER:
+                                    return "integer";
+                                case __type_def_enum::TYPE_LIST:
+                                    return "list";
+                                case __type_def_enum::TYPE_LONG:
+                                    return "long";
+                                case __type_def_enum::TYPE_MAP:
+                                    return "map";
+                                case __type_def_enum::TYPE_SHORT:
+                                    return "short";
+                                case __type_def_enum::TYPE_STRING:
+                                    return "string";
+                                case __type_def_enum::TYPE_STRUCT:
+                                    return "struct";
+                                case __type_def_enum::TYPE_TEXT:
+                                    return "text";
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    return "timestamp";
+                                case __type_def_enum::TYPE_BOOL:
+                                    return "boolean";
+                                case __type_def_enum::TYPE_DATETIME:
+                                    return "datetime";
+                                default:
+                                    return "unkown";
+                            }
+                        }
+
+                        /*!
+                         * Parse the string value as a datatype enum. The parse is case-insensitive.
+                         *
+                         * @param type - String value of enum.
+                         * @return - Parsed datatype enum.
+                         */
+                        static __type_def_enum parse_type(const string &type) {
+                            CHECK_NOT_EMPTY(type);
+                            string t = string_utils::toupper(type);
+                            if (t == get_type_string(__type_def_enum::TYPE_STRING)) {
+                                return __type_def_enum::TYPE_STRING;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_INTEGER)) {
+                                return __type_def_enum::TYPE_INTEGER;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_LONG)) {
+                                return __type_def_enum::TYPE_LONG;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_DOUBLE)) {
+                                return __type_def_enum::TYPE_DOUBLE;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_TIMESTAMP)) {
+                                return __type_def_enum::TYPE_TIMESTAMP;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_TEXT)) {
+                                return __type_def_enum::TYPE_TEXT;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_ARRAY)) {
+                                return __type_def_enum::TYPE_ARRAY;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_BYTE)) {
+                                return __type_def_enum::TYPE_BYTE;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_CHAR)) {
+                                return __type_def_enum::TYPE_CHAR;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_FLOAT)) {
+                                return __type_def_enum::TYPE_FLOAT;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_LIST)) {
+                                return __type_def_enum::TYPE_LIST;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_MAP)) {
+                                return __type_def_enum::TYPE_MAP;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_SHORT)) {
+                                return __type_def_enum::TYPE_SHORT;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_BOOL)) {
+                                return __type_def_enum::TYPE_BOOL;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_STRUCT)) {
+                                return __type_def_enum::TYPE_STRUCT;
+                            } else if (t == get_type_string(__type_def_enum::TYPE_DATETIME)) {
+                                return __type_def_enum::TYPE_DATETIME;
+                            }
+                            return __type_def_enum::TYPE_UNKNOWN;
+                        }
                     };
+
+
+                    typedef enum __constraint_operator__ {
+                        /// Greater than operator
+                                GT = 0,
+                        /// Greater than/equals operator
+                                GTEQ,
+                        /// Less than operator
+                                LT,
+                        /// Less than/equals operator
+                                LTEQ,
+                        /// Equals operator
+                                EQ
+                    } __constraint_operator;
 
                     /*!
                      * Base class for defining data type handlers. Handlers implement the interfaces
@@ -161,6 +266,15 @@ REACTFS_NS_CORE
                          * @return - Return storage size.
                          */
                         virtual uint64_t compute_size(const void *data, int size) = 0;
+
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
+                        virtual bool compare(const void *source, const void *target, __constraint_operator oper) = 0;
                     };
 
                     /*!
@@ -229,6 +343,16 @@ REACTFS_NS_CORE
                          * @return - Return storage size.
                          */
                         virtual uint64_t compute_size(const void *data, int size) override = 0;
+
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override = 0;
                     };
 
 
@@ -236,19 +360,30 @@ REACTFS_NS_CORE
                     public:
                         virtual ~__constraint() {}
 
-                        virtual bool validate(void *value) const = 0;
+                        virtual bool validate(const void *value) const = 0;
+
+                        virtual uint32_t write(void *buffer, uint64_t offset) = 0;
+
+                        virtual uint32_t read(void *buffer, uint64_t offset) = 0;
                     };
 
                     class __native_type {
                     protected:
                         string name;
+                        uint8_t index;
                         __type_def_enum datatype;
                         __constraint *constraint = nullptr;
                         void *default_value = nullptr;
 
                     public:
-                        __native_type(const string &name, const __type_def_enum datatype) {
+                        __native_type(const uint8_t index, const string &name, const __type_def_enum datatype) {
+                            this->index = index;
                             this->name = string(name);
+                            this->datatype = datatype;
+                        }
+
+                        __native_type(const uint8_t index, const __type_def_enum datatype) {
+                            this->index = index;
                             this->datatype = datatype;
                         }
 
@@ -294,8 +429,16 @@ REACTFS_NS_CORE
                         uint32_t max_size = 0;
 
                     public:
-                        __sized_type(const string &name, const __type_def_enum datatype, const uint32_t max_size)
-                                : __native_type(name, datatype) {
+                        __sized_type(const uint8_t index, const string &name, const __type_def_enum datatype,
+                                     const uint32_t max_size)
+                                : __native_type(index, name, datatype) {
+                            PRECONDITION(max_size > 0);
+                            this->max_size = max_size;
+                        }
+
+                        __sized_type(const uint8_t index, const __type_def_enum datatype,
+                                     const uint32_t max_size)
+                                : __native_type(index, datatype) {
                             PRECONDITION(max_size > 0);
                             this->max_size = max_size;
                         }
@@ -309,7 +452,13 @@ REACTFS_NS_CORE
                     private:
                         unordered_map<string, __native_type *> fields;
                     public:
-                        __complex_type(const string &name) : __native_type(name, __type_def_enum::TYPE_STRUCT) {
+                        __complex_type(const uint8_t index, const string &name) : __native_type(index, name,
+                                                                                                __type_def_enum::TYPE_STRUCT) {
+
+                        }
+
+                        __complex_type(const uint8_t index) : __native_type(index,
+                                                                            __type_def_enum::TYPE_STRUCT) {
 
                         }
 

@@ -216,23 +216,23 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
         RINBRACE = 282,
         LSZBRACE = 283,
         RSZBRACE = 284,
-        LINTYPBRACE = 285,
-        RINTYPBRACE = 286,
-        COMMA = 287,
-        ON = 288,
-        DEFAULT = 289,
-        TYPE_END = 290,
-        KEY_FIELDS = 291,
-        INDEX = 292,
-        SCHEMA = 293,
-        CONSTRAINT = 294,
-        REGEX = 295,
-        IN = 296,
-        BETWEEN = 297,
-        NULLABLE = 298,
-        NOT = 299,
-        LT = 300,
-        GT = 301,
+        COMMA = 285,
+        ON = 286,
+        DEFAULT = 287,
+        TYPE_END = 288,
+        KEY_FIELDS = 289,
+        INDEX = 290,
+        SCHEMA = 291,
+        CONSTRAINT = 292,
+        REGEX = 293,
+        IN = 294,
+        BETWEEN = 295,
+        NULLABLE = 296,
+        NOT = 297,
+        LT = 298,
+        GT = 299,
+        LTEQ = 300,
+        GTEQ = 301,
         ASC = 302,
         DESC = 303,
         COLON = 304,
@@ -428,7 +428,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   // number is the opposite.  If YYTABLE_NINF, syntax error.
   static const unsigned char yytable_[];
 
-  static const short int yycheck_[];
+  static const unsigned char yycheck_[];
 
   // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
   // symbol of state STATE-NUM.
@@ -545,7 +545,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     enum
     {
       yyeof_ = 0,
-      yylast_ = 209,     ///< Last index in yytable_.
+      yylast_ = 208,     ///< Last index in yytable_.
       yynnts_ = 43,  ///< Number of nonterminal symbols.
       yyfinal_ = 9, ///< Termination state number.
       yyterror_ = 1,

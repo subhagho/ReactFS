@@ -95,6 +95,28 @@ REACTFS_NS_CORE
                             }
                             return sizeof(uint8_t);
                         }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const uint8_t *s = static_cast<const uint8_t *>(source);
+                            const uint8_t *t = static_cast<const uint8_t *>(target);
+                            switch (oper) {
+                                case __constraint_operator::LT:
+                                    return (*s < *t);
+                                case __constraint_operator::EQ:
+                                    return (*s == *t);
+                                case __constraint_operator::GT:
+                                    return (*s > *t);
+                                case __constraint_operator::GTEQ:
+                                    return (*s >= *t);
+                                case __constraint_operator::LTEQ:
+                                    return (*s <= *t);
+                                default:
+                                    return false;
+                            }
+                        }
                     };
 
                     /*!
@@ -148,6 +170,28 @@ REACTFS_NS_CORE
                                 return 0;
                             }
                             return sizeof(char);
+                        }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const char *s = static_cast<const char *>(source);
+                            const char *t = static_cast<const char *>(target);
+                            switch (oper) {
+                                case __constraint_operator::LT:
+                                    return (*s < *t);
+                                case __constraint_operator::EQ:
+                                    return (*s == *t);
+                                case __constraint_operator::GT:
+                                    return (*s > *t);
+                                case __constraint_operator::GTEQ:
+                                    return (*s >= *t);
+                                case __constraint_operator::LTEQ:
+                                    return (*s <= *t);
+                                default:
+                                    return false;
+                            }
                         }
                     };
 
@@ -203,6 +247,17 @@ REACTFS_NS_CORE
                             }
                             return sizeof(bool);
                         }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const bool *s = static_cast<const bool *>(source);
+                            const bool *t = static_cast<const bool *>(target);
+                            if (oper == __constraint_operator::EQ)
+                                return (*s == *t);
+                            return false;
+                        }
                     };
 
                     /*!
@@ -256,6 +311,28 @@ REACTFS_NS_CORE
                                 return 0;
                             }
                             return sizeof(short);
+                        }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const short *s = static_cast<const short *>(source);
+                            const short *t = static_cast<const short *>(target);
+                            switch (oper) {
+                                case __constraint_operator::LT:
+                                    return (*s < *t);
+                                case __constraint_operator::EQ:
+                                    return (*s == *t);
+                                case __constraint_operator::GT:
+                                    return (*s > *t);
+                                case __constraint_operator::GTEQ:
+                                    return (*s >= *t);
+                                case __constraint_operator::LTEQ:
+                                    return (*s <= *t);
+                                default:
+                                    return false;
+                            }
                         }
                     };
 
@@ -311,6 +388,28 @@ REACTFS_NS_CORE
                             }
                             return sizeof(int);
                         }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const int *s = static_cast<const int *>(source);
+                            const int *t = static_cast<const int *>(target);
+                            switch (oper) {
+                                case __constraint_operator::LT:
+                                    return (*s < *t);
+                                case __constraint_operator::EQ:
+                                    return (*s == *t);
+                                case __constraint_operator::GT:
+                                    return (*s > *t);
+                                case __constraint_operator::GTEQ:
+                                    return (*s >= *t);
+                                case __constraint_operator::LTEQ:
+                                    return (*s <= *t);
+                                default:
+                                    return false;
+                            }
+                        }
                     };
 
                     /*!
@@ -364,6 +463,28 @@ REACTFS_NS_CORE
                                 return 0;
                             }
                             return sizeof(long);
+                        }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const long *s = static_cast<const long *>(source);
+                            const long *t = static_cast<const long *>(target);
+                            switch (oper) {
+                                case __constraint_operator::LT:
+                                    return (*s < *t);
+                                case __constraint_operator::EQ:
+                                    return (*s == *t);
+                                case __constraint_operator::GT:
+                                    return (*s > *t);
+                                case __constraint_operator::GTEQ:
+                                    return (*s >= *t);
+                                case __constraint_operator::LTEQ:
+                                    return (*s <= *t);
+                                default:
+                                    return false;
+                            }
                         }
                     };
 
@@ -419,6 +540,28 @@ REACTFS_NS_CORE
                                 return 0;
                             }
                             return sizeof(uint64_t);
+                        }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const uint64_t *s = static_cast<const uint64_t *>(source);
+                            const uint64_t *t = static_cast<const uint64_t *>(target);
+                            switch (oper) {
+                                case __constraint_operator::LT:
+                                    return (*s < *t);
+                                case __constraint_operator::EQ:
+                                    return (*s == *t);
+                                case __constraint_operator::GT:
+                                    return (*s > *t);
+                                case __constraint_operator::GTEQ:
+                                    return (*s >= *t);
+                                case __constraint_operator::LTEQ:
+                                    return (*s <= *t);
+                                default:
+                                    return false;
+                            }
                         }
                     };
 
@@ -537,6 +680,28 @@ REACTFS_NS_CORE
                             }
                             return sizeof(float);
                         }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const float *s = static_cast<const float *>(source);
+                            const float *t = static_cast<const float *>(target);
+                            switch (oper) {
+                                case __constraint_operator::LT:
+                                    return (*s < *t);
+                                case __constraint_operator::EQ:
+                                    return (*s == *t);
+                                case __constraint_operator::GT:
+                                    return (*s > *t);
+                                case __constraint_operator::GTEQ:
+                                    return (*s >= *t);
+                                case __constraint_operator::LTEQ:
+                                    return (*s <= *t);
+                                default:
+                                    return false;
+                            }
+                        }
                     };
 
                     /*!
@@ -591,6 +756,28 @@ REACTFS_NS_CORE
                                 return 0;
                             }
                             return sizeof(double);
+                        }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const double *s = static_cast<const double *>(source);
+                            const double *t = static_cast<const double *>(target);
+                            switch (oper) {
+                                case __constraint_operator::LT:
+                                    return (*s < *t);
+                                case __constraint_operator::EQ:
+                                    return (*s == *t);
+                                case __constraint_operator::GT:
+                                    return (*s > *t);
+                                case __constraint_operator::GTEQ:
+                                    return (*s >= *t);
+                                case __constraint_operator::LTEQ:
+                                    return (*s <= *t);
+                                default:
+                                    return false;
+                            }
                         }
                     };
 
@@ -674,6 +861,28 @@ REACTFS_NS_CORE
                             const string *d = static_cast<const string *>(data);
                             CHECK_NOT_NULL(data);
                             return (sizeof(uint64_t) + (sizeof(char) * d->length()));
+                        }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            CHECK_NOT_NULL(source);
+                            CHECK_NOT_NULL(target);
+                            const string *s = static_cast<const string *>(source);
+                            const string *t = static_cast<const string *>(target);
+                            switch (oper) {
+                                case __constraint_operator::LT:
+                                    return (*s < *t);
+                                case __constraint_operator::EQ:
+                                    return (*s == *t);
+                                case __constraint_operator::GT:
+                                    return (*s > *t);
+                                case __constraint_operator::GTEQ:
+                                    return (*s >= *t);
+                                case __constraint_operator::LTEQ:
+                                    return (*s <= *t);
+                                default:
+                                    return false;
+                            }
                         }
                     };
 
@@ -774,7 +983,7 @@ REACTFS_NS_CORE
                          */
                         static __base_datatype_io *get_type_handler(__type_def_enum type) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(type));
-                            string type_n = get_type_string(type);
+                            string type_n = __type_enum_helper::get_type_string(type);
                             unordered_map<string, __base_datatype_io *>::iterator iter = type_handlers.find(type_n);
                             if (iter != type_handlers.end()) {
                                 return iter->second;
@@ -850,99 +1059,9 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw BASE_ERROR("Type not supported as basic type handler. [type=%s]",
-                                                     get_type_string(type).c_str());
+                                                     __type_enum_helper::get_type_string(type).c_str());
                             }
                             return t;
-                        }
-
-                        /*!
-                         * Get the string value of the datatype enum.
-                         *
-                         * @param type - Datatype enum.
-                         * @return - String value of the enum.
-                         */
-                        static string get_type_string(__type_def_enum type) {
-                            switch (type) {
-                                case __type_def_enum::TYPE_ARRAY:
-                                    return "ARRAY";
-                                case __type_def_enum::TYPE_BYTE:
-                                    return "BYTE";
-                                case __type_def_enum::TYPE_CHAR:
-                                    return "CHAR";
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    return "DOUBLE";
-                                case __type_def_enum::TYPE_FLOAT:
-                                    return "FLOAT";
-                                case __type_def_enum::TYPE_INTEGER:
-                                    return "INTEGER";
-                                case __type_def_enum::TYPE_LIST:
-                                    return "LIST";
-                                case __type_def_enum::TYPE_LONG:
-                                    return "LONG";
-                                case __type_def_enum::TYPE_MAP:
-                                    return "MAP";
-                                case __type_def_enum::TYPE_SHORT:
-                                    return "SHORT";
-                                case __type_def_enum::TYPE_STRING:
-                                    return "STRING";
-                                case __type_def_enum::TYPE_STRUCT:
-                                    return "STRUCT";
-                                case __type_def_enum::TYPE_TEXT:
-                                    return "TEXT";
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                    return "TIMESTAMP";
-                                case __type_def_enum::TYPE_BOOL:
-                                    return "BOOLEAN";
-                                case __type_def_enum::TYPE_DATETIME:
-                                    return "DATETIME";
-                                default:
-                                    return "EMPTY_STRING";
-                            }
-                        }
-
-                        /*!
-                         * Parse the string value as a datatype enum. The parse is case-insensitive.
-                         *
-                         * @param type - String value of enum.
-                         * @return - Parsed datatype enum.
-                         */
-                        static __type_def_enum parse_type(const string &type) {
-                            CHECK_NOT_EMPTY(type);
-                            string t = string_utils::toupper(type);
-                            if (t == get_type_string(__type_def_enum::TYPE_STRING)) {
-                                return __type_def_enum::TYPE_STRING;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_INTEGER)) {
-                                return __type_def_enum::TYPE_INTEGER;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_LONG)) {
-                                return __type_def_enum::TYPE_LONG;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_DOUBLE)) {
-                                return __type_def_enum::TYPE_DOUBLE;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_TIMESTAMP)) {
-                                return __type_def_enum::TYPE_TIMESTAMP;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_TEXT)) {
-                                return __type_def_enum::TYPE_TEXT;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_ARRAY)) {
-                                return __type_def_enum::TYPE_ARRAY;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_BYTE)) {
-                                return __type_def_enum::TYPE_BYTE;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_CHAR)) {
-                                return __type_def_enum::TYPE_CHAR;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_FLOAT)) {
-                                return __type_def_enum::TYPE_FLOAT;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_LIST)) {
-                                return __type_def_enum::TYPE_LIST;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_MAP)) {
-                                return __type_def_enum::TYPE_MAP;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_SHORT)) {
-                                return __type_def_enum::TYPE_SHORT;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_BOOL)) {
-                                return __type_def_enum::TYPE_BOOL;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_STRUCT)) {
-                                return __type_def_enum::TYPE_STRUCT;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_DATETIME)) {
-                                return __type_def_enum::TYPE_DATETIME;
-                            }
-                            return __type_def_enum::TYPE_UNKNOWN;
                         }
                     };
 
@@ -1033,6 +1152,11 @@ REACTFS_NS_CORE
                                 t_size += type_handler->compute_size(data[ii], -1);
                             }
                         }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            throw BASE_ERROR("Compare only supported for native types.");
+                        }
                     };
 
                     template<typename __T>
@@ -1120,6 +1244,11 @@ REACTFS_NS_CORE
                             for (int ii = 0; ii < data->size(); ii++) {
                                 t_size += type_handler->compute_size((*data)[ii], -1);
                             }
+                        }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            throw BASE_ERROR("Compare only supported for native types.");
                         }
                     };
 
@@ -1234,6 +1363,11 @@ REACTFS_NS_CORE
                                 t_size += vt_handler->compute_size(iter->second, -1);
                             }
                             return t_size;
+                        }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            throw BASE_ERROR("Compare only supported for native types.");
                         }
                     };
 
@@ -1443,6 +1577,11 @@ REACTFS_NS_CORE
                                 t_size += handler->compute_size(d, -1);
                             }
                             return t_size;
+                        }
+
+                        virtual bool
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                            throw BASE_ERROR("Compare only supported for native types.");
                         }
                     };
                 }

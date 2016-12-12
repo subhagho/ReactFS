@@ -880,7 +880,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 
   case 52:
 #line 401 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { 	(yylhs.value.lval) = 1; }
+    { 	(yylhs.value.lval) = 1; driver.set_nullable(); }
 #line 885 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
@@ -1080,8 +1080,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     { 
 									const std::string p("LT"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, (yystack_[1].value.str));
-									FREE_PTR((yystack_[1].value.str));
+									driver.set_constraint(false, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
 								}
 #line 1087 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
@@ -1091,8 +1091,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     { 
 									const std::string p("LT"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, (yystack_[1].value.str));
-									FREE_PTR((yystack_[1].value.str));
+									driver.set_constraint(true, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
 								}
 #line 1098 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
@@ -1100,10 +1100,10 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   case 83:
 #line 512 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("GT"); 
+									const std::string p("LTEQ"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, (yystack_[1].value.str));
-									FREE_PTR((yystack_[1].value.str));
+									driver.set_constraint(false, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
 								}
 #line 1109 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
@@ -1111,16 +1111,60 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   case 84:
 #line 518 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("GT"); 
+									const std::string p("LTEQ"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, (yystack_[1].value.str));
-									FREE_PTR((yystack_[1].value.str));
+									driver.set_constraint(true, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
 								}
 #line 1120 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 85:
-#line 527 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 525 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { 
+									const std::string p("GT"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
+								}
+#line 1131 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+    break;
+
+  case 86:
+#line 531 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { 
+									const std::string p("GT"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
+								}
+#line 1142 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+    break;
+
+  case 87:
+#line 537 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { 
+									const std::string p("GTEQ"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
+								}
+#line 1153 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+    break;
+
+  case 88:
+#line 543 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { 
+									const std::string p("GTEQ"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
+								}
+#line 1164 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+    break;
+
+  case 89:
+#line 552 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 						int size = strlen((yystack_[0].value.str));
 						char *ptr = (char *)malloc(sizeof(char) * size);
@@ -1131,11 +1175,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 						(yylhs.value.str) = ptr;
 						debug_r("VALUES {%s}", (yylhs.value.str)); 
  					}
-#line 1135 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1179 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 86:
-#line 537 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 90:
+#line 562 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 						int size = strlen((yystack_[2].value.str)) + strlen((yystack_[0].value.str)) + 4;
 						char *ptr = (char *)malloc(sizeof(char) * size);
@@ -1147,11 +1191,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 						(yylhs.value.str) = ptr;
 						debug_r("VALUES {%s}", (yylhs.value.str)); 
  					}
-#line 1151 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1195 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 87:
-#line 552 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 91:
+#line 577 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 	
 					char *ptr = (char *)malloc(sizeof(char) * DEFAULT_BUFFER_SIZE);
 					CHECK_ALLOC(ptr, TYPE_NAME(char));
@@ -1159,11 +1203,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 					sprintf(ptr, "%ld", (yystack_[0].value.lval));
 					(yylhs.value.str) = ptr; 
 				}
-#line 1163 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1207 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 88:
-#line 559 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 92:
+#line 584 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 	
 					char *ptr = (char *)malloc(sizeof(char) * DEFAULT_BUFFER_SIZE);
 					CHECK_ALLOC(ptr, TYPE_NAME(char));
@@ -1171,17 +1215,17 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 					sprintf(ptr, "%f", (yystack_[0].value.dval));
 					(yylhs.value.str) = ptr; 
 				}
-#line 1175 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1219 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 89:
-#line 566 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 93:
+#line 591 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("String value [%s]", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 1181 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1225 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
 
-#line 1185 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1229 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
             default:
               break;
             }
@@ -1354,26 +1398,26 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   const short int
   schema_parser::yypact_[] =
   {
-      11,    37,    22,   -18,    11,  -138,    47,  -138,  -138,  -138,
-      37,    38,    53,  -138,   106,  -138,    37,  -138,    38,  -138,
-      18,   106,    37,  -138,  -138,  -138,  -138,  -138,  -138,  -138,
-    -138,  -138,  -138,  -138,  -138,    48,    52,    56,   -15,  -138,
-    -138,  -138,  -138,  -138,  -138,  -138,  -138,  -138,    37,    54,
-    -138,    37,   -47,    -9,    37,    20,   129,   159,    55,   106,
-      57,    37,    -8,  -138,     7,  -138,  -138,  -138,  -138,    55,
-    -138,    59,    57,    37,    67,    37,    69,    72,  -138,  -138,
-    -138,    75,    71,  -138,  -138,  -138,    37,  -138,  -138,    37,
-    -138,  -138,  -138,    80,    55,  -138,    71,    76,    37,    77,
-      37,   147,   140,    89,    87,  -138,  -138,    37,  -138,    87,
-      37,    82,    37,    57,    37,    81,    83,   103,   105,   148,
-     107,   122,   124,  -138,  -138,  -138,  -138,  -138,  -138,    14,
-    -138,    82,   130,    57,    57,    71,   121,    37,   134,    89,
-      89,   138,   155,   163,   164,   167,    89,    89,  -138,  -138,
-      57,   168,    71,    71,    87,    37,    57,  -138,    16,  -138,
-      27,   177,    89,    89,    89,    89,   169,   170,    71,  -138,
-      87,    87,  -138,    57,    71,  -138,    89,  -138,  -138,    32,
-      44,   171,   172,  -138,  -138,    87,  -138,  -138,    71,    87,
-    -138,  -138,  -138,  -138,  -138,  -138,    87,  -138,  -138
+      29,    53,    69,    37,    29,  -138,    60,  -138,  -138,  -138,
+      53,    42,    63,  -138,   109,  -138,    53,  -138,    42,  -138,
+      64,   109,    53,  -138,  -138,  -138,  -138,  -138,  -138,  -138,
+    -138,  -138,  -138,  -138,  -138,    51,    52,    57,     8,  -138,
+    -138,  -138,  -138,  -138,  -138,  -138,  -138,  -138,    53,    65,
+    -138,    53,    -8,     9,    53,   131,   153,   178,    68,   109,
+      66,    53,    31,  -138,    -7,  -138,  -138,  -138,  -138,    68,
+    -138,    70,    66,    53,    61,    53,    62,    77,  -138,  -138,
+    -138,    84,    80,  -138,  -138,  -138,    53,  -138,  -138,    53,
+    -138,  -138,  -138,    88,    68,  -138,    80,    71,    53,    89,
+      53,   166,   -26,    47,    93,  -138,  -138,    53,  -138,    93,
+      53,   107,    53,    66,    53,    92,   103,   125,   126,   -16,
+      47,    47,    47,    47,   110,  -138,  -138,  -138,  -138,  -138,
+    -138,    36,  -138,   107,   151,    66,    66,    80,   112,    53,
+     138,    47,    47,   150,   130,   172,    47,    47,    47,    47,
+    -138,  -138,  -138,  -138,  -138,  -138,    66,   173,    80,    80,
+      93,    53,    66,  -138,   -23,  -138,    -4,   140,    47,    47,
+    -138,  -138,  -138,  -138,    80,  -138,    93,    93,  -138,    66,
+      80,  -138,    47,  -138,  -138,    38,    46,    93,  -138,  -138,
+      80,    93,  -138,  -138,  -138,  -138,    93,  -138,  -138
   };
 
   const unsigned char
@@ -1391,24 +1435,24 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
       22,    24,     9,     0,     0,    18,    53,     0,     0,     0,
        0,     0,     0,     0,    51,    21,    58,     0,     3,    51,
        0,     0,     0,    55,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,    89,    87,    88,    54,    52,    43,     0,
-      44,     0,     0,    55,    55,    53,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,    74,    19,
-      55,     0,    53,    53,    51,     0,    55,    75,     0,    85,
-       0,     0,     0,     0,     0,     0,     0,     0,    53,    72,
-      51,    51,    47,    55,    53,    77,     0,    79,    76,     0,
-       0,     0,     0,    81,    83,    51,    45,    48,    53,    51,
-      86,    78,    80,    82,    84,    46,    51,    49,    50
+       0,     0,     0,     0,     0,    93,    91,    92,    54,    52,
+      43,     0,    44,     0,     0,    55,    55,    53,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+      81,    85,    83,    87,    74,    19,    55,     0,    53,    53,
+      51,     0,    55,    75,     0,    89,     0,     0,     0,     0,
+      82,    86,    84,    88,    53,    72,    51,    51,    47,    55,
+      53,    77,     0,    79,    76,     0,     0,    51,    45,    48,
+      53,    51,    90,    78,    80,    46,    51,    49,    50
   };
 
   const short int
   schema_parser::yypgoto_[] =
   {
-    -138,  -138,  -138,  -138,  -138,  -138,   184,  -138,  -138,  -138,
+    -138,  -138,  -138,  -138,  -138,  -138,   183,  -138,  -138,  -138,
     -138,  -138,  -138,    96,   118,  -138,  -138,  -138,  -138,   201,
-    -138,   185,   149,  -138,  -138,  -138,  -138,  -138,  -138,  -138,
-    -138,  -105,   -85,   -71,  -138,    -1,   -43,    78,   -67,  -138,
-    -138,  -137,   -95
+    -138,   185,   148,  -138,  -138,  -138,  -138,  -138,  -138,  -138,
+    -138,   -98,   -88,   -71,  -138,    -1,   -53,    75,   -59,  -138,
+    -138,  -137,   -66
   };
 
   const short int
@@ -1417,85 +1461,85 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
       -1,     2,    11,    12,    17,    18,    19,    52,    69,    70,
       20,    94,    95,    62,    63,    90,    91,     3,     4,     5,
        6,    38,    39,    40,    41,    42,    43,    44,    45,    46,
-      47,   128,   104,    82,    64,    65,    48,   133,    79,    83,
-     122,   158,   159
+      47,   130,   104,    82,    64,    65,    48,   135,    79,    83,
+     124,   164,   165
   };
 
   const unsigned char
   schema_parser::yytable_[] =
   {
-       8,    96,    92,   160,   130,    66,    67,    68,   126,    15,
-      58,   109,    74,    76,    77,    49,    71,    59,     1,    85,
-      10,    54,     9,    59,    86,   179,   180,   108,    73,    23,
-      24,    25,    26,    27,    28,    29,    30,    31,    32,    33,
-      34,   149,   135,     7,    51,   175,    86,    60,   176,   172,
-     154,   166,   167,    72,    87,    88,   177,    89,   115,   176,
-      84,   191,   152,   153,   176,   186,   187,   170,   171,   181,
-     182,    14,    97,   192,    99,    16,   176,    21,    55,   168,
-     195,   190,    56,   185,   197,   174,    57,    61,   106,   189,
-      78,   198,   123,   124,   125,    93,    81,   111,    98,   113,
-     100,   102,   188,   196,   101,   103,   107,   110,   112,   131,
-     132,   134,   137,   136,    22,    23,    24,    25,    26,    27,
-      28,    29,    30,    31,    32,    33,    34,    35,    36,    37,
-     127,   139,   138,   140,   151,   146,   156,    75,    23,    24,
+       8,    96,    74,    76,    77,   166,   181,   182,   109,    15,
+      92,   132,   116,   117,   118,    49,   119,   120,   121,   122,
+     123,    54,   143,   144,   145,   183,   182,   146,   147,   148,
+     149,   185,   186,    58,    71,   108,     1,   128,    59,    59,
+      87,    88,   137,    89,    66,    67,    68,    60,   115,   160,
+     125,   126,   127,    72,   150,   151,   152,   153,    85,     7,
+      84,    86,   178,   155,   158,   159,    86,   193,   182,     9,
+     176,   177,    97,    10,    99,   194,   182,    16,   188,   189,
+     170,   171,   172,   173,    14,   174,   187,    21,   106,   195,
+      51,   180,   191,   197,    55,    56,    61,   111,   198,   113,
+      57,    78,   196,    81,    93,    98,   100,   101,   190,   133,
+     102,   136,   103,   138,   107,   110,   192,    22,    23,    24,
       25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
-     147,   148,   155,   157,   173,   114,    23,    24,    25,    26,
-      27,    28,    29,    30,    31,    32,    33,    34,    23,    24,
-      25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
-     116,   117,   118,   162,   119,   120,   121,   161,   141,   142,
-     143,   163,   164,   144,   145,   165,   178,   169,   183,   184,
-     193,   194,    50,   129,   105,    13,    53,     0,    80,   150
+      35,    36,    37,   112,   129,   134,   139,   154,   162,    73,
+      23,    24,    25,    26,    27,    28,    29,    30,    31,    32,
+      33,    34,   140,   141,   142,   157,   161,   163,   168,   184,
+     179,    75,    23,    24,    25,    26,    27,    28,    29,    30,
+      31,    32,    33,    34,   114,    23,    24,    25,    26,    27,
+      28,    29,    30,    31,    32,    33,    34,    23,    24,    25,
+      26,    27,    28,    29,    30,    31,    32,    33,    34,   167,
+     169,    50,   175,   131,   105,    13,    53,    80,   156
   };
 
-  const short int
+  const unsigned char
   schema_parser::yycheck_[] =
   {
-       1,    72,    69,   140,   109,    52,    53,    54,   103,    10,
-      25,    96,    55,    56,    57,    16,    25,    32,     7,    27,
-      38,    22,     0,    32,    32,   162,   163,    94,     8,     9,
-      10,    11,    12,    13,    14,    15,    16,    17,    18,    19,
-      20,    27,   113,     6,    26,    29,    32,    48,    32,   154,
-     135,   146,   147,    54,    47,    48,    29,    50,   101,    32,
-      61,    29,   133,   134,    32,   170,   171,   152,   153,   164,
-     165,    24,    73,    29,    75,    37,    32,    24,    30,   150,
-     185,   176,    30,   168,   189,   156,    30,    33,    89,   174,
-      35,   196,     3,     4,     5,    36,    39,    98,    31,   100,
-      31,    26,   173,   188,    32,    34,    26,    31,    31,   110,
-      28,   112,    31,   114,     8,     9,    10,    11,    12,    13,
-      14,    15,    16,    17,    18,    19,    20,    21,    22,    23,
-      43,    28,    49,    28,     4,    28,   137,     8,     9,    10,
+       1,    72,    55,    56,    57,   142,    29,    30,    96,    10,
+      69,   109,    38,    39,    40,    16,    42,    43,    44,    45,
+      46,    22,    38,    39,    40,    29,    30,    43,    44,    45,
+      46,   168,   169,    25,    25,    94,     7,   103,    30,    30,
+      47,    48,   113,    50,    52,    53,    54,    48,   101,   137,
+       3,     4,     5,    54,   120,   121,   122,   123,    27,     6,
+      61,    30,   160,    27,   135,   136,    30,    29,    30,     0,
+     158,   159,    73,    36,    75,    29,    30,    35,   176,   177,
+     146,   147,   148,   149,    24,   156,   174,    24,    89,   187,
+      26,   162,   180,   191,    43,    43,    31,    98,   196,   100,
+      43,    33,   190,    37,    34,    44,    44,    30,   179,   110,
+      26,   112,    32,   114,    26,    44,   182,     8,     9,    10,
       11,    12,    13,    14,    15,    16,    17,    18,    19,    20,
-      28,    27,    31,    19,   155,     8,     9,    10,    11,    12,
-      13,    14,    15,    16,    17,    18,    19,    20,     9,    10,
-      11,    12,    13,    14,    15,    16,    17,    18,    19,    20,
-      40,    41,    42,    28,    44,    45,    46,    49,    40,    41,
-      42,    28,    28,    45,    46,    28,    19,    29,    29,    29,
-      29,    29,    18,   107,    86,     4,    21,    -1,    59,   131
+      21,    22,    23,    44,    41,    28,    44,    27,   139,     8,
+       9,    10,    11,    12,    13,    14,    15,    16,    17,    18,
+      19,    20,    49,    28,    28,     4,    44,    19,    28,    19,
+     161,     8,     9,    10,    11,    12,    13,    14,    15,    16,
+      17,    18,    19,    20,     8,     9,    10,    11,    12,    13,
+      14,    15,    16,    17,    18,    19,    20,     9,    10,    11,
+      12,    13,    14,    15,    16,    17,    18,    19,    20,    49,
+      28,    18,    29,   107,    86,     4,    21,    59,   133
   };
 
   const unsigned char
   schema_parser::yystos_[] =
   {
        0,     7,    56,    72,    73,    74,    75,     6,    90,     0,
-      38,    57,    58,    74,    24,    90,    37,    59,    60,    61,
+      36,    57,    58,    74,    24,    90,    35,    59,    60,    61,
       65,    24,     8,     9,    10,    11,    12,    13,    14,    15,
       16,    17,    18,    19,    20,    21,    22,    23,    76,    77,
       78,    79,    80,    81,    82,    83,    84,    85,    91,    90,
-      61,    26,    62,    76,    90,    30,    30,    30,    25,    32,
-      90,    33,    68,    69,    89,    90,    52,    53,    54,    63,
-      64,    25,    90,     8,    91,     8,    91,    91,    35,    93,
-      77,    39,    88,    94,    90,    27,    32,    47,    48,    50,
-      70,    71,    93,    36,    66,    67,    88,    90,    31,    90,
-      31,    32,    26,    34,    87,    69,    90,    26,    93,    87,
-      31,    90,    31,    90,     8,    91,    40,    41,    42,    44,
-      45,    46,    95,     3,     4,     5,    97,    43,    86,    68,
-      86,    90,    28,    92,    90,    88,    90,    31,    49,    28,
-      28,    40,    41,    42,    45,    46,    28,    28,    27,    27,
-      92,     4,    88,    88,    87,    31,    90,    19,    96,    97,
-      96,    49,    28,    28,    28,    28,    97,    97,    88,    29,
-      87,    87,    86,    90,    88,    29,    32,    29,    19,    96,
-      96,    97,    97,    29,    29,    87,    86,    86,    88,    87,
-      97,    29,    29,    29,    29,    86,    87,    86,    86
+      61,    26,    62,    76,    90,    43,    43,    43,    25,    30,
+      90,    31,    68,    69,    89,    90,    52,    53,    54,    63,
+      64,    25,    90,     8,    91,     8,    91,    91,    33,    93,
+      77,    37,    88,    94,    90,    27,    30,    47,    48,    50,
+      70,    71,    93,    34,    66,    67,    88,    90,    44,    90,
+      44,    30,    26,    32,    87,    69,    90,    26,    93,    87,
+      44,    90,    44,    90,     8,    91,    38,    39,    40,    42,
+      43,    44,    45,    46,    95,     3,     4,     5,    97,    41,
+      86,    68,    86,    90,    28,    92,    90,    88,    90,    44,
+      49,    28,    28,    38,    39,    40,    43,    44,    45,    46,
+      97,    97,    97,    97,    27,    27,    92,     4,    88,    88,
+      87,    44,    90,    19,    96,    97,    96,    49,    28,    28,
+      97,    97,    97,    97,    88,    29,    87,    87,    86,    90,
+      88,    29,    30,    29,    19,    96,    96,    87,    86,    86,
+      88,    87,    97,    29,    29,    86,    87,    86,    86
   };
 
   const unsigned char
@@ -1509,7 +1553,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
       85,    86,    86,    87,    87,    88,    88,    89,    89,    90,
       91,    91,    91,    91,    91,    91,    91,    91,    91,    91,
       91,    91,    92,    93,    94,    95,    95,    95,    95,    95,
-      95,    95,    95,    95,    95,    96,    96,    97,    97,    97
+      95,    95,    95,    95,    95,    95,    95,    95,    95,    96,
+      96,    97,    97,    97
   };
 
   const unsigned char
@@ -1523,7 +1568,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
       11,     0,     1,     0,     2,     0,     1,     1,     3,     1,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
        1,     1,     3,     1,     4,     3,     4,     4,     5,     4,
-       5,     4,     5,     4,     5,     1,     3,     1,     1,     1
+       5,     2,     3,     2,     3,     2,     3,     2,     3,     1,
+       3,     1,     1,     1
   };
 
 
@@ -1537,16 +1583,15 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   "VARNAME", "TYPE", "DATATYPE", "BYTE", "CHAR", "BOOL", "SHORT",
   "INTEGER", "LONG", "FLOAT", "DOUBLE", "TIMESTAMP", "DATETIME", "STRING",
   "TEXT", "ARRAY", "LIST", "MAP", "LTYPEBRACE", "RTYPEBRACE", "LINBRACE",
-  "RINBRACE", "LSZBRACE", "RSZBRACE", "LINTYPBRACE", "RINTYPBRACE",
-  "COMMA", "ON", "DEFAULT", "TYPE_END", "KEY_FIELDS", "INDEX", "SCHEMA",
-  "CONSTRAINT", "REGEX", "IN", "BETWEEN", "NULLABLE", "NOT", "LT", "GT",
-  "ASC", "DESC", "COLON", "DOT", "NEWLINE", "FULLTEXT_INDEX", "HASH_INDEX",
-  "TREE_INDEX", "$accept", "parse", "schema", "schema_declare",
-  "opt_indexes", "indexes", "index", "index_fields", "opt_index_type",
-  "index_type", "index_declare", "opt_key_fields", "key_fields", "columns",
-  "column", "opt_sort", "sort", "opt_types", "types", "type",
-  "type_declare", "declarations", "declare", "declare_native",
-  "declare_ref", "declare_native_arr", "declare_ref_arr",
+  "RINBRACE", "LSZBRACE", "RSZBRACE", "COMMA", "ON", "DEFAULT", "TYPE_END",
+  "KEY_FIELDS", "INDEX", "SCHEMA", "CONSTRAINT", "REGEX", "IN", "BETWEEN",
+  "NULLABLE", "NOT", "LT", "GT", "LTEQ", "GTEQ", "ASC", "DESC", "COLON",
+  "DOT", "NEWLINE", "FULLTEXT_INDEX", "HASH_INDEX", "TREE_INDEX",
+  "$accept", "parse", "schema", "schema_declare", "opt_indexes", "indexes",
+  "index", "index_fields", "opt_index_type", "index_type", "index_declare",
+  "opt_key_fields", "key_fields", "columns", "column", "opt_sort", "sort",
+  "opt_types", "types", "type", "type_declare", "declarations", "declare",
+  "declare_native", "declare_ref", "declare_native_arr", "declare_ref_arr",
   "declare_native_list", "declare_ref_list", "declare_netive_map",
   "declare_ref_map", "opt_nullable", "opt_default", "opt_constraint",
   "nested_variable", "variable", "datatype", "size_def", "declare_finish",
@@ -1565,7 +1610,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
      386,   400,   401,   404,   406,   412,   414,   418,   422,   436,
      440,   441,   442,   443,   444,   445,   446,   447,   448,   449,
      450,   451,   455,   458,   461,   464,   470,   476,   482,   488,
-     494,   500,   506,   512,   518,   527,   537,   552,   559,   566
+     494,   500,   506,   512,   518,   525,   531,   537,   543,   552,
+     562,   577,   584,   591
   };
 
   // Print the state stack on the debug stream.
@@ -1651,8 +1697,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 
 #line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:1167
 } } } } } // com::wookler::reactfs::core::parsers
-#line 1655 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:1167
-#line 570 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:1168
+#line 1701 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:1167
+#line 595 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:1168
 
 
 void com::wookler::reactfs::core::parsers::schema_parser::error( const location_type &l, const std::string &err_message ) {

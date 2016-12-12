@@ -91,8 +91,6 @@ void debug_r(const char *s, ...);
 %token			RINBRACE
 %token			LSZBRACE
 %token			RSZBRACE
-%token			LINTYPBRACE
-%token			RINTYPBRACE
 %token			COMMA
 %token			ON
 %token			DEFAULT
@@ -108,6 +106,8 @@ void debug_r(const char *s, ...);
 %token			NOT
 %token			LT
 %token			GT
+%token			LTEQ
+%token			GTEQ
 %token			ASC
 %token			DESC
 %token			COLON
@@ -318,7 +318,7 @@ declare_ref:
 	;
 
 declare_native_arr:
-		ARRAY LINTYPBRACE datatype RINTYPBRACE  variable size_def opt_constraint opt_default opt_nullable	{
+		ARRAY LT datatype GT  variable size_def opt_constraint opt_default opt_nullable	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $3, $5, $6);
 									std::string t($3);
 									std::string n($5);
@@ -331,7 +331,7 @@ declare_native_arr:
 	;
 
 declare_ref_arr:
-		ARRAY LINTYPBRACE DATATYPE variable RINTYPBRACE variable size_def opt_constraint opt_default opt_nullable	{
+		ARRAY LT DATATYPE variable GT variable size_def opt_constraint opt_default opt_nullable	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $4, $6, $7);
 									std::string t($4);
 									std::string n($6);
@@ -345,7 +345,7 @@ declare_ref_arr:
 	;
 
 declare_native_list:
-		LIST LINTYPBRACE datatype RINTYPBRACE variable opt_constraint opt_default opt_nullable	{
+		LIST LT datatype GT variable opt_constraint opt_default opt_nullable	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $3, $5);
 									std::string t($3);
 									std::string n($5);
@@ -358,7 +358,7 @@ declare_native_list:
 	;
 
 declare_ref_list:
-		LIST LINTYPBRACE DATATYPE variable RINTYPBRACE variable opt_constraint opt_default opt_nullable	{
+		LIST LT DATATYPE variable GT variable opt_constraint opt_default opt_nullable	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $4, $6);
 									std::string t($4);
 									std::string n($6);
@@ -369,7 +369,7 @@ declare_ref_list:
 								}
 	;
 declare_netive_map:
-		MAP LINTYPBRACE datatype COMMA datatype RINTYPBRACE variable opt_constraint opt_default	opt_nullable	{
+		MAP LT datatype COMMA datatype GT variable opt_constraint opt_default	opt_nullable	{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $5, $7);
 									std::string kt($3);
 									std::string vt($5);
@@ -383,7 +383,7 @@ declare_netive_map:
 	;
 
 declare_ref_map:
-		MAP LINTYPBRACE datatype COMMA DATATYPE variable RINTYPBRACE variable opt_constraint opt_default opt_nullable	{
+		MAP LT datatype COMMA DATATYPE variable GT variable opt_constraint opt_default opt_nullable	{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $6, $8);
 									std::string kt($3);
 									std::string vt($6);
@@ -497,29 +497,54 @@ constraint_type:
 									driver.set_constraint(true, p, $4);
 									FREE_PTR($4);
 								}
-	|	LT LSZBRACE value RSZBRACE 			{ 
+	|	LT value 					{ 
 									const std::string p("LT"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, $3);
-									FREE_PTR($3);
+									driver.set_constraint(false, p, $2);
+									FREE_PTR($2);
 								}
-	|	NOT LT LSZBRACE value RSZBRACE 			{ 
+	|	NOT LT value 					{ 
 									const std::string p("LT"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, $4);
-									FREE_PTR($4);
-								}
-	|	GT LSZBRACE value RSZBRACE 			{ 
-									const std::string p("GT"); 
-									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, $3);
+									driver.set_constraint(true, p, $3);
 									FREE_PTR($3);
 								}
-	|	NOT GT LSZBRACE value RSZBRACE 			{ 
+	|	LTEQ value 					{ 
+									const std::string p("LTEQ"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, $2);
+									FREE_PTR($2);
+								}
+	|	NOT LTEQ value 					{ 
+									const std::string p("LTEQ"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, $3);
+									FREE_PTR($3);
+								}
+
+	|	GT value 					{ 
 									const std::string p("GT"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, $4);
-									FREE_PTR($4);
+									driver.set_constraint(false, p, $2);
+									FREE_PTR($2);
+								}
+	|	NOT GT value 					{ 
+									const std::string p("GT"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, $3);
+									FREE_PTR($3);
+								}
+	|	GTEQ value 					{ 
+									const std::string p("GTEQ"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, $2);
+									FREE_PTR($2);
+								}
+	|	NOT GTEQ value 					{ 
+									const std::string p("GTEQ"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, $3);
+									FREE_PTR($3);
 								}
 	;
 

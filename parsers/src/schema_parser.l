@@ -155,8 +155,6 @@ void debug_r(const char *s, ...);
 ")"		{ debug_r("[lexer] token : %s", yytext); return (token::RINBRACE); }
 "["		{ debug_r("[lexer] token : %s", yytext); return (token::LSZBRACE); }
 "]"		{ debug_r("[lexer] token : %s", yytext); return (token::RSZBRACE); }
-"<" 		{ debug_r("[lexer] token : %s", yytext); return (token::LINTYPBRACE); }
-">" 		{ debug_r("[lexer] token : %s", yytext); return (token::RINTYPBRACE); }
 ","		{ debug_r("[lexer] token : %s", yytext); return (token::COMMA); }
 "default"		{
 			debug_r("[lexer]  token : %s", yytext);
@@ -210,19 +208,29 @@ void debug_r(const char *s, ...);
             		return (token::BETWEEN);
 
             	}
-"not"			{
+"!"			{
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::NOT);
 
             	}
-"less than"		{
+"<"		{
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::LT);
 
             	}
-"greater than"		{
+"<="		{
+			debug_r("[lexer]  token : %s", yytext);
+            		return (token::LTEQ);
+
+            	}
+">"		{
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::GT);
+
+            	}
+">="		{
+			debug_r("[lexer]  token : %s", yytext);
+            		return (token::GTEQ);
 
             	}
 "nullable"		{
