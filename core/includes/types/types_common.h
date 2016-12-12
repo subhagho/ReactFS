@@ -1504,7 +1504,7 @@ REACTFS_NS_CORE
                             vector<__T *> **list = (vector<__T *> **) t;
 
                             if (r_count > 0) {
-                                *list = new vector<__T *>(r_count);
+                                *list = new vector<__T *>();
                                 CHECK_ALLOC(*list, TYPE_NAME(vector));
 
                                 uint64_t r_offset = offset + sizeof(uint64_t);
@@ -1513,7 +1513,7 @@ REACTFS_NS_CORE
                                     __T *t = nullptr;
                                     uint64_t r = type_handler->read(buffer, &t, r_offset, max_length);
                                     CHECK_NOT_NULL(t);
-                                    list[ii] = t;
+                                    (*list)->push_back(t);
                                     r_offset += r;
                                     t_size += r;
                                 }
@@ -1701,19 +1701,33 @@ REACTFS_NS_CORE
                         virtual uint32_t read(void *buffer, uint64_t offset) = 0;
                     };
 
-                    template<typename __T>
                     class __default {
-                    private:
+                    protected:
                         __type_def_enum datatype;
                         __base_datatype_io *handler = nullptr;
-                        __T value;
-                    public:
+
                         __default(__type_def_enum datatype) {
                             PRECONDITION(__type_enum_helper::is_native(datatype));
                             this->datatype = datatype;
                         }
 
+                    public:
+
                         virtual ~__default() {
+
+                        }
+
+                        virtual uint32_t write(void *buffer, uint64_t offset) = 0;
+
+                        virtual uint32_t read(void *buffer, uint64_t offset) = 0;
+                    };
+
+                    template<typename __T>
+                    class __typed_default : public __default {
+                    private:
+                        __T value;
+                    public:
+                        __typed_default(__type_def_enum datatype) : __default(datatype) {
 
                         }
 
@@ -1747,65 +1761,65 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class __default_char : public __default<char> {
+                    class __default_char : public __typed_default<char> {
                     public:
-                        __default_char() : __default<char>(__type_def_enum::TYPE_CHAR) {
+                        __default_char() : __typed_default<char>(__type_def_enum::TYPE_CHAR) {
 
                         }
                     };
 
-                    class __default_bool : public __default<bool> {
+                    class __default_bool : public __typed_default<bool> {
                     public:
-                        __default_bool() : __default<bool>(__type_def_enum::TYPE_BOOL) {
+                        __default_bool() : __typed_default<bool>(__type_def_enum::TYPE_BOOL) {
 
                         }
                     };
 
-                    class __default_short : public __default<short> {
+                    class __default_short : public __typed_default<short> {
                     public:
-                        __default_short() : __default<short>(__type_def_enum::TYPE_SHORT) {
+                        __default_short() : __typed_default<short>(__type_def_enum::TYPE_SHORT) {
 
                         }
                     };
 
-                    class __default_int : public __default<int> {
+                    class __default_int : public __typed_default<int> {
                     public:
-                        __default_int() : __default<int>(__type_def_enum::TYPE_INTEGER) {
+                        __default_int() : __typed_default<int>(__type_def_enum::TYPE_INTEGER) {
 
                         }
                     };
 
-                    class __default_long : public __default<long> {
+                    class __default_long : public __typed_default<long> {
                     public:
-                        __default_long() : __default<long>(__type_def_enum::TYPE_LONG) {
+                        __default_long() : __typed_default<long>(__type_def_enum::TYPE_LONG) {
 
                         }
                     };
 
-                    class __default_timestamp : public __default<uint64_t> {
+                    class __default_timestamp : public __typed_default<uint64_t> {
                     public:
-                        __default_timestamp() : __default<uint64_t>(__type_def_enum::TYPE_TIMESTAMP) {
+                        __default_timestamp() : __typed_default<uint64_t>(__type_def_enum::TYPE_TIMESTAMP) {
 
                         }
                     };
 
-                    class __default_float : public __default<float> {
+                    class __default_float : public __typed_default<float> {
                     public:
-                        __default_float() : __default<float>(__type_def_enum::TYPE_FLOAT) {
+                        __default_float() : __typed_default<float>(__type_def_enum::TYPE_FLOAT) {
 
                         }
                     };
 
-                    class __default_double : public __default<double> {
+                    class __default_double : public __typed_default<double> {
                     public:
-                        __default_double() : __default<double>(__type_def_enum::TYPE_DOUBLE) {
+                        __default_double() : __typed_default<double>(__type_def_enum::TYPE_DOUBLE) {
 
                         }
                     };
 
-                    class __default_string : public __default<string> {
+                    class __default_string : public __typed_default<string> {
                     public:
-                        __default_string() : __default<string>(__type_def_enum::TYPE_STRING) {
+                        __default_string() : __typed_default<string>(__type_def_enum::TYPE_STRING) {
 
                         }
                     };

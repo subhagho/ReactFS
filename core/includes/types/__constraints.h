@@ -135,18 +135,25 @@ REACTFS_NS_CORE
                     class __regex : public __constraint {
                     private:
                         string value;
+                        std::regex regex_;
                         __base_datatype_io *handler = nullptr;
+
                     public:
                         __regex() {
                             handler = __type_defs_utils::get_type_handler(__type_def_enum::TYPE_STRING);
                             CHECK_NOT_NULL(handler);
                         }
 
+                        void set_value(string &value) {
+                            this->value = string(value);
+                            this->regex_ = regex(value);
+                        }
+
                         virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 const string *ss = static_cast<const string *>(value);
                                 CHECK_NOT_NULL(ss);
-                                return std::regex_match(ss, this->value);
+                                // return std::regex_match(ss, this->regex_);
                             }
                             return false;
                         }
@@ -175,148 +182,9 @@ REACTFS_NS_CORE
                             uint16_t r_size = sizeof(uint8_t);
                             r_size += handler->read(buffer, &value, (offset + r_size), ULONG_MAX);
                             CHECK_NOT_NULL(value);
-                            this->value = *value;
+                            set_value(*value);
 
                             return r_size;
-                        }
-                    };
-
-                    template<typename __T>
-                    class __value_constraint : public __constraint {
-                    private:
-                        __type_def_enum value_type;
-                        vector<__T> values;
-                        __base_datatype_io *handler = nullptr;
-
-                    protected:
-                        __value_constraint(__type_def_enum value_type) {
-                            PRECONDITION(__type_enum_helper::is_native(value_type));
-                            this->value_type = value_type;
-                            handler = __type_defs_utils::get_type_handler(value_type);
-                            CHECK_NOT_NULL(handler);
-                        }
-
-                    public:
-                        virtual ~__value_constraint() {
-                            values.clear();
-                        }
-
-                        void add_value(__T t) {
-                            values.push_back(t);
-                        }
-
-                        virtual bool validate(void *value) const {
-                            if (NOT_NULL(value)) {
-                                __T *t = (__T *) value;
-                                vector<__T>::iterator iter;
-                                for (iter = values.begin(); iter != values.end(); iter++) {
-                                    if (*t == (*iter)) {
-                                        return true;
-                                    }
-                                }
-                            }
-                            return false;
-                        }
-
-                        virtual uint32_t write(void *buffer, uint64_t offset) override {
-                            CHECK_NOT_NULL(buffer);
-                            CHECK_NOT_NULL(handler);
-
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t type = __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN);
-                            memcpy(ptr, &type, sizeof(uint8_t));
-
-                            uint16_t count = values.size();
-                            uint64_t w_size = sizeof(uint8_t);
-                            memcpy(ptr, &count, sizeof(uint16_t));
-                            w_size += sizeof(uint16_t);
-                            for (__T t : values) {
-                                uint64_t off = (offset + w_size);
-                                w_size += handler->write(buffer, &t, off,
-                                                         ULONG_MAX); // Note: Don't need to worry about buffer size here.
-                            }
-                            return w_size;
-                        }
-
-                        virtual uint32_t read(void *buffer, uint64_t offset) override {
-                            CHECK_NOT_NULL(buffer);
-                            CHECK_NOT_NULL(handler);
-
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t *type = static_cast<uint8_t *>(ptr);
-                            POSTCONDITION(*type ==
-                                          __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN));
-                            ptr = common_utils::increment_data_ptr(ptr, sizeof(uint8_t));
-
-                            uint16_t *count = static_cast<uint16_t *>(ptr);
-                            uint64_t r_size = sizeof(uint16_t) + sizeof(uint8_t);
-                            if (count > 0) {
-                                for (uint16_t ii = 0; ii < *count; ii++) {
-                                    uint64_t off = offset + r_size;
-                                    __T *t = nullptr;
-                                    r_size += handler->read(buffer, &t, off, ULONG_MAX);
-                                    CHECK_NOT_NULL(t);
-
-                                    values.push_back(*t);
-                                }
-                            }
-                            return r_size;
-                        }
-                    };
-
-                    class char_value_constraint : public __value_constraint<char> {
-                    public:
-                        char_value_constraint() : __value_constraint<char>(__type_def_enum::TYPE_CHAR) {
-
-                        }
-                    };
-
-                    class short_value_constraint : public __value_constraint<short> {
-                    public:
-                        short_value_constraint() : __value_constraint<short>(__type_def_enum::TYPE_SHORT) {
-
-                        }
-                    };
-
-                    class int_value_constraint : public __value_constraint<int> {
-                    public:
-                        int_value_constraint() : __value_constraint<int>(__type_def_enum::TYPE_INTEGER) {
-
-                        }
-                    };
-
-                    class long_value_constraint : public __value_constraint<long> {
-                    public:
-                        long_value_constraint() : __value_constraint<long>(__type_def_enum::TYPE_LONG) {
-
-                        }
-                    };
-
-                    class float_value_constraint : public __value_constraint<long> {
-                    public:
-                        float_value_constraint() : __value_constraint<long>(__type_def_enum::TYPE_FLOAT) {
-
-                        }
-                    };
-
-                    class timestamp_value_constraint : public __value_constraint<uint64_t> {
-                    public:
-                        timestamp_value_constraint() : __value_constraint<uint64_t>(__type_def_enum::TYPE_TIMESTAMP) {
-
-                        }
-                    };
-
-                    class douable_value_constraint : public __value_constraint<double> {
-                    public:
-                        douable_value_constraint() : __value_constraint<double>(__type_def_enum::TYPE_DOUBLE) {
-
-                        }
-                    };
-
-                    class string_value_constraint : public __value_constraint<string> {
-                    public:
-                        string_value_constraint() : __value_constraint<string>(__type_def_enum::TYPE_STRING) {
-
                         }
                     };
 
@@ -350,7 +218,7 @@ REACTFS_NS_CORE
                             this->max_value = max_value;
                         }
 
-                        virtual bool validate(void *value) const {
+                        virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 __T *t = (__T *) value;
                                 return (*t >= min_value && *t <= max_value);
@@ -507,7 +375,7 @@ REACTFS_NS_CORE
                             this->value = value;
                         }
 
-                        virtual bool validate(void *value) const {
+                        virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 CHECK_NOT_NULL(handler);
 
@@ -620,12 +488,154 @@ REACTFS_NS_CORE
                         }
                     };
 
+
+                    template<typename __T>
+                    class __value_constraint : public __constraint {
+                    private:
+                        __type_def_enum value_type;
+                        vector<__T> values;
+                        __base_datatype_io *handler = nullptr;
+
+                    protected:
+                        __value_constraint(__type_def_enum value_type) {
+                            PRECONDITION(__type_enum_helper::is_native(value_type));
+                            this->value_type = value_type;
+                            handler = __type_defs_utils::get_type_handler(value_type);
+                            CHECK_NOT_NULL(handler);
+                        }
+
+                    public:
+                        virtual ~__value_constraint() {
+                            values.clear();
+                        }
+
+                        void add_value(__T t) {
+                            values.push_back(t);
+                        }
+
+                        virtual bool validate(const void *value) const override {
+                            if (NOT_NULL(value)) {
+                                __T *t = (__T *) value;
+                                CHECK_NOT_NULL(t);
+                                vector<__T>::const_iterator iter;
+                                for (iter = values.begin(); iter != values.end(); iter++) {
+                                    if (*t == (*iter)) {
+                                        return true;
+                                    }
+                                }
+                            }
+                            return false;
+                        }
+
+                        virtual uint32_t write(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(handler);
+
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint8_t type = __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN);
+                            memcpy(ptr, &type, sizeof(uint8_t));
+
+                            uint16_t count = values.size();
+                            uint64_t w_size = sizeof(uint8_t);
+                            memcpy(ptr, &count, sizeof(uint16_t));
+                            w_size += sizeof(uint16_t);
+                            for (__T t : values) {
+                                uint64_t off = (offset + w_size);
+                                w_size += handler->write(buffer, &t, off,
+                                                         ULONG_MAX); // Note: Don't need to worry about buffer size here.
+                            }
+                            return w_size;
+                        }
+
+                        virtual uint32_t read(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(handler);
+
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint8_t *type = static_cast<uint8_t *>(ptr);
+                            POSTCONDITION(*type ==
+                                          __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN));
+                            ptr = common_utils::increment_data_ptr(ptr, sizeof(uint8_t));
+
+                            uint16_t *count = static_cast<uint16_t *>(ptr);
+                            uint64_t r_size = sizeof(uint16_t) + sizeof(uint8_t);
+                            if (count > 0) {
+                                for (uint16_t ii = 0; ii < *count; ii++) {
+                                    uint64_t off = offset + r_size;
+                                    __T *t = nullptr;
+                                    r_size += handler->read(buffer, &t, off, ULONG_MAX);
+                                    CHECK_NOT_NULL(t);
+
+                                    values.push_back(*t);
+                                }
+                            }
+                            return r_size;
+                        }
+                    };
+
+                    class char_value_constraint : public __value_constraint<char> {
+                    public:
+                        char_value_constraint() : __value_constraint<char>(__type_def_enum::TYPE_CHAR) {
+
+                        }
+                    };
+
+                    class short_value_constraint : public __value_constraint<short> {
+                    public:
+                        short_value_constraint() : __value_constraint<short>(__type_def_enum::TYPE_SHORT) {
+
+                        }
+                    };
+
+                    class int_value_constraint : public __value_constraint<int> {
+                    public:
+                        int_value_constraint() : __value_constraint<int>(__type_def_enum::TYPE_INTEGER) {
+
+                        }
+                    };
+
+                    class long_value_constraint : public __value_constraint<long> {
+                    public:
+                        long_value_constraint() : __value_constraint<long>(__type_def_enum::TYPE_LONG) {
+
+                        }
+                    };
+
+                    class float_value_constraint : public __value_constraint<long> {
+                    public:
+                        float_value_constraint() : __value_constraint<long>(__type_def_enum::TYPE_FLOAT) {
+
+                        }
+                    };
+
+                    class timestamp_value_constraint : public __value_constraint<uint64_t> {
+                    public:
+                        timestamp_value_constraint() : __value_constraint<uint64_t>(__type_def_enum::TYPE_TIMESTAMP) {
+
+                        }
+                    };
+
+                    class douable_value_constraint : public __value_constraint<double> {
+                    public:
+                        douable_value_constraint() : __value_constraint<double>(__type_def_enum::TYPE_DOUBLE) {
+
+                        }
+                    };
+
+                    class string_value_constraint : public __value_constraint<string> {
+                    public:
+                        string_value_constraint() : __value_constraint<string>(__type_def_enum::TYPE_STRING) {
+
+                        }
+                    };
+
                     class __constraint_loader {
                     public:
                         static __constraint *read(void *buffer, uint64_t offset, __type_def_enum datatype) {
                             return nullptr;
                         }
                     };
+
                 }
 REACTFS_NS_CORE_END
 #endif //REACTFS_CONSTRAINTS_H
