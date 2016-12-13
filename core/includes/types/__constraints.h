@@ -59,8 +59,17 @@ REACTFS_NS_CORE
                                 CONSTRAINT_LTEQ = 7,
                     } __constraint_type;
 
+                    /*!
+                     * Utility class for constraint types.
+                     */
                     class __constraint_type_utils {
                     public:
+                        /*!
+                         * Get the numerical value of this constraint type.
+                         *
+                         * @param type - Constraint type enum.
+                         * @return - Numerical value.
+                         */
                         static uint8_t get_number_value(__constraint_type type) {
                             switch (type) {
                                 case __constraint_type::CONSTRAINT_NOT_NULLABLE:
@@ -82,6 +91,12 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        /*!
+                         * Get the string for the specified constraint type.
+                         *
+                         * @param type - Constraint type enum.
+                         * @return - String value of the enum.
+                         */
                         static string get_string(__constraint_type type) {
                             switch (type) {
                                 case __constraint_type::CONSTRAINT_NOT_NULLABLE:
@@ -104,12 +119,28 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    /*!
+                     * Not null contraint definition.
+                     */
                     class __notnull : public __constraint {
                     public:
+                        /*!
+                         * Validate the data is not null.
+                         *
+                         * @param value - Data value to validate
+                         * @return - Constraint passed?
+                         */
                         virtual bool validate(const void *value) const override {
                             return NOT_NULL(value);
                         }
 
+                        /*!
+                         * Write (serialize) this constraint instance.
+                         *
+                         * @param buffer - Output buffer to write the constraint to.
+                         * @param offset - Offset in the buffer to start writing.
+                         * @return - Number of byte written.
+                         */
                         virtual uint32_t write(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -121,6 +152,13 @@ REACTFS_NS_CORE
                             return sizeof(uint8_t);
                         }
 
+                        /*!
+                         * Read (de-serialize) the constraint instance.
+                         *
+                         * @param buffer - Input buffer to read data from.
+                         * @param offset - Offset in the input buffer to read from.
+                         * @return - Number of bytes consumed.
+                         */
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -132,28 +170,55 @@ REACTFS_NS_CORE
                             return sizeof(uint8_t);
                         }
 
+                        /*!
+                         * Get the datatype enum that this constraint instance supports.
+                         * All types are supported for nut null constraint.
+                         *
+                         * @return - Supported datatype enum.
+                         */
                         __type_def_enum get_datatype() override {
                             return __type_def_enum::TYPE_UNKNOWN;
                         }
                     };
 
+                    /*!
+                     * Regular expression based constraint definition. Only applicable
+                     * for STRING datatype.
+                     */
                     class __regex : public __constraint {
                     private:
-                        string value;
+                        /// Regular expression string.
+                        string pattern;
+                        /// Regex definition
                         std::regex regex_;
+                        /// IO handler for this regex data.
                         __base_datatype_io *handler = nullptr;
 
                     public:
+                        /*!<constructor
+                         * Default empty constructor.
+                         */
                         __regex() {
                             handler = __type_defs_utils::get_type_handler(__type_def_enum::TYPE_STRING);
                             CHECK_NOT_NULL(handler);
                         }
 
-                        void set_value(string &value) {
-                            this->value = string(value);
-                            this->regex_ = regex(value);
+                        /*!
+                         * Set the string value of the regex pattern.
+                         *
+                         * @param value - Regex pattern string.
+                         */
+                        void set_pattern(string &pattern) {
+                            this->pattern = string(pattern);
+                            this->regex_ = regex(pattern);
                         }
 
+                        /*!
+                         * Validate the input string against the regex pattern.
+                         *
+                         * @param value - Input string to validate.
+                         * @return - Constraint passed?
+                         */
                         virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 const string *ss = static_cast<const string *>(value);
@@ -163,6 +228,13 @@ REACTFS_NS_CORE
                             return false;
                         }
 
+                        /*!
+                         * Write (serialize) this constraint instance.
+                         *
+                         * @param buffer - Output buffer to write the constraint to.
+                         * @param offset - Offset in the buffer to start writing.
+                         * @return - Number of byte written.
+                         */
                         virtual uint32_t write(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -171,11 +243,18 @@ REACTFS_NS_CORE
                                     __constraint_type::CONSTRAINT_REGEX);
                             memcpy(ptr, &type, sizeof(uint8_t));
                             uint16_t w_size = sizeof(uint8_t);
-                            w_size += handler->write(buffer, &value, (offset + w_size), ULONG_MAX);
+                            w_size += handler->write(buffer, &pattern, (offset + w_size), ULONG_MAX);
 
                             return w_size;
                         }
 
+                        /*!
+                        * Read (de-serialize) the constraint instance.
+                        *
+                        * @param buffer - Input buffer to read data from.
+                        * @param offset - Offset in the input buffer to read from.
+                        * @return - Number of bytes consumed.
+                        */
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -187,25 +266,45 @@ REACTFS_NS_CORE
                             uint16_t r_size = sizeof(uint8_t);
                             r_size += handler->read(buffer, &value, (offset + r_size), ULONG_MAX);
                             CHECK_NOT_NULL(value);
-                            set_value(*value);
+                            set_pattern(*value);
 
                             return r_size;
                         }
 
+                        /*!
+                         * Get the datatype enum that this constraint instance supports.
+                         * Only string datatype supported.
+                         *
+                         * @return - Supported datatype enum.
+                         */
                         __type_def_enum get_datatype() override {
                             return __type_def_enum::TYPE_STRING;
                         }
                     };
 
+                    /*!
+                     * Template definition of a range based constraint definition.
+                     * Range constraints are inclusive (both for lower and upper bounds).
+                     *
+                     * @tparam __T - Datatype of the range definition.
+                     * @tparam __type - Datatype enum.
+                     */
                     template<typename __T, __type_def_enum __type>
                     class __range_constraint : public __constraint {
                     private:
+                        /// Datatype enum of the supported range type.
                         __type_def_enum value_type = __type;
+                        /// Min value of the range
                         __T min_value;
+                        /// Max value of the range.
                         __T max_value;
+                        /// Datatype IO handler.
                         __base_datatype_io *handler = nullptr;
 
                     public:
+                        /*!<constructor
+                         * Default empty constructor.
+                         */
                         __range_constraint() {
                             PRECONDITION(__type_enum_helper::is_native(value_type));
                             handler = __type_defs_utils::get_type_handler(value_type);
@@ -216,18 +315,41 @@ REACTFS_NS_CORE
 
                         }
 
+                        /*!
+                         * Set the min bounds of this range.
+                         *
+                         * @param min_value - Minimum value.
+                         */
                         void set_min_value(__T min_value) {
                             this->min_value = min_value;
                         }
 
+                        /*!
+                         * Set the max bounds of this range.
+                         *
+                         * @param max_value - Maximum value.
+                         */
                         void set_max_value(__T max_value) {
                             this->max_value = max_value;
                         }
 
+                        /*!
+                         * Get the datatype enum that this constraint instance supports.
+                         * All basic datatypes are supported.
+                         *
+                         * @return - Supported datatype enum.
+                         */
                         __type_def_enum get_datatype() override {
                             return this->value_type;
                         }
 
+                        /*!
+                         * Validate the input is bounded by this range definition.
+                         * Range constraints are inclusive (both for lower and upper bounds).
+                         *
+                         * @param value - Input data value to validate.
+                         * @return - Constraint passed?
+                         */
                         virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 __T *t = (__T *) value;
@@ -237,6 +359,13 @@ REACTFS_NS_CORE
                             return false;
                         }
 
+                        /*!
+                         * Write (serialize) this constraint instance.
+                         *
+                         * @param buffer - Output buffer to write the constraint to.
+                         * @param offset - Offset in the buffer to start writing.
+                         * @return - Number of byte written.
+                         */
                         virtual uint32_t write(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
@@ -258,6 +387,13 @@ REACTFS_NS_CORE
                             return w_size;
                         }
 
+                        /*!
+                        * Read (de-serialize) the constraint instance.
+                        *
+                        * @param buffer - Input buffer to read data from.
+                        * @param offset - Offset in the input buffer to read from.
+                        * @return - Number of bytes consumed.
+                        */
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
@@ -560,7 +696,8 @@ REACTFS_NS_CORE
 
                     class __constraint_loader {
                     private:
-                        static __constraint *read_operator_gt(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                        static __constraint *
+                        read_operator_gt(void *buffer, uint64_t offset, __type_def_enum datatype, uint64_t *size) {
                             __constraint *c = nullptr;
                             switch (datatype) {
                                 case __type_def_enum::TYPE_CHAR:
@@ -599,12 +736,12 @@ REACTFS_NS_CORE
                                     throw BASE_ERROR("Constraints can only be defined for basic types.");
                             }
                             CHECK_NOT_NULL(c);
-                            c->read(buffer, offset);
+                            *size = c->read(buffer, offset);
                             return c;
                         }
 
                         static __constraint *
-                        read_operator_gteq(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                        read_operator_gteq(void *buffer, uint64_t offset, __type_def_enum datatype, uint64_t *size) {
                             __constraint *c = nullptr;
                             switch (datatype) {
                                 case __type_def_enum::TYPE_CHAR:
@@ -643,11 +780,12 @@ REACTFS_NS_CORE
                                     throw BASE_ERROR("Constraints can only be defined for basic types.");
                             }
                             CHECK_NOT_NULL(c);
-                            c->read(buffer, offset);
+                            *size = c->read(buffer, offset);
                             return c;
                         }
 
-                        static __constraint *read_operator_lt(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                        static __constraint *
+                        read_operator_lt(void *buffer, uint64_t offset, __type_def_enum datatype, uint64_t *size) {
                             __constraint *c = nullptr;
                             switch (datatype) {
                                 case __type_def_enum::TYPE_CHAR:
@@ -686,12 +824,12 @@ REACTFS_NS_CORE
                                     throw BASE_ERROR("Constraints can only be defined for basic types.");
                             }
                             CHECK_NOT_NULL(c);
-                            c->read(buffer, offset);
+                            *size = c->read(buffer, offset);
                             return c;
                         }
 
                         static __constraint *
-                        read_operator_lteq(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                        read_operator_lteq(void *buffer, uint64_t offset, __type_def_enum datatype, uint64_t *size) {
                             __constraint *c = nullptr;
                             switch (datatype) {
                                 case __type_def_enum::TYPE_CHAR:
@@ -730,57 +868,62 @@ REACTFS_NS_CORE
                                     throw BASE_ERROR("Constraints can only be defined for basic types.");
                             }
                             CHECK_NOT_NULL(c);
-                            c->read(buffer, offset);
+                            *size = c->read(buffer, offset);
                             return c;
                         }
 
                     public:
-                        static __constraint *read(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                        static __constraint *
+                        read(void *buffer, uint64_t offset, __type_def_enum datatype, uint64_t *size) {
                             CHECK_NOT_NULL(buffer);
+                            __constraint *c = nullptr;
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             uint8_t *type = static_cast<uint8_t *>(ptr);
                             if (*type == __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN)) {
-                                return read_value(buffer, offset, datatype);
+                                c = read_value(buffer, offset, datatype, size);
                             } else if (*type ==
                                        __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_RANGE)) {
-                                return read_range(buffer, offset, datatype);
+                                c = read_range(buffer, offset, datatype, size);
                             } else if (*type ==
                                        __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_REGEX)) {
-                                return read_regex(buffer, offset);
+                                c = read_regex(buffer, offset, size);
                             } else if (*type == __constraint_type_utils::get_number_value(
                                     __constraint_type::CONSTRAINT_NOT_NULLABLE)) {
-                                return read_nullable(buffer, offset);
+                                c = read_nullable(buffer, offset, size);
                             } else if (*type ==
                                        __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_LTEQ)) {
-                                return read_operator(buffer, offset, datatype, __constraint_operator::LTEQ);
+                                c = read_operator(buffer, offset, datatype, __constraint_operator::LTEQ, size);
                             } else if (*type ==
                                        __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_LT)) {
-                                return read_operator(buffer, offset, datatype, __constraint_operator::LT);
+                                c = read_operator(buffer, offset, datatype, __constraint_operator::LT, size);
                             } else if (*type ==
                                        __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_GTEQ)) {
-                                return read_operator(buffer, offset, datatype, __constraint_operator::GTEQ);
+                                c = read_operator(buffer, offset, datatype, __constraint_operator::GTEQ, size);
                             } else if (*type ==
                                        __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_LT)) {
-                                return read_operator(buffer, offset, datatype, __constraint_operator::LT);
+                                c = read_operator(buffer, offset, datatype, __constraint_operator::LT, size);
                             }
-                            return nullptr;
+                            CHECK_NOT_NULL(c);
+                            *size += sizeof(uint8_t);
+                            return c;
                         }
 
-                        static __constraint *read_nullable(void *buffer, uint64_t offset) {
+                        static __constraint *read_nullable(void *buffer, uint64_t offset, uint64_t *size) {
                             __notnull *c = new __notnull();
                             CHECK_ALLOC(c, TYPE_NAME(__notnull));
-                            c->read(buffer, offset);
+                            *size = c->read(buffer, offset);
                             return c;
                         }
 
-                        static __constraint *read_regex(void *buffer, uint64_t offset) {
+                        static __constraint *read_regex(void *buffer, uint64_t offset, uint64_t *size) {
                             __regex *c = new __regex();
                             CHECK_ALLOC(c, TYPE_NAME(__regex));
-                            c->read(buffer, offset);
+                            *size = c->read(buffer, offset);
                             return c;
                         }
 
-                        static __constraint *read_value(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                        static __constraint *
+                        read_value(void *buffer, uint64_t offset, __type_def_enum datatype, uint64_t *size) {
                             __constraint *c = nullptr;
                             switch (datatype) {
                                 case __type_def_enum::TYPE_CHAR:
@@ -819,11 +962,12 @@ REACTFS_NS_CORE
                                     throw BASE_ERROR("Constraints can only be defined for basic types.");
                             }
                             CHECK_NOT_NULL(c);
-                            c->read(buffer, offset);
+                            *size = c->read(buffer, offset);
                             return c;
                         }
 
-                        static __constraint *read_range(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                        static __constraint *
+                        read_range(void *buffer, uint64_t offset, __type_def_enum datatype, uint64_t *size) {
                             __constraint *c = nullptr;
                             switch (datatype) {
                                 case __type_def_enum::TYPE_CHAR:
@@ -862,21 +1006,21 @@ REACTFS_NS_CORE
                                     throw BASE_ERROR("Constraints can only be defined for basic types.");
                             }
                             CHECK_NOT_NULL(c);
-                            c->read(buffer, offset);
+                            *size = c->read(buffer, offset);
                             return c;
                         }
 
                         static __constraint *read_operator(void *buffer, uint64_t offset, __type_def_enum datatype,
-                                                           __constraint_operator oper) {
+                                                           __constraint_operator oper, uint64_t *size) {
                             switch (oper) {
                                 case __constraint_operator::GT:
-                                    return read_operator_gt(buffer, offset, datatype);
+                                    return read_operator_gt(buffer, offset, datatype, size);
                                 case __constraint_operator::GTEQ:
-                                    return read_operator_gteq(buffer, offset, datatype);
+                                    return read_operator_gteq(buffer, offset, datatype, size);
                                 case __constraint_operator::LT:
-                                    return read_operator_lt(buffer, offset, datatype);
+                                    return read_operator_lt(buffer, offset, datatype, size);
                                 case __constraint_operator::LTEQ:
-                                    return read_operator_lteq(buffer, offset, datatype);
+                                    return read_operator_lteq(buffer, offset, datatype, size);
                                 default:
                                     throw BASE_ERROR("Equals constraint is meaningless.");
                             }

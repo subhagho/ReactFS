@@ -31,28 +31,45 @@
 REACTFS_NS_CORE
                 namespace types {
 
+                    /*!
+                     * Enum definition for the field types.
+                     */
                     typedef enum __field_type__ {
                         /// Field type is a native type.
                                 NATIVE = 0,
                         /// Field type is a sized type.
                                 SIZED = 1,
                         /// Field type is a complex type.
-                                COMPLEX = 2
+                                COMPLEX = 2,
+                        /// Field type is an array.
+                                ARRAY = 3,
+                        /// Field type is a list
+                                LIST = 4,
+                        /// Field type is a map
+                                MAP = 5
                     } __field_type;
 
+                    /*!
+                     * Helper class for field type definitions.
+                     */
                     class __field_type_helper {
                     public:
+                        /*!
+                         * Get the numeric (uint8_t) value of the field type.
+                         *
+                         * @param type - Field type.
+                         * @return - Numeric value.
+                         */
                         static uint8_t get_type_number(__field_type type) {
-                            switch (type) {
-                                case __field_type::NATIVE:
-                                    return 0;
-                                case __field_type::SIZED:
-                                    return 1;
-                                case __field_type::COMPLEX:
-                                    return 2;
-                            }
+                            return (uint8_t) type;
                         }
 
+                        /*!
+                         * Get the type enum for the specified numeric value.
+                         *
+                         * @param ii - Type enum numeric value.
+                         * @return - Type enum.
+                         */
                         static __field_type get_type(uint8_t ii) {
                             if (ii == 0) {
                                 return __field_type::NATIVE;
@@ -60,20 +77,38 @@ REACTFS_NS_CORE
                                 return __field_type::SIZED;
                             } else if (ii == 2) {
                                 return __field_type::COMPLEX;
+                            } else if (ii == 3) {
+                                return __field_type::ARRAY;
+                            } else if (ii == 4) {
+                                return __field_type::LIST;
+                            } else if (ii == 5) {
+                                return __field_type::MAP;
                             }
                             throw BASE_ERROR("Not field type defined for value. [value=%d]", ii);
                         }
                     };
 
+                    /*!
+                     * Field definition for a native data type. (including string).
+                     */
                     class __native_type {
                     protected:
+                        /// Field name
                         string name;
+                        /// Field index (in the complex type definition)
                         uint8_t index;
+                        /// Type of this field definition
                         __field_type type;
+                        /// Datatype of this field.
                         __type_def_enum datatype;
+                        /// Constraints (if any) defined for this field.
                         __constraint *constraint = nullptr;
+                        /// Default value (if any) defined for this field.
                         __default *default_value = nullptr;
+                        /// Field datatype IO handler.
                         __base_datatype_io *string_handler = nullptr;
+                        /// Is this field nullable.
+                        bool nullable = false;
 
                     public:
                         __native_type(const uint8_t index, const string &name, const __type_def_enum datatype) {
@@ -91,6 +126,10 @@ REACTFS_NS_CORE
                             CHECK_AND_FREE(default_value);
                         }
 
+                        const uint8_t get_index() const {
+                            return this->index;
+                        }
+
                         const string get_name() const {
                             return this->name;
                         }
@@ -103,7 +142,7 @@ REACTFS_NS_CORE
                             this->constraint = constraint;
                         }
 
-                        const __constraint *get_constraint() const {
+                        __constraint *get_constraint() const {
                             return this->constraint;
                         }
 
@@ -113,6 +152,10 @@ REACTFS_NS_CORE
 
                         const __default *get_default_value() const {
                             return this->default_value;
+                        }
+
+                        bool is_nullable() const {
+                            return this->nullable;
                         }
 
                         bool is_valid_value(void *value) {
@@ -179,8 +222,20 @@ REACTFS_NS_CORE
                             r_size += sizeof(uint8_t);
 
                             if (bitset_utils::check_uint8_bit(*bits, BIT_TYPE_CONSTRAINT)) {
-                                this->constraint = __constraint_loader::read(buffer, r_size, this->datatype);
+                                uint64_t size = 0;
+                                this->constraint = __constraint_loader::read(buffer, (offset + r_size), this->datatype,
+                                                                             &size);
                                 CHECK_NOT_NULL(this->constraint);
+                                POSTCONDITION(size > 0);
+                                r_size += size;
+                            }
+                            if (bitset_utils::check_uint8_bit(*bits, BIT_TYPE_DEFAULT_VALUE)) {
+                                uint64_t size = 0;
+                                this->default_value = __defaults_loader::read(buffer, (offset + r_size), this->datatype,
+                                                                              &size);
+                                CHECK_NOT_NULL(this->default_value);
+                                POSTCONDITION(size > 0);
+                                r_size += size;
                             }
                             return r_size;
                         }

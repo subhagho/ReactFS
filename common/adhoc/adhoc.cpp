@@ -28,6 +28,14 @@ typedef test<24> test_24;
 #define BIT_TYPE_CONSTRAINT 1
 #define DEFAULT_VALUE_BIT 2
 
+typedef enum {
+    TEST = 0, TEST1, TEST2
+} test_enum;
+
 int main(int argc, char *argv[]) {
-    test_24 t;
+    test_enum t1 = test_enum::TEST;
+    test_enum t2 = test_enum::TEST1;
+    test_enum t3 = test_enum::TEST2;
+
+    cout << t1 << "; " << t2 << "; " << t3 << "\n";
 }

@@ -39,23 +39,25 @@
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
+#define SIZE_MAX_TYPE_STRING 256
 
 REACTFS_NS_CORE
                 namespace types {
 
                     class __type_instance {
                     protected:
-                        __type_instance *parent = nullptr;
+                        const __type_instance *parent = nullptr;
                         __native_type *type;
                         __base_datatype_io *handler;
-
+                        uint8_t index;
                     public:
-                        __type_instance(__native_type *type, __type_instance *parent = nullptr) {
+                        __type_instance(__native_type *type, const __type_instance *parent = nullptr) {
                             CHECK_NOT_NULL(type);
                             PRECONDITION(__type_enum_helper::is_native(type->get_datatype()));
                             this->parent = parent;
                             this->handler = __type_defs_utils::get_type_handler(type->get_datatype());
                             this->type = type;
+                            this->index = type->get_index();
                         }
 
                         __type_instance(__native_type *type, __base_datatype_io *handler,
@@ -65,26 +67,31 @@ REACTFS_NS_CORE
                             this->parent = parent;
                             this->handler = handler;
                             this->type = type;
+                            this->index = type->get_index();
                         }
 
                         ~__type_instance() {
                             CHECK_AND_FREE(type);
                         }
 
-                        __native_type *get_type() {
+                        uint8_t get_index() const {
+                            return this->index;
+                        }
+
+                        __native_type *get_type() const {
                             return this->type;
                         }
 
-                        __base_datatype_io *get_handler() {
+                        __base_datatype_io *get_handler() const {
                             return this->handler;
                         }
 
-                        __type_instance *get_parent() {
+                        const __type_instance *get_parent() const {
                             return this->parent;
                         }
 
 
-                        string get_canonical_name() {
+                        string get_canonical_name() const {
                             if (IS_NULL(parent)) {
                                 return type->get_name();
                             } else {
@@ -101,14 +108,13 @@ REACTFS_NS_CORE
                         __version_header *version;
                         vector<__type_instance *> fields;
 
-                        void *get_field_value(unordered_map<string, void *> *map, __type_instance *type) {
+                        void *get_field_value(unordered_map<uint8_t, void *> *map, __type_instance *type) {
                             CHECK_NOT_NULL(type);
-                            unordered_map<string, void *>::iterator iter = map->find(type->get_canonical_name());
+                            unordered_map<uint8_t, void *>::iterator iter = map->find(type->get_index());
                             if (iter == map->end())
                                 return nullptr;
                             return iter->second;
                         }
-
 
                     public:
                         __dt_struct(__version_header version) : __base_datatype_io(__type_def_enum::TYPE_STRUCT) {
@@ -169,8 +175,8 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(v);
 
                             POSTCONDITION(version_utils::compatible(*(this->version), *v));
-                            unordered_map<string, void *> **T = (unordered_map<string, void *> **) t;
-                            *T = new unordered_map<string, void *>();
+                            unordered_map<uint8_t, void *> **T = (unordered_map<uint8_t, void *> **) t;
+                            *T = new unordered_map<uint8_t, void *>();
 
                             vector<__type_instance *>::iterator iter;
                             uint64_t r_offset = offset + sizeof(__version_header);
@@ -194,7 +200,7 @@ REACTFS_NS_CORE
                                 } else {
                                     r = handler->read(buffer, &value, r_offset, max_length);
                                 }
-                                (*T)->insert({type->get_canonical_name(), value});
+                                (*T)->insert({type->get_index(), value});
                                 t_size += r;
                                 r_offset += r;
                             }
@@ -203,7 +209,7 @@ REACTFS_NS_CORE
 
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            unordered_map<string, void *> *map = (unordered_map<string, void *> *) value;
+                            unordered_map<uint8_t, void *> *map = (unordered_map<uint8_t, void *> *) value;
                             CHECK_NOT_EMPTY_P(map);
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             memcpy(ptr, this->version, sizeof(__version_header));
@@ -219,12 +225,30 @@ REACTFS_NS_CORE
                                     throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
                                                            (*iter)->get_type()->get_name().c_str());
                                 }
+                                __native_type *ntype = (*iter)->get_type();
+                                CHECK_NOT_NULL(ntype);
                                 if (IS_NULL(d)) {
-                                    continue;
+                                    if (!ntype->is_nullable()) {
+                                        throw TYPE_VALID_ERROR("Specified field is not nullable. [field=%s]",
+                                                               (*iter)->get_canonical_name().c_str());
+                                    }
+                                    if (NOT_NULL(ntype->get_default_value())) {
+                                        const __default *df = ntype->get_default_value();
+                                        df->set_default(d);
+                                    }
                                 }
-                                uint64_t r = handler->write(buffer, d, r_offset, max_length);
-                                r_offset += r;
-                                t_size += r;
+                                if (NOT_NULL(d)) {
+                                    if (NOT_NULL(ntype->get_constraint())) {
+                                        __constraint *constraint = ntype->get_constraint();
+                                        if (!constraint->validate(d)) {
+                                            throw TYPE_VALID_ERROR("Constraint validation failed. [field=%s]",
+                                                                   (*iter)->get_canonical_name().c_str());
+                                        }
+                                    }
+                                    uint64_t r = handler->write(buffer, d, r_offset, max_length);
+                                    r_offset += r;
+                                    t_size += r;
+                                }
                             }
                             return t_size;
                         }
@@ -233,7 +257,7 @@ REACTFS_NS_CORE
                             if (IS_NULL(data)) {
                                 return 0;
                             }
-                            unordered_map<string, void *> *map = (unordered_map<string, void *> *) data;
+                            unordered_map<uint8_t, void *> *map = (unordered_map<uint8_t, void *> *) data;
                             CHECK_NOT_EMPTY_P(map);
                             uint64_t t_size = sizeof(__version_header);
                             vector<__type_instance *>::iterator iter;

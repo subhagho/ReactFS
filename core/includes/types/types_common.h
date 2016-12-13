@@ -428,6 +428,13 @@ REACTFS_NS_CORE
                             return sizeof(uint8_t);
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -510,6 +517,13 @@ REACTFS_NS_CORE
                             return sizeof(char);
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -592,6 +606,14 @@ REACTFS_NS_CORE
                             return sizeof(bool);
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         * (Only equals supported for bool)
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -663,6 +685,13 @@ REACTFS_NS_CORE
                             return sizeof(short);
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -745,6 +774,13 @@ REACTFS_NS_CORE
                             return sizeof(int);
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -827,6 +863,13 @@ REACTFS_NS_CORE
                             return sizeof(long);
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -910,6 +953,13 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -1055,6 +1105,13 @@ REACTFS_NS_CORE
                             return sizeof(float);
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -1138,6 +1195,13 @@ REACTFS_NS_CORE
                             return sizeof(double);
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -1249,6 +1313,13 @@ REACTFS_NS_CORE
                             return (sizeof(uint64_t) + (sizeof(char) * d->length()));
                         }
 
+                        /*!
+                         * Compare the source and target base on the specified operator.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
@@ -1545,6 +1616,7 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(type_handler);
+                            CHECK_NOT_NULL(value);
                             va_list vl;
                             va_start(vl, max_length);
                             uint64_t a_size = va_arg(vl, uint64_t);
@@ -1594,6 +1666,13 @@ REACTFS_NS_CORE
                             return t_size;
                         }
 
+                        /*!
+                         * Comparisons not supported for arrays. Will throw exception if called.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
@@ -1613,8 +1692,7 @@ REACTFS_NS_CORE
 
                     /*!
                      * List type is a collection of basic types or structs.
-                     *
-                     * Should be initialized as a vector of type pointer.
+                     * Internally implemented as a vector of type pointers.
                      *
                      * @tparam __T - Basic datatype of the array elements.
                      * @tparam __type - Datatype enum of the array element type.
@@ -1696,6 +1774,7 @@ REACTFS_NS_CORE
                         */
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             CHECK_NOT_NULL(type_handler);
 
                             vector<__T *> *list = static_cast<vector<__T *> *>( value);
@@ -1743,6 +1822,13 @@ REACTFS_NS_CORE
                             return t_size;
                         }
 
+                        /*!
+                         * Comparisons not supported for lists. Will throw exception if called.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
@@ -1760,15 +1846,33 @@ REACTFS_NS_CORE
                     typedef __dt_list<string, __type_def_enum::TYPE_STRING> __string_list;
                     typedef __dt_list<string, __type_def_enum::TYPE_TEXT> __text_list;
 
+                    /*!
+                     * Map datatype of key/value pairs.
+                     * Keys are expected to be basic datatypes.
+                     * Values can be any embedded datatype. (Cannot be array or list types).
+                     * Internally implemented as an unordered_map.
+                     *
+                     * @tparam __K - Key datatype.
+                     * @tparam __key_type - Key datatype enum.
+                     * @tparam __V - Value datatype.
+                     * @tparam __value_type - Value datatype enum.
+                     */
                     template<typename __K, __type_def_enum __key_type, typename __V, __type_def_enum __value_type>
                     class __dt_map : public __datatype_io<unordered_map<__K, __V *>> {
                     private:
+                        /// Datatype enum of the map key.
                         __type_def_enum key_type = __key_type;
+                        /// Datatype enum of the map value.
                         __type_def_enum value_type = __value_type;
+                        /// Key type IO handler.
                         __base_datatype_io *kt_handler = nullptr;
+                        /// Value type IO handler.
                         __base_datatype_io *vt_handler = nullptr;
 
                     public:
+                        /*!<constructor
+                         * Default empty constructor.
+                         */
                         __dt_map() : __datatype_io<__V>(
                                 __type_def_enum::TYPE_MAP) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(value_type));
@@ -1779,14 +1883,33 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(vt_handler);
                         }
 
+                        /*!
+                         * Get the key type enum.
+                         *
+                         * @return - Key type enum
+                         */
                         __type_def_enum get_key_type() {
                             return this->key_type;
                         }
 
+                        /*!
+                         * Get the value type enum.
+                         *
+                         * @return - Value type enum.
+                         */
                         __type_def_enum get_value_type() {
                             return this->value_type;
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the typed unordered_map.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
@@ -1823,8 +1946,21 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                        * Write (serialize) data for the map (unordered_map) to the binary output buffer.
+                        *
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @return - Total number of bytes written.
+                        */
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(kt_handler);
+                            CHECK_NOT_NULL(vt_handler);
+                            CHECK_NOT_NULL(value);
+
                             unordered_map<__K, __V *> *map = (unordered_map<__K, __V *> *) value;
                             CHECK_NOT_NULL(map);
 
@@ -1853,6 +1989,12 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (data size occupied by the map).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *value, int size = -1) override {
                             if (IS_NULL(value)) {
                                 return 0;
@@ -1875,76 +2017,197 @@ REACTFS_NS_CORE
                             return t_size;
                         }
 
+                        /*!
+                         * Comparisons not supported for maps. Will throw exception if called.
+                         *
+                         * @param source - Source value pointer
+                         * @param target - Target value pointer
+                         * @return - Is comparision true?
+                         */
                         virtual bool
                         compare(const void *source, const void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
                         }
                     };
 
+                    /*!
+                     * Absract base class for defining type constraints.
+                     */
                     class __constraint {
                     public:
+                        /*!
+                         * Virtual base desctructor.
+                         */
                         virtual ~__constraint() {}
 
+                        /*!
+                         * Validate the data by applying this constraint instance.
+                         *
+                         * @param value - Data value to validate
+                         * @return - Constraint passed?
+                         */
                         virtual bool validate(const void *value) const = 0;
 
+                        /*!
+                         * Write (serialize) this constraint instance.
+                         *
+                         * @param buffer - Output buffer to write the constraint to.
+                         * @param offset - Offset in the buffer to start writing.
+                         * @return - Number of byte written.
+                         */
                         virtual uint32_t write(void *buffer, uint64_t offset) = 0;
 
+                        /*!
+                         * Read (de-serialize) the constraint instance.
+                         *
+                         * @param buffer - Input buffer to read data from.
+                         * @param offset - Offset in the input buffer to read from.
+                         * @return - Number of bytes consumed.
+                         */
                         virtual uint32_t read(void *buffer, uint64_t offset) = 0;
 
+                        /*!
+                         * Get the datatype enum that this constraint instance supports.
+                         *
+                         * @return - Supported datatype enum.
+                         */
                         virtual __type_def_enum get_datatype() = 0;
                     };
 
+                    /*!
+                     * Abstract base class for defining default values.
+                     */
                     class __default {
                     protected:
+                        /// Datatype IO handler.
                         __base_datatype_io *handler = nullptr;
 
                     public:
 
+                        /*!<destructor
+                         * Base virtual destructor.
+                         */
                         virtual ~__default() {
 
                         }
 
+                        /*!
+                         * Write (serialize) this default value instance.
+                         *
+                         * @param buffer - Output buffer to write the constraint to.
+                         * @param offset - Offset in the buffer to start writing.
+                         * @return - Number of byte written.
+                         */
                         virtual uint32_t write(void *buffer, uint64_t offset) = 0;
 
+                        /*!
+                         * Read (de-serialize) the default value instance.
+                         *
+                         * @param buffer - Input buffer to read data from.
+                         * @param offset - Offset in the input buffer to read from.
+                         * @return - Number of bytes consumed.
+                         */
                         virtual uint32_t read(void *buffer, uint64_t offset) = 0;
 
+                        /*!
+                         * Get the datatype enum that this default value instance supports.
+                         *
+                         * @return - Supported datatype enum.
+                         */
                         virtual __type_def_enum get_datatype() = 0;
 
+                        /*!
+                         * Set the passed pointer to the default value.
+                         *
+                         * @param value - Value pointer.
+                         */
+                        virtual void set_default(void *value) const = 0;
                     };
 
+                    /*!
+                     * Template base class for defining typed default value instances.
+                     *
+                     * @tparam __T - Datatype of the value.
+                     * @tparam __type - Datatype enum of the value.
+                     */
                     template<typename __T, __type_def_enum __type>
                     class __typed_default : public __default {
                     private:
+                        /// Datatype enum of the value.
                         __type_def_enum datatype = __type;
+                        /// Typed default value
                         __T value;
                     public:
+                        /*!<constructor
+                         * Default empty constructor.
+                         */
                         __typed_default() {
                             PRECONDITION(__type_enum_helper::is_native(datatype));
                             handler = __type_defs_utils::get_type_handler(this->datatype);
                             CHECK_NOT_NULL(handler);
                         }
 
+                        /*!
+                         * Get the default value.
+                         *
+                         * @return - Typed default value.
+                         */
                         const __T get_value() const {
                             CHECK_NOT_NULL(value);
                             return value;
                         }
 
+                        /*!
+                         * Set the default value.
+                         *
+                         * @param value - Typed default value.
+                         */
                         void set_value(__T value) {
                             this->value = value;
                         }
 
+                        /*!
+                         * Set the passed pointer to the default value.
+                         *
+                         * @param value - Value pointer.
+                         */
+                        void set_default(void *value) const override {
+                            __T *t = (__T *) value;
+                            CHECK_NOT_NULL(t);
+                            *t = this->value;
+                        }
+
+                        /*!
+                         * Get the datatype enum of the supported value type.
+                         *
+                         * @return - Supported datatype enum.
+                         */
                         __type_def_enum get_datatype() override {
                             return this->datatype;
                         }
 
-                        uint32_t write(void *buffer, uint64_t offset) {
+                        /*!
+                         * Write (serialize) this default value instance.
+                         *
+                         * @param buffer - Output buffer to write the constraint to.
+                         * @param offset - Offset in the buffer to start writing.
+                         * @return - Number of byte written.
+                         */
+                        uint32_t write(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
 
                             return handler->write(buffer, &value, offset, ULONG_MAX);
                         }
 
-                        uint32_t read(void *buffer, uint64_t offset) {
+                        /*!
+                         * Read (de-serialize) the default value instance.
+                         *
+                         * @param buffer - Input buffer to read data from.
+                         * @param offset - Offset in the input buffer to read from.
+                         * @return - Number of bytes consumed.
+                         */
+                        uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
 
@@ -1968,6 +2231,57 @@ REACTFS_NS_CORE
                     typedef __typed_default<double, __type_def_enum::TYPE_DOUBLE> __default_double;
                     typedef __typed_default<string, __type_def_enum::TYPE_STRING> __default_string;
 
+                    class __defaults_loader {
+                    public:
+                        static __default *
+                        read(void *buffer, uint64_t offset, __type_def_enum datatype, uint64_t *size) {
+                            __default *d = nullptr;
+                            switch (datatype) {
+                                case __type_def_enum::TYPE_BOOL:
+                                    d = new __default_bool();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_bool));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    d = new __default_char();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_char));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    d = new __default_short();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_short));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    d = new __default_int();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_int));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    d = new __default_long();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_long));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    d = new __default_timestamp();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_timestamp));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    d = new __default_float();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_float));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    d = new __default_double();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_double));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    d = new __default_string();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_string));
+                                    break;
+                                default:
+                                    throw BASE_ERROR("No default value handler defined for datatype. [type=%d]",
+                                                     datatype);
+                            }
+                            CHECK_NOT_NULL(d);
+                            *size = d->read(buffer, offset);
+                            return d;
+                        }
+                    };
                 }
 REACTFS_NS_CORE_END
 #endif //REACTFS_TYPES_COMMON_H
