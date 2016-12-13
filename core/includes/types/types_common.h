@@ -104,7 +104,7 @@ REACTFS_NS_CORE
                         static bool is_inner_type_valid(__type_def_enum type) {
                             if (is_native(type)) {
                                 return true;
-                            } else if (type == __type_def_enum::TYPE_STRUCT) {
+                            } else if (type == __type_def_enum::TYPE_STRUCT || type == __type_def_enum::TYPE_TEXT) {
                                 return true;
                             }
                             return false;
@@ -2072,6 +2072,7 @@ REACTFS_NS_CORE
                             throw BASE_ERROR("Compare only supported for native types.");
                         }
                     };
+
 
                     /*!
                      * Absract base class for defining type constraints.

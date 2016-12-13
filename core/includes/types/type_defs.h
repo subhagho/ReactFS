@@ -279,6 +279,289 @@ REACTFS_NS_CORE
                             throw BASE_ERROR("Compare only supported for native types.");
                         }
                     };
+
+                    typedef __dt_array<__dt_struct, __type_def_enum::TYPE_STRUCT> __struct_array;
+                    typedef __dt_list<__dt_struct, __type_def_enum::TYPE_STRUCT> __struct_list;
+
+                    class __array_init_utils {
+                    private:
+                        static unordered_map<string, __base_datatype_io *> array_handlers;
+
+                    public:
+                        static __base_datatype_io *get_handler(__type_def_enum inner_type) {
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
+                            string type_n = __type_enum_helper::get_type_string(inner_type);
+                            __base_datatype_io *handler = nullptr;
+                            unordered_map<string, __base_datatype_io *>::iterator iter = array_handlers.find(type_n);
+                            if (iter != array_handlers.end()) {
+                                return iter->second;
+                            }
+                            handler = create_handler(inner_type);
+                            CHECK_NOT_NULL(handler);
+                            array_handlers.insert({type_n, handler});
+                            return handler;
+                        }
+
+                        static __base_datatype_io *create_handler(__type_def_enum inner_type) {
+                            __base_datatype_io *handler = nullptr;
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
+                            switch (inner_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __byte_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__byte_array));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __char_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__char_array));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __short_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__short_array));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __int_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__int_array));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __long_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__long_array));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __float_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__float_array));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __double_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__double_array));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __timestamp_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__timestamp_array));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __string_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__string_array));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __text_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__text_array));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    handler = new __struct_array();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__struct_array));
+                                    break;
+                            }
+                            return handler;
+                        }
+                    };
+
+                    class __list_init_utils {
+                    private:
+                        static unordered_map<string, __base_datatype_io *> list_handlers;
+
+                    public:
+                        static __base_datatype_io *get_handler(__type_def_enum inner_type) {
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
+                            string type_n = __type_enum_helper::get_type_string(inner_type);
+                            __base_datatype_io *handler = nullptr;
+                            unordered_map<string, __base_datatype_io *>::iterator iter = list_handlers.find(type_n);
+                            if (iter != list_handlers.end()) {
+                                return iter->second;
+                            }
+                            handler = create_handler(inner_type);
+                            CHECK_NOT_NULL(handler);
+                            list_handlers.insert({type_n, handler});
+                            return handler;
+                        }
+
+                        static __base_datatype_io *create_handler(__type_def_enum inner_type) {
+                            __base_datatype_io *handler = nullptr;
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
+                            switch (inner_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __byte_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__byte_list));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __char_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__char_list));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __short_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__short_list));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __int_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__int_list));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __long_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__long_list));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __float_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__float_list));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __double_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__double_list));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __timestamp_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__timestamp_list));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __string_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__string_list));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __text_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__text_list));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    handler = new __struct_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__struct_list));
+                                    break;
+                            }
+                            return handler;
+                        }
+                    };
+
+                    class __map_init_utils {
+                    private:
+                        static unordered_map<string, __base_datatype_io *> map_handlers;
+
+                        static string get_key(__type_def_enum key_type, __type_def_enum value_type) {
+                            string key_n = __type_enum_helper::get_type_string(key_type);
+                            string value_n = __type_enum_helper::get_type_string(value_type);
+                            return common_utils::format("%s::%s", key_n, value_n);
+                        }
+
+                        static __base_datatype_io *create_char_map(__type_def_enum value_type) {
+                            __base_datatype_io *handler = nullptr;
+                            switch (value_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, uint8_t, __type_def_enum::TYPE_BYTE>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_CHAR>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, short, __type_def_enum::TYPE_SHORT>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, int, __type_def_enum::TYPE_INTEGER>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, long, __type_def_enum::TYPE_LONG>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, float, __type_def_enum::TYPE_FLOAT>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, double, __type_def_enum::TYPE_DOUBLE>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, uint64_t, __type_def_enum::TYPE_TIMESTAMP>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_STRING>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_TEXT>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, __dt_struct, __type_def_enum::TYPE_STRUCT>();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                            }
+                            return handler;
+                        }
+
+                    public:
+                        static __base_datatype_io *get_handler(__type_def_enum key_type, __type_def_enum value_type) {
+                            PRECONDITION(__type_enum_helper::is_native(key_type));
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(value_type));
+                            string type_n = get_key(key_type, value_type);
+
+                            __base_datatype_io *handler = nullptr;
+                            unordered_map<string, __base_datatype_io *>::iterator iter = map_handlers.find(type_n);
+                            if (iter != map_handlers.end()) {
+                                return iter->second;
+                            }
+                            handler = create_handler(key_type, value_type);
+                            CHECK_NOT_NULL(handler);
+                            map_handlers.insert({type_n, handler});
+                            return handler;
+                        }
+
+                        static __base_datatype_io *
+                        create_handler(__type_def_enum key_type, __type_def_enum value_type) {
+                            __base_datatype_io *handler = nullptr;
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
+                            switch (inner_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __byte_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__byte_list));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __char_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__char_list));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __short_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__short_list));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __int_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__int_list));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __long_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__long_list));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __float_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__float_list));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __double_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__double_list));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __timestamp_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__timestamp_list));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __string_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__string_list));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __text_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__text_list));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    handler = new __struct_list();
+                                    CHECK_ALLOC(handler, TYPE_NAME(__struct_list));
+                                    break;
+                            }
+                            return handler;
+                        }
+                    };
                 }
 REACTFS_NS_CORE_END
 

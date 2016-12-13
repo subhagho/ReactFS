@@ -106,16 +106,19 @@ REACTFS_NS_CORE
                         /// Default value (if any) defined for this field.
                         __default *default_value = nullptr;
                         /// Field datatype IO handler.
-                        __base_datatype_io *string_handler = nullptr;
+                        __base_datatype_io *type_handler = nullptr;
                         /// Is this field nullable.
                         bool nullable = false;
-
+                        /// Parent type of which this field is a part.
+                        const __native_type *parent = nullptr;
                     public:
                         /*!
                          * Default empty constructor, to be instantiated
                          * when reading the definition from buffer.
                          */
-                        __native_type() {}
+                        __native_type(const __native_type *parent) {
+                            this->parent = parent;
+                        }
 
                         /*!
                          * Constructor for creating a new field definition.
@@ -124,14 +127,16 @@ REACTFS_NS_CORE
                          * @param name - Name of this field.
                          * @param datatype - Data type of this field.
                          */
-                        __native_type(const uint8_t index, const string &name, const __type_def_enum datatype) {
+                        __native_type(const __native_type *parent, const uint8_t index, const string &name,
+                                      const __type_def_enum datatype) {
+                            this->parent = parent;
                             this->index = index;
                             this->name = string(name);
                             this->datatype = datatype;
                             this->type = __field_type::NATIVE;
 
-                            string_handler = __type_defs_utils::get_type_handler(__type_def_enum::TYPE_STRING);
-                            CHECK_NOT_NULL(string_handler);
+                            type_handler = __type_defs_utils::get_type_handler(this->datatype);
+                            CHECK_NOT_NULL(type_handler);
                         }
 
                         /*!
@@ -248,6 +253,9 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t write(void *buffer, uint64_t offset) {
                             CHECK_NOT_NULL(buffer);
+                            __base_datatype_io *string_handler = __type_defs_utils::get_type_handler(
+                                    __type_def_enum::TYPE_STRING);
+                            CHECK_NOT_NULL(string_handler);
 
                             // Write the field type.
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -311,6 +319,9 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t read(void *buffer, uint64_t offset) {
                             CHECK_NOT_NULL(buffer);
+                            __base_datatype_io *string_handler = __type_defs_utils::get_type_handler(
+                                    __type_def_enum::TYPE_STRING);
+                            CHECK_NOT_NULL(string_handler);
 
                             // Read the field type.
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -336,6 +347,8 @@ REACTFS_NS_CORE
                             uint8_t *dt = static_cast<uint8_t *>(ptr);
                             this->datatype = __type_enum_helper::parse_type(*dt);
                             r_size += sizeof(uint16_t);
+                            type_handler = __type_defs_utils::get_type_handler(this->datatype);
+                            CHECK_NOT_NULL(type_handler);
 
                             // Read is nullable
                             ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
@@ -368,6 +381,18 @@ REACTFS_NS_CORE
                             }
                             return r_size;
                         }
+
+                        const __native_type *get_parent() const {
+                            return this->parent;
+                        }
+
+                        string get_canonical_name() const {
+                            if (NOT_NULL(parent)) {
+                                string sn = parent->get_canonical_name();
+                                return common_utils::format("%s.%s", sn, this->name);
+                            }
+                            return this->name;
+                        }
                     };
 
                     /*!
@@ -384,7 +409,7 @@ REACTFS_NS_CORE
                          * Default empty constructor, to be instantiated
                          * when reading the definition from buffer.
                          */
-                        __sized_type() {
+                        __sized_type(const __native_type *parent) : __native_type(parent) {
 
                         }
 
@@ -396,9 +421,10 @@ REACTFS_NS_CORE
                          * @param datatype - Data type of this field.
                          * @param max_size - Maximum size for this field type.
                          */
-                        __sized_type(const uint8_t index, const string &name, const __type_def_enum datatype,
+                        __sized_type(const __native_type *parent, const uint8_t index, const string &name,
+                                     const __type_def_enum datatype,
                                      const uint32_t max_size)
-                                : __native_type(index, name, datatype) {
+                                : __native_type(parent, index, name, datatype) {
                             PRECONDITION(max_size > 0);
                             this->max_size = max_size;
                             this->type = __field_type::SIZED;
@@ -441,6 +467,57 @@ REACTFS_NS_CORE
                             r_size += sizeof(uint32_t);
 
                             return r_size;
+                        }
+                    };
+
+                    class __array_type : public __sized_type {
+                    private:
+                        __type_def_enum inner_type;
+                        __base_datatype_io *inner_type_handler = nullptr;
+                    public:
+                        __array_type(const __native_type *parent) : __sized_type(parent) {
+
+                        }
+
+                        __array_type(const __native_type *parent, const uint8_t index, const string &name,
+                                     const __type_def_enum inner_type,
+                                     const uint32_t max_size) : __sized_type(parent, index, name,
+                                                                             __type_def_enum::TYPE_ARRAY, max_size) {
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
+                            this->inner_type = inner_type;
+                            inner_type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            CHECK_NOT_NULL(inner_type_handler);
+                        }
+
+                        /*!
+                         * Set the constraint definition for this field.
+                         * Note:: Constraints cannot be defined for arrays. Call will throw exception.
+                         *
+                         * @param constraint - Field data constraint.
+                         */
+                        virtual void set_constraint(__constraint *constraint) {
+                            throw BASE_ERROR("Constraints can only be defined for basic types.");
+                        }
+
+                        /*!
+                         * Set the default value for this field.
+                         * Note:: Default value cannot be defined for arrays. Call will throw exception.
+                         *
+                         * @param default_value - Field default value.
+                         */
+                        virtual void set_default_value(__default *default_value) {
+                            throw BASE_ERROR("Default value can only be defined for basic types.");
+                        }
+
+                        /*!
+                         * Write (serialize) this field definition to the output buffer.
+                         *
+                         * @param buffer - Output write buffer.
+                         * @param offset - Offset to start writing from.
+                         * @return - Number of bytes written.
+                         */
+                        virtual uint32_t write(void *buffer, uint64_t offset) override {
+
                         }
                     };
 
