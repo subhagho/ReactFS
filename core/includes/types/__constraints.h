@@ -554,13 +554,332 @@ REACTFS_NS_CORE
                     typedef __value_constraint<long, __type_def_enum::TYPE_LONG> long_value_constraint;
                     typedef __value_constraint<float, __type_def_enum::TYPE_FLOAT> float_value_constraint;
                     typedef __value_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP> timestamp_value_constraint;
-                    typedef __value_constraint<double, __type_def_enum::TYPE_DOUBLE> douable_value_constraint;
+                    typedef __value_constraint<double, __type_def_enum::TYPE_DOUBLE> double_value_constraint;
                     typedef __value_constraint<string, __type_def_enum::TYPE_STRING> string_value_constraint;
 
 
                     class __constraint_loader {
+                    private:
+                        static __constraint *read_operator_gt(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                            __constraint *c = nullptr;
+                            switch (datatype) {
+                                case __type_def_enum::TYPE_CHAR:
+                                    c = new char_gt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(char_gt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    c = new short_gt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(short_gt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    c = new int_gt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(int_gt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    c = new long_gt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(long_gt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    c = new float_gt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(float_gt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    c = new double_gt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(double_gt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    c = new timestamp_gt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(timestamp_gt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    c = new string_gt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(string_gt_constraint));
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Constraints can only be defined for basic types.");
+                            }
+                            CHECK_NOT_NULL(c);
+                            c->read(buffer, offset);
+                            return c;
+                        }
+
+                        static __constraint *
+                        read_operator_gteq(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                            __constraint *c = nullptr;
+                            switch (datatype) {
+                                case __type_def_enum::TYPE_CHAR:
+                                    c = new char_gteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(char_gteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    c = new short_gteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(short_gteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    c = new int_gteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(int_gteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    c = new long_gteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(long_gteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    c = new float_gteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(float_gteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    c = new double_gteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(double_gteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    c = new timestamp_gteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(timestamp_gteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    c = new string_gteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(string_gteq_constraint));
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Constraints can only be defined for basic types.");
+                            }
+                            CHECK_NOT_NULL(c);
+                            c->read(buffer, offset);
+                            return c;
+                        }
+
+                        static __constraint *read_operator_lt(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                            __constraint *c = nullptr;
+                            switch (datatype) {
+                                case __type_def_enum::TYPE_CHAR:
+                                    c = new char_lt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(char_lt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    c = new short_lt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(short_lt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    c = new int_lt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(int_lt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    c = new long_lt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(long_lt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    c = new float_lt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(float_lt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    c = new double_lt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(double_lt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    c = new timestamp_lt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(timestamp_lt_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    c = new string_lt_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(string_lt_constraint));
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Constraints can only be defined for basic types.");
+                            }
+                            CHECK_NOT_NULL(c);
+                            c->read(buffer, offset);
+                            return c;
+                        }
+
+                        static __constraint *
+                        read_operator_lteq(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                            __constraint *c = nullptr;
+                            switch (datatype) {
+                                case __type_def_enum::TYPE_CHAR:
+                                    c = new char_lteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(char_lteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    c = new short_lteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(short_lteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    c = new int_lteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(int_lteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    c = new long_lteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(long_lteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    c = new float_lteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(float_lteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    c = new double_lteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(double_lteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    c = new timestamp_lteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(timestamp_lteq_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    c = new string_lteq_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(string_lteq_constraint));
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Constraints can only be defined for basic types.");
+                            }
+                            CHECK_NOT_NULL(c);
+                            c->read(buffer, offset);
+                            return c;
+                        }
+
                     public:
                         static __constraint *read(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                            CHECK_NOT_NULL(buffer);
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint8_t *type = static_cast<uint8_t *>(ptr);
+                            if (*type == __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN)) {
+                                return read_value(buffer, offset, datatype);
+                            } else if (*type ==
+                                       __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_RANGE)) {
+                                return read_range(buffer, offset, datatype);
+                            } else if (*type ==
+                                       __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_REGEX)) {
+                                return read_regex(buffer, offset);
+                            } else if (*type == __constraint_type_utils::get_number_value(
+                                    __constraint_type::CONSTRAINT_NOT_NULLABLE)) {
+                                return read_nullable(buffer, offset);
+                            } else if (*type ==
+                                       __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_LTEQ)) {
+                                return read_operator(buffer, offset, datatype, __constraint_operator::LTEQ);
+                            } else if (*type ==
+                                       __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_LT)) {
+                                return read_operator(buffer, offset, datatype, __constraint_operator::LT);
+                            } else if (*type ==
+                                       __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_GTEQ)) {
+                                return read_operator(buffer, offset, datatype, __constraint_operator::GTEQ);
+                            } else if (*type ==
+                                       __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_LT)) {
+                                return read_operator(buffer, offset, datatype, __constraint_operator::LT);
+                            }
+                            return nullptr;
+                        }
+
+                        static __constraint *read_nullable(void *buffer, uint64_t offset) {
+                            __notnull *c = new __notnull();
+                            CHECK_ALLOC(c, TYPE_NAME(__notnull));
+                            c->read(buffer, offset);
+                            return c;
+                        }
+
+                        static __constraint *read_regex(void *buffer, uint64_t offset) {
+                            __regex *c = new __regex();
+                            CHECK_ALLOC(c, TYPE_NAME(__regex));
+                            c->read(buffer, offset);
+                            return c;
+                        }
+
+                        static __constraint *read_value(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                            __constraint *c = nullptr;
+                            switch (datatype) {
+                                case __type_def_enum::TYPE_CHAR:
+                                    c = new char_value_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(char_value_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    c = new short_value_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(short_value_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    c = new int_value_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(int_value_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    c = new long_value_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(long_value_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    c = new float_value_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(float_value_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    c = new double_value_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(double_value_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    c = new timestamp_value_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(timestamp_value_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    c = new string_value_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(string_value_constraint));
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Constraints can only be defined for basic types.");
+                            }
+                            CHECK_NOT_NULL(c);
+                            c->read(buffer, offset);
+                            return c;
+                        }
+
+                        static __constraint *read_range(void *buffer, uint64_t offset, __type_def_enum datatype) {
+                            __constraint *c = nullptr;
+                            switch (datatype) {
+                                case __type_def_enum::TYPE_CHAR:
+                                    c = new char_range_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(char_range_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    c = new short_range_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(short_range_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    c = new int_range_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(int_range_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    c = new long_range_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(long_range_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    c = new float_range_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(float_range_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    c = new double_range_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(double_range_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    c = new timestamp_range_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(timestamp_range_constraint));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    c = new string_range_constraint();
+                                    CHECK_ALLOC(c, TYPE_NAME(string_range_constraint));
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Constraints can only be defined for basic types.");
+                            }
+                            CHECK_NOT_NULL(c);
+                            c->read(buffer, offset);
+                            return c;
+                        }
+
+                        static __constraint *read_operator(void *buffer, uint64_t offset, __type_def_enum datatype,
+                                                           __constraint_operator oper) {
+                            switch (oper) {
+                                case __constraint_operator::GT:
+                                    return read_operator_gt(buffer, offset, datatype);
+                                case __constraint_operator::GTEQ:
+                                    return read_operator_gteq(buffer, offset, datatype);
+                                case __constraint_operator::LT:
+                                    return read_operator_lt(buffer, offset, datatype);
+                                case __constraint_operator::LTEQ:
+                                    return read_operator_lteq(buffer, offset, datatype);
+                                default:
+                                    throw BASE_ERROR("Equals constraint is meaningless.");
+                            }
                             return nullptr;
                         }
                     };
