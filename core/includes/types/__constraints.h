@@ -131,6 +131,10 @@ REACTFS_NS_CORE
 
                             return sizeof(uint8_t);
                         }
+
+                        __type_def_enum get_datatype() override {
+                            return __type_def_enum::TYPE_UNKNOWN;
+                        }
                     };
 
                     class __regex : public __constraint {
@@ -187,25 +191,26 @@ REACTFS_NS_CORE
 
                             return r_size;
                         }
+
+                        __type_def_enum get_datatype() override {
+                            return __type_def_enum::TYPE_STRING;
+                        }
                     };
 
-                    template<typename __T>
+                    template<typename __T, __type_def_enum __type>
                     class __range_constraint : public __constraint {
                     private:
-                        __type_def_enum value_type;
+                        __type_def_enum value_type = __type;
                         __T min_value;
                         __T max_value;
                         __base_datatype_io *handler = nullptr;
 
-                    protected:
-                        __range_constraint(__type_def_enum value_type) {
+                    public:
+                        __range_constraint() {
                             PRECONDITION(__type_enum_helper::is_native(value_type));
-                            this->value_type = value_type;
                             handler = __type_defs_utils::get_type_handler(value_type);
                             CHECK_NOT_NULL(handler);
                         }
-
-                    public:
 
                         virtual ~__range_constraint() {
 
@@ -219,9 +224,14 @@ REACTFS_NS_CORE
                             this->max_value = max_value;
                         }
 
+                        __type_def_enum get_datatype() override {
+                            return this->value_type;
+                        }
+
                         virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 __T *t = (__T *) value;
+                                CHECK_NOT_NULL(t);
                                 return (*t >= min_value && *t <= max_value);
                             }
                             return false;
@@ -256,7 +266,6 @@ REACTFS_NS_CORE
                             uint8_t *type = static_cast<uint8_t *>(ptr);
                             POSTCONDITION(*type == __constraint_type_utils::get_number_value(
                                     __constraint_type::CONSTRAINT_RANGE));
-                            ptr = common_utils::increment_data_ptr(ptr, sizeof(uint8_t));
 
                             uint64_t r_size = sizeof(uint8_t);
 
@@ -278,78 +287,25 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class char_range_constraint : public __range_constraint<char> {
-                    public:
-                        char_range_constraint() : __range_constraint<char>(__type_def_enum::TYPE_CHAR) {
+                    typedef __range_constraint<char, __type_def_enum::TYPE_CHAR> char_range_constraint;
+                    typedef __range_constraint<short, __type_def_enum::TYPE_SHORT> short_range_constraint;
+                    typedef __range_constraint<int, __type_def_enum::TYPE_INTEGER> int_range_constraint;
+                    typedef __range_constraint<long, __type_def_enum::TYPE_LONG> long_range_constraint;
+                    typedef __range_constraint<float, __type_def_enum::TYPE_FLOAT> float_range_constraint;
+                    typedef __range_constraint<double, __type_def_enum::TYPE_DOUBLE> double_range_constraint;
+                    typedef __range_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP> timestamp_range_constraint;
+                    typedef __range_constraint<string, __type_def_enum::TYPE_STRING> string_range_constraint;
 
-                        }
-                    };
 
-                    class short_range_constraint : public __range_constraint<short> {
-                    public:
-                        short_range_constraint() : __range_constraint<short>(__type_def_enum::TYPE_SHORT) {
-
-                        }
-                    };
-
-                    class int_range_constraint : public __range_constraint<int> {
-                    public:
-                        int_range_constraint() : __range_constraint<int>(__type_def_enum::TYPE_INTEGER) {
-
-                        }
-                    };
-
-                    class long_range_constraint : public __range_constraint<long> {
-                    public:
-                        long_range_constraint() : __range_constraint<long>(__type_def_enum::TYPE_LONG) {
-
-                        }
-                    };
-
-                    class float_range_constraint : public __range_constraint<float> {
-                    public:
-                        float_range_constraint() : __range_constraint<float>(__type_def_enum::TYPE_FLOAT) {
-
-                        }
-                    };
-
-                    class double_range_constraint : public __range_constraint<double> {
-                    public:
-                        double_range_constraint() : __range_constraint<double>(__type_def_enum::TYPE_DOUBLE) {
-
-                        }
-                    };
-
-                    class timestamp_range_constraint : public __range_constraint<uint64_t> {
-                    public:
-                        timestamp_range_constraint() : __range_constraint<uint64_t>(__type_def_enum::TYPE_TIMESTAMP) {
-
-                        }
-                    };
-
-                    class string_range_constraint : public __range_constraint<string> {
-                    public:
-                        string_range_constraint() : __range_constraint<string>(__type_def_enum::TYPE_STRING) {
-
-                        }
-                    };
-
-                    template<typename __T>
+                    template<typename __T, __type_def_enum __type, __constraint_operator __operator>
                     class __oper_constraint : public __constraint {
                     private:
-                        __constraint_operator oper;
-                        __type_def_enum value_type;
+                        __constraint_operator oper = __operator;
+                        __type_def_enum value_type = __type;
                         __T value;
                         __base_datatype_io *handler = nullptr;
 
                     protected:
-                        __oper_constraint(__type_def_enum value_type, __constraint_operator oper) {
-                            PRECONDITION(__type_enum_helper::is_native(value_type));
-                            this->value_type = value_type;
-                            this->oper = oper;
-                            handler = __type_defs_utils::get_type_handler(value_type);
-                            CHECK_NOT_NULL(handler);
-                        }
 
                         __constraint_type get_constraint_type() {
                             switch (oper) {
@@ -368,6 +324,12 @@ REACTFS_NS_CORE
 
                     public:
 
+                        __oper_constraint() {
+                            PRECONDITION(__type_enum_helper::is_native(value_type));
+                            handler = __type_defs_utils::get_type_handler(value_type);
+                            CHECK_NOT_NULL(handler);
+                        }
+
                         virtual ~__oper_constraint() {
 
                         }
@@ -376,11 +338,16 @@ REACTFS_NS_CORE
                             this->value = value;
                         }
 
+                        __type_def_enum get_datatype() override {
+                            return this->value_type;
+                        }
+
                         virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 CHECK_NOT_NULL(handler);
 
                                 __T *t = (__T *) value;
+                                CHECK_NOT_NULL(t);
                                 return (handler->compare(&(this->value), value, oper));
                             }
                             return false;
@@ -423,89 +390,93 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class char_oper_constraint : public __oper_constraint<char> {
-                    public:
-                        char_oper_constraint(__constraint_operator oper) : __oper_constraint<char>(
-                                __type_def_enum::TYPE_CHAR, oper) {
+                    typedef __oper_constraint<char, __type_def_enum::TYPE_CHAR,
+                            __constraint_operator::GT> char_gt_constraint;
+                    typedef __oper_constraint<char, __type_def_enum::TYPE_CHAR,
+                            __constraint_operator::GTEQ> char_gteq_constraint;
+                    typedef __oper_constraint<char, __type_def_enum::TYPE_CHAR,
+                            __constraint_operator::LT> char_lt_constraint;
+                    typedef __oper_constraint<char, __type_def_enum::TYPE_CHAR,
+                            __constraint_operator::LTEQ> char_lteq_constraint;
 
-                        }
-                    };
-
-                    class short_oper_constraint : public __oper_constraint<short> {
-                    public:
-                        short_oper_constraint(__constraint_operator oper) : __oper_constraint<short>(
-                                __type_def_enum::TYPE_SHORT, oper) {
-
-                        }
-                    };
-
-
-                    class int_oper_constraint : public __oper_constraint<int> {
-                    public:
-                        int_oper_constraint(__constraint_operator oper) : __oper_constraint<int>(
-                                __type_def_enum::TYPE_INTEGER, oper) {
-
-                        }
-                    };
+                    typedef __oper_constraint<short, __type_def_enum::TYPE_SHORT,
+                            __constraint_operator::GT> short_gt_constraint;
+                    typedef __oper_constraint<short, __type_def_enum::TYPE_SHORT,
+                            __constraint_operator::GTEQ> short_gteq_constraint;
+                    typedef __oper_constraint<short, __type_def_enum::TYPE_SHORT,
+                            __constraint_operator::LT> short_lt_constraint;
+                    typedef __oper_constraint<short, __type_def_enum::TYPE_SHORT,
+                            __constraint_operator::LTEQ> short_lteq_constraint;
 
 
-                    class long_oper_constraint : public __oper_constraint<long> {
-                    public:
-                        long_oper_constraint(__constraint_operator oper) : __oper_constraint<long>(
-                                __type_def_enum::TYPE_LONG, oper) {
+                    typedef __oper_constraint<int, __type_def_enum::TYPE_INTEGER,
+                            __constraint_operator::GT> int_gt_constraint;
+                    typedef __oper_constraint<int, __type_def_enum::TYPE_INTEGER,
+                            __constraint_operator::GTEQ> int_gteq_constraint;
+                    typedef __oper_constraint<int, __type_def_enum::TYPE_INTEGER,
+                            __constraint_operator::LT> int_lt_constraint;
+                    typedef __oper_constraint<int, __type_def_enum::TYPE_INTEGER,
+                            __constraint_operator::LTEQ> int_lteq_constraint;
 
-                        }
-                    };
+                    typedef __oper_constraint<long, __type_def_enum::TYPE_LONG,
+                            __constraint_operator::GT> long_gt_constraint;
+                    typedef __oper_constraint<long, __type_def_enum::TYPE_LONG,
+                            __constraint_operator::GTEQ> long_gteq_constraint;
+                    typedef __oper_constraint<long, __type_def_enum::TYPE_LONG,
+                            __constraint_operator::LT> long_lt_constraint;
+                    typedef __oper_constraint<long, __type_def_enum::TYPE_LONG,
+                            __constraint_operator::LTEQ> long_lteq_constraint;
 
-                    class float_oper_constraint : public __oper_constraint<float> {
-                    public:
-                        float_oper_constraint(__constraint_operator oper) : __oper_constraint<float>(
-                                __type_def_enum::TYPE_FLOAT, oper) {
+                    typedef __oper_constraint<float, __type_def_enum::TYPE_FLOAT,
+                            __constraint_operator::GT> float_gt_constraint;
+                    typedef __oper_constraint<float, __type_def_enum::TYPE_FLOAT,
+                            __constraint_operator::GTEQ> float_gteq_constraint;
+                    typedef __oper_constraint<float, __type_def_enum::TYPE_FLOAT,
+                            __constraint_operator::LT> float_lt_constraint;
+                    typedef __oper_constraint<float, __type_def_enum::TYPE_FLOAT,
+                            __constraint_operator::LTEQ> float_lteq_constraint;
 
-                        }
-                    };
+                    typedef __oper_constraint<double, __type_def_enum::TYPE_DOUBLE,
+                            __constraint_operator::GT> double_gt_constraint;
+                    typedef __oper_constraint<double, __type_def_enum::TYPE_DOUBLE,
+                            __constraint_operator::GTEQ> double_gteq_constraint;
+                    typedef __oper_constraint<double, __type_def_enum::TYPE_DOUBLE,
+                            __constraint_operator::LT> double_lt_constraint;
+                    typedef __oper_constraint<double, __type_def_enum::TYPE_DOUBLE,
+                            __constraint_operator::LTEQ> double_lteq_constraint;
 
-                    class double_oper_constraint : public __oper_constraint<double> {
-                    public:
-                        double_oper_constraint(__constraint_operator oper) : __oper_constraint<double>(
-                                __type_def_enum::TYPE_DOUBLE, oper) {
+                    typedef __oper_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP,
+                            __constraint_operator::GT> timestamp_gt_constraint;
+                    typedef __oper_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP,
+                            __constraint_operator::GTEQ> timestamp_gteq_constraint;
+                    typedef __oper_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP,
+                            __constraint_operator::LT> timestamp_lt_constraint;
+                    typedef __oper_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP,
+                            __constraint_operator::LTEQ> timestamp_lteq_constraint;
 
-                        }
-                    };
+                    typedef __oper_constraint<string, __type_def_enum::TYPE_STRING,
+                            __constraint_operator::GT> string_gt_constraint;
+                    typedef __oper_constraint<string, __type_def_enum::TYPE_STRING,
+                            __constraint_operator::GTEQ> string_gteq_constraint;
+                    typedef __oper_constraint<string, __type_def_enum::TYPE_STRING,
+                            __constraint_operator::LT> string_lt_constraint;
+                    typedef __oper_constraint<string, __type_def_enum::TYPE_STRING,
+                            __constraint_operator::LTEQ> string_lteq_constraint;
 
-                    class timestamp_oper_constraint : public __oper_constraint<uint64_t> {
-                    public:
-                        timestamp_oper_constraint(__constraint_operator oper) : __oper_constraint<uint64_t>(
-                                __type_def_enum::TYPE_TIMESTAMP, oper) {
-
-                        }
-                    };
-
-                    class string_oper_constraint : public __oper_constraint<string> {
-                    public:
-                        string_oper_constraint(__constraint_operator oper) : __oper_constraint<string>(
-                                __type_def_enum::TYPE_STRING, oper) {
-
-                        }
-                    };
-
-
-                    template<typename __T>
+                    template<typename __T, __type_def_enum __type>
                     class __value_constraint : public __constraint {
                     private:
-                        __type_def_enum value_type;
+                        __type_def_enum value_type = __type;
                         vector<__T> values;
                         __base_datatype_io *handler = nullptr;
 
-                    protected:
-                        __value_constraint(__type_def_enum value_type) {
+                    public:
+                        __value_constraint() {
                             PRECONDITION(__type_enum_helper::is_native(value_type));
-                            this->value_type = value_type;
                             handler = __type_defs_utils::get_type_handler(value_type);
                             CHECK_NOT_NULL(handler);
                         }
 
-                    public:
                         virtual ~__value_constraint() {
                             values.clear();
                         }
@@ -514,11 +485,19 @@ REACTFS_NS_CORE
                             values.push_back(t);
                         }
 
+                        __type_def_enum get_datatype() override {
+                            return this->value_type;
+                        }
+
                         virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 __T *t = (__T *) value;
                                 CHECK_NOT_NULL(t);
-                                vector<__T>::const_iterator iter;
+                                for (auto iter = values.begin(); iter != values.end(); iter++) {
+                                    if (*t == (*iter)) {
+                                        return true;
+                                    }
+                                }
                             }
                             return false;
                         }
@@ -569,61 +548,15 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class char_value_constraint : public __value_constraint<char> {
-                    public:
-                        char_value_constraint() : __value_constraint<char>(__type_def_enum::TYPE_CHAR) {
+                    typedef __value_constraint<char, __type_def_enum::TYPE_CHAR> char_value_constraint;
+                    typedef __value_constraint<short, __type_def_enum::TYPE_SHORT> short_value_constraint;
+                    typedef __value_constraint<int, __type_def_enum::TYPE_INTEGER> int_value_constraint;
+                    typedef __value_constraint<long, __type_def_enum::TYPE_LONG> long_value_constraint;
+                    typedef __value_constraint<float, __type_def_enum::TYPE_FLOAT> float_value_constraint;
+                    typedef __value_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP> timestamp_value_constraint;
+                    typedef __value_constraint<double, __type_def_enum::TYPE_DOUBLE> douable_value_constraint;
+                    typedef __value_constraint<string, __type_def_enum::TYPE_STRING> string_value_constraint;
 
-                        }
-                    };
-
-                    class short_value_constraint : public __value_constraint<short> {
-                    public:
-                        short_value_constraint() : __value_constraint<short>(__type_def_enum::TYPE_SHORT) {
-
-                        }
-                    };
-
-                    class int_value_constraint : public __value_constraint<int> {
-                    public:
-                        int_value_constraint() : __value_constraint<int>(__type_def_enum::TYPE_INTEGER) {
-
-                        }
-                    };
-
-                    class long_value_constraint : public __value_constraint<long> {
-                    public:
-                        long_value_constraint() : __value_constraint<long>(__type_def_enum::TYPE_LONG) {
-
-                        }
-                    };
-
-                    class float_value_constraint : public __value_constraint<long> {
-                    public:
-                        float_value_constraint() : __value_constraint<long>(__type_def_enum::TYPE_FLOAT) {
-
-                        }
-                    };
-
-                    class timestamp_value_constraint : public __value_constraint<uint64_t> {
-                    public:
-                        timestamp_value_constraint() : __value_constraint<uint64_t>(__type_def_enum::TYPE_TIMESTAMP) {
-
-                        }
-                    };
-
-                    class douable_value_constraint : public __value_constraint<double> {
-                    public:
-                        douable_value_constraint() : __value_constraint<double>(__type_def_enum::TYPE_DOUBLE) {
-
-                        }
-                    };
-
-                    class string_value_constraint : public __value_constraint<string> {
-                    public:
-                        string_value_constraint() : __value_constraint<string>(__type_def_enum::TYPE_STRING) {
-
-                        }
-                    };
 
                     class __constraint_loader {
                     public:

@@ -1706,17 +1706,13 @@ REACTFS_NS_CORE
                         virtual uint32_t write(void *buffer, uint64_t offset) = 0;
 
                         virtual uint32_t read(void *buffer, uint64_t offset) = 0;
+
+                        virtual __type_def_enum get_datatype() = 0;
                     };
 
                     class __default {
                     protected:
-                        __type_def_enum datatype;
                         __base_datatype_io *handler = nullptr;
-
-                        __default(__type_def_enum datatype) {
-                            PRECONDITION(__type_enum_helper::is_native(datatype));
-                            this->datatype = datatype;
-                        }
 
                     public:
 
@@ -1727,15 +1723,21 @@ REACTFS_NS_CORE
                         virtual uint32_t write(void *buffer, uint64_t offset) = 0;
 
                         virtual uint32_t read(void *buffer, uint64_t offset) = 0;
+
+                        virtual __type_def_enum get_datatype() = 0;
+
                     };
 
-                    template<typename __T>
+                    template<typename __T, __type_def_enum __type>
                     class __typed_default : public __default {
                     private:
+                        __type_def_enum datatype = __type;
                         __T value;
                     public:
-                        __typed_default(__type_def_enum datatype) : __default(datatype) {
-
+                        __typed_default() {
+                            PRECONDITION(__type_enum_helper::is_native(datatype));
+                            handler = __type_defs_utils::get_type_handler(this->datatype);
+                            CHECK_NOT_NULL(handler);
                         }
 
                         const __T get_value() const {
@@ -1745,6 +1747,10 @@ REACTFS_NS_CORE
 
                         void set_value(__T value) {
                             this->value = value;
+                        }
+
+                        __type_def_enum get_datatype() override {
+                            return this->datatype;
                         }
 
                         uint32_t write(void *buffer, uint64_t offset) {
@@ -1768,68 +1774,15 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class __default_char : public __typed_default<char> {
-                    public:
-                        __default_char() : __typed_default<char>(__type_def_enum::TYPE_CHAR) {
-
-                        }
-                    };
-
-                    class __default_bool : public __typed_default<bool> {
-                    public:
-                        __default_bool() : __typed_default<bool>(__type_def_enum::TYPE_BOOL) {
-
-                        }
-                    };
-
-                    class __default_short : public __typed_default<short> {
-                    public:
-                        __default_short() : __typed_default<short>(__type_def_enum::TYPE_SHORT) {
-
-                        }
-                    };
-
-                    class __default_int : public __typed_default<int> {
-                    public:
-                        __default_int() : __typed_default<int>(__type_def_enum::TYPE_INTEGER) {
-
-                        }
-                    };
-
-                    class __default_long : public __typed_default<long> {
-                    public:
-                        __default_long() : __typed_default<long>(__type_def_enum::TYPE_LONG) {
-
-                        }
-                    };
-
-                    class __default_timestamp : public __typed_default<uint64_t> {
-                    public:
-                        __default_timestamp() : __typed_default<uint64_t>(__type_def_enum::TYPE_TIMESTAMP) {
-
-                        }
-                    };
-
-                    class __default_float : public __typed_default<float> {
-                    public:
-                        __default_float() : __typed_default<float>(__type_def_enum::TYPE_FLOAT) {
-
-                        }
-                    };
-
-                    class __default_double : public __typed_default<double> {
-                    public:
-                        __default_double() : __typed_default<double>(__type_def_enum::TYPE_DOUBLE) {
-
-                        }
-                    };
-
-                    class __default_string : public __typed_default<string> {
-                    public:
-                        __default_string() : __typed_default<string>(__type_def_enum::TYPE_STRING) {
-
-                        }
-                    };
+                    typedef __typed_default<char, __type_def_enum::TYPE_CHAR> __default_char;
+                    typedef __typed_default<bool, __type_def_enum::TYPE_BOOL> __default_bool;
+                    typedef __typed_default<short, __type_def_enum::TYPE_SHORT> __default_short;
+                    typedef __typed_default<int, __type_def_enum::TYPE_INTEGER> __default_int;
+                    typedef __typed_default<long, __type_def_enum::TYPE_LONG> __default_long;
+                    typedef __typed_default<uint64_t, __type_def_enum::TYPE_TIMESTAMP> __default_timestamp;
+                    typedef __typed_default<float, __type_def_enum::TYPE_FLOAT> __default_float;
+                    typedef __typed_default<double, __type_def_enum::TYPE_DOUBLE> __default_double;
+                    typedef __typed_default<string, __type_def_enum::TYPE_STRING> __default_string;
 
                 }
 REACTFS_NS_CORE_END

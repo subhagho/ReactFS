@@ -15,30 +15,19 @@ template<int __size>
 class test {
     int size = __size;
 public:
+    test() {
+        cout << "Size = " << __size << "\n";
+    }
     int get_size() {
         return size;
     }
 };
 
+typedef test<24> test_24;
+
 #define BIT_TYPE_CONSTRAINT 1
 #define DEFAULT_VALUE_BIT 2
 
 int main(int argc, char *argv[]) {
-    uint32_t bit = 0;
-    bit = bitset_utils::set_uint32_bit(bit, BIT_TYPE_CONSTRAINT);
-    cout << "WITH CONSTRAINT BIT : " << bit << "\n";
-    bit = bitset_utils::set_uint32_bit(bit, DEFAULT_VALUE_BIT);
-    cout << "WITH CONSTRAINT & VALUE BIT : " << bit << "\n";
-
-    if (bitset_utils::check_uint32_bit(bit, BIT_TYPE_CONSTRAINT)) {
-        cout << "CONSTRAINT BIT SET\n";
-    }
-
-    if (bitset_utils::check_uint32_bit(bit, DEFAULT_VALUE_BIT)) {
-        cout << "VALUE BIT SET\n";
-    }
-
-    if (bitset_utils::check_uint32_bit(bit, 4)) {
-        cout << "BIT SET ERROR\n";
-    }
+    test_24 t;
 }
