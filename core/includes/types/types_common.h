@@ -415,6 +415,12 @@ REACTFS_NS_CORE
                             return sizeof(uint8_t);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (uint8_t).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -491,6 +497,12 @@ REACTFS_NS_CORE
                             return sizeof(char);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (char).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -567,6 +579,12 @@ REACTFS_NS_CORE
                             return sizeof(bool);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (bool).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -632,6 +650,12 @@ REACTFS_NS_CORE
                             return sizeof(short);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (short).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -708,6 +732,12 @@ REACTFS_NS_CORE
                             return sizeof(int);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (int).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -784,6 +814,12 @@ REACTFS_NS_CORE
                             return sizeof(long);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (long).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -861,6 +897,12 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (uint64_t).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -1000,6 +1042,12 @@ REACTFS_NS_CORE
                             return sizeof(float);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (float).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -1077,6 +1125,12 @@ REACTFS_NS_CORE
                             return sizeof(double);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (double).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -1180,6 +1234,12 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (size(long) + string length).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -1216,7 +1276,7 @@ REACTFS_NS_CORE
                      * Data handler for STRING data type. (string)
                      *
                      * Note: The difference between TEXT and STRING types is that STRING
-                     * has to be defined with a max-size and is limited to a max of USHRT_MAX.
+                     * has to be defined with a max-size and is limited to a max of (SIZE_MAX_TYPE_STRING - 1) = 255.
                      */
                     class __dt_string : public __dt_text {
 
@@ -1265,7 +1325,7 @@ REACTFS_NS_CORE
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             string *s = (string *) value;
-                            PRECONDITION(s->length() <= SIZE_MAX_TYPE_STRING);
+                            PRECONDITION(s->length() < SIZE_MAX_TYPE_STRING);
                             uint16_t size = (s->length() * sizeof(char));
                             // Write the size of the string buffer. (uint16_t)
                             memcpy(ptr, &size, sizeof(uint16_t));
@@ -1279,6 +1339,12 @@ REACTFS_NS_CORE
                             return sizeof(uint16_t);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (size(uint8_t) + string length).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
                             if (IS_NULL(data)) {
                                 return 0;
@@ -1392,25 +1458,56 @@ REACTFS_NS_CORE
                     };
 
 
-                    template<typename __T>
+                    /*!
+                     * Array type is a size bound collection of basic types or structs.
+                     *
+                     * Should generally be initialized
+                     * as an array rather than a double pointer.
+                     *
+                     * @tparam __T - Basic datatype of the array elements.
+                     * @tparam __type - Datatype enum of the array element type.
+                     */
+                    template<typename __T, __type_def_enum __type>
                     class __dt_array : public __datatype_io<__T *> {
                     protected:
-                        __type_def_enum inner_type;
-
+                        /// Datatype of the array elements (should be basic types or structs).
+                        __type_def_enum inner_type = __type;
+                        /// Datatype IO handler for the array type.
+                        __base_datatype_io *type_handler = nullptr;
                     public:
-                        __dt_array(__type_def_enum inner_type) : __datatype_io<__T *>(
+                        /*!<constructor
+                         * Default constructor.
+                         *
+                         */
+                        __dt_array() : __datatype_io<__T *>(
                                 __type_def_enum::TYPE_ARRAY) {
-                            this->inner_type = inner_type;
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(this->inner_type));
+                            type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            CHECK_NOT_NULL(type_handler);
                         }
 
+                        /*!
+                         * Get the element type of this array.
+                         *
+                         * @return - Element datatype.
+                         */
                         __type_def_enum get_inner_type() {
                             return this->inner_type;
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the typed array.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @param size - Size of the input array (number of records).
+                        * @return - Total bytes consumed by this read.
+                        */
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
-                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
 
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -1435,9 +1532,18 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                        * Write (serialize) data for the array to the binary output buffer.
+                        *
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @param size - Size of the input array (number of records).
+                        * @return - Total number of bytes written.
+                        */
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
                             va_list vl;
                             va_start(vl, max_length);
@@ -1461,6 +1567,14 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (data size occupied by the array).
+                         * @param size - Must be specified if value is a double pointer. If it's an array
+                         *              size can be computed.
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *value, int size = -1) override {
                             if (IS_NULL(value)) {
                                 return 0;
@@ -1477,6 +1591,7 @@ REACTFS_NS_CORE
                             for (int ii = 0; ii < size; ii++) {
                                 t_size += type_handler->compute_size(data[ii], -1);
                             }
+                            return t_size;
                         }
 
                         virtual bool
@@ -1485,25 +1600,66 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    template<typename __T>
+                    typedef __dt_array<char, __type_def_enum::TYPE_CHAR> __char_array;
+                    typedef __dt_array<short, __type_def_enum::TYPE_SHORT> __short_array;
+                    typedef __dt_array<uint8_t, __type_def_enum::TYPE_BYTE> __byte_array;
+                    typedef __dt_array<int, __type_def_enum::TYPE_INTEGER> __int_array;
+                    typedef __dt_array<long, __type_def_enum::TYPE_LONG> __long_array;
+                    typedef __dt_array<float, __type_def_enum::TYPE_FLOAT> __float_array;
+                    typedef __dt_array<double, __type_def_enum::TYPE_DOUBLE> __double_array;
+                    typedef __dt_array<uint64_t, __type_def_enum::TYPE_TIMESTAMP> __timestamp_array;
+                    typedef __dt_array<string, __type_def_enum::TYPE_STRING> __string_array;
+                    typedef __dt_array<string, __type_def_enum::TYPE_TEXT> __text_array;
+
+                    /*!
+                     * List type is a collection of basic types or structs.
+                     *
+                     * Should be initialized as a vector of type pointer.
+                     *
+                     * @tparam __T - Basic datatype of the array elements.
+                     * @tparam __type - Datatype enum of the array element type.
+                     */
+                    template<typename __T, __type_def_enum __type>
                     class __dt_list : public __datatype_io<vector<__T *>> {
                     protected:
-                        __type_def_enum inner_type;
+                        /// Datatype of the array elements (should be basic types or structs).
+                        __type_def_enum inner_type = __type;
+                        /// Datatype IO handler for the array type.
+                        __base_datatype_io *type_handler = nullptr;
 
                     public:
-                        __dt_list(__type_def_enum inner_type) : __datatype_io<__T>(
+                        /*!<constructor
+                         * Default constructor.
+                         *
+                         */
+                        __dt_list() : __datatype_io<__T>(
                                 __type_def_enum::TYPE_LIST) {
-                            this->inner_type = inner_type;
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(this->inner_type));
+                            type_handler = __type_defs_utils::get_type_handler(this->inner_type);
+                            CHECK_NOT_NULL(type_handler);
                         }
 
+                        /*!
+                         * Get the element type of this array.
+                         *
+                         * @return - Element datatype.
+                         */
                         __type_def_enum get_inner_type() {
                             return this->inner_type;
                         }
 
+                        /*!
+                        * Read (de-serialize) data from the binary format for the typed vector.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
-                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
 
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
@@ -1529,9 +1685,17 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                        * Write (serialize) data for the list (vector) to the binary output buffer.
+                        *
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @return - Total number of bytes written.
+                        */
                         virtual uint64_t
                         write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             CHECK_NOT_NULL(type_handler);
 
                             vector<__T *> *list = static_cast<vector<__T *> *>( value);
@@ -1554,6 +1718,12 @@ REACTFS_NS_CORE
                             return sizeof(uint64_t);
                         }
 
+                        /*!
+                         * Compute the storage size of the given type value.
+                         *
+                         * @param data - Value of the type (data size occupied by the array).
+                         * @return - Return storage size, if null returns 0.
+                         */
                         virtual uint64_t compute_size(const void *value, int size = -1) override {
                             if (IS_NULL(value)) {
                                 return 0;
@@ -1570,6 +1740,7 @@ REACTFS_NS_CORE
                             for (int ii = 0; ii < data->size(); ii++) {
                                 t_size += type_handler->compute_size((*data)[ii], -1);
                             }
+                            return t_size;
                         }
 
                         virtual bool
@@ -1578,18 +1749,34 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    template<typename __K, typename __V>
+                    typedef __dt_list<char, __type_def_enum::TYPE_CHAR> __char_list;
+                    typedef __dt_list<short, __type_def_enum::TYPE_SHORT> __short_list;
+                    typedef __dt_list<uint8_t, __type_def_enum::TYPE_BYTE> __byte_list;
+                    typedef __dt_list<int, __type_def_enum::TYPE_INTEGER> __int_list;
+                    typedef __dt_list<long, __type_def_enum::TYPE_LONG> __long_list;
+                    typedef __dt_list<float, __type_def_enum::TYPE_FLOAT> __float_list;
+                    typedef __dt_list<double, __type_def_enum::TYPE_DOUBLE> __double_list;
+                    typedef __dt_list<uint64_t, __type_def_enum::TYPE_TIMESTAMP> __timestamp_list;
+                    typedef __dt_list<string, __type_def_enum::TYPE_STRING> __string_list;
+                    typedef __dt_list<string, __type_def_enum::TYPE_TEXT> __text_list;
+
+                    template<typename __K, __type_def_enum __key_type, typename __V, __type_def_enum __value_type>
                     class __dt_map : public __datatype_io<unordered_map<__K, __V *>> {
                     private:
-                        __type_def_enum key_type;
-                        __type_def_enum value_type;
+                        __type_def_enum key_type = __key_type;
+                        __type_def_enum value_type = __value_type;
+                        __base_datatype_io *kt_handler = nullptr;
+                        __base_datatype_io *vt_handler = nullptr;
+
                     public:
-                        __dt_map(__type_def_enum key_type, __type_def_enum value_type) : __datatype_io<__V>(
+                        __dt_map() : __datatype_io<__V>(
                                 __type_def_enum::TYPE_MAP) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(value_type));
                             PRECONDITION(__type_enum_helper::is_native(key_type));
-                            this->key_type = key_type;
-                            this->value_type = value_type;
+                            kt_handler = __type_defs_utils::get_type_handler(this->key_type);
+                            CHECK_NOT_NULL(kt_handler);
+                            vt_handler = __type_defs_utils::get_type_handler(this->value_type);
+                            CHECK_NOT_NULL(vt_handler);
                         }
 
                         __type_def_enum get_key_type() {
@@ -1603,16 +1790,14 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
+                            CHECK_NOT_NULL(kt_handler);
+                            CHECK_NOT_NULL(vt_handler);
+
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             uint64_t r_count = *((uint64_t *) ptr);
                             if (r_count > 0) {
                                 unordered_map<__K, __V *> **T = (unordered_map<__K, __V *> **) t;
                                 *T = new unordered_map<__K, __V *>();
-
-                                __base_datatype_io *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
-                                CHECK_NOT_NULL(kt_handler);
-                                __base_datatype_io *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
-                                CHECK_NOT_NULL(vt_handler);
 
                                 uint64_t r_offset = offset + sizeof(uint64_t);
                                 uint64_t t_size = sizeof(uint64_t);
@@ -1643,15 +1828,14 @@ REACTFS_NS_CORE
                             unordered_map<__K, __V *> *map = (unordered_map<__K, __V *> *) value;
                             CHECK_NOT_NULL(map);
 
+                            CHECK_NOT_NULL(kt_handler);
+                            CHECK_NOT_NULL(vt_handler);
+
                             uint64_t m_size = map->size();
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             memcpy(ptr, &m_size, sizeof(uint64_t));
 
                             if (!map->empty()) {
-                                __base_datatype_io *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
-                                CHECK_NOT_NULL(kt_handler);
-                                __base_datatype_io *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
-                                CHECK_NOT_NULL(vt_handler);
 
                                 uint64_t r_offset = offset + sizeof(uint64_t);
                                 uint64_t t_size = sizeof(uint64_t);
