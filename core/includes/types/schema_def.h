@@ -176,9 +176,11 @@ REACTFS_NS_CORE
 
                             ptr = common_utils::increment_data_ptr(ptr, r_size);
                             uint8_t *bits = static_cast<uint8_t *>(ptr);
+                            r_size += sizeof(uint8_t);
 
                             if (bitset_utils::check_uint8_bit(*bits, BIT_TYPE_CONSTRAINT)) {
-
+                                this->constraint = __constraint_loader::read(buffer, r_size, this->datatype);
+                                CHECK_NOT_NULL(this->constraint);
                             }
                             return r_size;
                         }
