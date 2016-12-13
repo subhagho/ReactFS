@@ -27,7 +27,7 @@ REACTFS_NS_CORE
                      */
                     typedef enum __type_def_enum__ {
                         /// Unknown data type.
-                                TYPE_UNKNOWN,
+                                TYPE_UNKNOWN = 0,
                         /// Boolean data type.
                                 TYPE_BOOL,
                         /// Basic byte data type (8-bits)
@@ -196,6 +196,49 @@ REACTFS_NS_CORE
                             } else if (t == get_type_string(__type_def_enum::TYPE_STRUCT)) {
                                 return __type_def_enum::TYPE_STRUCT;
                             } else if (t == get_type_string(__type_def_enum::TYPE_DATETIME)) {
+                                return __type_def_enum::TYPE_DATETIME;
+                            }
+                            return __type_def_enum::TYPE_UNKNOWN;
+                        }
+
+                        /*!
+                         * Parse the numeric value as a datatype enum.
+                         *
+                         * @param type - Numeric value of enum.
+                         * @return - Parsed datatype enum.
+                         */
+                        static __type_def_enum parse_type(const uint8_t &t) {
+                            if (t == __type_def_enum::TYPE_STRING) {
+                                return __type_def_enum::TYPE_STRING;
+                            } else if (t == __type_def_enum::TYPE_INTEGER) {
+                                return __type_def_enum::TYPE_INTEGER;
+                            } else if (t == __type_def_enum::TYPE_LONG) {
+                                return __type_def_enum::TYPE_LONG;
+                            } else if (t == __type_def_enum::TYPE_DOUBLE) {
+                                return __type_def_enum::TYPE_DOUBLE;
+                            } else if (t == __type_def_enum::TYPE_TIMESTAMP) {
+                                return __type_def_enum::TYPE_TIMESTAMP;
+                            } else if (t == __type_def_enum::TYPE_TEXT) {
+                                return __type_def_enum::TYPE_TEXT;
+                            } else if (t == __type_def_enum::TYPE_ARRAY) {
+                                return __type_def_enum::TYPE_ARRAY;
+                            } else if (t == __type_def_enum::TYPE_BYTE) {
+                                return __type_def_enum::TYPE_BYTE;
+                            } else if (t == __type_def_enum::TYPE_CHAR) {
+                                return __type_def_enum::TYPE_CHAR;
+                            } else if (t == __type_def_enum::TYPE_FLOAT) {
+                                return __type_def_enum::TYPE_FLOAT;
+                            } else if (t == __type_def_enum::TYPE_LIST) {
+                                return __type_def_enum::TYPE_LIST;
+                            } else if (t == __type_def_enum::TYPE_MAP) {
+                                return __type_def_enum::TYPE_MAP;
+                            } else if (t == __type_def_enum::TYPE_SHORT) {
+                                return __type_def_enum::TYPE_SHORT;
+                            } else if (t == __type_def_enum::TYPE_BOOL) {
+                                return __type_def_enum::TYPE_BOOL;
+                            } else if (t == __type_def_enum::TYPE_STRUCT) {
+                                return __type_def_enum::TYPE_STRUCT;
+                            } else if (t == __type_def_enum::TYPE_DATETIME) {
                                 return __type_def_enum::TYPE_DATETIME;
                             }
                             return __type_def_enum::TYPE_UNKNOWN;

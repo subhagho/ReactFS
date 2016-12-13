@@ -38,4 +38,8 @@ int main(int argc, char *argv[]) {
     test_enum t3 = test_enum::TEST2;
 
     cout << t1 << "; " << t2 << "; " << t3 << "\n";
+    cout << "BOOL SIZE : " << sizeof(bool) << "\n";
+    if (2 == t3) {
+        cout << "Worked...\n";
+    }
 }
