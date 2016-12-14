@@ -271,16 +271,6 @@ REACTFS_NS_CORE
                         /// Data type this type handler manages.
                         __type_def_enum type = __type_def_enum::TYPE_UNKNOWN;
 
-                        /*!
-                         * Protected constructor.
-                         *
-                         * @param type - Data type enum.
-                         */
-                        __base_datatype_io(__type_def_enum type) {
-                            PRECONDITION(type != __type_def_enum::TYPE_UNKNOWN);
-                            this->type = type;
-                        }
-
                     public:
                         /*!
                          * Get the data time enum of this handler.
@@ -312,7 +302,7 @@ REACTFS_NS_CORE
                          * @return - Total number of bytes written.
                          */
                         virtual uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...)  = 0;
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...)  = 0;
 
                         /*!
                          * Compute the storage size of the given type value.
@@ -329,7 +319,7 @@ REACTFS_NS_CORE
                          * @param target - Target value pointer
                          * @return - Is comparision true?
                          */
-                        virtual bool compare(const void *source, const void *target, __constraint_operator oper) = 0;
+                        virtual bool compare(const void *source, void *target, __constraint_operator oper) = 0;
                     };
 
                     /*!
@@ -347,7 +337,9 @@ REACTFS_NS_CORE
                          *
                          * @param type - Data type enum.
                          */
-                        __datatype_io(__type_def_enum type) : __base_datatype_io(type) {
+                        __datatype_io(__type_def_enum type) {
+                            PRECONDITION(type != __type_def_enum::TYPE_UNKNOWN);
+                            this->type = type;
                         }
 
                         /*!
@@ -389,7 +381,7 @@ REACTFS_NS_CORE
                          * @return - Total number of bytes written.
                          */
                         virtual uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override = 0;
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override = 0;
 
                         /*!
                          * Compute the storage size of the given type value.
@@ -407,7 +399,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override = 0;
+                        compare(const void *source, void *target, __constraint_operator oper) override = 0;
                     };
 
 
@@ -452,7 +444,7 @@ REACTFS_NS_CORE
                          * @return - Total number of bytes written.
                          */
                         uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint8_t), offset, max_length);
                             memcpy(ptr, value, sizeof(uint8_t));
                             return sizeof(uint8_t);
@@ -479,7 +471,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const uint8_t *s = static_cast<const uint8_t *>(source);
@@ -541,9 +533,9 @@ REACTFS_NS_CORE
                          * @param max_length - Max lenght of the output buffer.
                          * @return - Total number of bytes written.
                          */
-                        uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(char), offset, max_length);
-                            memcpy(ptr, 0, sizeof(uint8_t));
+                            memcpy(ptr, value, sizeof(char));
                             return sizeof(char);
                         }
 
@@ -568,7 +560,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const char *s = static_cast<const char *>(source);
@@ -630,7 +622,7 @@ REACTFS_NS_CORE
                          * @param max_length - Max lenght of the output buffer.
                          * @return - Total number of bytes written.
                          */
-                        uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(bool), offset, max_length);
                             memcpy(ptr, value, sizeof(bool));
                             return sizeof(bool);
@@ -658,7 +650,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const bool *s = static_cast<const bool *>(source);
@@ -709,7 +701,7 @@ REACTFS_NS_CORE
                          * @param max_length - Max lenght of the output buffer.
                          * @return - Total number of bytes written.
                          */
-                        uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(short), offset, max_length);
                             memcpy(ptr, value, sizeof(short));
                             return sizeof(short);
@@ -736,7 +728,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const short *s = static_cast<const short *>(source);
@@ -798,7 +790,7 @@ REACTFS_NS_CORE
                          * @param max_length - Max lenght of the output buffer.
                          * @return - Total number of bytes written.
                          */
-                        uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(int), offset, max_length);
                             memcpy(ptr, value, sizeof(int));
                             return sizeof(int);
@@ -825,7 +817,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const int *s = static_cast<const int *>(source);
@@ -887,7 +879,7 @@ REACTFS_NS_CORE
                         * @param max_length - Max lenght of the output buffer.
                         * @return - Total number of bytes written.
                         */
-                        uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(long), offset, max_length);
                             memcpy(ptr, value, sizeof(long));
                             return sizeof(long);
@@ -914,7 +906,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const long *s = static_cast<const long *>(source);
@@ -977,7 +969,7 @@ REACTFS_NS_CORE
                         * @return - Total number of bytes written.
                         */
                         uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             memcpy(ptr, value, sizeof(uint64_t));
                             return sizeof(uint64_t);
@@ -1004,7 +996,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const uint64_t *s = static_cast<const uint64_t *>(source);
@@ -1077,7 +1069,7 @@ REACTFS_NS_CORE
                          *                  (if EMPTY will use the global format)
                          * @return - Total number of bytes written.
                          */
-                        uint64_t writestr(void *buffer, string *value, uint64_t offset, uint64_t max_length,
+                        uint64_t writestr(void *buffer, const string *value, uint64_t offset, uint64_t max_length,
                                           const string &format = common_consts::EMPTY_STRING) {
                             CHECK_NOT_EMPTY_P(value);
                             uint64_t ts = 0;
@@ -1129,7 +1121,7 @@ REACTFS_NS_CORE
                         * @param max_length - Max lenght of the output buffer.
                         * @return - Total number of bytes written.
                         */
-                        uint64_t write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(float), offset, max_length);
                             memcpy(ptr, value, sizeof(float));
                             return sizeof(float);
@@ -1156,7 +1148,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const float *s = static_cast<const float *>(source);
@@ -1219,7 +1211,7 @@ REACTFS_NS_CORE
                         * @return - Total number of bytes written.
                         */
                         uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(double), offset, max_length);
                             memcpy(ptr, value, sizeof(double));
                             return sizeof(double);
@@ -1246,7 +1238,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const double *s = static_cast<const double *>(source);
@@ -1325,7 +1317,7 @@ REACTFS_NS_CORE
                         * @return - Total number of bytes written.
                         */
                         virtual uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             string *s = (string *) value;
                             uint64_t size = (s->length() * sizeof(char));
@@ -1364,7 +1356,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
+                        compare(const void *source, void *target, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const string *s = static_cast<const string *>(source);
@@ -1436,7 +1428,7 @@ REACTFS_NS_CORE
                         * @return - Total number of bytes written.
                         */
                         virtual uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             string *s = (string *) value;
                             PRECONDITION(s->length() < SIZE_MAX_TYPE_STRING);
@@ -1571,509 +1563,6 @@ REACTFS_NS_CORE
                         }
                     };
 
-
-                    /*!
-                     * Array type is a size bound collection of basic types or structs.
-                     *
-                     * Should generally be initialized
-                     * as an array rather than a double pointer.
-                     *
-                     * @tparam __T - Basic datatype of the array elements.
-                     * @tparam __type - Datatype enum of the array element type.
-                     */
-                    template<typename __T, __type_def_enum __type>
-                    class __dt_array : public __datatype_io<__T *> {
-                    protected:
-                        /// Datatype of the array elements (should be basic types or structs).
-                        __type_def_enum inner_type = __type;
-                        /// Datatype IO handler for the array type.
-                        __base_datatype_io *type_handler = nullptr;
-                    public:
-                        /*!<constructor
-                         * Default constructor.
-                         *
-                         */
-                        __dt_array() : __datatype_io<__T *>(
-                                __type_def_enum::TYPE_ARRAY) {
-                            PRECONDITION(__type_enum_helper::is_inner_type_valid(this->inner_type));
-                            type_handler = __type_defs_utils::get_type_handler(this->inner_type);
-                            CHECK_NOT_NULL(type_handler);
-                        }
-
-                        /*!
-                         * Get the element type of this array.
-                         *
-                         * @return - Element datatype.
-                         */
-                        __type_def_enum get_inner_type() {
-                            return this->inner_type;
-                        }
-
-                        /*!
-                        * Read (de-serialize) data from the binary format for the typed array.
-                        *
-                        * @param buffer - Source data buffer (binary data)
-                        * @param t - Pointer to map the output data to.
-                        * @param offset - Start offset where the buffer is to be read from.
-                        * @param max_length - Max length of the data in the buffer.
-                        * @param size - Size of the input array (number of records).
-                        * @return - Total bytes consumed by this read.
-                        */
-                        virtual uint64_t
-                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
-                            CHECK_NOT_NULL(t);
-                            CHECK_NOT_NULL(type_handler);
-
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint64_t r_count = *((uint64_t *) ptr);
-                            __T **d_ptr = (__T **) t;
-                            va_list vl;
-                            va_start(vl, max_length);
-                            uint64_t a_size = va_arg(vl, uint64_t);
-                            va_end(vl);
-
-                            PRECONDITION(a_size >= r_count);
-                            if (a_size > 0) {
-                                uint64_t r_offset = offset + sizeof(uint64_t);
-                                uint64_t t_size = sizeof(uint64_t);
-                                for (uint64_t ii = 0; ii < r_count; ii++) {
-                                    uint64_t r = type_handler->read(buffer, d_ptr[ii], r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                }
-                                return t_size;
-                            }
-                            return sizeof(uint64_t);
-                        }
-
-                        /*!
-                        * Write (serialize) data for the array to the binary output buffer.
-                        *
-                        * @param buffer - Output data buffer the data is to be copied to.
-                        * @param value - Data value pointer to copy from.
-                        * @param offset - Offset in the output buffer to start writing from.
-                        * @param max_length - Max lenght of the output buffer.
-                        * @param size - Size of the input array (number of records).
-                        * @return - Total number of bytes written.
-                        */
-                        virtual uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            CHECK_NOT_NULL(type_handler);
-                            CHECK_NOT_NULL(value);
-                            va_list vl;
-                            va_start(vl, max_length);
-                            uint64_t a_size = va_arg(vl, uint64_t);
-                            va_end(vl);
-
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            memcpy(ptr, &a_size, sizeof(uint64_t));
-
-                            if (a_size > 0) {
-                                __T **d_ptr = (__T **) value;
-                                uint64_t r_offset = offset + sizeof(uint64_t);
-                                uint64_t t_size = sizeof(uint64_t);
-                                for (uint64_t ii = 0; ii < a_size; ii++) {
-                                    uint64_t r = type_handler->write(buffer, d_ptr[ii], r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                }
-                                return t_size;
-                            }
-                            return sizeof(uint64_t);
-                        }
-
-                        /*!
-                         * Compute the storage size of the given type value.
-                         *
-                         * @param data - Value of the type (data size occupied by the array).
-                         * @param size - Must be specified if value is a double pointer. If it's an array
-                         *              size can be computed.
-                         * @return - Return storage size, if null returns 0.
-                         */
-                        virtual uint64_t compute_size(const void *value, int size = -1) override {
-                            if (IS_NULL(value)) {
-                                return 0;
-                            }
-
-                            const __T **data = static_cast<const __T **>(value);
-                            CHECK_NOT_NULL(data);
-                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
-                            if (size < 0) {
-                                size = (sizeof(data) / sizeof(__T *));
-                            }
-                            CHECK_NOT_NULL(type_handler);
-                            uint64_t t_size = sizeof(uint64_t);
-                            for (int ii = 0; ii < size; ii++) {
-                                t_size += type_handler->compute_size(data[ii], -1);
-                            }
-                            return t_size;
-                        }
-
-                        /*!
-                         * Comparisons not supported for arrays. Will throw exception if called.
-                         *
-                         * @param source - Source value pointer
-                         * @param target - Target value pointer
-                         * @return - Is comparision true?
-                         */
-                        virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
-                            throw BASE_ERROR("Compare only supported for native types.");
-                        }
-                    };
-
-                    typedef __dt_array<char, __type_def_enum::TYPE_CHAR> __char_array;
-                    typedef __dt_array<short, __type_def_enum::TYPE_SHORT> __short_array;
-                    typedef __dt_array<uint8_t, __type_def_enum::TYPE_BYTE> __byte_array;
-                    typedef __dt_array<int, __type_def_enum::TYPE_INTEGER> __int_array;
-                    typedef __dt_array<long, __type_def_enum::TYPE_LONG> __long_array;
-                    typedef __dt_array<float, __type_def_enum::TYPE_FLOAT> __float_array;
-                    typedef __dt_array<double, __type_def_enum::TYPE_DOUBLE> __double_array;
-                    typedef __dt_array<uint64_t, __type_def_enum::TYPE_TIMESTAMP> __timestamp_array;
-                    typedef __dt_array<string, __type_def_enum::TYPE_STRING> __string_array;
-                    typedef __dt_array<string, __type_def_enum::TYPE_TEXT> __text_array;
-
-                    /*!
-                     * List type is a collection of basic types or structs.
-                     * Internally implemented as a vector of type pointers.
-                     *
-                     * @tparam __T - Basic datatype of the array elements.
-                     * @tparam __type - Datatype enum of the array element type.
-                     */
-                    template<typename __T, __type_def_enum __type>
-                    class __dt_list : public __datatype_io<vector<__T *>> {
-                    protected:
-                        /// Datatype of the array elements (should be basic types or structs).
-                        __type_def_enum inner_type = __type;
-                        /// Datatype IO handler for the array type.
-                        __base_datatype_io *type_handler = nullptr;
-
-                    public:
-                        /*!<constructor
-                         * Default constructor.
-                         *
-                         */
-                        __dt_list() : __datatype_io<__T>(
-                                __type_def_enum::TYPE_LIST) {
-                            PRECONDITION(__type_enum_helper::is_inner_type_valid(this->inner_type));
-                            type_handler = __type_defs_utils::get_type_handler(this->inner_type);
-                            CHECK_NOT_NULL(type_handler);
-                        }
-
-                        /*!
-                         * Get the element type of this array.
-                         *
-                         * @return - Element datatype.
-                         */
-                        __type_def_enum get_inner_type() {
-                            return this->inner_type;
-                        }
-
-                        /*!
-                        * Read (de-serialize) data from the binary format for the typed vector.
-                        *
-                        * @param buffer - Source data buffer (binary data)
-                        * @param t - Pointer to map the output data to.
-                        * @param offset - Start offset where the buffer is to be read from.
-                        * @param max_length - Max length of the data in the buffer.
-                        * @return - Total bytes consumed by this read.
-                        */
-                        virtual uint64_t
-                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
-                            CHECK_NOT_NULL(t);
-                            CHECK_NOT_NULL(type_handler);
-
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint64_t r_count = *((uint64_t *) ptr);
-                            vector<__T *> **list = (vector<__T *> **) t;
-
-                            if (r_count > 0) {
-                                *list = new vector<__T *>();
-                                CHECK_ALLOC(*list, TYPE_NAME(vector));
-
-                                uint64_t r_offset = offset + sizeof(uint64_t);
-                                uint64_t t_size = sizeof(uint64_t);
-                                for (uint64_t ii = 0; ii < r_count; ii++) {
-                                    __T *t = nullptr;
-                                    uint64_t r = type_handler->read(buffer, &t, r_offset, max_length);
-                                    CHECK_NOT_NULL(t);
-                                    (*list)->push_back(t);
-                                    r_offset += r;
-                                    t_size += r;
-                                }
-                                return t_size;
-                            }
-                            return sizeof(uint64_t);
-                        }
-
-                        /*!
-                        * Write (serialize) data for the list (vector) to the binary output buffer.
-                        *
-                        * @param buffer - Output data buffer the data is to be copied to.
-                        * @param value - Data value pointer to copy from.
-                        * @param offset - Offset in the output buffer to start writing from.
-                        * @param max_length - Max lenght of the output buffer.
-                        * @return - Total number of bytes written.
-                        */
-                        virtual uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            CHECK_NOT_NULL(value);
-                            CHECK_NOT_NULL(type_handler);
-
-                            vector<__T *> *list = static_cast<vector<__T *> *>( value);
-
-                            uint64_t a_size = list->size();
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            memcpy(ptr, &a_size, sizeof(uint64_t));
-
-                            if (a_size > 0) {
-                                __T **d_ptr = (__T **) value;
-                                uint64_t r_offset = offset + sizeof(uint64_t);
-                                uint64_t t_size = sizeof(uint64_t);
-                                for (uint64_t ii = 0; ii < a_size; ii++) {
-                                    uint64_t r = type_handler->write(buffer, (*list)[ii], r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                }
-                                return t_size;
-                            }
-                            return sizeof(uint64_t);
-                        }
-
-                        /*!
-                         * Compute the storage size of the given type value.
-                         *
-                         * @param data - Value of the type (data size occupied by the array).
-                         * @return - Return storage size, if null returns 0.
-                         */
-                        virtual uint64_t compute_size(const void *value, int size = -1) override {
-                            if (IS_NULL(value)) {
-                                return 0;
-                            }
-                            const vector<__T *> *data = static_cast< const vector<__T *>>(value);
-                            CHECK_NOT_NULL(data);
-                            if (IS_EMPTY_P(data)) {
-                                return 0;
-                            }
-                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
-
-                            CHECK_NOT_NULL(type_handler);
-                            uint64_t t_size = sizeof(uint64_t);
-                            for (int ii = 0; ii < data->size(); ii++) {
-                                t_size += type_handler->compute_size((*data)[ii], -1);
-                            }
-                            return t_size;
-                        }
-
-                        /*!
-                         * Comparisons not supported for lists. Will throw exception if called.
-                         *
-                         * @param source - Source value pointer
-                         * @param target - Target value pointer
-                         * @return - Is comparision true?
-                         */
-                        virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
-                            throw BASE_ERROR("Compare only supported for native types.");
-                        }
-                    };
-
-                    typedef __dt_list<char, __type_def_enum::TYPE_CHAR> __char_list;
-                    typedef __dt_list<short, __type_def_enum::TYPE_SHORT> __short_list;
-                    typedef __dt_list<uint8_t, __type_def_enum::TYPE_BYTE> __byte_list;
-                    typedef __dt_list<int, __type_def_enum::TYPE_INTEGER> __int_list;
-                    typedef __dt_list<long, __type_def_enum::TYPE_LONG> __long_list;
-                    typedef __dt_list<float, __type_def_enum::TYPE_FLOAT> __float_list;
-                    typedef __dt_list<double, __type_def_enum::TYPE_DOUBLE> __double_list;
-                    typedef __dt_list<uint64_t, __type_def_enum::TYPE_TIMESTAMP> __timestamp_list;
-                    typedef __dt_list<string, __type_def_enum::TYPE_STRING> __string_list;
-                    typedef __dt_list<string, __type_def_enum::TYPE_TEXT> __text_list;
-
-                    /*!
-                     * Map datatype of key/value pairs.
-                     * Keys are expected to be basic datatypes.
-                     * Values can be any embedded datatype. (Cannot be array or list types).
-                     * Internally implemented as an unordered_map.
-                     *
-                     * @tparam __K - Key datatype.
-                     * @tparam __key_type - Key datatype enum.
-                     * @tparam __V - Value datatype.
-                     * @tparam __value_type - Value datatype enum.
-                     */
-                    template<typename __K, __type_def_enum __key_type, typename __V, __type_def_enum __value_type>
-                    class __dt_map : public __datatype_io<unordered_map<__K, __V *>> {
-                    private:
-                        /// Datatype enum of the map key.
-                        __type_def_enum key_type = __key_type;
-                        /// Datatype enum of the map value.
-                        __type_def_enum value_type = __value_type;
-                        /// Key type IO handler.
-                        __base_datatype_io *kt_handler = nullptr;
-                        /// Value type IO handler.
-                        __base_datatype_io *vt_handler = nullptr;
-
-                    public:
-                        /*!<constructor
-                         * Default empty constructor.
-                         */
-                        __dt_map() : __datatype_io<__V>(
-                                __type_def_enum::TYPE_MAP) {
-                            PRECONDITION(__type_enum_helper::is_inner_type_valid(value_type));
-                            PRECONDITION(__type_enum_helper::is_native(key_type));
-                            kt_handler = __type_defs_utils::get_type_handler(this->key_type);
-                            CHECK_NOT_NULL(kt_handler);
-                            vt_handler = __type_defs_utils::get_type_handler(this->value_type);
-                            CHECK_NOT_NULL(vt_handler);
-                        }
-
-                        /*!
-                         * Get the key type enum.
-                         *
-                         * @return - Key type enum
-                         */
-                        __type_def_enum get_key_type() {
-                            return this->key_type;
-                        }
-
-                        /*!
-                         * Get the value type enum.
-                         *
-                         * @return - Value type enum.
-                         */
-                        __type_def_enum get_value_type() {
-                            return this->value_type;
-                        }
-
-                        /*!
-                        * Read (de-serialize) data from the binary format for the typed unordered_map.
-                        *
-                        * @param buffer - Source data buffer (binary data)
-                        * @param t - Pointer to map the output data to.
-                        * @param offset - Start offset where the buffer is to be read from.
-                        * @param max_length - Max length of the data in the buffer.
-                        * @return - Total bytes consumed by this read.
-                        */
-                        virtual uint64_t
-                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
-                            CHECK_NOT_NULL(t);
-                            CHECK_NOT_NULL(kt_handler);
-                            CHECK_NOT_NULL(vt_handler);
-
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint64_t r_count = *((uint64_t *) ptr);
-                            if (r_count > 0) {
-                                unordered_map<__K, __V *> **T = (unordered_map<__K, __V *> **) t;
-                                *T = new unordered_map<__K, __V *>();
-
-                                uint64_t r_offset = offset + sizeof(uint64_t);
-                                uint64_t t_size = sizeof(uint64_t);
-
-                                for (uint64_t ii = 0; ii < r_count; ii++) {
-                                    __K *key = nullptr;
-                                    __V *value = nullptr;
-
-                                    uint64_t r = kt_handler->read(buffer, key, r_offset, max_length);
-                                    CHECK_NOT_NULL(key);
-                                    r_offset += r;
-                                    t_size += r;
-                                    r = vt_handler->read(buffer, value, r_offset, max_length);
-                                    CHECK_NOT_NULL(value);
-                                    r_offset += r;
-                                    t_size += r;
-
-                                    (*T)->insert({*key, value});
-                                }
-
-                                return t_size;
-                            }
-                            return sizeof(uint64_t);
-                        }
-
-                        /*!
-                        * Write (serialize) data for the map (unordered_map) to the binary output buffer.
-                        *
-                        * @param buffer - Output data buffer the data is to be copied to.
-                        * @param value - Data value pointer to copy from.
-                        * @param offset - Offset in the output buffer to start writing from.
-                        * @param max_length - Max lenght of the output buffer.
-                        * @return - Total number of bytes written.
-                        */
-                        virtual uint64_t
-                        write(void *buffer, void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            CHECK_NOT_NULL(kt_handler);
-                            CHECK_NOT_NULL(vt_handler);
-                            CHECK_NOT_NULL(value);
-
-                            unordered_map<__K, __V *> *map = (unordered_map<__K, __V *> *) value;
-                            CHECK_NOT_NULL(map);
-
-                            CHECK_NOT_NULL(kt_handler);
-                            CHECK_NOT_NULL(vt_handler);
-
-                            uint64_t m_size = map->size();
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            memcpy(ptr, &m_size, sizeof(uint64_t));
-
-                            if (!map->empty()) {
-
-                                uint64_t r_offset = offset + sizeof(uint64_t);
-                                uint64_t t_size = sizeof(uint64_t);
-
-                                for (auto iter = map->begin(); iter != map->end(); iter++) {
-                                    uint64_t r = kt_handler->write(buffer, iter->first, r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                    r = vt_handler->write(buffer, iter->second, r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                }
-                                return t_size;
-                            }
-                            return sizeof(uint64_t);
-                        }
-
-                        /*!
-                         * Compute the storage size of the given type value.
-                         *
-                         * @param data - Value of the type (data size occupied by the map).
-                         * @return - Return storage size, if null returns 0.
-                         */
-                        virtual uint64_t compute_size(const void *value, int size = -1) override {
-                            if (IS_NULL(value)) {
-                                return 0;
-                            }
-                            const unordered_map<__K, __V *> *data = static_cast<const unordered_map<__K, __V *> *>(value);
-                            CHECK_NOT_NULL(data);
-                            if (IS_EMPTY_P(data)) {
-                                return 0;
-                            }
-                            uint64_t t_size = sizeof(uint64_t);
-                            __base_datatype_io *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
-                            CHECK_NOT_NULL(kt_handler);
-                            __base_datatype_io *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
-                            CHECK_NOT_NULL(vt_handler);
-
-                            for (auto iter = data->begin(); iter != data->end(); iter++) {
-                                t_size += kt_handler->compute_size(iter->first, -1);
-                                t_size += vt_handler->compute_size(iter->second, -1);
-                            }
-                            return t_size;
-                        }
-
-                        /*!
-                         * Comparisons not supported for maps. Will throw exception if called.
-                         *
-                         * @param source - Source value pointer
-                         * @param target - Target value pointer
-                         * @return - Is comparision true?
-                         */
-                        virtual bool
-                        compare(const void *source, const void *target, __constraint_operator oper) override {
-                            throw BASE_ERROR("Compare only supported for native types.");
-                        }
-                    };
-
-
                     /*!
                      * Absract base class for defining type constraints.
                      */
@@ -2090,7 +1579,7 @@ REACTFS_NS_CORE
                          * @param value - Data value to validate
                          * @return - Constraint passed?
                          */
-                        virtual bool validate(const void *value) const = 0;
+                        virtual bool validate(void *value) const = 0;
 
                         /*!
                          * Write (serialize) this constraint instance.

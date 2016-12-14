@@ -110,13 +110,13 @@ REACTFS_NS_CORE
                         /// Is this field nullable.
                         bool nullable = false;
                         /// Parent type of which this field is a part.
-                        const __native_type *parent = nullptr;
+                        __native_type *parent = nullptr;
                     public:
                         /*!
                          * Default empty constructor, to be instantiated
                          * when reading the definition from buffer.
                          */
-                        __native_type(const __native_type *parent) {
+                        __native_type(__native_type *parent) {
                             this->parent = parent;
                         }
 
@@ -127,7 +127,7 @@ REACTFS_NS_CORE
                          * @param name - Name of this field.
                          * @param datatype - Data type of this field.
                          */
-                        __native_type(const __native_type *parent, const uint8_t index, const string &name,
+                        __native_type(__native_type *parent, const uint8_t index, const string &name,
                                       const __type_def_enum datatype) {
                             this->parent = parent;
                             this->index = index;
@@ -389,7 +389,7 @@ REACTFS_NS_CORE
                         string get_canonical_name() const {
                             if (NOT_NULL(parent)) {
                                 string sn = parent->get_canonical_name();
-                                return common_utils::format("%s.%s", sn, this->name);
+                                return common_utils::format("%s.%s", sn.c_str(), this->name.c_str());
                             }
                             return this->name;
                         }
@@ -409,7 +409,7 @@ REACTFS_NS_CORE
                          * Default empty constructor, to be instantiated
                          * when reading the definition from buffer.
                          */
-                        __sized_type(const __native_type *parent) : __native_type(parent) {
+                        __sized_type(__native_type *parent) : __native_type(parent) {
 
                         }
 
@@ -421,7 +421,7 @@ REACTFS_NS_CORE
                          * @param datatype - Data type of this field.
                          * @param max_size - Maximum size for this field type.
                          */
-                        __sized_type(const __native_type *parent, const uint8_t index, const string &name,
+                        __sized_type(__native_type *parent, const uint8_t index, const string &name,
                                      const __type_def_enum datatype,
                                      const uint32_t max_size)
                                 : __native_type(parent, index, name, datatype) {
@@ -475,11 +475,11 @@ REACTFS_NS_CORE
                         __type_def_enum inner_type;
                         __base_datatype_io *inner_type_handler = nullptr;
                     public:
-                        __array_type(const __native_type *parent) : __sized_type(parent) {
+                        __array_type(__native_type *parent) : __sized_type(parent) {
 
                         }
 
-                        __array_type(const __native_type *parent, const uint8_t index, const string &name,
+                        __array_type(__native_type *parent, const uint8_t index, const string &name,
                                      const __type_def_enum inner_type,
                                      const uint32_t max_size) : __sized_type(parent, index, name,
                                                                              __type_def_enum::TYPE_ARRAY, max_size) {
@@ -495,7 +495,7 @@ REACTFS_NS_CORE
                          *
                          * @param constraint - Field data constraint.
                          */
-                        virtual void set_constraint(__constraint *constraint) {
+                        virtual void set_constraint(__constraint *constraint) override {
                             throw BASE_ERROR("Constraints can only be defined for basic types.");
                         }
 
@@ -505,7 +505,7 @@ REACTFS_NS_CORE
                          *
                          * @param default_value - Field default value.
                          */
-                        virtual void set_default_value(__default *default_value) {
+                        virtual void set_default_value(__default *default_value) override {
                             throw BASE_ERROR("Default value can only be defined for basic types.");
                         }
 
@@ -525,8 +525,13 @@ REACTFS_NS_CORE
                     private:
                         unordered_map<string, __native_type *> fields;
                     public:
-                        __complex_type(const uint8_t index, const string &name) : __native_type(index, name,
-                                                                                                __type_def_enum::TYPE_STRUCT) {
+                        __complex_type(__native_type *parent) : __native_type(parent) {
+
+                        }
+
+                        __complex_type(__native_type *parent, const uint8_t index, const string &name) : __native_type(
+                                parent, index, name,
+                                __type_def_enum::TYPE_STRUCT) {
                             this->type = __field_type::COMPLEX;
                         }
 
