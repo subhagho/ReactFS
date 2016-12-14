@@ -17,7 +17,7 @@ com::wookler::reactfs::core::parsers::schema_driver::~schema_driver() {
 
     free_schema();
 
-    for(auto iter = indexes.begin(); iter != indexes.end(); iter++) {
+    for (auto iter = indexes.begin(); iter != indexes.end(); iter++) {
         free_index_def(iter->second);
     }
     indexes.clear();
@@ -77,7 +77,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_type(const string 
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const string &varname, const string &type,
-                                                                          bool is_ref, bool nullable) {
+                                                                          bool is_ref, int nullable) {
     CHECK_NOT_EMPTY(varname);
     CHECK_NOT_EMPTY(type);
 
@@ -95,7 +95,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const 
     memset(d, 0, sizeof(__declare));
 
     d->is_reference = is_ref;
-    d->is_nullable = nullable;
+    d->is_nullable = (nullable > 0 ? true : false);
     d->variable = new string(varname);
     d->type = new string(type);
 
@@ -122,7 +122,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const 
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_array_decl(const string &varname, uint16_t size,
                                                                          const string &type, bool is_ref,
-                                                                         bool nullable) {
+                                                                         int nullable) {
     CHECK_NOT_EMPTY(varname);
     CHECK_NOT_EMPTY(type);
     PRECONDITION(size > 0);
@@ -136,7 +136,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_array_decl(const s
     memset(d, 0, sizeof(__declare));
 
     d->is_reference = false;
-    d->is_nullable = nullable;
+    d->is_nullable = (nullable > 0 ? true : false);
     d->variable = new string(varname);
     d->type = new string(TYPE_NAME_ARRAY);
     d->size = size;
@@ -168,7 +168,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_array_decl(const s
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_list_decl(const string &varname, const string &type,
-                                                                        bool is_ref, bool nullable) {
+                                                                        bool is_ref, int nullable) {
     CHECK_NOT_EMPTY(varname);
     CHECK_NOT_EMPTY(type);
 
@@ -181,7 +181,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_list_decl(const st
     memset(d, 0, sizeof(__declare));
 
     d->is_reference = false;
-    d->is_nullable = nullable;
+    d->is_nullable = (nullable > 0 ? true : false);
     d->variable = new string(varname);
     d->type = new string(TYPE_NAME_LIST);
 
@@ -213,7 +213,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_list_decl(const st
 
 void com::wookler::reactfs::core::parsers::schema_driver::add_map_decl(const string &varname, const string &ktype,
                                                                        const string &vtype, bool is_ref,
-                                                                       bool nullable) {
+                                                                       int nullable) {
     CHECK_NOT_EMPTY(varname);
     CHECK_NOT_EMPTY(ktype);
     CHECK_NOT_EMPTY(vtype);
@@ -227,7 +227,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_map_decl(const str
     memset(d, 0, sizeof(__declare));
 
     d->is_reference = false;
-    d->is_nullable = nullable;
+    d->is_nullable = (nullable > 0 ? true : false);
     d->variable = new string(varname);
     d->type = new string(TYPE_NAME_MAP);
 

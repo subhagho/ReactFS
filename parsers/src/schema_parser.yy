@@ -300,8 +300,7 @@ declare_native:
 							debug_r("[type=%s] varname=%s nullable=%d", $1, $2, $5);
 							std::string t($1);
 							std::string n($2);
-							bool nullable = ($5 == 0 ? true : false);
-							driver.add_declaration(n, t, false, nullable); 
+							driver.add_declaration(n, t, false, $5); 
 							FREE_PTR($1);
 							FREE_PTR($2);
 						}				
@@ -310,21 +309,21 @@ declare_native:
 declare_ref:
 		DATATYPE variable variable opt_constraint opt_default opt_nullable	{ 
 							debug_r("[type=%s] varname=%s", $2, $3);
+							debug_r("varname=%s nullable=%d", $3, $6);
 							std::string t($2);
 							std::string n($3);
-							bool nullable = ($6 == 0 ? true : false);
-							driver.add_declaration(n, t, true, nullable); 
+							driver.add_declaration(n, t, true, $6); 
 						}
 	;
 
 declare_native_arr:
 		ARRAY LT datatype GT  variable size_def opt_constraint opt_default opt_nullable	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $3, $5, $6);
+									debug_r("varname=%s nullable=%d", $5, $9);
 									std::string t($3);
 									std::string n($5);
 									int s = $6;
-									bool nullable = ($9 == 0 ? true : false);
-									driver.add_array_decl(n, s, t, false, nullable);
+									driver.add_array_decl(n, s, t, false, $9);
 									FREE_PTR($3);
 									FREE_PTR($5);
 								}
@@ -333,11 +332,11 @@ declare_native_arr:
 declare_ref_arr:
 		ARRAY LT DATATYPE variable GT variable size_def opt_constraint opt_default opt_nullable	{
 									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $4, $6, $7);
+									debug_r("varname=%s nullable=%d", $6, $10);
 									std::string t($4);
 									std::string n($6);
 									int s = $7;
-									bool nullable = ($10 == 0 ? true : false);
-									driver.add_array_decl(n, s, t, true, nullable);
+									driver.add_array_decl(n, s, t, true, $10);
 									FREE_PTR($4);
 									FREE_PTR($6);
 	
@@ -347,10 +346,10 @@ declare_ref_arr:
 declare_native_list:
 		LIST LT datatype GT variable opt_constraint opt_default opt_nullable	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $3, $5);
+									debug_r("varname=%s nullable=%d", $5, $8);
 									std::string t($3);
 									std::string n($5);
-									bool nullable = ($8 == 0 ? true : false);
-									driver.add_list_decl(n, t, false, nullable);
+									driver.add_list_decl(n, t, false, $8);
 									FREE_PTR($3);
 									FREE_PTR($5);
 
@@ -360,10 +359,10 @@ declare_native_list:
 declare_ref_list:
 		LIST LT DATATYPE variable GT variable opt_constraint opt_default opt_nullable	{
 									debug_r("type=[LIST] inner type=%s varname=%s", $4, $6);
+									debug_r("varname=%s nullable=%d", $6, $9);
 									std::string t($4);
 									std::string n($6);
-									bool nullable = ($9 == 0 ? true : false);
-									driver.add_list_decl(n, t, true, nullable);
+									driver.add_list_decl(n, t, true, $9);
 									FREE_PTR($4);
 									FREE_PTR($6);	
 								}
@@ -371,11 +370,11 @@ declare_ref_list:
 declare_netive_map:
 		MAP LT datatype COMMA datatype GT variable opt_constraint opt_default	opt_nullable	{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $5, $7);
+									debug_r("varname=%s nullable=%d", $7, $10);
 									std::string kt($3);
 									std::string vt($5);
 									std::string n($7);
-									bool nullable = ($10 == 0 ? true : false);
-									driver.add_map_decl(n, kt, vt, false, nullable);
+									driver.add_map_decl(n, kt, vt, false, $10);
 									FREE_PTR($3);
 									FREE_PTR($5);
 									FREE_PTR($7);
@@ -385,11 +384,11 @@ declare_netive_map:
 declare_ref_map:
 		MAP LT datatype COMMA DATATYPE variable GT variable opt_constraint opt_default opt_nullable	{
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", $3, $6, $8);
+									debug_r("varname=%s nullable=%d", $8, $11);
 									std::string kt($3);
 									std::string vt($6);
 									std::string n($8);
-									bool nullable = ($11 == 0 ? true : false);
-									driver.add_map_decl(n, kt, vt, true, nullable);
+									driver.add_map_decl(n, kt, vt, true, $11);
 									FREE_PTR($3);
 									FREE_PTR($6);
 									FREE_PTR($8);

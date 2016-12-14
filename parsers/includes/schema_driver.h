@@ -351,20 +351,20 @@ REACTFS_NS_CORE
 
                         void set_index_type(const string &type);
 
-                        void add_declaration(const string &varname, const string &type, bool is_ref = false,
-                                             bool nullable = false);
+                        void add_declaration(const string &varname, const string &type, bool is_ref,
+                                             int nullable);
 
                         void
-                        add_array_decl(const string &varname, uint16_t size, const string &type, bool is_ref = false,
-                                       bool nullable = false);
+                        add_array_decl(const string &varname, uint16_t size, const string &type, bool is_ref,
+                                       int nullable);
 
                         void
-                        add_list_decl(const string &varname, const string &type, bool is_ref = false,
-                                      bool nullable = false);
+                        add_list_decl(const string &varname, const string &type, bool is_ref,
+                                      int nullable);
 
                         void
                         add_map_decl(const string &varname, const string &ktype, const string &vtype,
-                                     bool is_ref = false, bool nullable = false);
+                                     bool is_ref, int nullable);
 
                         void set_constraint(bool is_not, const string &constraint, const string &values);
 

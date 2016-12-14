@@ -463,7 +463,6 @@ REACTFS_NS_CORE
                             memcpy(ptr, &a_size, sizeof(uint64_t));
 
                             if (a_size > 0) {
-                                __T **d_ptr = (__T **) value;
                                 uint64_t r_offset = offset + sizeof(uint64_t);
                                 uint64_t t_size = sizeof(uint64_t);
                                 for (uint64_t ii = 0; ii < a_size; ii++) {
