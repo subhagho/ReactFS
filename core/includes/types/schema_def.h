@@ -138,8 +138,11 @@ REACTFS_NS_CORE
                             this->datatype = datatype;
                             this->type = __field_type::NATIVE;
 
-                            type_handler = __type_defs_utils::get_type_handler(this->datatype);
-                            CHECK_NOT_NULL(type_handler);
+                            if (__type_enum_helper::is_native(this->datatype) ||
+                                this->datatype == __type_def_enum::TYPE_TEXT) {
+                                type_handler = __type_defs_utils::get_type_handler(this->datatype);
+                                CHECK_NOT_NULL(type_handler);
+                            }
                         }
 
                         /*!
@@ -339,6 +342,11 @@ REACTFS_NS_CORE
                             ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
                             uint8_t *dt = static_cast<uint8_t *>(ptr);
                             this->datatype = __type_enum_helper::parse_type(*dt);
+                            if (__type_enum_helper::is_native(this->datatype) ||
+                                this->datatype == __type_def_enum::TYPE_TEXT) {
+                                type_handler = __type_defs_utils::get_type_handler(this->datatype);
+                                CHECK_NOT_NULL(type_handler);
+                            }
                             r_size += sizeof(uint8_t);
 
                             // Read the field index.
@@ -482,8 +490,15 @@ REACTFS_NS_CORE
                     /*!
                      * Interface to define the datatype loaders for a complex type.
                      */
-                    class __complex_type_loader {
+                    class __complex_type_helper {
+                    protected:
+                        static __complex_type_helper *type_loader;
+
                     public:
+                        virtual ~__complex_type_helper() {
+
+                        }
+
                         /*!
                          * Load the field type definition for fields of a complex type.
                          *
@@ -496,13 +511,24 @@ REACTFS_NS_CORE
                          */
                         virtual void read(void *buffer, uint64_t offset, uint8_t count, vector<__native_type *> *fields,
                                           uint32_t *size) = 0;
+
+                        virtual __base_datatype_io *get_complex_type_handler(__field_type type, ...) = 0;
+
+                        static __complex_type_helper *get_type_loader() {
+                            CHECK_NOT_NULL(type_loader);
+                            return type_loader;
+                        }
+
+                        static void dispose() {
+                            CHECK_AND_FREE(type_loader);
+                        }
                     };
 
                     class __complex_type : public __native_type {
                     private:
                         unordered_map<uint8_t, __native_type *> fields;
                         unordered_map<string, uint8_t> field_index;
-                        __complex_type_loader *loader = nullptr;
+                        __complex_type_helper *loader = nullptr;
 
 
                         void add_field(const uint8_t index, const string &name, __native_type *type) {
@@ -516,13 +542,21 @@ REACTFS_NS_CORE
 
                     public:
                         __complex_type(__native_type *parent) : __native_type(parent) {
-
+                            this->type = __field_type::COMPLEX;
+                            loader = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(loader);
+                            this->type_handler = loader->get_complex_type_handler(this->type);
+                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         __complex_type(__native_type *parent, const uint8_t index, const string &name) : __native_type(
                                 parent, index, name,
                                 __type_def_enum::TYPE_STRUCT) {
                             this->type = __field_type::COMPLEX;
+                            loader = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(loader);
+                            this->type_handler = loader->get_complex_type_handler(this->type);
+                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         ~__complex_type() {
@@ -531,11 +565,6 @@ REACTFS_NS_CORE
                                 CHECK_AND_FREE(iter->second);
                             }
                             fields.clear();
-                        }
-
-                        void set_field_loader(__complex_type_loader *loader) {
-                            CHECK_NOT_NULL(loader);
-                            this->loader = loader;
                         }
 
                         __native_type *get_type(const string &name) {
@@ -677,7 +706,11 @@ REACTFS_NS_CORE
                         __native_type *inner = nullptr;
                     public:
                         __array_type(__native_type *parent) : __sized_type(parent) {
-
+                            this->type = __field_type::ARRAY;
+                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(loader);
+                            this->type_handler = loader->get_complex_type_handler(this->type);
+                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         __array_type(__native_type *parent, const uint8_t index, const string &name,
@@ -687,6 +720,11 @@ REACTFS_NS_CORE
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
                             this->inner_type = inner_type;
                             this->inner = __type_init_utils::create_inner_type(this, name, index, inner_type);
+                            this->type = __field_type::ARRAY;
+                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(loader);
+                            this->type_handler = loader->get_complex_type_handler(this->type);
+                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         ~__array_type() {
@@ -763,7 +801,11 @@ REACTFS_NS_CORE
                         __native_type *inner = nullptr;
                     public:
                         __list_type(__native_type *parent) : __native_type(parent) {
-
+                            this->type = __field_type::LIST;
+                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(loader);
+                            this->type_handler = loader->get_complex_type_handler(this->type);
+                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         __list_type(__native_type *parent, const uint8_t index, const string &name,
@@ -772,6 +814,11 @@ REACTFS_NS_CORE
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
                             this->inner_type = inner_type;
                             this->inner = __type_init_utils::create_inner_type(this, name, index, inner_type);
+                            this->type = __field_type::LIST;
+                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(loader);
+                            this->type_handler = loader->get_complex_type_handler(this->type);
+                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         ~__list_type() {
@@ -850,7 +897,11 @@ REACTFS_NS_CORE
                         __native_type *value;
                     public:
                         __map_type(__native_type *parent) : __native_type(parent) {
-
+                            this->type = __field_type::MAP;
+                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(loader);
+                            this->type_handler = loader->get_complex_type_handler(this->type);
+                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         __map_type(__native_type *parent, const uint8_t index, const string &name,
@@ -867,6 +918,12 @@ REACTFS_NS_CORE
                             this->value_type = value_type;
                             string value_name(MAP_TYPE_VALUE_NAME);
                             this->value = __type_init_utils::create_inner_type(this, value_name, index, value_type);
+
+                            this->type = __field_type::MAP;
+                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(loader);
+                            this->type_handler = loader->get_complex_type_handler(this->type);
+                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         /*!
@@ -925,6 +982,7 @@ REACTFS_NS_CORE
                             return this->name;
                         }
                     };
+
                 }
 REACTFS_NS_CORE_END
 #endif //REACTFS_SCHEMA_DEF_H

@@ -6,6 +6,7 @@
 #define REACTFS_TYPES_COMMON_H
 
 #include <unordered_map>
+#include <mutex>
 
 #include "common/includes/common.h"
 #include "common/includes/common_utils.h"
@@ -281,6 +282,10 @@ REACTFS_NS_CORE
                             return this->type;
                         }
 
+                        virtual ~__base_datatype_io() {
+
+                        }
+
                         /*!
                          * Read (de-serialize) data from the binary format for the represented data type.
                          *
@@ -533,7 +538,8 @@ REACTFS_NS_CORE
                          * @param max_length - Max lenght of the output buffer.
                          * @return - Total number of bytes written.
                          */
-                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(char), offset, max_length);
                             memcpy(ptr, value, sizeof(char));
                             return sizeof(char);
@@ -622,7 +628,8 @@ REACTFS_NS_CORE
                          * @param max_length - Max lenght of the output buffer.
                          * @return - Total number of bytes written.
                          */
-                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(bool), offset, max_length);
                             memcpy(ptr, value, sizeof(bool));
                             return sizeof(bool);
@@ -701,7 +708,8 @@ REACTFS_NS_CORE
                          * @param max_length - Max lenght of the output buffer.
                          * @return - Total number of bytes written.
                          */
-                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(short), offset, max_length);
                             memcpy(ptr, value, sizeof(short));
                             return sizeof(short);
@@ -790,7 +798,8 @@ REACTFS_NS_CORE
                          * @param max_length - Max lenght of the output buffer.
                          * @return - Total number of bytes written.
                          */
-                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(int), offset, max_length);
                             memcpy(ptr, value, sizeof(int));
                             return sizeof(int);
@@ -879,7 +888,8 @@ REACTFS_NS_CORE
                         * @param max_length - Max lenght of the output buffer.
                         * @return - Total number of bytes written.
                         */
-                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(long), offset, max_length);
                             memcpy(ptr, value, sizeof(long));
                             return sizeof(long);
@@ -1121,7 +1131,8 @@ REACTFS_NS_CORE
                         * @param max_length - Max lenght of the output buffer.
                         * @return - Total number of bytes written.
                         */
-                        uint64_t write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        uint64_t
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             void *ptr = get_data_ptr(buffer, sizeof(float), offset, max_length);
                             memcpy(ptr, value, sizeof(float));
                             return sizeof(float);
@@ -1463,36 +1474,20 @@ REACTFS_NS_CORE
 
                     /*!
                      * Singleton utility class for managing data type IO handlers.
+                     *
+                     * Native type handlers are automatically added. Other type handlers
+                     * should be added externally.
+                     *
+                     * Note:: Needs to be disposed prior to application existing.
                      */
                     class __type_defs_utils {
                     private:
+                        /// Thread lock mutex for creating handlers.
+                        static mutex thread_mutex;
+
                         /// Static map of the registered data type IO handlers.
                         static unordered_map<string, __base_datatype_io *> type_handlers;
 
-                    public:
-
-                        /*!
-                         * Get the datatype IO handler for the specified datatype enum.
-                         *
-                         * Note: Only valid inner type datatype handlers are registered.
-                         *
-                         * @param type - Datatype enum
-                         * @return - Datatype IO handler
-                         */
-                        static __base_datatype_io *get_type_handler(__type_def_enum type) {
-                            PRECONDITION(__type_enum_helper::is_inner_type_valid(type));
-                            string type_n = __type_enum_helper::get_type_string(type);
-                            unordered_map<string, __base_datatype_io *>::iterator iter = type_handlers.find(type_n);
-                            if (iter != type_handlers.end()) {
-                                return iter->second;
-                            } else {
-                                // If not available, create a new instance.
-                                __base_datatype_io *ptr = create_type_handler(type);
-                                CHECK_NOT_NULL(ptr);
-                                type_handlers.insert({type_n, ptr});
-                                return ptr;
-                            }
-                        }
 
                         /*!
                          * Create a new instance of the IO handler.
@@ -1501,6 +1496,12 @@ REACTFS_NS_CORE
                          * @return - Datatype IO handler
                          */
                         static __base_datatype_io *create_type_handler(__type_def_enum type) {
+                            lock_guard<std::mutex> lock(thread_mutex);
+                            string type_n = __type_enum_helper::get_type_string(type);
+                            unordered_map<string, __base_datatype_io *>::iterator iter = type_handlers.find(type_n);
+                            if (iter != type_handlers.end()) {
+                                return nullptr;
+                            }
                             __base_datatype_io *t = nullptr;
                             switch (type) {
                                 case __type_def_enum::TYPE_BYTE:
@@ -1560,6 +1561,74 @@ REACTFS_NS_CORE
                                                      __type_enum_helper::get_type_string(type).c_str());
                             }
                             return t;
+                        }
+
+                    public:
+
+                        /*!
+                         * Get the datatype IO handler for the specified datatype enum.
+                         *
+                         * Note: Only valid inner type datatype handlers are auto-created, others should be
+                         * added explicitly.
+                         *
+                         * @param type - Datatype enum
+                         * @return - Datatype IO handler
+                         */
+                        static __base_datatype_io *get_type_handler(__type_def_enum type) {
+                            PRECONDITION(__type_enum_helper::is_native(type) || type == __type_def_enum::TYPE_TEXT);
+                            string type_n = __type_enum_helper::get_type_string(type);
+                            unordered_map<string, __base_datatype_io *>::iterator iter = type_handlers.find(type_n);
+                            if (iter != type_handlers.end()) {
+                                return iter->second;
+                            } else {
+                                if (__type_enum_helper::is_native(type) || type == __type_def_enum::TYPE_TEXT) {
+                                    // If not available and native type, create a new instance.
+                                    __base_datatype_io *ptr = create_type_handler(type);
+                                    if (IS_NULL(ptr)) {
+                                        // Another thread should have added this type handler.
+                                        iter = type_handlers.find(type_n);
+                                        if (iter != type_handlers.end()) {
+                                            return iter->second;
+                                        }
+                                    } else {
+                                        type_handlers.insert({type_n, ptr});
+                                        return ptr;
+                                    }
+                                }
+                            }
+                            return nullptr;
+                        }
+
+                        /*!
+                         * Add a non-native IO handler that was instantiated externally.
+                         *
+                         *
+                         * @param type - Datatype of the handler.
+                         * @param handler - Handler instance.
+                         * @return - Has been added? Will return false if handler already registered.
+                         */
+                        static bool add_external_handler(__type_def_enum type, __base_datatype_io *handler) {
+                            CHECK_NOT_NULL(handler);
+                            lock_guard<std::mutex> lock(thread_mutex);
+                            string type_n = __type_enum_helper::get_type_string(type);
+                            unordered_map<string, __base_datatype_io *>::iterator iter = type_handlers.find(type_n);
+                            if (iter != type_handlers.end()) {
+                                return false;
+                            }
+                            type_handlers.insert({type_n, handler});
+                            return true;
+                        }
+
+                        /*!
+                         * Dispose all the registered instances of the IO handlers.
+                         */
+                        static void dispose() {
+                            lock_guard<std::mutex> lock(thread_mutex);
+                            unordered_map<string, __base_datatype_io *>::iterator iter;
+                            for (iter = type_handlers.begin(); iter != type_handlers.end(); iter++) {
+                                CHECK_AND_FREE(iter->second);
+                            }
+                            type_handlers.clear();
                         }
                     };
 

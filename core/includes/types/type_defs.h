@@ -389,7 +389,7 @@ REACTFS_NS_CORE
                             memcpy(ptr, &a_size, sizeof(uint64_t));
 
                             if (a_size > 0) {
-                                __T * const *d_ptr = static_cast<__T * const *>(value);
+                                __T *const *d_ptr = static_cast<__T *const *>(value);
                                 uint64_t r_offset = offset + sizeof(uint64_t);
                                 uint64_t t_size = sizeof(uint64_t);
                                 for (uint64_t ii = 0; ii < a_size; ii++) {
@@ -415,7 +415,7 @@ REACTFS_NS_CORE
                                 return 0;
                             }
 
-                            __T * const *data = static_cast<__T * const *>(value);
+                            __T *const *data = static_cast<__T *const *>(value);
                             CHECK_NOT_NULL(data);
                             __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
                             if (size < 0) {
@@ -1515,6 +1515,19 @@ REACTFS_NS_CORE
                                     throw BASE_ERROR("Specified type not supported. [type=%d]", key_type);
                             }
                             return handler;
+                        }
+                    };
+
+                    class complex_type_loader_impl : public __complex_type_helper {
+                    public:
+                        void read(void *buffer, uint64_t offset, uint8_t count, vector<__native_type *> *fields,
+                                  uint32_t *size) override {
+
+                        }
+
+                        virtual __base_datatype_io *get_complex_type_handler(__field_type type, ...) override {
+
+                            return nullptr;
                         }
                     };
                 }
