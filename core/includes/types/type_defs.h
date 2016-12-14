@@ -103,11 +103,7 @@ REACTFS_NS_CORE
 
                     };
 
-                    /*!
-                     * Dummy structure definition for defining STRUCT based array/list/map.
-                     */
-                    typedef struct __dummy_struct__ {
-                    } __dummy_struct;
+                    typedef unordered_map<uint8_t, void *> __struct_datatype__;
 
                     class __dt_struct : public __base_datatype_io {
                     private:
@@ -220,7 +216,7 @@ REACTFS_NS_CORE
 
                         virtual uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            unordered_map<uint8_t, void *> *map = (unordered_map<uint8_t, void *> *) value;
+                            const unordered_map<uint8_t, void *> *map = (const unordered_map<uint8_t, void *> *) value;
                             CHECK_NOT_EMPTY_P(map);
                             void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             memcpy(ptr, this->version, sizeof(__version_header));
@@ -806,8 +802,8 @@ REACTFS_NS_CORE
                     };
 
 
-                    typedef __dt_array<__dummy_struct, __type_def_enum::TYPE_STRUCT> __struct_array;
-                    typedef __dt_list<__dummy_struct, __type_def_enum::TYPE_STRUCT> __struct_list;
+                    typedef __dt_array<__struct_datatype__, __type_def_enum::TYPE_STRUCT> __struct_array;
+                    typedef __dt_list<__struct_datatype__, __type_def_enum::TYPE_STRUCT> __struct_list;
 
                     class __array_init_utils {
                     private:
@@ -1014,7 +1010,7 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, __dummy_struct, __type_def_enum::TYPE_STRUCT>();
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>();
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 default:
@@ -1068,7 +1064,7 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, __dummy_struct, __type_def_enum::TYPE_STRUCT>();
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>();
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 default:
@@ -1122,7 +1118,7 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, __dummy_struct, __type_def_enum::TYPE_STRUCT>();
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>();
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 default:
@@ -1176,7 +1172,7 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, __dummy_struct, __type_def_enum::TYPE_STRUCT>();
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>();
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 default:
@@ -1230,7 +1226,7 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, __dummy_struct, __type_def_enum::TYPE_STRUCT>();
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>();
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 default:
@@ -1284,7 +1280,7 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, __dummy_struct, __type_def_enum::TYPE_STRUCT>();
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>();
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 default:
@@ -1338,7 +1334,7 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, __dummy_struct, __type_def_enum::TYPE_STRUCT>();
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>();
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 default:
@@ -1392,7 +1388,7 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, __dummy_struct, __type_def_enum::TYPE_STRUCT>();
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>();
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 default:
@@ -1446,7 +1442,7 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<string, __type_def_enum::TYPE_CHAR, __dummy_struct, __type_def_enum::TYPE_STRUCT>();
+                                    handler = new __dt_map<string, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>();
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 default:

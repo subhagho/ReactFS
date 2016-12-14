@@ -28,6 +28,9 @@
 #include "types_common.h"
 #include "__constraints.h"
 
+#define MAP_TYPE_KEY_NAME "key"
+#define MAP_TYPE_VALUE_NAME "value"
+
 REACTFS_NS_CORE
                 namespace types {
 
@@ -170,7 +173,7 @@ REACTFS_NS_CORE
                          *
                          * @return - Field datatype.
                          */
-                        const __type_def_enum get_datatype() const {
+                        __type_def_enum get_datatype() const {
                             return this->datatype;
                         }
 
@@ -263,6 +266,12 @@ REACTFS_NS_CORE
                             memcpy(ptr, &ft, sizeof(uint8_t));
                             uint32_t w_size = sizeof(uint8_t);
 
+                            // Write the field datatype
+                            uint8_t dt = (uint8_t) this->datatype;
+                            ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
+                            memcpy(ptr, &dt, sizeof(uint8_t));
+                            w_size += sizeof(uint8_t);
+
                             // Write the field index
                             ptr = common_utils::increment_data_ptr(ptr, w_size);
                             memcpy(ptr, &index, sizeof(uint8_t));
@@ -274,15 +283,10 @@ REACTFS_NS_CORE
                             if (NOT_NULL(constraint)) {
                                 bits = bitset_utils::set_uint8_bit(bits, BIT_TYPE_CONSTRAINT);
                             }
-                            // Write the field datatype
-                            uint8_t dt = (uint8_t) this->datatype;
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
-                            memcpy(ptr, &dt, sizeof(uint8_t));
-                            w_size += sizeof(uint8_t);
 
                             // Write is nullable
                             ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
-                            memcpy(ptr, &this->nullable, sizeof(bool));
+                            memcpy(ptr, &(this->nullable), sizeof(bool));
                             w_size += sizeof(bool);
 
                             // Set constraint bit
@@ -319,6 +323,7 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t read(void *buffer, uint64_t offset) {
                             CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(type_handler);
                             __base_datatype_io *string_handler = __type_defs_utils::get_type_handler(
                                     __type_def_enum::TYPE_STRING);
                             CHECK_NOT_NULL(string_handler);
@@ -329,11 +334,18 @@ REACTFS_NS_CORE
                             POSTCONDITION(*ft == __field_type_helper::get_type_number(this->type));
                             uint32_t r_size = sizeof(uint8_t);
 
+
+                            // Read the field datatype
+                            ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
+                            uint8_t *dt = static_cast<uint8_t *>(ptr);
+                            this->datatype = __type_enum_helper::parse_type(*dt);
+                            r_size += sizeof(uint8_t);
+
                             // Read the field index.
                             ptr = common_utils::increment_data_ptr(ptr, r_size);
-                            uint16_t *index = static_cast<uint16_t *>(ptr);
+                            uint8_t *index = static_cast<uint8_t *>(ptr);
                             this->index = *index;
-                            r_size += sizeof(uint16_t);
+                            r_size += sizeof(uint8_t);
 
                             // Read the field name.
                             string *sp = nullptr;
@@ -341,14 +353,6 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(sp);
                             this->name = string(*sp);
                             CHECK_AND_FREE(sp);
-
-                            // Read the field datatype
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
-                            uint8_t *dt = static_cast<uint8_t *>(ptr);
-                            this->datatype = __type_enum_helper::parse_type(*dt);
-                            r_size += sizeof(uint16_t);
-                            type_handler = __type_defs_utils::get_type_handler(this->datatype);
-                            CHECK_NOT_NULL(type_handler);
 
                             // Read is nullable
                             ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
@@ -386,7 +390,12 @@ REACTFS_NS_CORE
                             return this->parent;
                         }
 
-                        string get_canonical_name() const {
+                        void set_parent(__native_type *parent) {
+                            CHECK_NOT_NULL(parent);
+                            this->parent = parent;
+                        }
+
+                        virtual string get_canonical_name() const {
                             if (NOT_NULL(parent)) {
                                 string sn = parent->get_canonical_name();
                                 return common_utils::format("%s.%s", sn.c_str(), this->name.c_str());
@@ -470,10 +479,202 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    /*!
+                     * Interface to define the datatype loaders for a complex type.
+                     */
+                    class __complex_type_loader {
+                    public:
+                        /*!
+                         * Load the field type definition for fields of a complex type.
+                         *
+                         * @param buffer - Input data buffer.
+                         * @param offset - Offset to start reading from.
+                         * @param count - Number of fields expected to be loaded.
+                         * @param fields - Vector to return the loaded fields.
+                         * @param size - Size increment pointer.
+                         * @return - Loaded field definition.
+                         */
+                        virtual void read(void *buffer, uint64_t offset, uint8_t count, vector<__native_type *> *fields,
+                                          uint32_t *size) = 0;
+                    };
+
+                    class __complex_type : public __native_type {
+                    private:
+                        unordered_map<uint8_t, __native_type *> fields;
+                        unordered_map<string, uint8_t> field_index;
+                        __complex_type_loader *loader = nullptr;
+
+
+                        void add_field(const uint8_t index, const string &name, __native_type *type) {
+                            CHECK_NOT_EMPTY(name);
+                            CHECK_NOT_NULL(type);
+                            PRECONDITION(fields.size() < UCHAR_MAX);
+
+                            fields.insert({index, type});
+                            field_index.insert({name, index});
+                        }
+
+                    public:
+                        __complex_type(__native_type *parent) : __native_type(parent) {
+
+                        }
+
+                        __complex_type(__native_type *parent, const uint8_t index, const string &name) : __native_type(
+                                parent, index, name,
+                                __type_def_enum::TYPE_STRUCT) {
+                            this->type = __field_type::COMPLEX;
+                        }
+
+                        ~__complex_type() {
+                            unordered_map<uint8_t, __native_type *>::iterator iter;
+                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                CHECK_AND_FREE(iter->second);
+                            }
+                            fields.clear();
+                        }
+
+                        void set_field_loader(__complex_type_loader *loader) {
+                            CHECK_NOT_NULL(loader);
+                            this->loader = loader;
+                        }
+
+                        __native_type *get_type(const string &name) {
+                            unordered_map<string, uint8_t>::const_iterator iter = field_index.find(name);
+                            if (iter != field_index.end()) {
+                                const uint8_t index = iter->second;
+                                unordered_map<uint8_t, __native_type *>::iterator fiter = fields.find(index);
+                                if (fiter != fields.end()) {
+                                    return fiter->second;
+                                }
+                            }
+                            return nullptr;
+                        }
+
+                        __native_type *get_type(const uint8_t index) {
+                            unordered_map<uint8_t, __native_type *>::iterator fiter = fields.find(index);
+                            if (fiter != fields.end()) {
+                                return fiter->second;
+                            }
+                            return nullptr;
+                        }
+
+                        /*!
+                         * Write (serialize) this field definition to the output buffer.
+                         *
+                         * @param buffer - Output write buffer.
+                         * @param offset - Offset to start writing from.
+                         * @return - Number of bytes written.
+                         */
+                        virtual uint32_t write(void *buffer, uint64_t offset) override {
+                            uint32_t w_size = __native_type::write(buffer, offset);
+                            // Write the max_size value.
+                            void *ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
+                            uint8_t size = (uint8_t) fields.size();
+                            memcpy(ptr, &size, sizeof(uint8_t));
+                            w_size += sizeof(uint8_t);
+
+                            unordered_map<uint8_t, __native_type *>::iterator iter;
+                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                w_size += iter->second->write(buffer, (offset + w_size));
+                            }
+                            return w_size;
+                        }
+
+                        /*!
+                         * Read (de-serialize) the field definition from the input buffer.
+                         *
+                         * @param buffer - Input data buffer.
+                         * @param offset - Offset to start reading from.
+                         * @return - Number of bytes read.
+                         */
+                        virtual uint32_t read(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(loader);
+                            uint32_t r_size = __native_type::read(buffer, offset);
+                            // Read the max_size value.
+                            void *ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
+                            uint8_t *size = static_cast<uint8_t *>(ptr);
+                            r_size += sizeof(uint8_t);
+
+                            vector<__native_type *> types;
+                            loader->read(buffer, (offset + r_size), *size, &types, &r_size);
+
+                            for (__native_type *type : types) {
+                                add_field(type->get_index(), type->get_name(), type);
+                            }
+                            return r_size;
+                        }
+                    };
+
+                    class __type_init_utils {
+                    public:
+                        static __native_type *
+                        create_inner_type(__native_type *parent, const string &name, const uint8_t index,
+                                          const __type_def_enum inner_type) {
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
+                            if (__type_enum_helper::is_native(inner_type) || inner_type == __type_def_enum::TYPE_TEXT) {
+                                __native_type *type = new __native_type(parent, index, name, inner_type);
+                                CHECK_ALLOC(type, TYPE_NAME(__native_type));
+                                return type;
+                            } else if (inner_type == __type_def_enum::TYPE_STRUCT) {
+                                __complex_type *type = new __complex_type(parent, index, name);
+                                CHECK_ALLOC(type, TYPE_NAME(__complex_type));
+                                return type;
+                            }
+                            throw BASE_ERROR("Cannot create inner type for datatype. [datatype=%d]", inner_type);
+                        }
+
+                        static __native_type *
+                        read_inner_type(__native_type *parent, void *buffer, uint64_t offset, uint32_t *size) {
+                            // Read the field type.
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint8_t *ft = static_cast<uint8_t *>(ptr);
+
+                            __field_type field_type = __field_type_helper::get_type(*ft);
+                            if (field_type == __field_type::NATIVE) {
+                                __native_type *type = new __native_type(parent);
+                                CHECK_ALLOC(type, TYPE_NAME(__native_type));
+                                *size += type->read(buffer, offset);
+                                return type;
+                            } else if (field_type == __field_type::COMPLEX) {
+                                __complex_type *type = new __complex_type(parent);
+                                CHECK_ALLOC(type, TYPE_NAME(__complex_type));
+                                *size += type->read(buffer, offset);
+                                return type;
+                            }
+                            throw BASE_ERROR("Cannot create inner type for datatype. [datatype=%d]", field_type);
+                        }
+
+                        static __native_type *
+                        create_key_type(__native_type *parent, const string &name, const uint8_t index,
+                                        const __type_def_enum inner_type) {
+                            PRECONDITION(__type_enum_helper::is_native(inner_type));
+                            __native_type *type = new __native_type(parent, index, name, inner_type);
+                            CHECK_ALLOC(type, TYPE_NAME(__native_type));
+                            return type;
+                        }
+
+                        static __native_type *
+                        read_key_type(__native_type *parent, void *buffer, uint64_t offset, uint32_t *size) {
+                            // Read the field type.
+                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint8_t *ft = static_cast<uint8_t *>(ptr);
+
+                            __field_type field_type = __field_type_helper::get_type(*ft);
+                            if (field_type == __field_type::NATIVE) {
+                                __native_type *type = new __native_type(parent);
+                                CHECK_ALLOC(type, TYPE_NAME(__native_type));
+                                *size += type->read(buffer, offset);
+                                POSTCONDITION(__type_enum_helper::is_native(type->get_datatype()));
+                                return type;
+                            }
+                            throw BASE_ERROR("Cannot create inner type for datatype. [datatype=%d]", field_type);
+                        }
+                    };
+
                     class __array_type : public __sized_type {
                     private:
                         __type_def_enum inner_type;
-                        __base_datatype_io *inner_type_handler = nullptr;
+                        __native_type *inner = nullptr;
                     public:
                         __array_type(__native_type *parent) : __sized_type(parent) {
 
@@ -485,8 +686,20 @@ REACTFS_NS_CORE
                                                                              __type_def_enum::TYPE_ARRAY, max_size) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
                             this->inner_type = inner_type;
-                            inner_type_handler = __type_defs_utils::get_type_handler(this->inner_type);
-                            CHECK_NOT_NULL(inner_type_handler);
+                            this->inner = __type_init_utils::create_inner_type(this, name, index, inner_type);
+                        }
+
+                        ~__array_type() {
+                            CHECK_AND_FREE(inner);
+                        }
+
+                        /*!
+                         * Get the inner datatype of this array.
+                         *
+                         * @return - Inner datatype.
+                         */
+                        __type_def_enum get_inner_type() {
+                            return this->inner_type;
                         }
 
                         /*!
@@ -517,47 +730,201 @@ REACTFS_NS_CORE
                          * @return - Number of bytes written.
                          */
                         virtual uint32_t write(void *buffer, uint64_t offset) override {
+                            uint32_t w_size = __sized_type::write(buffer, offset);
+                            w_size += inner->write(buffer, (offset + w_size));
+                            return w_size;
+                        }
 
+                        /*!
+                         * Read (de-serialize) the field definition from the input buffer.
+                         *
+                         * @param buffer - Input data buffer.
+                         * @param offset - Offset to start reading from.
+                         * @return - Number of bytes read.
+                         */
+                        virtual uint32_t read(void *buffer, uint64_t offset) override {
+                            uint32_t r_size = __sized_type::read(buffer, offset);
+                            this->inner = __type_init_utils::read_inner_type(this, buffer, (offset + r_size), &r_size);
+                            this->inner_type = this->inner->get_datatype();
+                            return r_size;
+                        }
+
+                        string get_canonical_name() const override {
+                            if (NOT_NULL(parent)) {
+                                return parent->get_canonical_name();
+                            }
+                            return this->name;
                         }
                     };
 
-                    class __complex_type : public __native_type {
+                    class __list_type : public __native_type {
                     private:
-                        unordered_map<string, __native_type *> fields;
+                        __type_def_enum inner_type;
+                        __native_type *inner = nullptr;
                     public:
-                        __complex_type(__native_type *parent) : __native_type(parent) {
+                        __list_type(__native_type *parent) : __native_type(parent) {
 
                         }
 
-                        __complex_type(__native_type *parent, const uint8_t index, const string &name) : __native_type(
-                                parent, index, name,
-                                __type_def_enum::TYPE_STRUCT) {
-                            this->type = __field_type::COMPLEX;
+                        __list_type(__native_type *parent, const uint8_t index, const string &name,
+                                    const __type_def_enum inner_type) : __native_type(parent, index, name,
+                                                                                      __type_def_enum::TYPE_LIST) {
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
+                            this->inner_type = inner_type;
+                            this->inner = __type_init_utils::create_inner_type(this, name, index, inner_type);
                         }
 
-                        ~__complex_type() {
-                            unordered_map<string, __native_type *>::iterator iter;
-                            for (iter = fields.begin(); iter != fields.end(); iter++) {
-                                CHECK_AND_FREE(iter->second);
+                        ~__list_type() {
+                            CHECK_AND_FREE(inner);
+                        }
+
+                        /*!
+                         * Get the inner datatype of this list.
+                         *
+                         * @return - Inner datatype.
+                         */
+                        __type_def_enum get_inner_type() {
+                            return this->inner_type;
+                        }
+
+                        /*!
+                         * Set the constraint definition for this field.
+                         * Note:: Constraints cannot be defined for arrays. Call will throw exception.
+                         *
+                         * @param constraint - Field data constraint.
+                         */
+                        virtual void set_constraint(__constraint *constraint) override {
+                            throw BASE_ERROR("Constraints can only be defined for basic types.");
+                        }
+
+                        /*!
+                         * Set the default value for this field.
+                         * Note:: Default value cannot be defined for arrays. Call will throw exception.
+                         *
+                         * @param default_value - Field default value.
+                         */
+                        virtual void set_default_value(__default *default_value) override {
+                            throw BASE_ERROR("Default value can only be defined for basic types.");
+                        }
+
+                        /*!
+                         * Write (serialize) this field definition to the output buffer.
+                         *
+                         * @param buffer - Output write buffer.
+                         * @param offset - Offset to start writing from.
+                         * @return - Number of bytes written.
+                         */
+                        virtual uint32_t write(void *buffer, uint64_t offset) override {
+                            uint32_t w_size = __native_type::write(buffer, offset);
+                            w_size += inner->write(buffer, (offset + w_size));
+                            return w_size;
+                        }
+
+                        /*!
+                         * Read (de-serialize) the field definition from the input buffer.
+                         *
+                         * @param buffer - Input data buffer.
+                         * @param offset - Offset to start reading from.
+                         * @return - Number of bytes read.
+                         */
+                        virtual uint32_t read(void *buffer, uint64_t offset) override {
+                            uint32_t r_size = __native_type::read(buffer, offset);
+                            this->inner = __type_init_utils::read_inner_type(this, buffer, (offset + r_size), &r_size);
+                            this->inner_type = this->inner->get_datatype();
+                            return r_size;
+                        }
+
+                        string get_canonical_name() const override {
+                            if (NOT_NULL(parent)) {
+                                return parent->get_canonical_name();
                             }
-                            fields.clear();
-                        }
-
-                        void add_field(string &name, __native_type *type) {
-                            CHECK_NOT_EMPTY(name);
-                            CHECK_NOT_NULL(type);
-                            fields.insert({name, type});
-                        }
-
-                        __native_type *get_type(string &name) {
-                            unordered_map<string, __native_type *>::iterator iter = fields.find(name);
-                            if (iter != fields.end()) {
-                                return iter->second;
-                            }
-                            return nullptr;
+                            return this->name;
                         }
                     };
 
+                    class __map_type : public __native_type {
+                    private:
+                        __type_def_enum key_type;
+                        __native_type *key;
+                        __type_def_enum value_type;
+                        __native_type *value;
+                    public:
+                        __map_type(__native_type *parent) : __native_type(parent) {
+
+                        }
+
+                        __map_type(__native_type *parent, const uint8_t index, const string &name,
+                                   const __type_def_enum key_type, const __type_def_enum value_type) : __native_type(
+                                parent, index, name,
+                                __type_def_enum::TYPE_MAP) {
+                            PRECONDITION(__type_enum_helper::is_native(key_type));
+                            PRECONDITION(__type_enum_helper::is_inner_type_valid(value_type));
+
+                            this->key_type = key_type;
+                            string key_name(MAP_TYPE_KEY_NAME);
+                            this->key = __type_init_utils::create_key_type(this, key_name, index, key_type);
+
+                            this->value_type = value_type;
+                            string value_name(MAP_TYPE_VALUE_NAME);
+                            this->value = __type_init_utils::create_inner_type(this, value_name, index, value_type);
+                        }
+
+                        /*!
+                         * Get the datatype of the Map key.
+                         *
+                         * @return - Key datatype
+                         */
+                        __type_def_enum get_key_type() {
+                            return this->key_type;
+                        }
+
+                        /*!
+                         * Get the datatype of the Map value.
+                         *
+                         * @return - Value type.
+                         */
+                        __type_def_enum get_value_type() {
+                            return this->value_type;
+                        }
+
+                        /*!
+                         * Write (serialize) this field definition to the output buffer.
+                         *
+                         * @param buffer - Output write buffer.
+                         * @param offset - Offset to start writing from.
+                         * @return - Number of bytes written.
+                         */
+                        virtual uint32_t write(void *buffer, uint64_t offset) override {
+                            uint32_t w_size = __native_type::write(buffer, offset);
+                            w_size += key->write(buffer, (offset + w_size));
+                            w_size += value->write(buffer, (offset + w_size));
+                            return w_size;
+                        }
+
+                        /*!
+                         * Read (de-serialize) the field definition from the input buffer.
+                         *
+                         * @param buffer - Input data buffer.
+                         * @param offset - Offset to start reading from.
+                         * @return - Number of bytes read.
+                         */
+                        virtual uint32_t read(void *buffer, uint64_t offset) override {
+                            uint32_t r_size = __native_type::read(buffer, offset);
+                            this->key = __type_init_utils::read_key_type(this, buffer, (offset + r_size), &r_size);
+                            this->key_type = this->key->get_datatype();
+                            this->value = __type_init_utils::read_inner_type(this, buffer, (offset + r_size), &r_size);
+                            this->value_type = this->value->get_datatype();
+
+                            return r_size;
+                        }
+
+                        string get_canonical_name() const override {
+                            if (NOT_NULL(parent)) {
+                                return parent->get_canonical_name();
+                            }
+                            return this->name;
+                        }
+                    };
                 }
 REACTFS_NS_CORE_END
 #endif //REACTFS_SCHEMA_DEF_H
