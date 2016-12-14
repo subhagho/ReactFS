@@ -19,14 +19,16 @@ fi
 
 echo "Using makefiles [$CMAKE]..."
 
-DIRS="common watergate core"
+DIRS="common watergate parsers core"
 DIRS_TO_BUILD=""
 
 for dir in $DIRS;
 do
     DIRS_TO_BUILD="$DIRS_TO_BUILD $dir"
     if [ -d "$dir/test" ];then
-        DIRS_TO_BUILD="$DIRS_TO_BUILD $dir/test"
+        if [ -f "$dir/test/CMakeLists.txt" ]; then
+            DIRS_TO_BUILD="$DIRS_TO_BUILD $dir/test"
+        fi
 	fi
 done
 

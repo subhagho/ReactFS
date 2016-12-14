@@ -77,6 +77,11 @@ REACTFS_NS_CORE
                             FREE_PTR(this->version);
                         }
 
+                        void set_fields(__complex_type *fields) {
+                            CHECK_NOT_NULL(fields);
+                            this->fields = fields;
+                        }
+
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
@@ -1543,7 +1548,63 @@ REACTFS_NS_CORE
                             return nullptr;
                         }
                     };
+
+                    class type_field_helper {
+                    public:
+                        static __native_type *
+                        create_field(__native_type *parent, __type_def_enum type, const string &name,
+                                     const uint8_t index, ...) {
+                            if (__type_enum_helper::is_native(type)) {
+                                __native_type *ptr = new __native_type(parent, index, name, type);
+                                CHECK_ALLOC(ptr, TYPE_NAME(__native_type));
+                                return ptr;
+                            } else if (type == __type_def_enum::TYPE_ARRAY) {
+                                va_list vl;
+                                va_start(vl, index);
+                                int i_type = va_arg(vl, int);
+                                __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
+                                int m_size = va_arg(vl, int);
+                                va_end(vl);
+                                POSTCONDITION(m_size > 0);
+
+                                __array_type *ptr = new __array_type(parent, index, name, inner_type, m_size);
+                                CHECK_ALLOC(ptr, TYPE_NAME(__array_type));
+                                return ptr;
+                            } else if (type == __type_def_enum::TYPE_LIST) {
+                                va_list vl;
+                                va_start(vl, index);
+                                int i_type = va_arg(vl, int);
+                                __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
+                                va_end(vl);
+
+                                __list_type *ptr = new __list_type(parent, index, name, inner_type);
+                                CHECK_ALLOC(ptr, TYPE_NAME(__list_type));
+                                return ptr;
+                            } else if (type == __type_def_enum::TYPE_MAP) {
+                                va_list vl;
+                                va_start(vl, index);
+                                int k_type = va_arg(vl, int);
+                                __type_def_enum key_type = __type_enum_helper::parse_type(k_type);
+                                int v_type = va_arg(vl, int);
+                                __type_def_enum value_type = __type_enum_helper::parse_type(v_type);
+
+                                va_end(vl);
+
+                                __map_type *ptr = new __map_type(parent, index, name, key_type, value_type);
+                                CHECK_ALLOC(ptr, TYPE_NAME(__map_type));
+
+                                return ptr;
+                            } else if (type == __type_def_enum::TYPE_STRUCT) {
+                                __complex_type *ptr = new __complex_type(parent, index, name);
+                                CHECK_ALLOC(ptr, TYPE_NAME(__complex_type));
+
+                                return ptr;
+                            }
+                            return nullptr;
+                        }
+                    };
                 }
+
 REACTFS_NS_CORE_END
 
 #endif //REACTFS_TYPE_DEFS_H

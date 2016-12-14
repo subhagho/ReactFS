@@ -522,6 +522,13 @@ REACTFS_NS_CORE
                                           vector<__native_type *> *fields,
                                           uint32_t *size) = 0;
 
+                        /*!
+                         * Get the IO type handler for complex datatype(s).
+                         *
+                         * @param type - Field type (should be ARRAY/LIST/MAP/COMPLEX)
+                         * @param ... - Optional parameters, as required by the types.
+                         * @return - Datatype IO handler.
+                         */
                         virtual __base_datatype_io *get_complex_type_handler(__field_type type, ...) = 0;
 
                         static __complex_type_helper *get_type_loader() {
@@ -529,6 +536,9 @@ REACTFS_NS_CORE
                             return type_loader;
                         }
 
+                        /*!
+                         * Dispose this helper singleton instance.
+                         */
                         static void dispose() {
                             CHECK_AND_FREE(type_loader);
                         }
@@ -553,6 +563,16 @@ REACTFS_NS_CORE
                     public:
                         __complex_type(__native_type *parent) : __native_type(parent) {
                             this->type = __field_type::COMPLEX;
+                            loader = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(loader);
+                            this->type_handler = loader->get_complex_type_handler(this->type);
+                            CHECK_NOT_NULL(this->type_handler);
+                        }
+
+                        __complex_type(__native_type *parent, const string &name) : __native_type(parent) {
+                            this->type = __field_type::COMPLEX;
+                            this->name = string(name);
+
                             loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
                             this->type_handler = loader->get_complex_type_handler(this->type);

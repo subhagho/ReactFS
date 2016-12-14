@@ -20,7 +20,7 @@ if (${APPLE})
     INCLUDE_DIRECTORIES(/opt/local/include /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers/)
 endif ()
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/parsers/includes/ ${CMAKE_SOURCE_DIR}/parsers/src/)
+INCLUDE_DIRECTORIES(${PROJECT_ROOT_DIR}/parsers/includes/ ${PROJECT_ROOT_DIR}/parsers/src/)
 
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_COMPILER g++)
@@ -33,26 +33,26 @@ LINK_DIRECTORIES(/usr/lib ../common/cmake)
 set(PRASERS_LIB_NAME ${PROJECT_NAME})
 
 FIND_PACKAGE(BISON REQUIRED)
-SET(YSchemaOutput ${CMAKE_SOURCE_DIR}/parsers/src/schema_parser.cpp)
+SET(YSchemaOutput ${PROJECT_ROOT_DIR}/parsers/src/schema_parser.cpp)
 IF(BISON_FOUND)
     ADD_CUSTOM_COMMAND(
             OUTPUT ${YSchemaOutput}
             COMMAND ${BISON_EXECUTABLE}
-            --defines=${CMAKE_SOURCE_DIR}/parsers/includes/schema_tokens.h
+            --defines=${PROJECT_ROOT_DIR}/parsers/includes/schema_tokens.h
             --output=${YSchemaOutput}
-            ${CMAKE_SOURCE_DIR}/parsers/src/schema_parser.yy
+            ${PROJECT_ROOT_DIR}/parsers/src/schema_parser.yy
             COMMENT "Generating schema_parser.cpp"
     )
 ENDIF()
 
 FIND_PACKAGE(FLEX REQUIRED)
-SET(LSchemaOutput ${CMAKE_SOURCE_DIR}/parsers/src/schema_lexer.cpp)
+SET(LSchemaOutput ${PROJECT_ROOT_DIR}/parsers/src/schema_lexer.cpp)
 IF(FLEX_FOUND)
     ADD_CUSTOM_COMMAND(
             OUTPUT ${LSchemaOutput}
             COMMAND ${FLEX_EXECUTABLE}
             --outfile=${LSchemaOutput}
-            ${CMAKE_SOURCE_DIR}/parsers/src/schema_parser.l
+            ${PROJECT_ROOT_DIR}/parsers/src/schema_parser.l
             COMMENT "Generating schema_lexer.cpp"
     )
 ENDIF()

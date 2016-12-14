@@ -519,3 +519,12 @@ void com::wookler::reactfs::core::parsers::schema_driver::parse_helper(std::istr
     }
     return;
 }
+
+__complex_type *com::wookler::reactfs::core::parsers::schema_driver::translate() {
+    CHECK_NOT_NULL(schema_stack);
+    CHECK_NOT_NULL(schema_stack->current_schema);
+
+    __schema_def *schema_def = schema_stack->current_schema;
+    translator tr(schema_def, types, indexes);
+    return tr.translate();
+}

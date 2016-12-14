@@ -143,7 +143,7 @@ REACTFS_NS_CORE
                                 case __type_def_enum::TYPE_STRING:
                                     return "string";
                                 case __type_def_enum::TYPE_STRUCT:
-                                    return "struct";
+                                    return "type";
                                 case __type_def_enum::TYPE_TEXT:
                                     return "text";
                                 case __type_def_enum::TYPE_TIMESTAMP:

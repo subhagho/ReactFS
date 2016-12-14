@@ -44,31 +44,62 @@
 #define COLUMN_SORT_DIR_DESC "DESC"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
+using namespace REACTFS_NS_CORE_PREFIX::types;
 
 REACTFS_NS_CORE
                 namespace parsers {
+                    /*!
+                     * Enum definitions for the parser state model.
+                     */
                     typedef enum __schema_parse_state__ {
-                        SPS_NONE = 0, SPS_IN_TYPE, SPS_IN_SCHEMA, SPS_IN_INDEX
+                        /// State is undefined.
+                                SPS_NONE = 0,
+                        /// Parser is in the processes of parsing a type declaration.
+                                SPS_IN_TYPE,
+                        /// Parser is in the processes of parsing a schema declaration.
+                                SPS_IN_SCHEMA,
+                        /// Parser is in the processes of parsing an index declaration.
+                                SPS_IN_INDEX
                     } __schema_parse_state;
 
+                    /*!
+                     * Struct for defining the stack for capturing field declarations.
+                     */
                     typedef struct __declare_stack__ {
+                        /// Constraint definition for the current field.
                         __constraint_def *current_constraint = nullptr;
+                        /// Default value definition for the current field.
                         string *default_value = nullptr;
+                        /// Is the current field nullable.
                         bool nullable = false;
                     } __declare_stack;
 
+                    /*!
+                    * Class for defining the stack for capturing type declarations.
+                    *
+                    * Utility class, hence members are public.
+                    */
                     class __type_stack {
                     public:
+                        /// Instance of the current type being defined.
                         __reference_type *current_type = nullptr;
+                        /// List of field declarations for the current type.
                         vector<__declare *> declares;
+                        /// Last variable declaration stack.
                         __declare_stack declare;
 
+                        /*!
+                         * Default empty constructor.
+                         */
                         __type_stack() {
                             this->current_type = nullptr;
                             this->declare.current_constraint = nullptr;
                             this->declare.default_value = nullptr;
                         }
 
+                        /*!
+                         * Default destructor.
+                         */
                         virtual ~__type_stack() {
                             this->declares.clear();
                             FREE_PTR(this->declare.default_value);
@@ -77,13 +108,25 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    /*!
+                    * Class for defining the stack for capturing schema declarations.
+                    *
+                    * Utility class, hence members are public.
+                    */
                     class __schema_stack {
                     public:
+                        /// Schema definition instance.
                         __schema_def *current_schema = nullptr;
+                        /// Fields declared for this schema definition.
                         vector<__declare *> declares;
+                        /// Last variable declaration stack.
                         __declare_stack declare;
+                        /// Primary Key columns (if any)
                         string *pk_columns = nullptr;
 
+                        /*!
+                         * Default empty constructor.
+                         */
                         __schema_stack() {
                             this->current_schema = nullptr;
                             this->declare.current_constraint = nullptr;
@@ -91,6 +134,9 @@ REACTFS_NS_CORE
                             CHECK_AND_FREE(pk_columns);
                         }
 
+                        /*!
+                         * Default destructor.
+                         */
                         ~__schema_stack() {
                             this->declares.clear();
                             FREE_PTR(this->declare.default_value);
@@ -100,18 +146,32 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    /*!
+                    * Class for defining the stack for capturing index declarations.
+                    *
+                    * Utility class, hence members are public.
+                    */
                     class __index_stack {
                     public:
+                        /// Current index being defined.
                         __index_def *current_index = nullptr;
+                        /// Comma seperated list of index fields.
                         string *fields = nullptr;
+                        /// Type of the index
                         string *index_type = nullptr;
 
+                        /*!
+                         * Default empty constructor.
+                         */
                         __index_stack() {
                             this->current_index = nullptr;
                             this->fields = nullptr;
                             this->index_type = nullptr;
                         }
 
+                        /*!
+                         * Default destructor.
+                         */
                         ~__index_stack() {
                             CHECK_AND_FREE(fields);
                             CHECK_AND_FREE(index_type);
@@ -119,17 +179,55 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class schema_driver {
+                    class translator {
                     private:
-                        schema_parser *parser = nullptr;
-                        schema_scanner *scanner = nullptr;
-                        __type_stack *type_stack = nullptr;
-                        __schema_stack *schema_stack = nullptr;
-                        __index_stack *index_stack = nullptr;
-
+                        /// Schema definition.
+                        __schema_def *schema_def = nullptr;
+                        /// Map of parsed types defined in the schema file.
                         unordered_map<string, __reference_type *> types;
+                        /// Map of parsed indexes defined in the schema file.
                         unordered_map<string, __index_def *> indexes;
 
+                    public:
+                        translator(__schema_def *schema_def, const unordered_map<string, __reference_type *> &types,
+                                   const unordered_map<string, __index_def *> &indexes) {
+                            CHECK_NOT_NULL(schema_def);
+                            this->schema_def = schema_def;
+                            this->types = types;
+                            this->indexes = indexes;
+                        }
+
+                        __complex_type *translate() {
+                            return nullptr;
+                        }
+                    };
+
+                    /*!
+                     * The schema driver class is responsible for parsing the schema/type/index
+                     * definitions. This class creates temporary definitions that will be translated
+                     * to the final schema (__complex_type) definition.
+                     *
+                     * This class's methods are used by the bison parser to parse the schema/type/index.
+                     */
+                    class schema_driver {
+                    private:
+                        /// Bison generated Schema Parser
+                        schema_parser *parser = nullptr;
+                        /// Flex generate Schema Scanner (Lexer)
+                        schema_scanner *scanner = nullptr;
+                        /// Type stack instance to capture types being parsed.
+                        __type_stack *type_stack = nullptr;
+                        /// Schema stack instance to capture the schema being parsed.
+                        __schema_stack *schema_stack = nullptr;
+                        /// Index stack instance to capture indexes being parsed.
+                        __index_stack *index_stack = nullptr;
+
+                        /// Map of parsed types defined in the schema file.
+                        unordered_map<string, __reference_type *> types;
+                        /// Map of parsed indexes defined in the schema file.
+                        unordered_map<string, __index_def *> indexes;
+
+                        /// Current parse state of the schema parser.
                         __schema_parse_state state = __schema_parse_state::SPS_NONE;
 
                         void parse_helper(std::istream &stream);
@@ -383,6 +481,8 @@ REACTFS_NS_CORE
                         void parse(const char *const filename);
 
                         void parse(std::istream &iss);
+
+                        __complex_type *translate();
                     };
                 }
 REACTFS_NS_CORE_END
