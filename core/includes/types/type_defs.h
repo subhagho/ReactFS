@@ -44,73 +44,14 @@ using namespace REACTFS_NS_COMMON_PREFIX;
 REACTFS_NS_CORE
                 namespace types {
 
-                    class __type_instance {
-                    protected:
-                        const __type_instance *parent = nullptr;
-                        __native_type *type;
-                        __base_datatype_io *handler;
-                        uint8_t index;
-                    public:
-                        __type_instance(__native_type *type, const __type_instance *parent = nullptr) {
-                            CHECK_NOT_NULL(type);
-                            PRECONDITION(__type_enum_helper::is_native(type->get_datatype()));
-                            this->parent = parent;
-                            this->handler = __type_defs_utils::get_type_handler(type->get_datatype());
-                            this->type = type;
-                            this->index = type->get_index();
-                        }
-
-                        __type_instance(__native_type *type, __base_datatype_io *handler,
-                                        __type_instance *parent = nullptr) {
-                            CHECK_NOT_NULL(type);
-                            CHECK_NOT_NULL(handler);
-                            this->parent = parent;
-                            this->handler = handler;
-                            this->type = type;
-                            this->index = type->get_index();
-                        }
-
-                        ~__type_instance() {
-                            CHECK_AND_FREE(type);
-                        }
-
-                        uint8_t get_index() const {
-                            return this->index;
-                        }
-
-                        __native_type *get_type() const {
-                            return this->type;
-                        }
-
-                        __base_datatype_io *get_handler() const {
-                            return this->handler;
-                        }
-
-                        const __type_instance *get_parent() const {
-                            return this->parent;
-                        }
-
-
-                        string get_canonical_name() const {
-                            if (IS_NULL(parent)) {
-                                return type->get_name();
-                            } else {
-                                string p_name = parent->get_canonical_name();
-                                CHECK_NOT_EMPTY(p_name);
-                                return common_utils::format("%s.%s", p_name.c_str(), type->get_name().c_str());
-                            }
-                        }
-
-                    };
-
                     typedef unordered_map<uint8_t, void *> __struct_datatype__;
 
                     class __dt_struct : public __base_datatype_io {
                     private:
-                        __version_header *version;
-                        vector<__type_instance *> fields;
+                        __version_header *version = nullptr;
+                        __complex_type *fields = nullptr;
 
-                        void *get_field_value(const unordered_map<uint8_t, void *> *map, __type_instance *type) {
+                        void *get_field_value(const unordered_map<uint8_t, void *> *map, __native_type *type) {
                             CHECK_NOT_NULL(type);
                             unordered_map<uint8_t, void *>::const_iterator iter = map->find(type->get_index());
                             if (iter == map->end())
@@ -132,46 +73,8 @@ REACTFS_NS_CORE
                         }
 
                         ~__dt_struct() {
-                            if (!IS_EMPTY(fields)) {
-                                vector<__type_instance *>::iterator iter;
-                                for (iter = fields.begin(); iter != fields.end(); iter++) {
-                                    CHECK_AND_FREE(*iter);
-                                }
-                                fields.clear();
-                            }
+                            CHECK_AND_FREE(fields);
                             FREE_PTR(this->version);
-                        }
-
-                        void add_field(uint16_t index, __type_instance *type) {
-                            CHECK_NOT_NULL(type);
-                            if (index == fields.size()) {
-                                fields.push_back(type);
-                            } else if (index > fields.size()) {
-                                for (uint16_t ii = fields.size(); ii <= index; ii++) {
-                                    fields.push_back(nullptr);
-                                }
-                                fields[index] = type;
-                            } else {
-                                PRECONDITION(IS_NULL(fields[index]));
-                                fields[index] = type;
-                            }
-                        }
-
-                        bool remove_field(string name) {
-                            if (!IS_EMPTY(fields)) {
-                                vector<__type_instance *>::iterator iter;
-                                for (iter = fields.begin(); iter != fields.end(); iter++) {
-                                    __type_instance *t = *iter;
-                                    if (t->get_canonical_name() == name) {
-                                        break;
-                                    }
-                                }
-                                if (iter != fields.end()) {
-                                    fields.erase(iter);
-                                    return true;
-                                }
-                            }
-                            return false;
                         }
 
                         virtual uint64_t
@@ -185,23 +88,26 @@ REACTFS_NS_CORE
                             unordered_map<uint8_t, void *> **T = (unordered_map<uint8_t, void *> **) t;
                             *T = new unordered_map<uint8_t, void *>();
 
-                            vector<__type_instance *>::iterator iter;
+                            unordered_map<uint8_t, __native_type *> types = fields->get_fields();
+                            CHECK_NOT_EMPTY(types);
+                            unordered_map<uint8_t, __native_type *>::const_iterator iter;
                             uint64_t r_offset = offset + sizeof(__version_header);
                             uint64_t t_size = sizeof(__version_header);
                             while (r_offset < max_length) {
                                 ptr = common_utils::increment_data_ptr(buffer, r_offset);
                                 uint8_t *ci = (uint8_t *) ptr;
-                                POSTCONDITION(*ci < fields.size());
-                                __type_instance *type = fields[*ci];
+                                iter = types.find(*ci);
+                                POSTCONDITION(iter != types.end());
+                                __native_type *type = iter->second;
                                 CHECK_NOT_NULL(type);
-                                __base_datatype_io *handler = type->get_handler();
+                                __base_datatype_io *handler = type->get_type_handler();
                                 CHECK_NOT_NULL(handler);
                                 r_offset += sizeof(uint8_t);
                                 t_size += sizeof(uint8_t);
                                 uint64_t r = 0;
                                 void *value = nullptr;
-                                if (type->get_type()->get_datatype() == __type_def_enum::TYPE_ARRAY) {
-                                    __sized_type *st = static_cast<__sized_type *>(type->get_type());
+                                if (type->get_datatype() == __type_def_enum::TYPE_ARRAY) {
+                                    __sized_type *st = static_cast<__sized_type *>(type);
                                     const uint32_t a_size = st->get_max_size();
                                     r = handler->read(buffer, &value, r_offset, max_length, a_size);
                                 } else {
@@ -223,33 +129,35 @@ REACTFS_NS_CORE
                             uint64_t r_offset = offset + sizeof(__version_header);
                             uint64_t t_size = sizeof(__version_header);
 
-                            vector<__type_instance *>::iterator iter;
-                            for (iter = fields.begin(); iter != fields.end(); iter++) {
-                                __base_datatype_io *handler = (*iter)->get_handler();
+                            unordered_map<uint8_t, __native_type *> types = fields->get_fields();
+                            CHECK_NOT_EMPTY(types);
+                            unordered_map<uint8_t, __native_type *>::const_iterator iter;
+                            for (iter = types.begin(); iter != types.end(); iter++) {
+                                __native_type *type = iter->second;
+                                CHECK_NOT_NULL(type);
+                                __base_datatype_io *handler = type->get_type_handler();
                                 CHECK_NOT_NULL(handler);
-                                void *d = get_field_value(map, *iter);
-                                if (!(*iter)->get_type()->is_valid_value(d)) {
+                                void *d = get_field_value(map, type);
+                                if (!type->is_valid_value(d)) {
                                     throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
-                                                           (*iter)->get_type()->get_name().c_str());
+                                                           type->get_name().c_str());
                                 }
-                                __native_type *ntype = (*iter)->get_type();
-                                CHECK_NOT_NULL(ntype);
                                 if (IS_NULL(d)) {
-                                    if (!ntype->is_nullable()) {
+                                    if (!type->is_nullable()) {
                                         throw TYPE_VALID_ERROR("Specified field is not nullable. [field=%s]",
-                                                               (*iter)->get_canonical_name().c_str());
+                                                               type->get_canonical_name().c_str());
                                     }
-                                    if (NOT_NULL(ntype->get_default_value())) {
-                                        const __default *df = ntype->get_default_value();
+                                    if (NOT_NULL(type->get_default_value())) {
+                                        const __default *df = type->get_default_value();
                                         df->set_default(d);
                                     }
                                 }
                                 if (NOT_NULL(d)) {
-                                    if (NOT_NULL(ntype->get_constraint())) {
-                                        __constraint *constraint = ntype->get_constraint();
+                                    if (NOT_NULL(type->get_constraint())) {
+                                        __constraint *constraint = type->get_constraint();
                                         if (!constraint->validate(d)) {
                                             throw TYPE_VALID_ERROR("Constraint validation failed. [field=%s]",
-                                                                   (*iter)->get_canonical_name().c_str());
+                                                                   type->get_canonical_name().c_str());
                                         }
                                     }
                                     uint64_t r = handler->write(buffer, d, r_offset, max_length);
@@ -267,14 +175,18 @@ REACTFS_NS_CORE
                             const unordered_map<uint8_t, void *> *map = (const unordered_map<uint8_t, void *> *) data;
                             CHECK_NOT_EMPTY_P(map);
                             uint64_t t_size = sizeof(__version_header);
-                            vector<__type_instance *>::const_iterator iter;
-                            for (iter = fields.begin(); iter != fields.end(); iter++) {
-                                __base_datatype_io *handler = (*iter)->get_handler();
+                            unordered_map<uint8_t, __native_type *> types = fields->get_fields();
+                            CHECK_NOT_EMPTY(types);
+                            unordered_map<uint8_t, __native_type *>::const_iterator iter;
+                            for (iter = types.begin(); iter != types.end(); iter++) {
+                                __native_type *type = iter->second;
+                                CHECK_NOT_NULL(type);
+                                __base_datatype_io *handler = type->get_type_handler();
                                 CHECK_NOT_NULL(handler);
-                                void *d = get_field_value(map, *iter);
-                                if (!(*iter)->get_type()->is_valid_value(d)) {
+                                void *d = get_field_value(map, type);
+                                if (!type->is_valid_value(d)) {
                                     throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
-                                                           (*iter)->get_type()->get_name().c_str());
+                                                           type->get_name().c_str());
                                 }
                                 t_size += handler->compute_size(d, -1);
                             }
@@ -1520,13 +1432,115 @@ REACTFS_NS_CORE
 
                     class complex_type_loader_impl : public __complex_type_helper {
                     public:
-                        void read(void *buffer, uint64_t offset, uint8_t count, vector<__native_type *> *fields,
+                        void read(__native_type *parent, void *buffer, uint64_t offset, uint8_t count,
+                                  vector<__native_type *> *fields,
                                   uint32_t *size) override {
-
+                            uint32_t r_size = 0;
+                            for (uint8_t ii = 0; ii < count; ii++) {
+                                // Read the field type.
+                                void *ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
+                                uint8_t *ft = static_cast<uint8_t *>(ptr);
+                                __field_type type = __field_type_helper::get_type(*ft);
+                                if (type == __field_type::NATIVE) {
+                                    __native_type *ptr = __type_init_utils::read_inner_type(parent, buffer,
+                                                                                            (offset + r_size), &r_size);
+                                    CHECK_NOT_NULL(ptr);
+                                    fields->push_back(ptr);
+                                } else if (type == __field_type::ARRAY) {
+                                    __array_type *ptr = new __array_type(parent);
+                                    CHECK_ALLOC(ptr, TYPE_NAME(__array_type));
+                                    r_size += ptr->read(buffer, (offset + r_size));
+                                    fields->push_back(ptr);
+                                } else if (type == __field_type::LIST) {
+                                    __list_type *ptr = new __list_type(parent);
+                                    CHECK_ALLOC(ptr, TYPE_NAME(__array_type));
+                                    r_size += ptr->read(buffer, (offset + r_size));
+                                    fields->push_back(ptr);
+                                } else if (type == __field_type::MAP) {
+                                    __map_type *ptr = new __map_type(parent);
+                                    CHECK_ALLOC(ptr, TYPE_NAME(__array_type));
+                                    r_size += ptr->read(buffer, (offset + r_size));
+                                    fields->push_back(ptr);
+                                }
+                            }
+                            *size += r_size;
                         }
 
                         virtual __base_datatype_io *get_complex_type_handler(__field_type type, ...) override {
+                            if (type == __field_type::COMPLEX) {
+                                __base_datatype_io *handler = __type_defs_utils::get_type_handler(
+                                        __type_def_enum::TYPE_STRUCT);
+                                if (IS_NULL(handler)) {
+                                    __dt_struct *sh = new __dt_struct();
+                                    CHECK_ALLOC(sh, TYPE_NAME(__dt_struct));
+                                    if (!__type_defs_utils::add_external_handler(sh->get_type(), sh)) {
+                                        CHECK_AND_FREE(sh);
+                                    }
+                                    handler = __type_defs_utils::get_type_handler(
+                                            __type_def_enum::TYPE_STRUCT);
+                                }
+                                return handler;
+                            } else if (type == __field_type::ARRAY) {
+                                va_list vl;
+                                va_start(vl, type);
+                                int i_type = va_arg(vl, int);
+                                __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
+                                va_end(vl);
 
+                                string key = __type_defs_utils::create_list_key(__type_def_enum::TYPE_ARRAY,
+                                                                                inner_type);
+                                __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
+                                if (IS_NULL(handler)) {
+                                    __base_datatype_io *ah = __array_init_utils::create_handler(inner_type);
+                                    CHECK_NOT_NULL(ah);
+                                    if (!__type_defs_utils::add_external_handler(key, ah)) {
+                                        CHECK_AND_FREE(ah);
+                                    }
+                                    handler = __type_defs_utils::get_type_handler(key);
+                                }
+                                return handler;
+                            } else if (type == __field_type::LIST) {
+                                va_list vl;
+                                va_start(vl, type);
+                                int i_type = va_arg(vl, int);
+                                __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
+                                va_end(vl);
+
+                                string key = __type_defs_utils::create_list_key(__type_def_enum::TYPE_LIST,
+                                                                                inner_type);
+                                __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
+                                if (IS_NULL(handler)) {
+                                    __base_datatype_io *ah = __list_init_utils::create_handler(inner_type);
+                                    CHECK_NOT_NULL(ah);
+                                    if (!__type_defs_utils::add_external_handler(key, ah)) {
+                                        CHECK_AND_FREE(ah);
+                                    }
+                                    handler = __type_defs_utils::get_type_handler(key);
+                                }
+                                return handler;
+                            } else if (type == __field_type::MAP) {
+                                va_list vl;
+                                va_start(vl, type);
+                                int k_type = va_arg(vl, int);
+                                __type_def_enum key_type = __type_enum_helper::parse_type(k_type);
+                                int v_type = va_arg(vl, int);
+                                __type_def_enum value_type = __type_enum_helper::parse_type(v_type);
+
+                                va_end(vl);
+
+                                string key = __type_defs_utils::create_map_key(__type_def_enum::TYPE_MAP,
+                                                                               key_type, value_type);
+                                __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
+                                if (IS_NULL(handler)) {
+                                    __base_datatype_io *ah = __map_init_utils::create_handler(key_type, value_type);
+                                    CHECK_NOT_NULL(ah);
+                                    if (!__type_defs_utils::add_external_handler(key, ah)) {
+                                        CHECK_AND_FREE(ah);
+                                    }
+                                    handler = __type_defs_utils::get_type_handler(key);
+                                }
+                                return handler;
+                            }
                             return nullptr;
                         }
                     };

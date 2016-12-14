@@ -235,6 +235,15 @@ REACTFS_NS_CORE
                         }
 
                         /*!
+                         * Get the type IO handler.
+                         *
+                         * @return - Type IO handler.
+                         */
+                        __base_datatype_io *get_type_handler() {
+                            return this->type_handler;
+                        }
+
+                        /*!
                          * Check if the specified field value is a valid value.
                          *
                          * @param value - Field data value.
@@ -509,7 +518,8 @@ REACTFS_NS_CORE
                          * @param size - Size increment pointer.
                          * @return - Loaded field definition.
                          */
-                        virtual void read(void *buffer, uint64_t offset, uint8_t count, vector<__native_type *> *fields,
+                        virtual void read(__native_type *parent, void *buffer, uint64_t offset, uint8_t count,
+                                          vector<__native_type *> *fields,
                                           uint32_t *size) = 0;
 
                         virtual __base_datatype_io *get_complex_type_handler(__field_type type, ...) = 0;
@@ -587,6 +597,10 @@ REACTFS_NS_CORE
                             return nullptr;
                         }
 
+                        const unordered_map<uint8_t, __native_type *> get_fields() {
+                            return this->fields;
+                        };
+
                         /*!
                          * Write (serialize) this field definition to the output buffer.
                          *
@@ -625,7 +639,7 @@ REACTFS_NS_CORE
                             r_size += sizeof(uint8_t);
 
                             vector<__native_type *> types;
-                            loader->read(buffer, (offset + r_size), *size, &types, &r_size);
+                            loader->read(this, buffer, (offset + r_size), *size, &types, &r_size);
 
                             for (__native_type *type : types) {
                                 add_field(type->get_index(), type->get_name(), type);

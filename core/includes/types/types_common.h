@@ -1565,6 +1565,18 @@ REACTFS_NS_CORE
 
                     public:
 
+                        static string create_list_key(__type_def_enum type, __type_def_enum inner_type) {
+                            return common_utils::format("%s::%s", __type_enum_helper::get_type_string(type).c_str(),
+                                                        __type_enum_helper::get_type_string(inner_type).c_str());
+                        }
+
+                        static string
+                        create_map_key(__type_def_enum type, __type_def_enum key_type, __type_def_enum value_type) {
+                            return common_utils::format("%s::%s::%s", __type_enum_helper::get_type_string(type).c_str(),
+                                                        __type_enum_helper::get_type_string(key_type).c_str(),
+                                                        __type_enum_helper::get_type_string(value_type).c_str());
+                        }
+
                         /*!
                          * Get the datatype IO handler for the specified datatype enum.
                          *
@@ -1600,10 +1612,48 @@ REACTFS_NS_CORE
                         }
 
                         /*!
+                         * Get the datatype IO handler for the specified datatype key.
+                         *
+                         * Note: Only valid inner type datatype handlers are auto-created, others should be
+                         * added explicitly.
+                         *
+                         * @param type - Datatype enum
+                         * @return - Datatype IO handler
+                         */
+                        static __base_datatype_io *get_type_handler(string &key) {
+                            CHECK_NOT_EMPTY(key);
+                            unordered_map<string, __base_datatype_io *>::iterator iter = type_handlers.find(key);
+                            if (iter != type_handlers.end()) {
+                                return iter->second;
+                            }
+                            return nullptr;
+                        }
+
+                        /*!
                          * Add a non-native IO handler that was instantiated externally.
                          *
                          *
-                         * @param type - Datatype of the handler.
+                         * @param key - String key for array/list/map types
+                         * @param handler - Handler instance.
+                         * @return - Has been added? Will return false if handler already registered.
+                         */
+                        static bool add_external_handler(string &key, __base_datatype_io *handler) {
+                            CHECK_NOT_NULL(handler);
+                            CHECK_NOT_EMPTY(key);
+                            lock_guard<std::mutex> lock(thread_mutex);
+                            unordered_map<string, __base_datatype_io *>::iterator iter = type_handlers.find(key);
+                            if (iter != type_handlers.end()) {
+                                return false;
+                            }
+                            type_handlers.insert({key, handler});
+                            return true;
+                        }
+
+                        /*!
+                         * Add a non-native IO handler that was instantiated externally.
+                         *
+                         *
+                         * @param type - Datatype enum
                          * @param handler - Handler instance.
                          * @return - Has been added? Will return false if handler already registered.
                          */
