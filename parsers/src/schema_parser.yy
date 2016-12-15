@@ -11,8 +11,8 @@
    #include <fstream>
    
    /* include for all driver functions */
-   #include "core/includes/types/type_defs.h"
-   #include "core/includes/types/type_errors.h"
+   #include "types/includes/type_defs.h"
+   #include "types/includes/type_errors.h"
    #include "parsers/includes/schema.h"
 
    #define DEFAULT_BUFFER_SIZE 64

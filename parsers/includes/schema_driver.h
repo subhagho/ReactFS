@@ -33,7 +33,7 @@
 #include "common/includes/base_error.h"
 #include "core/includes/core.h"
 
-#include "core/includes/types/type_defs.h"
+#include "types/includes/type_defs.h"
 #include "schema.h"
 #include "schema_scanner.h"
 

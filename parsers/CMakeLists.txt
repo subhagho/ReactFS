@@ -28,7 +28,7 @@ set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -DYYDEBUG=1")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -DYYDEBUG=1")
 
-LINK_DIRECTORIES(/usr/lib ../common/cmake)
+LINK_DIRECTORIES(/usr/lib ../common/cmake ../types/cmake)
 
 set(PRASERS_LIB_NAME ${PROJECT_NAME})
 
@@ -66,10 +66,10 @@ MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
-    set(RFS_C_LIBRARIES "-lreactfs-common")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lpthread -luuid -lrt ")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lpthread -luuid -lrt ")
 endif ()
 
 MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")

@@ -9,6 +9,7 @@ add_subdirectory(common/test)
 add_subdirectory(watergate)
 add_subdirectory(watergate/test)
 
+add_subdirectory(types)
 add_subdirectory(parsers)
 
 add_subdirectory(core)

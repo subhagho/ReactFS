@@ -35,7 +35,7 @@
 
 #endif
 
-#include "core/includes/types/type_defs.h"
+#include "types/includes/type_defs.h"
 
 #include "schema_tokens.h"
 #include "parsers/src/location.hh"

@@ -26,7 +26,9 @@
 #include "core/includes/core.h"
 
 #include "types_common.h"
+#include "schema_common.h"
 #include "__constraints.h"
+#include "schema_helpers.h"
 
 #define MAP_TYPE_KEY_NAME "key"
 #define MAP_TYPE_VALUE_NAME "value"

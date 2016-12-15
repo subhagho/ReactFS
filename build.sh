@@ -19,7 +19,7 @@ fi
 
 echo "Using makefiles [$CMAKE]..."
 
-DIRS="common watergate parsers core"
+DIRS="common watergate types parsers core"
 DIRS_TO_BUILD=""
 
 for dir in $DIRS;
