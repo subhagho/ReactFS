@@ -24,6 +24,7 @@
 #include <sstream>
 #include <vector>
 #include <assert.h>
+#include <limits>
 
 #define NOT_NULL(v) (nullptr != v)
 #define IS_NULL(v) (nullptr == v)
@@ -132,7 +133,11 @@ namespace com {
 #define REACTFS_NS_COMMON_PREFIX REACTFS_NS_PREFIX::common
 
 #ifndef ULONG_MAX
-#define std::numeric_limits<long>::max()
+#define ULONG_MAX std::numeric_limits<long>::max()
+#endif
+
+#ifndef UCHAR_MAX
+#define UCHAR_MAX std::numeric_limits<char>::max()
 #endif
 
 #endif

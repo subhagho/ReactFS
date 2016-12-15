@@ -90,6 +90,7 @@ REACTFS_NS_CORE
                                 case __constraint_type::CONSTRAINT_LTEQ:
                                     return 7;
                             }
+			    throw BASE_ERROR("Unknown constraint type. [type=%d]", type);
                         }
 
                         /*!
@@ -117,6 +118,7 @@ REACTFS_NS_CORE
                                 case __constraint_type::CONSTRAINT_LTEQ:
                                     return "<=";
                             }
+			    throw BASE_ERROR("Unknown constraint type. [type=%d]", type);
                         }
 
                         static __constraint_type parse(string type) {

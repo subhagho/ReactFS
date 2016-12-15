@@ -69,7 +69,7 @@ if (${APPLE})
     set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lpthread -luuid -lrt ")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lpthread -luuid -lrt")
 endif ()
 
 MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")
