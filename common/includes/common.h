@@ -131,4 +131,8 @@ namespace com {
 #define REACTFS_NS_PREFIX com::wookler::reactfs
 #define REACTFS_NS_COMMON_PREFIX REACTFS_NS_PREFIX::common
 
+#ifndef ULONG_MAX
+#define std::numeric_limits<long>::max()
+#endif
+
 #endif
