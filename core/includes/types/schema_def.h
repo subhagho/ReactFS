@@ -597,7 +597,7 @@ REACTFS_NS_CORE
                             fields.clear();
                         }
 
-                        __native_type *get_type(const string &name) {
+                        __native_type *get_field(const string &name) {
                             unordered_map<string, uint8_t>::const_iterator iter = field_index.find(name);
                             if (iter != field_index.end()) {
                                 const uint8_t index = iter->second;
@@ -609,7 +609,7 @@ REACTFS_NS_CORE
                             return nullptr;
                         }
 
-                        __native_type *get_type(const uint8_t index) {
+                        __native_type *get_field(const uint8_t index) {
                             unordered_map<uint8_t, __native_type *>::iterator fiter = fields.find(index);
                             if (fiter != fields.end()) {
                                 return fiter->second;
@@ -620,6 +620,10 @@ REACTFS_NS_CORE
                         const unordered_map<uint8_t, __native_type *> get_fields() {
                             return this->fields;
                         };
+
+                        void add_field(__native_type *type, uint8_t index) {
+                            this->add_field(index, type->get_name(), type);
+                        }
 
                         /*!
                          * Write (serialize) this field definition to the output buffer.

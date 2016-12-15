@@ -188,6 +188,56 @@ REACTFS_NS_CORE
                         /// Map of parsed indexes defined in the schema file.
                         unordered_map<string, __index_def *> indexes;
 
+                        __default *create_default_value(__declare *field, __type_def_enum type) {
+                            string *value = field->default_value;
+                            CHECK_NOT_EMPTY_P(value);
+                            __default *d = __defaults_loader::create(value, type);
+                            return d;
+                        }
+
+                        __constraint *create_constraint(__declare *field, __type_def_enum type) {
+                            __constraint_def *def = field->constraint;
+                            CHECK_NOT_NULL(def);
+                            CHECK_NOT_EMPTY_P(def->constraint);
+                            CHECK_NOT_EMPTY_P(def->values);
+
+                            __constraint *c = __constraint_loader::create(def->constraint, def->values, type,
+                                                                          def->is_not);
+                            CHECK_NOT_NULL(c);
+
+                            return c;
+                        }
+
+                        void add_field(__complex_type *type, __declare *field, uint8_t index) {
+                            CHECK_NOT_NULL(type);
+                            CHECK_NOT_NULL(field);
+                            CHECK_NOT_EMPTY_P(field->type);
+                            CHECK_NOT_EMPTY_P(field->variable);
+
+                            __native_type *nt = nullptr;
+                            __type_def_enum ft = __type_enum_helper::parse_type(*(field->type));
+                            POSTCONDITION(ft != __type_def_enum::TYPE_UNKNOWN);
+                            if (__type_enum_helper::is_native(ft)) {
+                                nt = new __native_type(type, index, *(field->variable), ft);
+                                CHECK_ALLOC(nt, TYPE_NAME(__native_type));
+                            } else if (field->is_reference) {
+
+                            }
+                            CHECK_NOT_NULL(nt);
+                            nt->set_nullable(field->is_nullable);
+                            if (NOT_NULL(field->constraint)) {
+                                __constraint *c = create_constraint(field, nt->get_datatype());
+                                CHECK_NOT_NULL(c);
+                                nt->set_constraint(c);
+                            }
+                            if (NOT_NULL(field->default_value)) {
+                                __default *d = create_default_value(field, nt->get_datatype());
+                                CHECK_NOT_NULL(d);
+                                nt->set_default_value(d);
+                            }
+                            type->add_field(nt, index);
+                        }
+
                     public:
                         translator(__schema_def *schema_def, const unordered_map<string, __reference_type *> &types,
                                    const unordered_map<string, __index_def *> &indexes) {
@@ -198,7 +248,20 @@ REACTFS_NS_CORE
                         }
 
                         __complex_type *translate() {
-                            return nullptr;
+                            __complex_type *type = new __complex_type(nullptr, *(schema_def->name));
+                            CHECK_ALLOC(type, TYPE_NAME(__complex_type));
+                            __declare *ptr = schema_def->members;
+                            uint8_t index = 0;
+                            while (NOT_NULL(ptr)) {
+                                add_field(type, ptr, index);
+                                ptr = ptr->next;
+                                index++;
+                                if (index >= UCHAR_MAX) {
+                                    throw TYPE_PARSER_ERROR("Exceeds maximum number of fields allowed. [max=%d]",
+                                                            UCHAR_MAX);
+                                }
+                            }
+                            return type;
                         }
                     };
 

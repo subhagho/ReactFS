@@ -1686,6 +1686,8 @@ REACTFS_NS_CORE
                      * Absract base class for defining type constraints.
                      */
                     class __constraint {
+                    protected:
+                        bool is_not = false;
                     public:
                         /*!
                          * Virtual base desctructor.
@@ -1724,6 +1726,15 @@ REACTFS_NS_CORE
                          * @return - Supported datatype enum.
                          */
                         virtual __type_def_enum get_datatype() = 0;
+
+                        /*!
+                         * Set if this constraint should return the negative of the constraint definition.
+                         *
+                         * @param is_not - Should be reversed?
+                         */
+                        void set_not(bool is_not) {
+                            this->is_not = is_not;
+                        }
                     };
 
                     /*!
@@ -1931,6 +1942,86 @@ REACTFS_NS_CORE
                             }
                             CHECK_NOT_NULL(d);
                             *size = d->read(buffer, offset);
+                            return d;
+                        }
+
+                        static __default *
+                        create(string *value, __type_def_enum datatype) {
+                            __default *d = nullptr;
+                            switch (datatype) {
+                                case __type_def_enum::TYPE_BOOL:
+                                    d = new __default_bool();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_bool));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    d = new __default_char();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_char));
+                                    {
+                                        char c = (*value)[0];
+                                        d->set_default(&c);
+                                    }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    d = new __default_short();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_short));
+                                    {
+                                        int is = std::stoi(*value);
+                                        POSTCONDITION(is >= std::numeric_limits<short>::min() &&
+                                                      is <= std::numeric_limits<short>::max());
+                                        short s = (short) is;
+                                        d->set_default(&s);
+                                    }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    d = new __default_int();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_int));
+                                    {
+                                        int ii = std::stoi(*value);
+                                        d->set_default(&ii);
+                                    }
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    d = new __default_long();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_long));
+                                    {
+                                        long ll = std::stol(*value);
+                                        d->set_default(&ll);
+                                    }
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    d = new __default_timestamp();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_timestamp));
+                                    {
+                                        long lu = std::stol(*value);
+                                        uint64_t ul = (uint64_t) lu;
+                                        d->set_default(&ul);
+                                    }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    d = new __default_float();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_float));
+                                    {
+                                        float fv = std::stof(*value);
+                                        d->set_default(&fv);
+                                    }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    d = new __default_double();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_double));
+                                    {
+                                        double dd = std::stod(*value);
+                                        d->set_default(&dd);
+                                    }
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    d = new __default_string();
+                                    CHECK_ALLOC(d, TYPE_NAME(__default_string));
+                                    d->set_default(value);
+                                    break;
+                                default:
+                                    throw BASE_ERROR("No default value handler defined for datatype. [type=%d]",
+                                                     datatype);
+                            }
                             return d;
                         }
                     };
