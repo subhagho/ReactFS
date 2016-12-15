@@ -23,6 +23,8 @@ main(const int argc, const char **argv) {
         com::wookler::reactfs::core::parsers::schema_driver driver;
         driver.parse(sf);
 
+        __complex_type *schema = driver.translate();
+
         env_utils::dispose();
     } else {
         cout << "Usage: " << argv[0] << " <config file> <schema file> \n";

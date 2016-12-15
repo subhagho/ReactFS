@@ -183,7 +183,7 @@ REACTFS_NS_CORE
                          */
                         static __type_def_enum parse_type(const string &type) {
                             CHECK_NOT_EMPTY(type);
-                            string t = string_utils::toupper(type);
+                            string t = string_utils::tolower(type);
                             if (t == get_type_string(__type_def_enum::TYPE_STRING)) {
                                 return __type_def_enum::TYPE_STRING;
                             } else if (t == get_type_string(__type_def_enum::TYPE_INTEGER)) {

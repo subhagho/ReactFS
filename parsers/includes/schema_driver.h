@@ -184,9 +184,9 @@ REACTFS_NS_CORE
                         /// Schema definition.
                         __schema_def *schema_def = nullptr;
                         /// Map of parsed types defined in the schema file.
-                        unordered_map<string, __reference_type *> types;
+                        unordered_map<string, __reference_type *> *types;
                         /// Map of parsed indexes defined in the schema file.
-                        unordered_map<string, __index_def *> indexes;
+                        unordered_map<string, __index_def *> *indexes;
 
                         __default *create_default_value(__declare *field, __type_def_enum type) {
                             string *value = field->default_value;
@@ -208,6 +208,57 @@ REACTFS_NS_CORE
                             return c;
                         }
 
+                        __complex_type *
+                        create_type(__native_type *parent, string &name, __reference_type *type, uint8_t index) {
+                            CHECK_NOT_NULL(parent);
+                            CHECK_NOT_NULL(type);
+                            CHECK_NOT_EMPTY(name);
+
+                            __complex_type *ct = new __complex_type(parent, index, name);
+                            CHECK_ALLOC(ct, TYPE_NAME(__complex_type));
+
+                            __declare *ptr = type->members;
+                            uint8_t t_index = 0;
+                            while (NOT_NULL(ptr)) {
+                                add_field(ct, ptr, t_index);
+                                ptr = ptr->next;
+                                t_index++;
+                                if (t_index >= UCHAR_MAX) {
+                                    throw TYPE_PARSER_ERROR(
+                                            "Exceeds maximum number of fields allowed. [max=%d][type=%s]",
+                                            UCHAR_MAX, ct->get_name().c_str());
+                                }
+                            }
+                            return ct;
+                        }
+
+                        __native_type *create_inner_type(__native_type *parent, __declare *field, string &name) {
+                            CHECK_NOT_NULL(parent);
+                            CHECK_NOT_NULL(field);
+
+                            if (!field->is_reference) {
+                                __type_def_enum type = __type_enum_helper::parse_type(*(field->type));
+                                POSTCONDITION(type != __type_def_enum::TYPE_UNKNOWN);
+                                PRECONDITION(__type_enum_helper::is_inner_type_valid(type));
+                                if (__type_enum_helper::is_native(type)) {
+                                    __native_type *nt = new __native_type(parent, 0, name, type);
+                                    CHECK_ALLOC(nt, TYPE_NAME(__native_type));
+                                    return nt;
+                                }
+                            } else {
+                                string *r_type = field->type;
+                                unordered_map<string, __reference_type *>::iterator iter = types->find(*r_type);
+                                if (iter == types->end()) {
+                                    throw BASE_ERROR("Cannot find specified type definition. [type=%s]",
+                                                     r_type->c_str());
+                                }
+                                __reference_type *rt = iter->second;
+                                CHECK_NOT_NULL(rt);
+                                return create_type(parent, name, rt, 0);
+                            }
+                            return nullptr;
+                        }
+
                         void add_field(__complex_type *type, __declare *field, uint8_t index) {
                             CHECK_NOT_NULL(type);
                             CHECK_NOT_NULL(field);
@@ -215,13 +266,112 @@ REACTFS_NS_CORE
                             CHECK_NOT_EMPTY_P(field->variable);
 
                             __native_type *nt = nullptr;
-                            __type_def_enum ft = __type_enum_helper::parse_type(*(field->type));
-                            POSTCONDITION(ft != __type_def_enum::TYPE_UNKNOWN);
-                            if (__type_enum_helper::is_native(ft)) {
-                                nt = new __native_type(type, index, *(field->variable), ft);
-                                CHECK_ALLOC(nt, TYPE_NAME(__native_type));
-                            } else if (field->is_reference) {
+                            if (!field->is_reference) {
+                                __type_def_enum ft = __type_enum_helper::parse_type(*(field->type));
+                                POSTCONDITION(ft != __type_def_enum::TYPE_UNKNOWN);
+                                if (__type_enum_helper::is_native(ft)) {
+                                    nt = new __native_type(type, index, *(field->variable), ft);
+                                    CHECK_ALLOC(nt, TYPE_NAME(__native_type));
+                                } else if (ft == __type_def_enum::TYPE_ARRAY) {
+                                    uint32_t size = field->size;
+                                    POSTCONDITION(size > 0);
 
+
+                                    __declare *inner_type = field->inner_types;
+                                    CHECK_NOT_NULL(inner_type);
+                                    if (!inner_type->is_reference) {
+                                        __type_def_enum it = __type_enum_helper::parse_type(*(inner_type->type));
+                                        POSTCONDITION(__type_enum_helper::is_inner_type_valid(it));
+
+                                        __array_type *at = new __array_type(type, index, *(field->variable), it, size);
+                                        CHECK_ALLOC(at, TYPE_NAME(__array_type));
+
+                                        __native_type *inner = create_inner_type(at, inner_type, *(field->variable));
+                                        CHECK_NOT_NULL(inner);
+                                        at->set_inner_type(inner);
+                                        nt = at;
+                                    } else {
+                                        __type_def_enum it = __type_def_enum::TYPE_STRUCT;
+
+                                        __array_type *at = new __array_type(type, index, *(field->variable), it, size);
+                                        CHECK_ALLOC(at, TYPE_NAME(__array_type));
+
+                                        __native_type *inner = create_inner_type(at, inner_type, *(field->variable));
+                                        CHECK_NOT_NULL(inner);
+                                        at->set_inner_type(inner);
+                                        nt = at;
+                                    }
+                                } else if (ft == __type_def_enum::TYPE_LIST) {
+
+                                    __declare *inner_type = field->inner_types;
+                                    CHECK_NOT_NULL(inner_type);
+                                    if (!inner_type->is_reference) {
+                                        __type_def_enum it = __type_enum_helper::parse_type(*(inner_type->type));
+                                        POSTCONDITION(__type_enum_helper::is_inner_type_valid(it));
+
+                                        __list_type *at = new __list_type(type, index, *(field->variable), it);
+                                        CHECK_ALLOC(at, TYPE_NAME(__list_type));
+
+                                        __native_type *inner = create_inner_type(at, inner_type, *(field->variable));
+                                        CHECK_NOT_NULL(inner);
+                                        at->set_inner_type(inner);
+
+                                        nt = at;
+                                    } else {
+                                        __type_def_enum it = __type_def_enum::TYPE_STRUCT;
+
+                                        __list_type *at = new __list_type(type, index, *(field->variable), it);
+                                        CHECK_ALLOC(at, TYPE_NAME(__list_type));
+
+                                        __native_type *inner = create_inner_type(at, inner_type, *(field->variable));
+                                        CHECK_NOT_NULL(inner);
+                                        at->set_inner_type(inner);
+
+                                        nt = at;
+                                    }
+                                } else if (ft == __type_def_enum::TYPE_MAP) {
+                                    __declare *key_type = field->inner_types;
+                                    CHECK_NOT_NULL(key_type);
+                                    __declare *value_type = field->inner_types->next;
+                                    CHECK_NOT_NULL(value_type);
+
+                                    __type_def_enum kt = __type_enum_helper::parse_type(*(key_type->type));
+                                    POSTCONDITION(__type_enum_helper::is_native(kt));
+
+                                    __type_def_enum vt = __type_def_enum::TYPE_UNKNOWN;
+
+                                    if (value_type->is_reference) {
+                                        vt = __type_def_enum::TYPE_STRUCT;
+                                    } else {
+                                        vt = __type_enum_helper::parse_type(*(value_type->type));
+                                    }
+                                    POSTCONDITION(__type_enum_helper::is_inner_type_valid(vt));
+
+                                    __map_type *mt = new __map_type(type, index, *(field->variable), kt, vt);
+                                    CHECK_ALLOC(mt, TYPE_NAME(__map_type));
+
+                                    string key_name(MAP_TYPE_KEY_NAME);
+                                    __native_type *key = create_inner_type(mt, key_type, key_name);
+                                    CHECK_NOT_NULL(key);
+                                    string value_name(MAP_TYPE_VALUE_NAME);
+                                    __native_type *value = create_inner_type(mt, value_type, value_name);
+                                    CHECK_NOT_NULL(value);
+
+                                    mt->set_key_type(key);
+                                    mt->set_value_type(value);
+
+                                    nt = mt;
+                                }
+                            } else {
+                                string *r_type = field->type;
+                                unordered_map<string, __reference_type *>::iterator iter = types->find(*r_type);
+                                if (iter == types->end()) {
+                                    throw BASE_ERROR("Cannot find specified type definition. [type=%s]",
+                                                     r_type->c_str());
+                                }
+                                __reference_type *rt = iter->second;
+                                CHECK_NOT_NULL(rt);
+                                nt = create_type(type, *(field->variable), rt, index);
                             }
                             CHECK_NOT_NULL(nt);
                             nt->set_nullable(field->is_nullable);
@@ -239,8 +389,8 @@ REACTFS_NS_CORE
                         }
 
                     public:
-                        translator(__schema_def *schema_def, const unordered_map<string, __reference_type *> &types,
-                                   const unordered_map<string, __index_def *> &indexes) {
+                        translator(__schema_def *schema_def, unordered_map<string, __reference_type *> *types,
+                                   unordered_map<string, __index_def *> *indexes) {
                             CHECK_NOT_NULL(schema_def);
                             this->schema_def = schema_def;
                             this->types = types;
@@ -257,8 +407,9 @@ REACTFS_NS_CORE
                                 ptr = ptr->next;
                                 index++;
                                 if (index >= UCHAR_MAX) {
-                                    throw TYPE_PARSER_ERROR("Exceeds maximum number of fields allowed. [max=%d]",
-                                                            UCHAR_MAX);
+                                    throw TYPE_PARSER_ERROR(
+                                            "Exceeds maximum number of fields allowed. [max=%d][schema=%s]",
+                                            UCHAR_MAX, type->get_name().c_str());
                                 }
                             }
                             return type;

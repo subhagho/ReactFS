@@ -148,7 +148,6 @@ REACTFS_NS_CORE
                          * @return - Datatype IO handler
                          */
                         static __base_datatype_io *get_type_handler(__type_def_enum type) {
-                            PRECONDITION(__type_enum_helper::is_native(type) || type == __type_def_enum::TYPE_TEXT);
                             string type_n = __type_enum_helper::get_type_string(type);
                             unordered_map<string, __base_datatype_io *>::iterator iter = type_handlers.find(type_n);
                             if (iter != type_handlers.end()) {

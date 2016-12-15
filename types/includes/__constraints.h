@@ -110,13 +110,13 @@ REACTFS_NS_CORE
                                 case __constraint_type::CONSTRAINT_REGEX:
                                     return "regex";
                                 case __constraint_type::CONSTRAINT_GT:
-                                    return ">";
+                                    return "gt";
                                 case __constraint_type::CONSTRAINT_LT:
-                                    return "<";
+                                    return "lt";
                                 case __constraint_type::CONSTRAINT_GTEQ:
-                                    return ">=";
+                                    return "gteq";
                                 case __constraint_type::CONSTRAINT_LTEQ:
-                                    return "<=";
+                                    return "lteq";
                             }
 			    throw BASE_ERROR("Unknown constraint type. [type=%d]", type);
                         }
