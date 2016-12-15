@@ -52,7 +52,7 @@ REACTFS_NS_COMMON
                     }
 
                 public:
-                    write_lock_client(string group) : lock_client(group, __lock_type::LOCK_W) {
+                    write_lock_client(string group) : lock_client(group, __lock_type::SHARED_LOCK_W) {
 
                     }
 

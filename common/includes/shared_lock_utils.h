@@ -93,13 +93,13 @@ REACTFS_NS_COMMON
                         read_write_lock_client *client = nullptr;
                         lock_client *ptr = find_client(group);
                         if (NOT_NULL(ptr)) {
-                            PRECONDITION(ptr->get_lock_type() == __lock_type::LOCK_RW);
+                            PRECONDITION(ptr->get_lock_type() == __lock_type::SHARED_LOCK_RW);
                             client = dynamic_cast<read_write_lock_client *>(ptr);
                             CHECK_CAST(client, TYPE_NAME(lock_client), TYPE_NAME(read_write_lock_client));
                         } else {
                             ptr = find_manager(group);
                             if (NOT_NULL(ptr)) {
-                                PRECONDITION(ptr->get_lock_type() == __lock_type::LOCK_RW);
+                                PRECONDITION(ptr->get_lock_type() == __lock_type::SHARED_LOCK_RW);
                                 client = dynamic_cast<read_write_lock_client *>(ptr);
                                 CHECK_CAST(client, TYPE_NAME(lock_client), TYPE_NAME(read_write_lock_client));
                             }
@@ -112,7 +112,7 @@ REACTFS_NS_COMMON
                         read_write_lock_manager *manager = nullptr;
                         lock_client *ptr = find_manager(group);
                         if (NOT_NULL(ptr)) {
-                            PRECONDITION(ptr->get_lock_type() == __lock_type::LOCK_RW);
+                            PRECONDITION(ptr->get_lock_type() == __lock_type::SHARED_LOCK_RW);
                             manager = dynamic_cast<read_write_lock_manager *>(ptr);
                             CHECK_CAST(manager, TYPE_NAME(lock_client), TYPE_NAME(read_write_lock_manager));
                         }
@@ -150,13 +150,13 @@ REACTFS_NS_COMMON
                         write_lock_client *client = nullptr;
                         lock_client *ptr = find_client(group);
                         if (NOT_NULL(ptr)) {
-                            PRECONDITION(ptr->get_lock_type() == __lock_type::LOCK_W);
+                            PRECONDITION(ptr->get_lock_type() == __lock_type::SHARED_LOCK_W);
                             client = dynamic_cast<write_lock_client *>(ptr);
                             CHECK_CAST(client, TYPE_NAME(lock_client), TYPE_NAME(write_lock_client));
                         } else {
                             ptr = find_manager(group);
                             if (NOT_NULL(ptr)) {
-                                PRECONDITION(ptr->get_lock_type() == __lock_type::LOCK_W);
+                                PRECONDITION(ptr->get_lock_type() == __lock_type::SHARED_LOCK_W);
                                 client = dynamic_cast<write_lock_client *>(ptr);
                                 CHECK_CAST(client, TYPE_NAME(lock_client), TYPE_NAME(write_lock_client));
                             }
@@ -169,7 +169,7 @@ REACTFS_NS_COMMON
                         write_lock_manager *manager = nullptr;
                         lock_client *ptr = find_manager(group);
                         if (NOT_NULL(ptr)) {
-                            PRECONDITION(ptr->get_lock_type() == __lock_type::LOCK_W);
+                            PRECONDITION(ptr->get_lock_type() == __lock_type::SHARED_LOCK_W);
                             manager = dynamic_cast<write_lock_manager *>(ptr);
                             CHECK_CAST(manager, TYPE_NAME(lock_client), TYPE_NAME(write_lock_manager));
                         }

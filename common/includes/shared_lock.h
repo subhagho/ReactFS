@@ -171,9 +171,9 @@ REACTFS_NS_COMMON
                  */
                 typedef enum __lock_type__ {
                     /// Write lock only
-                            LOCK_W = 0,
+                            SHARED_LOCK_W = 0,
                     /// Read/Write Lock.
-                            LOCK_RW = 1
+                            SHARED_LOCK_RW = 1
                 } __lock_type;
 
                 class lock_client {
