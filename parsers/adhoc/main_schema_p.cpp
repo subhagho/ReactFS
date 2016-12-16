@@ -24,6 +24,8 @@ main(const int argc, const char **argv) {
         driver.parse(sf);
 
         __complex_type *schema = driver.translate();
+        CHECK_NOT_NULL(schema);
+        schema->print();
 
         env_utils::dispose();
     } else {

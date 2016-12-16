@@ -86,6 +86,64 @@ REACTFS_NS_CORE
                      */
                     class __type_enum_helper {
                     public:
+                        static string get_string_value(const void *value, __type_def_enum type) {
+                            switch (type) {
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    uint64_t *v = (uint64_t *) value;
+                                    return to_string(*v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_BOOL: {
+                                    bool *v = (bool *) value;
+                                    if (*v) {
+                                        return BOOL_TRUE;
+                                    } else {
+                                        return BOOL_FALSE;
+                                    }
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    double *v = (double *) value;
+                                    return to_string(*v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    short *v = (short *) value;
+                                    return to_string(*v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    char *v = (char *) value;
+                                    return to_string(*v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    float *v = (float *) value;
+                                    return to_string(*v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    int *v = (int *) value;
+                                    return to_string(*v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    long *v = (long *) value;
+                                    return to_string(*v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_STRING: {
+                                    string *v = (string *) value;
+                                    return *v;
+                                }
+                                    break;
+                                default:
+                                    break;
+                            }
+                            return common_consts::EMPTY_STRING;
+                        }
+
                         /*!
                          * Check if the type enum represents a native type.
                          *

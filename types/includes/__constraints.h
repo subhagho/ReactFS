@@ -90,7 +90,7 @@ REACTFS_NS_CORE
                                 case __constraint_type::CONSTRAINT_LTEQ:
                                     return 7;
                             }
-			    throw BASE_ERROR("Unknown constraint type. [type=%d]", type);
+                            throw BASE_ERROR("Unknown constraint type. [type=%d]", type);
                         }
 
                         /*!
@@ -118,7 +118,7 @@ REACTFS_NS_CORE
                                 case __constraint_type::CONSTRAINT_LTEQ:
                                     return "lteq";
                             }
-			    throw BASE_ERROR("Unknown constraint type. [type=%d]", type);
+                            throw BASE_ERROR("Unknown constraint type. [type=%d]", type);
                         }
 
                         static __constraint_type parse(string type) {
@@ -221,6 +221,11 @@ REACTFS_NS_CORE
                         __type_def_enum get_datatype() override {
                             return __type_def_enum::TYPE_UNKNOWN;
                         }
+
+                        void print() const override {
+                            string n = (is_not ? "NOT" : "");
+                            LOG_INFO("\tconstraint : %s nullable", n.c_str());
+                        }
                     };
 
                     /*!
@@ -321,6 +326,11 @@ REACTFS_NS_CORE
                          */
                         __type_def_enum get_datatype() override {
                             return __type_def_enum::TYPE_STRING;
+                        }
+
+                        void print() const override {
+                            string n = (is_not ? "NOT" : "");
+                            LOG_INFO("\t constraint: %s regex(%s)", n.c_str(), pattern.c_str());
                         }
                     };
 
@@ -466,6 +476,16 @@ REACTFS_NS_CORE
 
                             return r_size;
                         }
+
+                        void print() const override {
+                            string n = (is_not ? "NOT" : "");
+                            string t = __type_enum_helper::get_type_string(this->value_type);
+                            string rmin = __type_enum_helper::get_string_value(&min_value, this->value_type);
+                            string rmax = __type_enum_helper::get_string_value(&max_value, this->value_type);
+
+                            LOG_INFO("\tconstraint : %s range[%s, %s] datatype=%s", n.c_str(), rmin.c_str(),
+                                     rmax.c_str(), t.c_str());
+                        }
                     };
 
                     typedef __range_constraint<char, __type_def_enum::TYPE_CHAR> char_range_constraint;
@@ -487,6 +507,21 @@ REACTFS_NS_CORE
                         __base_datatype_io *handler = nullptr;
 
                     protected:
+                        string get_oper_string(__constraint_operator oper) const {
+                            switch (oper) {
+                                case __constraint_operator::EQ:
+                                    return "=";
+                                case __constraint_operator::GT:
+                                    return ">";
+                                case __constraint_operator::GTEQ:
+                                    return ">=";
+                                case __constraint_operator::LT:
+                                    return "<";
+                                case __constraint_operator::LTEQ:
+                                    return "=<";
+                            }
+                            return common_consts::EMPTY_STRING;
+                        }
 
                         __constraint_type get_constraint_type() {
                             switch (oper) {
@@ -571,6 +606,15 @@ REACTFS_NS_CORE
                             value = *t;
 
                             return r_size;
+                        }
+
+                        void print() const override {
+                            string n = (is_not ? "NOT" : "");
+                            string t = __type_enum_helper::get_type_string(this->value_type);
+                            string v = __type_enum_helper::get_string_value(&(this->value), this->value_type);
+                            string o = get_oper_string(this->oper);
+                            LOG_INFO("\tconstraint : %s compare(%s %s) datatype=%s", n.c_str(), o.c_str(), v.c_str(),
+                                     t.c_str());
                         }
                     };
 
@@ -732,6 +776,21 @@ REACTFS_NS_CORE
                             }
                             return r_size;
                         }
+
+                        void print() const override {
+                            string n = (is_not ? "NOT" : "");
+                            string t = __type_enum_helper::get_type_string(this->value_type);
+                            string v;
+                            for (__T t : values) {
+                                string tv = __type_enum_helper::get_string_value(&t, this->value_type);
+                                if (!IS_EMPTY(v)) {
+                                    v.append(", ");
+                                }
+                                v.append(tv);
+                            }
+                            LOG_INFO("\tconstraint : %s in(%s) datatype=%s", n.c_str(), v.c_str(),
+                                     t.c_str());
+                        }
                     };
 
                     typedef __value_constraint<char, __type_def_enum::TYPE_CHAR> char_value_constraint;
@@ -742,8 +801,6 @@ REACTFS_NS_CORE
                     typedef __value_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP> timestamp_value_constraint;
                     typedef __value_constraint<double, __type_def_enum::TYPE_DOUBLE> double_value_constraint;
                     typedef __value_constraint<string, __type_def_enum::TYPE_STRING> string_value_constraint;
-
-
 
 
                 }

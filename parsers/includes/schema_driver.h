@@ -179,6 +179,10 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    /*!
+                     * Class implements the translator to create a schema object from the
+                     * parser types.
+                     */
                     class translator {
                     private:
                         /// Schema definition.
@@ -188,6 +192,13 @@ REACTFS_NS_CORE
                         /// Map of parsed indexes defined in the schema file.
                         unordered_map<string, __index_def *> *indexes;
 
+                        /*!
+                         * Create a default value definition for a field.
+                         *
+                         * @param field - Parsed field handle.
+                         * @param type - Datatype of the field.
+                         * @return - Default value element.
+                         */
                         __default *create_default_value(__declare *field, __type_def_enum type) {
                             string *value = field->default_value;
                             CHECK_NOT_EMPTY_P(value);
@@ -195,6 +206,13 @@ REACTFS_NS_CORE
                             return d;
                         }
 
+                        /*!
+                         * Create a field constraint definition.
+                         *
+                         * @param field - Declared field.
+                         * @param type - Datatype of the field.
+                         * @return - Constraint value element.
+                         */
                         __constraint *create_constraint(__declare *field, __type_def_enum type) {
                             __constraint_def *def = field->constraint;
                             CHECK_NOT_NULL(def);
@@ -208,6 +226,16 @@ REACTFS_NS_CORE
                             return c;
                         }
 
+                        /*!
+                         * Create an instance of a type (complex type) definition based on the parsed
+                         * reference type.
+                         *
+                         * @param parent - Parent node of this type definition.
+                         * @param name - Declared variable name for this type instance.
+                         * @param type - Parsed reference type handle.
+                         * @param index - Position index in the parent declaration.
+                         * @return - Complex type handle.
+                         */
                         __complex_type *
                         create_type(__native_type *parent, string &name, __reference_type *type, uint8_t index) {
                             CHECK_NOT_NULL(parent);
@@ -232,6 +260,14 @@ REACTFS_NS_CORE
                             return ct;
                         }
 
+                        /*!
+                         * Create an inner type definition for collections (ARRAY/LIST/MAP).
+                         *
+                         * @param parent - Parent node (collection node).
+                         * @param field - Parsed field delcaration.
+                         * @param name - Declared variable name for the collection instance.
+                         * @return - Inner type definition.
+                         */
                         __native_type *create_inner_type(__native_type *parent, __declare *field, string &name) {
                             CHECK_NOT_NULL(parent);
                             CHECK_NOT_NULL(field);
@@ -259,6 +295,13 @@ REACTFS_NS_CORE
                             return nullptr;
                         }
 
+                        /*!
+                         * Add a new field declaration to a complex type definition.
+                         *
+                         * @param type - Parent type definition.
+                         * @param field - Parsed field declaration.
+                         * @param index - Position index in the parent declaration.
+                         */
                         void add_field(__complex_type *type, __declare *field, uint8_t index) {
                             CHECK_NOT_NULL(type);
                             CHECK_NOT_NULL(field);
@@ -266,19 +309,21 @@ REACTFS_NS_CORE
                             CHECK_NOT_EMPTY_P(field->variable);
 
                             __native_type *nt = nullptr;
+                            // Is a native (simple) type declaration. (including collections)
                             if (!field->is_reference) {
                                 __type_def_enum ft = __type_enum_helper::parse_type(*(field->type));
                                 POSTCONDITION(ft != __type_def_enum::TYPE_UNKNOWN);
                                 if (__type_enum_helper::is_native(ft)) {
                                     nt = new __native_type(type, index, *(field->variable), ft);
                                     CHECK_ALLOC(nt, TYPE_NAME(__native_type));
-                                } else if (ft == __type_def_enum::TYPE_ARRAY) {
+                                } else if (ft == __type_def_enum::TYPE_ARRAY) { // Is an array definition.
                                     uint32_t size = field->size;
                                     POSTCONDITION(size > 0);
 
-
+                                    // Collections should always have inner type definition.
                                     __declare *inner_type = field->inner_types;
                                     CHECK_NOT_NULL(inner_type);
+                                    // Inner type is a native datatype (cannot include other collections)
                                     if (!inner_type->is_reference) {
                                         __type_def_enum it = __type_enum_helper::parse_type(*(inner_type->type));
                                         POSTCONDITION(__type_enum_helper::is_inner_type_valid(it));
@@ -291,6 +336,7 @@ REACTFS_NS_CORE
                                         at->set_inner_type(inner);
                                         nt = at;
                                     } else {
+                                        // Inner type is a structure (complex type)
                                         __type_def_enum it = __type_def_enum::TYPE_STRUCT;
 
                                         __array_type *at = new __array_type(type, index, *(field->variable), it, size);
@@ -301,10 +347,11 @@ REACTFS_NS_CORE
                                         at->set_inner_type(inner);
                                         nt = at;
                                     }
-                                } else if (ft == __type_def_enum::TYPE_LIST) {
-
+                                } else if (ft == __type_def_enum::TYPE_LIST) { // Is a list definition.
+                                    // Collections should always have inner type definition.
                                     __declare *inner_type = field->inner_types;
                                     CHECK_NOT_NULL(inner_type);
+                                    // Inner type is a native datatype (cannot include other collections)
                                     if (!inner_type->is_reference) {
                                         __type_def_enum it = __type_enum_helper::parse_type(*(inner_type->type));
                                         POSTCONDITION(__type_enum_helper::is_inner_type_valid(it));
@@ -318,6 +365,7 @@ REACTFS_NS_CORE
 
                                         nt = at;
                                     } else {
+                                        // Inner type is a structure (complex type)
                                         __type_def_enum it = __type_def_enum::TYPE_STRUCT;
 
                                         __list_type *at = new __list_type(type, index, *(field->variable), it);
@@ -329,9 +377,11 @@ REACTFS_NS_CORE
 
                                         nt = at;
                                     }
-                                } else if (ft == __type_def_enum::TYPE_MAP) {
+                                } else if (ft == __type_def_enum::TYPE_MAP) { // Is a map definition.
+                                    // Inner type definition should include key type.
                                     __declare *key_type = field->inner_types;
                                     CHECK_NOT_NULL(key_type);
+                                    // Inner type definition should include value type.
                                     __declare *value_type = field->inner_types->next;
                                     CHECK_NOT_NULL(value_type);
 
@@ -362,7 +412,7 @@ REACTFS_NS_CORE
 
                                     nt = mt;
                                 }
-                            } else {
+                            } else { // Field definition is a reference to a complex type.
                                 string *r_type = field->type;
                                 unordered_map<string, __reference_type *>::iterator iter = types->find(*r_type);
                                 if (iter == types->end()) {
@@ -374,21 +424,29 @@ REACTFS_NS_CORE
                                 nt = create_type(type, *(field->variable), rt, index);
                             }
                             CHECK_NOT_NULL(nt);
-                            nt->set_nullable(field->is_nullable);
-                            if (NOT_NULL(field->constraint)) {
+                            nt->set_nullable(field->is_nullable); // Is field nullable
+                            if (NOT_NULL(field->constraint)) { // Check if the field has any constraint defined.
                                 __constraint *c = create_constraint(field, nt->get_datatype());
                                 CHECK_NOT_NULL(c);
                                 nt->set_constraint(c);
                             }
-                            if (NOT_NULL(field->default_value)) {
+                            if (NOT_NULL(field->default_value)) { // Check if the field has a default value set.
                                 __default *d = create_default_value(field, nt->get_datatype());
                                 CHECK_NOT_NULL(d);
                                 nt->set_default_value(d);
                             }
+                            // Add the field to the parent type.
                             type->add_field(nt, index);
                         }
 
                     public:
+                        /*!
+                         * Default constructor of the translator.
+                         *
+                         * @param schema_def - Parsed schema definition.
+                         * @param types - Parsed complex type definitions.
+                         * @param indexes - Parsed index definitions.
+                         */
                         translator(__schema_def *schema_def, unordered_map<string, __reference_type *> *types,
                                    unordered_map<string, __index_def *> *indexes) {
                             CHECK_NOT_NULL(schema_def);
@@ -397,6 +455,11 @@ REACTFS_NS_CORE
                             this->indexes = indexes;
                         }
 
+                        /*!
+                         * Translate the parsed type definitions into a complex datatype.
+                         *
+                         * @return - Generated complex datatype.
+                         */
                         __complex_type *translate() {
                             __complex_type *type = new __complex_type(nullptr, *(schema_def->name));
                             CHECK_ALLOC(type, TYPE_NAME(__complex_type));
@@ -525,13 +588,13 @@ REACTFS_NS_CORE
                                 CHECK_AND_FREE(type->name);
                                 FREE_PTR(type);
                             }
-                            type = nullptr;
                         }
 
                         void free_declare(__declare *ptr) {
                             if (NOT_NULL(ptr)) {
                                 CHECK_AND_FREE(ptr->default_value);
                                 free_constraint_def(ptr->constraint);
+                                ptr->constraint = nullptr;
                                 if (NOT_NULL(ptr->inner_types)) {
                                     __declare *iptr = ptr->inner_types;
                                     while (NOT_NULL(iptr)) {
@@ -539,12 +602,12 @@ REACTFS_NS_CORE
                                         free_declare(iptr);
                                         iptr = next;
                                     }
+                                    ptr->inner_types = nullptr;
                                 }
                                 CHECK_AND_FREE(ptr->type);
                                 CHECK_AND_FREE(ptr->variable);
                                 FREE_PTR(ptr);
                             }
-                            ptr = nullptr;
                         }
 
                         void free_constraint_def(__constraint_def *ptr) {
@@ -554,7 +617,6 @@ REACTFS_NS_CORE
                                 CHECK_AND_FREE(ptr->values);
                                 FREE_PTR(ptr);
                             }
-                            ptr = nullptr;
                         }
 
                         __constraint_def *get_type_var_constraint(const string &type) {

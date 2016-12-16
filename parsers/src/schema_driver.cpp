@@ -10,12 +10,12 @@ com::wookler::reactfs::core::parsers::schema_driver::~schema_driver() {
     CHECK_AND_FREE(scanner);
     CHECK_AND_FREE(parser);
 
+    free_schema();
+
     for (auto iter = types.begin(); iter != types.end(); iter++) {
         free_type(iter->second);
     }
     types.clear();
-
-    free_schema();
 
     for (auto iter = indexes.begin(); iter != indexes.end(); iter++) {
         free_index_def(iter->second);

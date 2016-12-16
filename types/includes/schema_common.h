@@ -24,13 +24,13 @@
 #define REACTFS_SCHEMA_COMMON_H
 
 #include "common/includes/common.h"
+#include "common/includes/log_utils.h"
 #include "core/includes/core.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
                 namespace types {
-
 
 
                     /*!
@@ -295,6 +295,11 @@ REACTFS_NS_CORE
                         void set_not(bool is_not) {
                             this->is_not = is_not;
                         }
+
+                        /*!
+                         * Utility function to print the definition of this constraint.
+                         */
+                        virtual void print() const = 0;
                     };
 
                     /*!
@@ -345,6 +350,11 @@ REACTFS_NS_CORE
                          * @param value - Value pointer.
                          */
                         virtual void set_default(void *value) const = 0;
+
+                        /*!
+                         * Utility function to print the definition of this constraint.
+                         */
+                        virtual void print() const = 0;
                     };
 
                     /*!
@@ -441,6 +451,12 @@ REACTFS_NS_CORE
                             this->value = *t;
 
                             return r_size;
+                        }
+
+                        void print() const override {
+                            string t = __type_enum_helper::get_type_string(this->datatype);
+                            string v = __type_enum_helper::get_string_value(&value, this->datatype);
+                            LOG_INFO("\t[type=%s] value='%s'", t.c_str(), v.c_str());
                         }
                     };
 

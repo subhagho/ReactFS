@@ -23,6 +23,7 @@
 #define REACTFS_SCHEMA_DEF_H
 
 #include "common/includes/common.h"
+#include "common/includes/log_utils.h"
 #include "core/includes/core.h"
 
 #include "types_common.h"
@@ -421,6 +422,18 @@ REACTFS_NS_CORE
                             }
                             return this->name;
                         }
+
+                        virtual void print() const {
+                            string t = __type_enum_helper::get_type_string(this->datatype);
+                            string n = this->get_canonical_name();
+                            LOG_INFO("[index=%d] [name=%s] %s", this->index, n.c_str(), t.c_str());
+                            if (NOT_NULL(constraint)) {
+                                constraint->print();
+                            }
+                            if (NOT_NULL(default_value)) {
+                                default_value->print();
+                            }
+                        }
                     };
 
                     /*!
@@ -428,7 +441,7 @@ REACTFS_NS_CORE
                      * definitions used by the native fields.
                      */
                     class __sized_type : public __native_type {
-                    private:
+                    protected:
                         /// Max size defined for this field.
                         uint32_t max_size = 0;
 
@@ -495,6 +508,18 @@ REACTFS_NS_CORE
                             r_size += sizeof(uint32_t);
 
                             return r_size;
+                        }
+
+                        virtual void print() const override {
+                            string t = __type_enum_helper::get_type_string(this->datatype);
+                            string n = this->get_canonical_name();
+                            LOG_INFO("[index=%d] [name=%s] %s[%d]", this->index, n.c_str(), t.c_str(), this->max_size);
+                            if (NOT_NULL(constraint)) {
+                                constraint->print();
+                            }
+                            if (NOT_NULL(default_value)) {
+                                default_value->print();
+                            }
                         }
                     };
 
@@ -565,6 +590,7 @@ REACTFS_NS_CORE
                     public:
                         __complex_type(__native_type *parent) : __native_type(parent) {
                             this->type = __field_type::COMPLEX;
+                            this->datatype = __type_def_enum::TYPE_STRUCT;
                             loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
                             this->type_handler = loader->get_complex_type_handler(this->type);
@@ -573,7 +599,9 @@ REACTFS_NS_CORE
 
                         __complex_type(__native_type *parent, const string &name) : __native_type(parent) {
                             this->type = __field_type::COMPLEX;
+                            this->datatype = __type_def_enum::TYPE_STRUCT;
                             this->name = string(name);
+                            this->index = 0;
 
                             loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
@@ -671,6 +699,18 @@ REACTFS_NS_CORE
                                 add_field(type->get_index(), type->get_name(), type);
                             }
                             return r_size;
+                        }
+
+                        virtual void print() const override {
+                            string t = __type_enum_helper::get_type_string(this->datatype);
+                            string n = this->get_canonical_name();
+                            LOG_INFO("[index=%d] [name=%s] %s", this->index, n.c_str(), t.c_str());
+                            unordered_map<uint8_t, __native_type *>::const_iterator iter;
+                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                __native_type *t = iter->second;
+                                CHECK_NOT_NULL(t);
+                                t->print();
+                            }
                         }
                     };
 
@@ -839,6 +879,17 @@ REACTFS_NS_CORE
                             }
                             return this->name;
                         }
+
+                        virtual void print() const override {
+                            string t = __type_enum_helper::get_type_string(this->datatype);
+                            string it = __type_enum_helper::get_type_string(this->inner_type);
+                            string n = inner->get_canonical_name();
+                            LOG_INFO("[index=%d] [name=%s] %s<%s>[%d]", this->index, n.c_str(), t.c_str(), it.c_str(),
+                                     this->max_size);
+                            if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
+                                this->inner->print();
+                            }
+                        }
                     };
 
                     class __list_type : public __native_type {
@@ -939,6 +990,16 @@ REACTFS_NS_CORE
                                 return parent->get_canonical_name();
                             }
                             return this->name;
+                        }
+
+                        virtual void print() const override {
+                            string t = __type_enum_helper::get_type_string(this->datatype);
+                            string it = __type_enum_helper::get_type_string(this->inner_type);
+                            string n = inner->get_canonical_name();
+                            LOG_INFO("[index=%d] [name=%s] %s<%s>", this->index, n.c_str(), t.c_str(), it.c_str());
+                            if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
+                                this->inner->print();
+                            }
                         }
                     };
 
@@ -1044,6 +1105,18 @@ REACTFS_NS_CORE
                                 return parent->get_canonical_name();
                             }
                             return this->name;
+                        }
+
+                        virtual void print() const override {
+                            string t = __type_enum_helper::get_type_string(this->datatype);
+                            string kt = __type_enum_helper::get_type_string(this->key_type);
+                            string vt = __type_enum_helper::get_type_string(this->value_type);
+                            string n = this->get_canonical_name();
+                            LOG_INFO("[index=%d] [name=%s] %s<%s, %s>", this->index, n.c_str(), t.c_str(), kt.c_str(),
+                                     vt.c_str());
+                            if (this->value_type == __type_def_enum::TYPE_STRUCT) {
+                                this->value->print();
+                            }
                         }
                     };
 
