@@ -113,8 +113,113 @@ REACTFS_NS_COMMON
                     }
                 };
 
+
+                class string_utils {
+                public:
+                    static bool starts_with(string *source, string prefix) {
+                        if (!IS_EMPTY_P(source) && !IS_EMPTY(prefix)) {
+                            std::size_t i = source->find(prefix);
+                            if (i != std::string::npos) {
+                                return (i == 0);
+                            }
+                        }
+                        return false;
+                    }
+
+                    static bool ends_with(string *source, string suffix) {
+                        if (!IS_EMPTY_P(source) && !IS_EMPTY(suffix)) {
+                            std::size_t i = source->rfind(suffix);
+                            if (i != std::string::npos) {
+                                i += suffix.length();
+                                return (i == (source->length() - 1));
+                            }
+                        }
+                        return false;
+                    }
+
+                    static inline std::string &ltrim(std::string &s) {
+                        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+                                                        std::not1(std::ptr_fun<int, int>(std::isspace))));
+                        return s;
+                    }
+
+// trim from end
+                    static inline std::string &rtrim(std::string &s) {
+                        s.erase(std::find_if(s.rbegin(), s.rend(),
+                                             std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+                        return s;
+                    }
+
+// trim from both ends
+                    static inline std::string &trim(std::string &s) {
+                        return ltrim(rtrim(s));
+                    }
+
+                    static uint32_t split(const string &s, char delim, vector<string> *elems) {
+                        stringstream ss;
+                        ss.str(s);
+                        string item;
+                        while (getline(ss, item, delim)) {
+                            elems->push_back(item);
+                        }
+                        return elems->size();
+                    }
+
+                    static uint32_t split(const string &s, char delim, string *array, uint32_t a_size) {
+                        stringstream ss;
+                        ss.str(s);
+                        string item;
+                        uint32_t count = 0;
+                        while (getline(ss, item, delim) && count < a_size) {
+                            array[count] = item;
+                            count++;
+                        }
+                        return count;
+                    }
+
+                    static string toupper(const string &input) {
+                        if (!IS_EMPTY(input)) {
+                            stringstream ss;
+                            std::locale loc;
+                            for (string::size_type ii = 0; ii < input.length(); ii++) {
+                                char c = std::toupper(input[ii], loc);
+                                ss << c;
+                            }
+                            return string(ss.str());
+                        }
+                        return input;
+                    }
+
+                    static string tolower(const string &input) {
+                        if (!IS_EMPTY(input)) {
+                            stringstream ss;
+                            std::locale loc;
+                            for (string::size_type ii = 0; ii < input.length(); ii++) {
+                                char c = std::tolower(input[ii], loc);
+                                ss << c;
+                            }
+                            return string(ss.str());
+                        }
+                        return input;
+                    }
+                };
+
                 class common_utils {
                 public:
+
+                    static bool parse_bool(string &value) {
+                        if (!IS_EMPTY(value)) {
+                            value = string_utils::tolower(value);
+                            if (value == BOOL_TRUE) {
+                                return true;
+                            } else if (value == BOOL_FALSE) {
+                                return false;
+                            } else if (value == "1") {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
 
                     static string get_normalized_name(const string name) {
                         if (!IS_EMPTY(name)) {
@@ -435,95 +540,6 @@ REACTFS_NS_COMMON
                     }
                 };
 
-                class string_utils {
-                public:
-                    static bool starts_with(string *source, string prefix) {
-                        if (!IS_EMPTY_P(source) && !IS_EMPTY(prefix)) {
-                            std::size_t i = source->find(prefix);
-                            if (i != std::string::npos) {
-                                return (i == 0);
-                            }
-                        }
-                        return false;
-                    }
-
-                    static bool ends_with(string *source, string suffix) {
-                        if (!IS_EMPTY_P(source) && !IS_EMPTY(suffix)) {
-                            std::size_t i = source->rfind(suffix);
-                            if (i != std::string::npos) {
-                                i += suffix.length();
-                                return (i == (source->length() - 1));
-                            }
-                        }
-                        return false;
-                    }
-
-                    static inline std::string &ltrim(std::string &s) {
-                        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-                                                        std::not1(std::ptr_fun<int, int>(std::isspace))));
-                        return s;
-                    }
-
-// trim from end
-                    static inline std::string &rtrim(std::string &s) {
-                        s.erase(std::find_if(s.rbegin(), s.rend(),
-                                             std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-                        return s;
-                    }
-
-// trim from both ends
-                    static inline std::string &trim(std::string &s) {
-                        return ltrim(rtrim(s));
-                    }
-
-                    static uint32_t split(const string &s, char delim, vector<string> *elems) {
-                        stringstream ss;
-                        ss.str(s);
-                        string item;
-                        while (getline(ss, item, delim)) {
-                            elems->push_back(item);
-                        }
-                        return elems->size();
-                    }
-
-                    static uint32_t split(const string &s, char delim, string *array, uint32_t a_size) {
-                        stringstream ss;
-                        ss.str(s);
-                        string item;
-                        uint32_t count = 0;
-                        while (getline(ss, item, delim) && count < a_size) {
-                            array[count] = item;
-                            count++;
-                        }
-                        return count;
-                    }
-
-                    static string toupper(const string &input) {
-                        if (!IS_EMPTY(input)) {
-                            stringstream ss;
-                            std::locale loc;
-                            for (string::size_type ii = 0; ii < input.length(); ii++) {
-                                char c = std::toupper(input[ii], loc);
-                                ss << c;
-                            }
-                            return string(ss.str());
-                        }
-                        return input;
-                    }
-
-                    static string tolower(const string &input) {
-                        if (!IS_EMPTY(input)) {
-                            stringstream ss;
-                            std::locale loc;
-                            for (string::size_type ii = 0; ii < input.length(); ii++) {
-                                char c = std::tolower(input[ii], loc);
-                                ss << c;
-                            }
-                            return string(ss.str());
-                        }
-                        return input;
-                    }
-                };
 REACTFS_NS_COMMON_END
 
 #endif // _CORE_H_

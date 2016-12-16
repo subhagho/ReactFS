@@ -1090,76 +1090,93 @@ REACTFS_NS_CORE
 
                         static __default *
                         create(string *value, __type_def_enum datatype) {
+                            CHECK_NOT_NULL(value);
                             __default *d = nullptr;
                             switch (datatype) {
-                                case __type_def_enum::TYPE_BOOL:
-                                    d = new __default_bool();
-                                    CHECK_ALLOC(d, TYPE_NAME(__default_bool));
+                                case __type_def_enum::TYPE_BOOL: {
+                                    __default_bool *dd = new __default_bool();
+                                    CHECK_ALLOC(dd, TYPE_NAME(__default_bool));
+                                    bool bv = common_utils::parse_bool(*value);
+                                    dd->set_value(bv);
+
+                                    d = dd;
+                                }
                                     break;
-                                case __type_def_enum::TYPE_CHAR:
-                                    d = new __default_char();
-                                    CHECK_ALLOC(d, TYPE_NAME(__default_char));
-                                    {
-                                        char c = (*value)[0];
-                                        d->set_default(&c);
-                                    }
+                                case __type_def_enum::TYPE_CHAR: {
+                                    __default_char *dd = new __default_char();
+                                    CHECK_ALLOC(dd, TYPE_NAME(__default_char));
+                                    char c = (*value)[0];
+                                    dd->set_value(c);
+
+                                    d = dd;
+                                }
                                     break;
-                                case __type_def_enum::TYPE_SHORT:
-                                    d = new __default_short();
-                                    CHECK_ALLOC(d, TYPE_NAME(__default_short));
-                                    {
-                                        int is = std::stoi(*value);
-                                        POSTCONDITION(is >= std::numeric_limits<short>::min() &&
-                                                      is <= std::numeric_limits<short>::max());
-                                        short s = (short) is;
-                                        d->set_default(&s);
-                                    }
+                                case __type_def_enum::TYPE_SHORT: {
+                                    __default_short *dd = new __default_short();
+                                    CHECK_ALLOC(dd, TYPE_NAME(__default_short));
+                                    int is = std::stoi(*value);
+                                    POSTCONDITION(is >= std::numeric_limits<short>::min() &&
+                                                  is <= std::numeric_limits<short>::max());
+                                    short s = (short) is;
+                                    dd->set_value(s);
+
+                                    d = dd;
+                                }
                                     break;
-                                case __type_def_enum::TYPE_INTEGER:
-                                    d = new __default_int();
-                                    CHECK_ALLOC(d, TYPE_NAME(__default_int));
-                                    {
-                                        int ii = std::stoi(*value);
-                                        d->set_default(&ii);
-                                    }
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    __default_int *dd = new __default_int();
+                                    CHECK_ALLOC(dd, TYPE_NAME(__default_int));
+                                    int ii = std::stoi(*value);
+                                    dd->set_value(ii);
+
+                                    d = dd;
+                                }
                                     break;
-                                case __type_def_enum::TYPE_LONG:
-                                    d = new __default_long();
-                                    CHECK_ALLOC(d, TYPE_NAME(__default_long));
-                                    {
-                                        long ll = std::stol(*value);
-                                        d->set_default(&ll);
-                                    }
+                                case __type_def_enum::TYPE_LONG: {
+                                    __default_long *dd = new __default_long();
+                                    CHECK_ALLOC(dd, TYPE_NAME(__default_long));
+                                    long ll = std::stol(*value);
+                                    dd->set_value(ll);
+
+                                    d = dd;
+                                }
                                     break;
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                    d = new __default_timestamp();
-                                    CHECK_ALLOC(d, TYPE_NAME(__default_timestamp));
-                                    {
-                                        long lu = std::stol(*value);
-                                        uint64_t ul = (uint64_t) lu;
-                                        d->set_default(&ul);
-                                    }
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    __default_timestamp *dd = new __default_timestamp();
+                                    CHECK_ALLOC(dd, TYPE_NAME(__default_timestamp));
+                                    long lu = std::stol(*value);
+                                    uint64_t ul = (uint64_t) lu;
+                                    dd->set_value(ul);
+
+                                    d = dd;
+                                }
                                     break;
-                                case __type_def_enum::TYPE_FLOAT:
-                                    d = new __default_float();
-                                    CHECK_ALLOC(d, TYPE_NAME(__default_float));
-                                    {
-                                        float fv = std::stof(*value);
-                                        d->set_default(&fv);
-                                    }
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    __default_float *dd = new __default_float();
+                                    CHECK_ALLOC(dd, TYPE_NAME(__default_float));
+                                    float fv = std::stof(*value);
+                                    dd->set_value(fv);
+
+                                    d = dd;
+                                }
                                     break;
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    d = new __default_double();
-                                    CHECK_ALLOC(d, TYPE_NAME(__default_double));
-                                    {
-                                        double dd = std::stod(*value);
-                                        d->set_default(&dd);
-                                    }
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    __default_double *dd = new __default_double();
+                                    CHECK_ALLOC(dd, TYPE_NAME(__default_double));
+                                    double dv = std::stod(*value);
+                                    dd->set_value(dv);
+
+                                    d = dd;
+                                }
                                     break;
-                                case __type_def_enum::TYPE_STRING:
-                                    d = new __default_string();
-                                    CHECK_ALLOC(d, TYPE_NAME(__default_string));
-                                    d->set_default(value);
+                                case __type_def_enum::TYPE_STRING: {
+                                    __default_string *dd = new __default_string();
+                                    CHECK_ALLOC(dd, TYPE_NAME(__default_string));
+                                    dd->set_value(*value);
+
+                                    d = dd;
+                                }
                                     break;
                                 default:
                                     throw BASE_ERROR("No default value handler defined for datatype. [type=%d]",
