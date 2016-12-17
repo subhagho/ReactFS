@@ -167,7 +167,7 @@ namespace com {
                      *
                      * @return - Base data address
                      */
-                    void *get_data_ptr() {
+                    virtual void *get_data_ptr() {
                         return common_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
                     }
 

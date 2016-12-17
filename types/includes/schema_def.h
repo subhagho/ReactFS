@@ -117,6 +117,7 @@ REACTFS_NS_CORE
                         bool nullable = false;
                         /// Parent type of which this field is a part.
                         __native_type *parent = nullptr;
+
                     public:
                         /*!
                          * Default empty constructor, to be instantiated
@@ -406,15 +407,32 @@ REACTFS_NS_CORE
                             return r_size;
                         }
 
+                        /*!
+                         * Get the parent type of this type instance.
+                         *
+                         * @return - Parent type instance.
+                         */
                         const __native_type *get_parent() const {
                             return this->parent;
                         }
 
+                        /*!
+                         * Set the parent instance of this type.
+                         *
+                         * @param parent - Parent type instance.
+                         */
                         void set_parent(__native_type *parent) {
                             CHECK_NOT_NULL(parent);
                             this->parent = parent;
                         }
 
+                        /*!
+                         * Get the complete (canonical) name of this type node.
+                         *
+                         * Canonical name is the complete name path (using dot notation).
+                         *
+                         * @return - Canonical name.
+                         */
                         virtual string get_canonical_name() const {
                             if (NOT_NULL(parent)) {
                                 string sn = parent->get_canonical_name();
@@ -423,6 +441,9 @@ REACTFS_NS_CORE
                             return this->name;
                         }
 
+                        /*!
+                         * Utility function to print a readable format of the type structure.
+                         */
                         virtual void print() const {
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string n = this->get_canonical_name();
@@ -433,6 +454,17 @@ REACTFS_NS_CORE
                             if (NOT_NULL(default_value)) {
                                 default_value->print();
                             }
+                        }
+
+                        virtual void get_field_index(unordered_map<string, __native_type *> *map) {
+                            CHECK_NOT_NULL(map);
+                            string key = get_canonical_name();
+                            map->insert({key, this});
+                        }
+
+                        virtual uint32_t estimate_size() {
+                            CHECK_NOT_NULL(this->type_handler);
+                            return this->type_handler->estimate_size();
                         }
                     };
 
@@ -471,6 +503,11 @@ REACTFS_NS_CORE
                             this->type = __field_type::SIZED;
                         }
 
+                        /*!
+                         * Get the set max size of this type.
+                         *
+                         * @return - Max size.
+                         */
                         const uint32_t get_max_size() const {
                             return this->max_size;
                         }
@@ -510,6 +547,9 @@ REACTFS_NS_CORE
                             return r_size;
                         }
 
+                        /*!
+                         * Utility function to print a readable format of the type structure.
+                         */
                         virtual void print() const override {
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string n = this->get_canonical_name();
@@ -571,13 +611,29 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    /*!
+                     * A complex (composite) type instance.
+                     * Complex types can contain any other type instances.
+                     */
                     class __complex_type : public __native_type {
                     private:
+                        /// Map of column index/types.
                         unordered_map<uint8_t, __native_type *> fields;
+                        /// Index map of fields by name.
                         unordered_map<string, uint8_t> field_index;
+                        /// Index of canonical field names.
+                        unordered_map<string, __native_type *> name_index;
+                        /// Type loader helper instance.
                         __complex_type_helper *loader = nullptr;
 
 
+                        /*!
+                         * Add a new field definition.
+                         *
+                         * @param index - Column index of this field.
+                         * @param name - Field name.
+                         * @param type - Datatype of the field.
+                         */
                         void add_field(const uint8_t index, const string &name, __native_type *type) {
                             CHECK_NOT_EMPTY(name);
                             CHECK_NOT_NULL(type);
@@ -588,6 +644,12 @@ REACTFS_NS_CORE
                         }
 
                     public:
+                        /*!
+                         * Constructor to be used when this instance will be setup by reading from the
+                         * serialized form.
+                         *
+                         * @param parent - Parent type of this instance.
+                         */
                         __complex_type(__native_type *parent) : __native_type(parent) {
                             this->type = __field_type::COMPLEX;
                             this->datatype = __type_def_enum::TYPE_STRUCT;
@@ -597,6 +659,12 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(this->type_handler);
                         }
 
+                        /*!
+                         * Constructor to be used when this is the root node of the schema definition.
+                         *
+                         * @param parent - Parent type of this instance.
+                         * @param name - Schema name
+                         */
                         __complex_type(__native_type *parent, const string &name) : __native_type(parent) {
                             this->type = __field_type::COMPLEX;
                             this->datatype = __type_def_enum::TYPE_STRUCT;
@@ -609,6 +677,13 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(this->type_handler);
                         }
 
+                        /*!
+                         * Constructor to be used when creating an embedded type instance.
+                         *
+                         * @param parent - Parent type of this instance.
+                         * @param index - Column index in the parent.
+                         * @param name - Field name
+                         */
                         __complex_type(__native_type *parent, const uint8_t index, const string &name) : __native_type(
                                 parent, index, name,
                                 __type_def_enum::TYPE_STRUCT) {
@@ -619,6 +694,9 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(this->type_handler);
                         }
 
+                        /*!
+                         * Dispose this instance of the complex type.
+                         */
                         ~__complex_type() {
                             unordered_map<uint8_t, __native_type *>::iterator iter;
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
@@ -627,6 +705,12 @@ REACTFS_NS_CORE
                             fields.clear();
                         }
 
+                        /*!
+                         * Get a field by field name.
+                         *
+                         * @param name - Field name.
+                         * @return - Field instance.
+                         */
                         __native_type *get_field(const string &name) {
                             unordered_map<string, uint8_t>::const_iterator iter = field_index.find(name);
                             if (iter != field_index.end()) {
@@ -639,6 +723,12 @@ REACTFS_NS_CORE
                             return nullptr;
                         }
 
+                        /*!
+                         * Get a field by column index.
+                         *
+                         * @param index - Column index of the field.
+                         * @return - Field instance.
+                         */
                         __native_type *get_field(const uint8_t index) {
                             unordered_map<uint8_t, __native_type *>::iterator fiter = fields.find(index);
                             if (fiter != fields.end()) {
@@ -647,10 +737,21 @@ REACTFS_NS_CORE
                             return nullptr;
                         }
 
+                        /*!
+                         * Get the map of all the fields in this type.
+                         *
+                         * @return - Map of fields.
+                         */
                         const unordered_map<uint8_t, __native_type *> get_fields() {
                             return this->fields;
                         };
 
+                        /*!
+                         * Add a field with the specified column index.
+                         *
+                         * @param type - Field instance.
+                         * @param index - Column index.
+                         */
                         void add_field(__native_type *type, uint8_t index) {
                             this->add_field(index, type->get_name(), type);
                         }
@@ -701,6 +802,9 @@ REACTFS_NS_CORE
                             return r_size;
                         }
 
+                        /*!
+                         * Utility function to print a readable format of the type structure.
+                         */
                         virtual void print() const override {
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string n = this->get_canonical_name();
@@ -712,26 +816,40 @@ REACTFS_NS_CORE
                                 t->print();
                             }
                         }
-                    };
 
-                    class __type_init_utils {
-                    public:
-                        static __native_type *
-                        create_inner_type(__native_type *parent, const string &name, const uint8_t index,
-                                          const __type_def_enum inner_type) {
-                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
-                            if (__type_enum_helper::is_native(inner_type) || inner_type == __type_def_enum::TYPE_TEXT) {
-                                __native_type *type = new __native_type(parent, index, name, inner_type);
-                                CHECK_ALLOC(type, TYPE_NAME(__native_type));
-                                return type;
-                            } else if (inner_type == __type_def_enum::TYPE_STRUCT) {
-                                __complex_type *type = new __complex_type(parent, index, name);
-                                CHECK_ALLOC(type, TYPE_NAME(__complex_type));
-                                return type;
+                        virtual void get_field_index(unordered_map<string, __native_type *> *map) override {
+                            unordered_map<uint8_t, __native_type *>::iterator iter;
+                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                iter->second->get_field_index(map);
                             }
-                            throw BASE_ERROR("Cannot create inner type for datatype. [datatype=%d]", inner_type);
                         }
 
+                        virtual uint32_t estimate_size() override {
+                            uint32_t size = 0;
+                            unordered_map<uint8_t, __native_type *>::iterator iter;
+                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                __native_type *nt = iter->second;
+                                size += nt->estimate_size();
+                            }
+                            return size;
+                        }
+                    };
+
+                    /*!
+                     * Utility class defining helper methods for type creation/instantiation.
+                     */
+                    class __type_init_utils {
+                    public:
+
+                        /*!
+                         * Read the inner type definition from the data buffer.
+                         *
+                         * @param parent- Parent type instance.
+                         * @param buffer - Input buffer to read from.
+                         * @param offset - Offset in the input buffer to start reading.
+                         * @param size - Size field to increment the read offset.
+                         * @return - Read type instance.
+                         */
                         static __native_type *
                         read_inner_type(__native_type *parent, void *buffer, uint64_t offset, uint32_t *size) {
                             // Read the field type.
@@ -753,15 +871,15 @@ REACTFS_NS_CORE
                             throw BASE_ERROR("Cannot create inner type for datatype. [datatype=%d]", field_type);
                         }
 
-                        static __native_type *
-                        create_key_type(__native_type *parent, const string &name, const uint8_t index,
-                                        const __type_def_enum inner_type) {
-                            PRECONDITION(__type_enum_helper::is_native(inner_type));
-                            __native_type *type = new __native_type(parent, index, name, inner_type);
-                            CHECK_ALLOC(type, TYPE_NAME(__native_type));
-                            return type;
-                        }
-
+                        /*!
+                         * Read a key type instance definition from the input buffer.
+                         *
+                         * @param parent - Parent type instance.
+                         * @param buffer - Buffer to read from.
+                         * @param offset - Offset in the buffer to start reading.
+                         * @param size - Size field to increment the read offset.
+                         * @return - Read key type instance.
+                         */
                         static __native_type *
                         read_key_type(__native_type *parent, void *buffer, uint64_t offset, uint32_t *size) {
                             // Read the field type.
@@ -890,6 +1008,10 @@ REACTFS_NS_CORE
                                 this->inner->print();
                             }
                         }
+
+                        virtual void get_field_index(unordered_map<string, __native_type *> *map) override {
+                            this->inner->get_field_index(map);
+                        }
                     };
 
                     class __list_type : public __native_type {
@@ -1001,14 +1123,18 @@ REACTFS_NS_CORE
                                 this->inner->print();
                             }
                         }
+
+                        virtual void get_field_index(unordered_map<string, __native_type *> *map) override {
+                            this->inner->get_field_index(map);
+                        }
                     };
 
                     class __map_type : public __native_type {
                     private:
                         __type_def_enum key_type;
-                        __native_type *key;
+                        __native_type *key = nullptr;
                         __type_def_enum value_type;
-                        __native_type *value;
+                        __native_type *value = nullptr;
                     public:
                         __map_type(__native_type *parent) : __native_type(parent) {
                             this->type = __field_type::MAP;
@@ -1034,6 +1160,11 @@ REACTFS_NS_CORE
                             this->type_handler = loader->get_complex_type_handler(this->type, this->key_type,
                                                                                   this->value_type);
                             CHECK_NOT_NULL(this->type_handler);
+                        }
+
+                        ~__map_type() {
+                            CHECK_AND_FREE(key);
+                            CHECK_AND_FREE(value);
                         }
 
                         void set_key_type(__native_type *type) {
@@ -1117,6 +1248,11 @@ REACTFS_NS_CORE
                             if (this->value_type == __type_def_enum::TYPE_STRUCT) {
                                 this->value->print();
                             }
+                        }
+
+                        virtual void get_field_index(unordered_map<string, __native_type *> *map) override {
+                            this->key->get_field_index(map);
+                            this->value->get_field_index(map);
                         }
                     };
 

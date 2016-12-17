@@ -5,9 +5,12 @@ project(reactfs-core VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-INCLUDE(../makefiles/CMakeInclude.txt /usr/local/opt/flex/include)
+INCLUDE(../makefiles/CMakeInclude.txt)
 
-LINK_DIRECTORIES(/usr/lib ../common/cmake ../watergate/cmake)
+set(LOCAL_INCLUDES "/usr/local/include")
+INCLUDE_DIRECTORIES(${LOCAL_INCLUDES} ${PROJECT_ROOT_DIR}/parsers/includes/ ${PROJECT_ROOT_DIR}/parsers/src/)
+
+LINK_DIRECTORIES(/usr/lib ../common/cmake ../watergate/cmake ../parsers/cmake ../types/cmake)
 
 set(CORE_LIB_NAME ${PROJECT_NAME})
 
@@ -20,10 +23,10 @@ MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lwatergate -lz")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lreactfs-parsers -lwatergate -lz")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lwatergate -lpthread -luuid -lrt -lz")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lreactfs-parsers -lwatergate -lpthread -luuid -lrt -lz")
 endif ()
 
 MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")
@@ -45,3 +48,6 @@ target_link_libraries(main_node_env reactfs-core ${RFS_C_LIBRARIES})
 
 add_executable(main_node_client adhoc/main_node_client.cpp)
 target_link_libraries(main_node_client reactfs-core ${RFS_C_LIBRARIES})
+
+add_executable(main_typed_b adhoc/main_typed_b.cpp)
+target_link_libraries(main_typed_b reactfs-core ${RFS_C_LIBRARIES})

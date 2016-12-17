@@ -394,6 +394,13 @@ REACTFS_NS_CORE
                         virtual uint64_t compute_size(const void *data, int size) = 0;
 
                         /*!
+                         * Estimate the storage size of the given type value.
+                         *
+                         * @return - Return estimated storage size.
+                         */
+                        virtual uint32_t estimate_size() = 0;
+
+                        /*!
                          * Compare the source and target base on the specified operator.
                          *
                          * @param source - Source value pointer
@@ -481,6 +488,16 @@ REACTFS_NS_CORE
                          */
                         virtual bool
                         compare(const void *source, void *target, __constraint_operator oper) override = 0;
+
+                        /*!
+                         * Estimate the storage size of the given type value.
+                         *
+                         * @return - Return estimated storage size.
+                         */
+                        virtual uint32_t estimate_size() override {
+                            return sizeof(__T);
+                        }
+
                     };
 
 

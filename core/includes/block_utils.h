@@ -11,9 +11,12 @@
 #include "common_structs.h"
 #include "base_block.h"
 #include "base_indexed_block.h"
+#include "typed_block.h"
 #include "clients/mount_client.h"
+#include "types/includes/schema_def.h"
 
 using namespace com::wookler::reactfs::core::client;
+using namespace com::wookler::reactfs::core::types;
 
 namespace com {
     namespace wookler {
@@ -21,6 +24,23 @@ namespace com {
             namespace core {
                 class block_utils {
                 public:
+                    static string
+                    create_typed_block(__complex_type *datatype, uint64_t block_id, uint64_t parent_id,
+                                       const string filename,
+                                       __block_def block_type, __block_usage usage, uint32_t block_size,
+                                       uint32_t est_record_size, uint64_t start_index, bool overwrite = false) {
+                        typed_block *block = new typed_block();
+                        CHECK_ALLOC(block, TYPE_NAME(typed_block));
+                        block->set_datatype(datatype);
+                        string uuid = block->create(block_id, parent_id, filename, usage, block_size, start_index,
+                                                    est_record_size,
+                                                    overwrite);
+                        POSTCONDITION(!IS_EMPTY(uuid));
+                        CHECK_AND_FREE(block);
+
+                        return uuid;
+                    }
+
                     /*!
                      * Create a new basic block based on the specified parameters.
                      *

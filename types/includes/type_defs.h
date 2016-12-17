@@ -39,6 +39,7 @@
 using namespace REACTFS_NS_COMMON_PREFIX;
 
 #define SIZE_MAX_TYPE_STRING 256
+#define COLLECTION_SIZE_FACTOR 32
 
 REACTFS_NS_CORE
                 namespace types {
@@ -201,6 +202,17 @@ REACTFS_NS_CORE
                         compare(const void *source, void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
                         }
+
+                        /*!
+                         * Estimate the storage size of the given type value.
+                         *
+                         * @return - Return estimated storage size.
+                         */
+                        virtual uint32_t estimate_size() override {
+                            CHECK_NOT_NULL(fields);
+                            return fields->estimate_size();
+                        }
+
                     };
 
 
@@ -355,6 +367,16 @@ REACTFS_NS_CORE
                         virtual bool
                         compare(const void *source, void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
+                        }
+
+                        /*!
+                         * Estimate the storage size of the given type value.
+                         *
+                         * @return - Return estimated storage size.
+                         */
+                        virtual uint32_t estimate_size() override {
+                            uint32_t r_size = this->type_handler->estimate_size();
+                            return (r_size * COLLECTION_SIZE_FACTOR);
                         }
                     };
 
@@ -514,6 +536,16 @@ REACTFS_NS_CORE
                         virtual bool
                         compare(const void *source, void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
+                        }
+
+                        /*!
+                         * Estimate the storage size of the given type value.
+                         *
+                         * @return - Return estimated storage size.
+                         */
+                        virtual uint32_t estimate_size() override {
+                            uint32_t r_size = this->type_handler->estimate_size();
+                            return (r_size * COLLECTION_SIZE_FACTOR);
                         }
                     };
 
@@ -713,6 +745,21 @@ REACTFS_NS_CORE
                         virtual bool
                         compare(const void *source, void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
+                        }
+
+                        /*!
+                         * Estimate the storage size of the given type value.
+                         *
+                         * @return - Return estimated storage size.
+                         */
+                        virtual uint32_t estimate_size() override {
+                            __base_datatype_io *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
+                            CHECK_NOT_NULL(kt_handler);
+                            __base_datatype_io *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
+                            CHECK_NOT_NULL(vt_handler);
+                            uint32_t k_size = kt_handler->estimate_size();
+                            uint32_t v_size = vt_handler->estimate_size();
+                            return ((k_size * COLLECTION_SIZE_FACTOR) + (v_size * COLLECTION_SIZE_FACTOR));
                         }
                     };
 
