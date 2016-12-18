@@ -23,10 +23,10 @@ MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lreactfs-parsers -lwatergate -lz")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lreactfs-parsers -lwatergate -lcrypto -lssl -lz")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lreactfs-parsers -lwatergate -lpthread -luuid -lrt -lz")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lreactfs-parsers -lwatergate -lpthread -luuid -lcrypto -lssl -lrt -lz")
 endif ()
 
 MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")

@@ -134,7 +134,7 @@ REACTFS_NS_COMMON
                      * @return
                      */
                     exclusive_lock(const string *name) {
-                        string ss = common_utils::get_normalized_name(*name);
+                        string ss = common_utils::get_name_hash(*name);
                         PRECONDITION(!IS_EMPTY(ss));
                         this->name = new string(EXCLUSIVE_LOCK_PREFIX);
                         CHECK_ALLOC(this->name, TYPE_NAME(string));
@@ -150,7 +150,7 @@ REACTFS_NS_COMMON
                      * @return
                      */
                     exclusive_lock(const string *name, mode_t mode) {
-                        string ss = common_utils::get_normalized_name(*name);
+                        string ss = common_utils::get_name_hash(*name);
                         PRECONDITION(!IS_EMPTY(ss));
                         string n = get_lock_name(&ss);
                         this->name = new string(n);

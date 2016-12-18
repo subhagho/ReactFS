@@ -23,7 +23,7 @@
           "name": "fs-temp-0",
           "class": "com::wookler::watergate::core::io::filesystem_driver",
           "params": {
-            "fs.path.root": "/private/tmp",
+            "fs.path.root": "/tmp",
             "fs.quota.bytes": "2000",
             "fs.quota.lease.time": "500",
             "fs.concurrency.max": "8"

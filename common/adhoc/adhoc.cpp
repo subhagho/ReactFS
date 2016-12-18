@@ -11,35 +11,18 @@
 using namespace std;
 using namespace com::wookler::reactfs::common;
 
-template<int __size>
-class test {
-    int size = __size;
-public:
-    test() {
-        cout << "Size = " << __size << "\n";
-    }
-    int get_size() {
-        return size;
-    }
-};
-
-typedef test<24> test_24;
-
-#define BIT_TYPE_CONSTRAINT 1
-#define DEFAULT_VALUE_BIT 2
-
-typedef enum {
-    TEST = 0, TEST1, TEST2
-} test_enum;
 
 int main(int argc, char *argv[]) {
-    test_enum t1 = test_enum::TEST;
-    test_enum t2 = test_enum::TEST1;
-    test_enum t3 = test_enum::TEST2;
+   string s1 = common_utils::uuid();
+   string s2 = common_utils::uuid();
+   string s3 = common_utils::uuid(); 
+    
+   string h1 = common_utils::get_name_hash(s1);
+   cout << "Name hash [" << s1 << ":" << h1 << "\n";
 
-    cout << t1 << "; " << t2 << "; " << t3 << "\n";
-    cout << "BOOL SIZE : " << sizeof(bool) << "\n";
-    if (2 == t3) {
-        cout << "Worked...\n";
-    }
+   string h2 = common_utils::get_name_hash(s2);
+   cout << "Name hash [" << s2 << ":" << h2 << "\n";
+
+   string h3 = common_utils::get_name_hash(s3);
+   cout << "Name hash [" << s3 << ":" << h3 << "\n";
 }

@@ -413,13 +413,14 @@ REACTFS_NS_COMMON
                                 if (c == '/') {
                                     n_path += "/";
                                 }
+                                uint8_t s_index = 0;
                                 for (uint32_t ii = 0; ii < parts.size(); ii++) {
-                                    if (parts[ii].empty())
+                                    if (parts[ii].empty()) {
+                                        s_index++;
                                         continue;
-                                    if (ii > 0) {
-                                        char cc = n_path.c_str()[0];
-                                        if (cc != '/')
-                                            n_path += "/";
+                                    }
+                                    if (ii > s_index) {
+                                        n_path += "/";
                                     }
                                     n_path += parts[ii];
 

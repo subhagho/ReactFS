@@ -23,9 +23,10 @@ add_library(${COMMON_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
+    set(RFS_C_LIBRARIES "-lcrypto -lssl")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "-lpthread -luuid -lrt")
+    set(RFS_C_LIBRARIES "-lpthread -luuid -lrt -lcrypto -lssl")
 endif ()
 
 
@@ -41,3 +42,4 @@ add_executable(main_thread_pool adhoc/main_thread_pool.cpp)
 target_link_libraries(main_thread_pool ${COMMON_LIB_NAME} ${RFS_C_LIBRARIES})
 
 add_executable(adhoc adhoc/adhoc.cpp)
+target_link_libraries(adhoc ${COMMON_LIB_NAME} ${RFS_C_LIBRARIES})

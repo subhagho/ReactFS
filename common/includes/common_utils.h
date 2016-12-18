@@ -35,6 +35,8 @@ extern "C"
 #include <unistd.h>
 #include <regex>
 #include <locale>
+#include <openssl/md5.h>
+
 
 #include "common.h"
 
@@ -52,6 +54,7 @@ extern "C"
 #define M_BYTES K_BYTES * 1024
 #define G_BYTES M_BYTES * 1024
 #define T_BYTES G_BYTES * 1024
+
 
 REACTFS_NS_COMMON
                 class bitset_utils {
@@ -221,7 +224,25 @@ REACTFS_NS_COMMON
                         return false;
                     }
 
-                    static string get_normalized_name(const string name) {
+                    static string get_name_hash(const string &name) {
+                        if (!IS_EMPTY(name)) {
+                            unsigned char digest[MD5_DIGEST_LENGTH];
+
+                            MD5_CTX ctx;
+                            MD5_Init(&ctx);
+                            MD5_Update(&ctx, name.c_str(), name.length());
+                            MD5_Final(digest, &ctx);
+
+                            char mdString[33];
+                            for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
+                                sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
+
+                            return string(mdString);
+                        }
+                        return common_consts::EMPTY_STRING;
+                    }
+
+                    static string get_normalized_name(const string &name) {
                         if (!IS_EMPTY(name)) {
                             char buff[name.length() + 1];
                             for (uint32_t ii = 0; ii < name.length(); ii++) {

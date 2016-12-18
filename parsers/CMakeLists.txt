@@ -66,10 +66,10 @@ MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lcrypto -lssl ")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lpthread -luuid -lrt")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lpthread -luuid -lcrypto -lssl -lrt")
 endif ()
 
 MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")

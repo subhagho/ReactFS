@@ -14,10 +14,10 @@ find_package(Threads)
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
-    set(WG_LIBRARIES reactfs-common)
+    set(WG_LIBRARIES "-lreactfs-common -lcrypto -lssl")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(WG_LIBRARIES "-lreactfs-common -lpthread -luuid -lrt")
+    set(WG_LIBRARIES "-lreactfs-common -lpthread -luuid -lrt -lcrypto -lssl")
 endif ()
 
 MESSAGE("Using libraries : [" ${WG_LIBRARIES} "]")

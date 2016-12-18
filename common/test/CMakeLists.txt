@@ -19,9 +19,10 @@ target_include_directories(catch INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
+    set(RFS_LIBRARIES "-lcrypto -lssl")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_LIBRARIES "-lpthread -luuid -lrt")
+    set(RFS_LIBRARIES "-lpthread -luuid -lcrypto -lssl -lrt")
 endif ()
 
 MESSAGE("Using libraries : [" ${RFS_LIBRARIES} "]")

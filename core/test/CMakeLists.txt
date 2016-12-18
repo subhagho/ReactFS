@@ -15,10 +15,10 @@ find_package(Threads)
 
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lwatergate -lreactfs-core -lz")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lwatergate -lreactfs-core -lcrypto -lssl -lz")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lwatergate -lreactfs-core -lpthread -luuid -lrt -lz")
+    set(RFS_C_LIBRARIES "-lreactfs-common -lwatergate -lreactfs-core -lpthread -luuid -lcrypto -lssl -lrt -lz")
 endif ()
 
 MESSAGE("Using libraries : [" ${RFS_C_LIBRARIES} "]")
