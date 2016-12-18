@@ -40,7 +40,9 @@ void com::wookler::watergate::core::__semaphore::create(const __app *app, const 
     TRACE("Resource name : [%s]", r_name.c_str());
     this->resource = resource_factory::get_resource(r_name);
 
-    this->name = new string(*this->resource->get_resource_name());
+    string ss = common_utils::get_name_hash(*(this->resource->get_resource_name()));
+
+    this->name = new string(ss);
     CHECK_ALLOC(this->name, TYPE_NAME(string));
 
     this->is_server = server;

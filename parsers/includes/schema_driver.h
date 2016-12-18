@@ -269,7 +269,6 @@ REACTFS_NS_CORE
                          * @return - Inner type definition.
                          */
                         __native_type *create_inner_type(__native_type *parent, __declare *field, string &name) {
-                            CHECK_NOT_NULL(parent);
                             CHECK_NOT_NULL(field);
 
                             if (!field->is_reference) {
