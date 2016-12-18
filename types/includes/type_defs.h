@@ -60,8 +60,9 @@ REACTFS_NS_CORE
                         }
 
                     public:
-                        __dt_struct() {
+                        __dt_struct(__complex_type *fields) {
                             this->type = __type_def_enum::TYPE_STRUCT;
+                            this->fields = fields;
                         }
 
                         __dt_struct(__version_header version) {
@@ -237,11 +238,14 @@ REACTFS_NS_CORE
                          * Default constructor.
                          *
                          */
-                        __dt_array() : __datatype_io<__T *>(
+                        __dt_array(__native_type *type) : __datatype_io<__T *>(
                                 __type_def_enum::TYPE_ARRAY) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(this->inner_type));
                             if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
-                                type_handler = new __dt_struct();
+                                CHECK_NOT_NULL(type);
+                                __complex_type *ct = dynamic_cast<__complex_type *>(type);
+                                CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
+                                type_handler = new __dt_struct(ct);
                                 CHECK_ALLOC(type_handler, TYPE_NAME(__dt_struct));
                             } else
                                 type_handler = __type_defs_utils::get_type_handler(this->inner_type);
@@ -380,16 +384,55 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    typedef __dt_array<char, __type_def_enum::TYPE_CHAR> __char_array;
-                    typedef __dt_array<short, __type_def_enum::TYPE_SHORT> __short_array;
-                    typedef __dt_array<uint8_t, __type_def_enum::TYPE_BYTE> __byte_array;
-                    typedef __dt_array<int, __type_def_enum::TYPE_INTEGER> __int_array;
-                    typedef __dt_array<long, __type_def_enum::TYPE_LONG> __long_array;
-                    typedef __dt_array<float, __type_def_enum::TYPE_FLOAT> __float_array;
-                    typedef __dt_array<double, __type_def_enum::TYPE_DOUBLE> __double_array;
-                    typedef __dt_array<uint64_t, __type_def_enum::TYPE_TIMESTAMP> __timestamp_array;
-                    typedef __dt_array<string, __type_def_enum::TYPE_STRING> __string_array;
-                    typedef __dt_array<string, __type_def_enum::TYPE_TEXT> __text_array;
+                    class  __char_array : public __dt_array<char, __type_def_enum::TYPE_CHAR> {
+                    public:
+                        __char_array() : __dt_array<char, __type_def_enum::TYPE_CHAR>(nullptr) {}
+                    };
+
+                    class  __short_array : public __dt_array<short, __type_def_enum::TYPE_SHORT> {
+                    public:
+                        __short_array() : __dt_array<short, __type_def_enum::TYPE_SHORT>(nullptr) {}
+                    };
+
+                    class  __byte_array : public __dt_array<uint8_t, __type_def_enum::TYPE_BYTE> {
+                    public:
+                        __byte_array() : __dt_array<uint8_t, __type_def_enum::TYPE_BYTE>(nullptr) {}
+                    };
+
+                    class  __int_array : public __dt_array<int, __type_def_enum::TYPE_INTEGER> {
+                    public:
+                        __int_array() : __dt_array<int, __type_def_enum::TYPE_INTEGER>(nullptr) {}
+                    };
+
+                    class  __long_array : public __dt_array<long, __type_def_enum::TYPE_LONG> {
+                    public:
+                        __long_array() : __dt_array<long, __type_def_enum::TYPE_LONG>(nullptr) {}
+                    };
+
+                    class  __float_array : public __dt_array<float, __type_def_enum::TYPE_FLOAT> {
+                    public:
+                        __float_array() : __dt_array<float, __type_def_enum::TYPE_FLOAT>(nullptr) {}
+                    };
+
+                    class  __double_array : public __dt_array<double, __type_def_enum::TYPE_DOUBLE> {
+                    public:
+                        __double_array() : __dt_array<double, __type_def_enum::TYPE_DOUBLE>(nullptr) {}
+                    };
+
+                    class  __timestamp_array : public __dt_array<uint64_t , __type_def_enum::TYPE_TIMESTAMP> {
+                    public:
+                        __timestamp_array() : __dt_array<uint64_t , __type_def_enum::TYPE_TIMESTAMP>(nullptr) {}
+                    };
+
+                    class  __string_array : public __dt_array<string , __type_def_enum::TYPE_STRING> {
+                    public:
+                        __string_array() : __dt_array<string , __type_def_enum::TYPE_STRING>(nullptr) {}
+                    };
+
+                    class  __text_array : public __dt_array<string , __type_def_enum::TYPE_TEXT> {
+                    public:
+                        __text_array() : __dt_array<string , __type_def_enum::TYPE_TEXT>(nullptr) {}
+                    };
 
                     /*!
                      * List type is a collection of basic types or structs.
@@ -411,11 +454,14 @@ REACTFS_NS_CORE
                          * Default constructor.
                          *
                          */
-                        __dt_list() : __datatype_io<vector<__T *>>(
+                        __dt_list(__native_type *type) : __datatype_io<vector<__T *>>(
                                 __type_def_enum::TYPE_LIST) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(this->inner_type));
                             if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
-                                type_handler = new __dt_struct();
+                                CHECK_NOT_NULL(type);
+                                __complex_type *ct = dynamic_cast<__complex_type *>(type);
+                                CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
+                                type_handler = new __dt_struct(ct);
                                 CHECK_ALLOC(type_handler, TYPE_NAME(__dt_struct));
                             } else
                                 type_handler = __type_defs_utils::get_type_handler(this->inner_type);
@@ -520,7 +566,7 @@ REACTFS_NS_CORE
 
                             CHECK_NOT_NULL(type_handler);
                             uint64_t t_size = sizeof(uint64_t);
-                            for (int ii = 0; ii < data->size(); ii++) {
+                            for (uint32_t ii = 0; ii < data->size(); ii++) {
                                 t_size += type_handler->compute_size((*data)[ii], -1);
                             }
                             return t_size;
@@ -549,16 +595,55 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    typedef __dt_list<char, __type_def_enum::TYPE_CHAR> __char_list;
-                    typedef __dt_list<short, __type_def_enum::TYPE_SHORT> __short_list;
-                    typedef __dt_list<uint8_t, __type_def_enum::TYPE_BYTE> __byte_list;
-                    typedef __dt_list<int, __type_def_enum::TYPE_INTEGER> __int_list;
-                    typedef __dt_list<long, __type_def_enum::TYPE_LONG> __long_list;
-                    typedef __dt_list<float, __type_def_enum::TYPE_FLOAT> __float_list;
-                    typedef __dt_list<double, __type_def_enum::TYPE_DOUBLE> __double_list;
-                    typedef __dt_list<uint64_t, __type_def_enum::TYPE_TIMESTAMP> __timestamp_list;
-                    typedef __dt_list<string, __type_def_enum::TYPE_STRING> __string_list;
-                    typedef __dt_list<string, __type_def_enum::TYPE_TEXT> __text_list;
+                    class  __char_list : public __dt_list<char, __type_def_enum::TYPE_CHAR> {
+                    public:
+                        __char_list() : __dt_list<char, __type_def_enum::TYPE_CHAR>(nullptr) {}
+                    };
+
+                    class  __short_list : public __dt_list<short, __type_def_enum::TYPE_SHORT> {
+                    public:
+                        __short_list() : __dt_list<short, __type_def_enum::TYPE_SHORT>(nullptr) {}
+                    };
+
+                    class  __byte_list : public __dt_list<uint8_t, __type_def_enum::TYPE_BYTE> {
+                    public:
+                        __byte_list() : __dt_list<uint8_t, __type_def_enum::TYPE_BYTE>(nullptr) {}
+                    };
+
+                    class  __int_list : public __dt_list<int, __type_def_enum::TYPE_INTEGER> {
+                    public:
+                        __int_list() : __dt_list<int, __type_def_enum::TYPE_INTEGER>(nullptr) {}
+                    };
+
+                    class  __long_list : public __dt_list<long, __type_def_enum::TYPE_LONG> {
+                    public:
+                        __long_list() : __dt_list<long, __type_def_enum::TYPE_LONG>(nullptr) {}
+                    };
+
+                    class  __float_list : public __dt_list<float, __type_def_enum::TYPE_FLOAT> {
+                    public:
+                        __float_list() : __dt_list<float, __type_def_enum::TYPE_FLOAT>(nullptr) {}
+                    };
+
+                    class  __double_list : public __dt_list<double, __type_def_enum::TYPE_DOUBLE> {
+                    public:
+                        __double_list() : __dt_list<double, __type_def_enum::TYPE_DOUBLE>(nullptr) {}
+                    };
+
+                    class  __timestamp_list : public __dt_list<uint64_t , __type_def_enum::TYPE_TIMESTAMP> {
+                    public:
+                        __timestamp_list() : __dt_list<uint64_t , __type_def_enum::TYPE_TIMESTAMP>(nullptr) {}
+                    };
+
+                    class  __string_list : public __dt_list<string , __type_def_enum::TYPE_STRING> {
+                    public:
+                        __string_list() : __dt_list<string , __type_def_enum::TYPE_STRING>(nullptr) {}
+                    };
+
+                    class  __text_list : public __dt_list<string , __type_def_enum::TYPE_TEXT> {
+                    public:
+                        __text_list() : __dt_list<string , __type_def_enum::TYPE_TEXT>(nullptr) {}
+                    };
 
                     /*!
                      * Map datatype of key/value pairs.
@@ -587,14 +672,17 @@ REACTFS_NS_CORE
                         /*!<constructor
                          * Default empty constructor.
                          */
-                        __dt_map() : __datatype_io<unordered_map<__K, __V *>>(
+                        __dt_map(__native_type *v_type) : __datatype_io<unordered_map<__K, __V *>>(
                                 __type_def_enum::TYPE_MAP) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(value_type));
                             PRECONDITION(__type_enum_helper::is_native(key_type));
                             kt_handler = __type_defs_utils::get_type_handler(this->key_type);
                             CHECK_NOT_NULL(kt_handler);
                             if (this->value_type == __type_def_enum::TYPE_STRUCT) {
-                                vt_handler = new __dt_struct();
+                                CHECK_NOT_NULL(v_type);
+                                __complex_type *ct = dynamic_cast<__complex_type *>(v_type);
+                                CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
+                                vt_handler = new __dt_struct(ct);
                                 CHECK_ALLOC(vt_handler, TYPE_NAME(__dt_struct));
                             } else
                                 vt_handler = __type_defs_utils::get_type_handler(this->value_type);
@@ -764,9 +852,19 @@ REACTFS_NS_CORE
                     };
 
 
-                    typedef __dt_array<__struct_datatype__, __type_def_enum::TYPE_STRUCT> __struct_array;
-                    typedef __dt_list<__struct_datatype__, __type_def_enum::TYPE_STRUCT> __struct_list;
+                    class __struct_array : public __dt_array<__struct_datatype__, __type_def_enum::TYPE_STRUCT> {
+                    public:
+                        __struct_array(__native_type *type) : __dt_array<__struct_datatype__, __type_def_enum::TYPE_STRUCT>(type) {
 
+                        }
+                    };
+
+                    class __struct_list : public __dt_list<__struct_datatype__, __type_def_enum::TYPE_STRUCT> {
+                    public:
+                        __struct_list(__native_type *type) : __dt_list<__struct_datatype__, __type_def_enum::TYPE_STRUCT>(type) {
+
+                        }
+                    };
                 }
 
 REACTFS_NS_CORE_END
