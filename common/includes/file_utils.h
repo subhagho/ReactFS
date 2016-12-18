@@ -416,8 +416,11 @@ REACTFS_NS_COMMON
                                 for (uint32_t ii = 0; ii < parts.size(); ii++) {
                                     if (parts[ii].empty())
                                         continue;
-                                    if (ii > 0)
-                                        n_path += "/";
+                                    if (ii > 0) {
+                                        char cc = n_path.c_str()[0];
+                                        if (cc != '/')
+                                            n_path += "/";
+                                    }
                                     n_path += parts[ii];
 
                                     int r = create_dir(n_path, mode);
