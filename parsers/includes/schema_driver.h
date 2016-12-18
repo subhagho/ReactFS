@@ -328,23 +328,21 @@ REACTFS_NS_CORE
                                         __type_def_enum it = __type_enum_helper::parse_type(*(inner_type->type));
                                         POSTCONDITION(__type_enum_helper::is_inner_type_valid(it));
 
-                                        __array_type *at = new __array_type(type, index, *(field->variable), it, size);
-                                        CHECK_ALLOC(at, TYPE_NAME(__array_type));
-
-                                        __native_type *inner = create_inner_type(at, inner_type, *(field->variable));
+                                        __native_type *inner = create_inner_type(nullptr, inner_type, *(field->variable));
                                         CHECK_NOT_NULL(inner);
-                                        at->set_inner_type(inner);
+                                        __array_type *at = new __array_type(type, index, *(field->variable), it, size, inner);
+                                        CHECK_ALLOC(at, TYPE_NAME(__array_type));
+                                        inner->set_parent(at);
                                         nt = at;
                                     } else {
                                         // Inner type is a structure (complex type)
                                         __type_def_enum it = __type_def_enum::TYPE_STRUCT;
 
-                                        __array_type *at = new __array_type(type, index, *(field->variable), it, size);
-                                        CHECK_ALLOC(at, TYPE_NAME(__array_type));
-
-                                        __native_type *inner = create_inner_type(at, inner_type, *(field->variable));
+                                        __native_type *inner = create_inner_type(nullptr, inner_type, *(field->variable));
                                         CHECK_NOT_NULL(inner);
-                                        at->set_inner_type(inner);
+                                        __array_type *at = new __array_type(type, index, *(field->variable), it, size, inner);
+                                        CHECK_ALLOC(at, TYPE_NAME(__array_type));
+                                        inner->set_parent(at);
                                         nt = at;
                                     }
                                 } else if (ft == __type_def_enum::TYPE_LIST) { // Is a list definition.
@@ -356,24 +354,22 @@ REACTFS_NS_CORE
                                         __type_def_enum it = __type_enum_helper::parse_type(*(inner_type->type));
                                         POSTCONDITION(__type_enum_helper::is_inner_type_valid(it));
 
-                                        __list_type *at = new __list_type(type, index, *(field->variable), it);
-                                        CHECK_ALLOC(at, TYPE_NAME(__list_type));
-
-                                        __native_type *inner = create_inner_type(at, inner_type, *(field->variable));
+                                        __native_type *inner = create_inner_type(nullptr, inner_type, *(field->variable));
                                         CHECK_NOT_NULL(inner);
-                                        at->set_inner_type(inner);
+                                        __list_type *at = new __list_type(type, index, *(field->variable), it, inner);
+                                        CHECK_ALLOC(at, TYPE_NAME(__list_type));
+                                        inner->set_parent(at);
 
                                         nt = at;
                                     } else {
                                         // Inner type is a structure (complex type)
                                         __type_def_enum it = __type_def_enum::TYPE_STRUCT;
 
-                                        __list_type *at = new __list_type(type, index, *(field->variable), it);
-                                        CHECK_ALLOC(at, TYPE_NAME(__list_type));
-
-                                        __native_type *inner = create_inner_type(at, inner_type, *(field->variable));
+                                        __native_type *inner = create_inner_type(nullptr, inner_type, *(field->variable));
                                         CHECK_NOT_NULL(inner);
-                                        at->set_inner_type(inner);
+                                        __list_type *at = new __list_type(type, index, *(field->variable), it,inner);
+                                        CHECK_ALLOC(at, TYPE_NAME(__list_type));
+                                        inner->set_parent(at);
 
                                         nt = at;
                                     }
@@ -397,15 +393,17 @@ REACTFS_NS_CORE
                                     }
                                     POSTCONDITION(__type_enum_helper::is_inner_type_valid(vt));
 
-                                    __map_type *mt = new __map_type(type, index, *(field->variable), kt, vt);
+                                    string value_name(MAP_TYPE_VALUE_NAME);
+                                    __native_type *value = create_inner_type(nullptr, value_type, value_name);
+                                    CHECK_NOT_NULL(value);
+
+                                    __map_type *mt = new __map_type(type, index, *(field->variable), kt, vt, value);
                                     CHECK_ALLOC(mt, TYPE_NAME(__map_type));
+                                    value->set_parent(mt);
 
                                     string key_name(MAP_TYPE_KEY_NAME);
                                     __native_type *key = create_inner_type(mt, key_type, key_name);
                                     CHECK_NOT_NULL(key);
-                                    string value_name(MAP_TYPE_VALUE_NAME);
-                                    __native_type *value = create_inner_type(mt, value_type, value_name);
-                                    CHECK_NOT_NULL(value);
 
                                     mt->set_key_type(key);
                                     mt->set_value_type(value);

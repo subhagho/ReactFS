@@ -832,53 +832,18 @@ REACTFS_NS_CORE
                             }
                             *size += r_size;
                         }
+                        virtual __base_datatype_io *get_complex_type_handler(__native_type *type) override {
+                            __complex_type *ct = dynamic_cast<__complex_type *>(type);
+                            CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
+                            __dt_struct *sh = new __dt_struct(ct);
+                            CHECK_ALLOC(sh, TYPE_NAME(__dt_struct));
 
-                        virtual __base_datatype_io *get_complex_type_handler(__field_type type, ...) override {
-                            if (type == __field_type::COMPLEX) {
-                                va_list vl;
-                                va_start(vl, type);
-                                __complex_type *ct = va_arg(vl, __complex_type *);
-                                CHECK_NOT_NULL(ct);
-                                __base_datatype_io *handler = nullptr;
-                                __dt_struct *sh = new __dt_struct(ct);
-                                CHECK_ALLOC(sh, TYPE_NAME(__dt_struct));
-                                handler = sh;
-                                return handler;
-                            } else if (type == __field_type::ARRAY) {
-                                va_list vl;
-                                va_start(vl, type);
-                                int i_type = va_arg(vl, int);
-                                __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
+                            return sh;
+                        }
 
-                                string key = __type_defs_utils::create_list_key(__type_def_enum::TYPE_ARRAY,
-                                                                                inner_type);
-                                __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
-                                if (IS_NULL(handler)) {
-                                    if (inner_type != __type_def_enum::TYPE_STRUCT) {
-                                        __base_datatype_io *ah = __array_init_utils::create_handler(inner_type,
-                                                                                                    nullptr);
-                                        CHECK_NOT_NULL(ah);
-                                        if (!__type_defs_utils::add_external_handler(key, ah)) {
-                                            CHECK_AND_FREE(ah);
-                                        }
-                                        handler = __type_defs_utils::get_type_handler(key);
-                                    } else {
-                                        __native_type *type = va_arg(vl, __native_type *);
-                                        CHECK_NOT_NULL(type);
-                                        __base_datatype_io *ah = __array_init_utils::create_handler(inner_type,
-                                                                                                    type);
-                                        CHECK_NOT_NULL(ah);
-                                        handler = ah;
-                                    }
-                                }
-                                va_end(vl);
-                                return handler;
-                            } else if (type == __field_type::LIST) {
-                                va_list vl;
-                                va_start(vl, type);
-                                int i_type = va_arg(vl, int);
-                                __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
-
+                        virtual __base_datatype_io *
+                        get_array_type_handler(__field_type field_type, __type_def_enum inner_type, __native_type *type) override  {
+                            if (field_type == __field_type::LIST) {
                                 string key = __type_defs_utils::create_list_key(__type_def_enum::TYPE_LIST,
                                                                                 inner_type);
                                 __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
@@ -891,49 +856,62 @@ REACTFS_NS_CORE
                                         }
                                         handler = __type_defs_utils::get_type_handler(key);
                                     } else {
-                                        __native_type *type = va_arg(vl, __native_type *);
                                         CHECK_NOT_NULL(type);
                                         __base_datatype_io *ah = __list_init_utils::create_handler(inner_type, type);
                                         CHECK_NOT_NULL(ah);
                                         handler = ah;
                                     }
-                                }
-                                va_end(vl);
-                                return handler;
-                            } else if (type == __field_type::MAP) {
-                                va_list vl;
-                                va_start(vl, type);
-                                int k_type = va_arg(vl, int);
-                                __type_def_enum key_type = __type_enum_helper::parse_type(k_type);
-                                int v_type = va_arg(vl, int);
-                                __type_def_enum value_type = __type_enum_helper::parse_type(v_type);
-
-
-                                string key = __type_defs_utils::create_map_key(__type_def_enum::TYPE_MAP,
-                                                                               key_type, value_type);
-                                __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
-                                if (IS_NULL(handler)) {
-                                    if (value_type != __type_def_enum::TYPE_STRUCT) {
-                                        __base_datatype_io *ah = __map_init_utils::create_handler(key_type, value_type,
-                                                                                                  nullptr);
-                                        CHECK_NOT_NULL(ah);
-                                        if (!__type_defs_utils::add_external_handler(key, ah)) {
-                                            CHECK_AND_FREE(ah);
+                                } else if (field_type == __field_type::ARRAY) {
+                                    string key = __type_defs_utils::create_list_key(__type_def_enum::TYPE_ARRAY,
+                                                                                    inner_type);
+                                    __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
+                                    if (IS_NULL(handler)) {
+                                        if (inner_type != __type_def_enum::TYPE_STRUCT) {
+                                            __base_datatype_io *ah = __array_init_utils::create_handler(inner_type,
+                                                                                                        nullptr);
+                                            CHECK_NOT_NULL(ah);
+                                            if (!__type_defs_utils::add_external_handler(key, ah)) {
+                                                CHECK_AND_FREE(ah);
+                                            }
+                                            handler = __type_defs_utils::get_type_handler(key);
+                                        } else {
+                                            CHECK_NOT_NULL(type);
+                                            __base_datatype_io *ah = __array_init_utils::create_handler(inner_type,
+                                                                                                        type);
+                                            CHECK_NOT_NULL(ah);
+                                            handler = ah;
                                         }
-                                        handler = __type_defs_utils::get_type_handler(key);
                                     }
+                                }
+                                return handler;
+                            }
+                        }
+
+                        virtual __base_datatype_io *
+                        get_map_type_handler(__type_def_enum key_type, __type_def_enum value_type,
+                                             __native_type *type)  override  {
+
+                            string key = __type_defs_utils::create_map_key(__type_def_enum::TYPE_MAP,
+                                                                           key_type, value_type);
+                            __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
+                            if (IS_NULL(handler)) {
+                                if (value_type != __type_def_enum::TYPE_STRUCT) {
+                                    __base_datatype_io *ah = __map_init_utils::create_handler(key_type, value_type,
+                                                                                              nullptr);
+                                    CHECK_NOT_NULL(ah);
+                                    if (!__type_defs_utils::add_external_handler(key, ah)) {
+                                        CHECK_AND_FREE(ah);
+                                    }
+                                    handler = __type_defs_utils::get_type_handler(key);
                                 } else {
-                                    __native_type *type = va_arg(vl, __native_type *);
                                     CHECK_NOT_NULL(type);
                                     __base_datatype_io *ah = __map_init_utils::create_handler(key_type, value_type,
                                                                                               nullptr);
                                     CHECK_NOT_NULL(ah);
                                     handler = ah;
                                 }
-                                va_end(vl);
-                                return handler;
                             }
-                            return nullptr;
+                            return handler;
                         }
                     };
 
@@ -952,10 +930,12 @@ REACTFS_NS_CORE
                                 int i_type = va_arg(vl, int);
                                 __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
                                 int m_size = va_arg(vl, int);
+                                __native_type *nt = va_arg(vl, __native_type *);
+                                CHECK_NOT_NULL(nt);
                                 va_end(vl);
                                 POSTCONDITION(m_size > 0);
 
-                                __array_type *ptr = new __array_type(parent, index, name, inner_type, m_size);
+                                __array_type *ptr = new __array_type(parent, index, name, inner_type, m_size, nt);
                                 CHECK_ALLOC(ptr, TYPE_NAME(__array_type));
                                 return ptr;
                             } else if (type == __type_def_enum::TYPE_LIST) {
@@ -963,9 +943,11 @@ REACTFS_NS_CORE
                                 va_start(vl, index);
                                 int i_type = va_arg(vl, int);
                                 __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
+                                __native_type *nt = va_arg(vl, __native_type *);
+                                CHECK_NOT_NULL(nt);
                                 va_end(vl);
 
-                                __list_type *ptr = new __list_type(parent, index, name, inner_type);
+                                __list_type *ptr = new __list_type(parent, index, name, inner_type, nt);
                                 CHECK_ALLOC(ptr, TYPE_NAME(__list_type));
                                 return ptr;
                             } else if (type == __type_def_enum::TYPE_MAP) {
@@ -975,10 +957,11 @@ REACTFS_NS_CORE
                                 __type_def_enum key_type = __type_enum_helper::parse_type(k_type);
                                 int v_type = va_arg(vl, int);
                                 __type_def_enum value_type = __type_enum_helper::parse_type(v_type);
-
+                                __native_type *nt = va_arg(vl, __native_type *);
+                                CHECK_NOT_NULL(nt);
                                 va_end(vl);
 
-                                __map_type *ptr = new __map_type(parent, index, name, key_type, value_type);
+                                __map_type *ptr = new __map_type(parent, index, name, key_type, value_type, nt);
                                 CHECK_ALLOC(ptr, TYPE_NAME(__map_type));
 
                                 return ptr;
