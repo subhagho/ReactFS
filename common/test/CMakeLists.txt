@@ -2,13 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 
 enable_testing()
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 INCLUDE(../../makefiles/CMakeTestInclude.txt)
-
-LINK_DIRECTORIES(../cmake)
 
 find_package(Threads)
 
@@ -16,35 +10,28 @@ find_package(Threads)
 add_library(catch INTERFACE)
 target_include_directories(catch INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
+LINK_DIRECTORIES(${EXT_LINK_DIRS} ${RFS_BUILD_COMMON})
 
-if (${APPLE})
-    MESSAGE("Host platform: MAC OS X")
-    set(RFS_LIBRARIES "-lcrypto -lssl")
-elseif (${UNIX})
-    MESSAGE("Host platform:  Other UNIX")
-    set(RFS_LIBRARIES "-lpthread -luuid -lcrypto -lssl -lrt")
-endif ()
-
-MESSAGE("Using libraries : [" ${RFS_LIBRARIES} "]")
+MESSAGE("Using libraries : [" ${RFS_COMMON_LIBS} "]")
 
 add_executable(test_config test_config.cpp)
-target_link_libraries(test_config reactfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+target_link_libraries(test_config ${CMAKE_THREAD_LIBS_INIT} ${RFS_COMMON_LIBS})
 add_test(NAME test_config COMMAND test_config)
 
 add_executable(test_alarm test_alarm.cpp)
-target_link_libraries(test_alarm reactfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+target_link_libraries(test_alarm ${CMAKE_THREAD_LIBS_INIT} ${RFS_COMMON_LIBS})
 add_test(NAME test_alarm COMMAND test_alarm)
 
 add_executable(test_file_utils test_file_utils.cpp)
-target_link_libraries(test_file_utils reactfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+target_link_libraries(test_file_utils ${CMAKE_THREAD_LIBS_INIT} ${RFS_COMMON_LIBS})
 add_test(NAME test_file_utils COMMAND test_file_utils)
 
 add_executable(test_shared_lock test_shared_lock.cpp)
-target_link_libraries(test_shared_lock reactfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+target_link_libraries(test_shared_lock ${CMAKE_THREAD_LIBS_INIT} ${RFS_COMMON_LIBS})
 add_test(NAME test_shared_lock COMMAND test_shared_lock)
 
 add_executable(test_thread_pool test_thread_pool.cpp)
-target_link_libraries(test_thread_pool reactfs-common ${CMAKE_THREAD_LIBS_INIT} ${RFS_LIBRARIES})
+target_link_libraries(test_thread_pool ${CMAKE_THREAD_LIBS_INIT} ${RFS_COMMON_LIBS})
 add_test(NAME test_thread_pool COMMAND test_thread_pool)
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")

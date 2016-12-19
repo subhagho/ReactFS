@@ -53,7 +53,7 @@ TEST_CASE("Configuration Lookup Test : 1", "[com::watergate::common::Config]") {
     REQUIRE(NOT_NULL(config));
 
 
-    const ConfigValue *c = config->find("/configuration/test-list");
+    const ConfigValue *c = config->find("/configuration/adhoc-list");
     REQUIRE(NOT_NULL(c));
     c->print("");
 
@@ -102,7 +102,7 @@ TEST_CASE("Configuration Lookup Test : 2", "[com::watergate::common::Config]") {
     const Config *config = env_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
-    const ConfigValue *c = config->find("/configuration/test-list");
+    const ConfigValue *c = config->find("/configuration/adhoc-list");
     REQUIRE(NOT_NULL(c));
 
     const ConfigValue *cv = c->find(".[3]/nested/params[key2]");

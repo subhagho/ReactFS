@@ -115,7 +115,7 @@ namespace Catch {
             std::string name = testCase.getTestCaseInfo().name;
             if( name == "" ) {
                 std::ostringstream oss;
-                oss << "Anonymous test case " << ++m_unnamedCount;
+                oss << "Anonymous adhoc case " << ++m_unnamedCount;
                 return registerTest( testCase.withName( oss.str() ) );
             }
             m_functions.push_back( testCase );

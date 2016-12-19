@@ -2,15 +2,10 @@ cmake_minimum_required(VERSION 3.1)
 
 project(reactfs-core VERSION 0.1.0)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 INCLUDE(../makefiles/CMakeInclude.txt)
 
-set(LOCAL_INCLUDES "/usr/local/include")
-INCLUDE_DIRECTORIES(${LOCAL_INCLUDES} ${PROJECT_ROOT_DIR}/parsers/includes/ ${PROJECT_ROOT_DIR}/parsers/src/)
+INCLUDE_DIRECTORIES(${PROJECT_ROOT_DIR}/parsers/includes/ ${PROJECT_ROOT_DIR}/parsers/src/)
 
-LINK_DIRECTORIES(/usr/lib ../common/cmake ../watergate/cmake ../parsers/cmake ../types/cmake)
 
 set(CORE_LIB_NAME ${PROJECT_NAME})
 
@@ -21,33 +16,28 @@ list(REMOVE_DUPLICATES RFS_C_SOURCES)
 
 MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
-if (${APPLE})
-    MESSAGE("Host platform: MAC OS X")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lreactfs-parsers -lwatergate -lcrypto -lssl -lz")
-elseif (${UNIX})
-    MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lreactfs-types -lreactfs-parsers -lwatergate -lpthread -luuid -lcrypto -lssl -lrt -lz")
-endif ()
+set(RFS_CORE_DEP_LIBS ${RFS_PARSER_LIBS} ${RFS_WGATE_LIB})
 
-MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")
+LINK_DIRECTORIES(${EXT_LINK_DIRS} ${RFS_BUILD_COMMON} ${RFS_BUILD_TYPES} ${RFS_BUILD_PARSER} ${RFS_BUILD_CORE} ${RFS_BUILD_WGATE})
+MESSAGE("Using libraries : [" ${RFS_CORE_DEP_LIBS} "]")
 
 add_library(${CORE_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
-target_link_libraries(${CORE_LIB_NAME} ${RFS_C_LIBRARIES})
+target_link_libraries(${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
 
 add_executable(main_fsb adhoc/main_fsb.cpp)
-target_link_libraries(main_fsb reactfs-core ${RFS_C_LIBRARIES})
+target_link_libraries(main_fsb ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
 
 add_executable(main_compress adhoc/main_compress.cpp)
-target_link_libraries(main_compress reactfs-core ${RFS_C_LIBRARIES})
+target_link_libraries(main_compress ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
 
 add_executable(core_adhoc adhoc/core_adhoc.cpp)
-target_link_libraries(core_adhoc reactfs-core ${RFS_C_LIBRARIES})
+target_link_libraries(core_adhoc ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
 
 add_executable(main_node_env adhoc/main_node_env.cpp)
-target_link_libraries(main_node_env reactfs-core ${RFS_C_LIBRARIES})
+target_link_libraries(main_node_env ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
 
 add_executable(main_node_client adhoc/main_node_client.cpp)
-target_link_libraries(main_node_client reactfs-core ${RFS_C_LIBRARIES})
+target_link_libraries(main_node_client ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
 
 add_executable(main_typed_b adhoc/main_typed_b.cpp)
-target_link_libraries(main_typed_b reactfs-core ${RFS_C_LIBRARIES})
+target_link_libraries(main_typed_b ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})

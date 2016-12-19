@@ -25,7 +25,7 @@ DIRS_TO_BUILD=""
 for dir in $DIRS;
 do
     DIRS_TO_BUILD="$DIRS_TO_BUILD $dir"
-    if [ -d "$dir/test" ];then
+	if [ -d "$dir/test" ];then
         if [ -f "$dir/test/CMakeLists.txt" ]; then
             DIRS_TO_BUILD="$DIRS_TO_BUILD $dir/test"
         fi

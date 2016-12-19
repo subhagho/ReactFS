@@ -1014,7 +1014,7 @@ inline unsigned count_digits(uint64_t n)
     {
         // Integer division is slow so do it for a group of four digits instead
         // of for every digit. The idea comes from the talk by Alexandrescu
-        // "Three Optimization Tips for C++". See speed-test for a comparison.
+        // "Three Optimization Tips for C++". See speed-adhoc for a comparison.
         if (n < 10) return count;
         if (n < 100) return count + 1;
         if (n < 1000) return count + 2;
@@ -1076,7 +1076,7 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits,
     {
         // Integer division is slow so do it for a group of two digits instead
         // of for every digit. The idea comes from the talk by Alexandrescu
-        // "Three Optimization Tips for C++". See speed-test for a comparison.
+        // "Three Optimization Tips for C++". See speed-adhoc for a comparison.
         unsigned index = static_cast<unsigned>((value % 100) * 2);
         value /= 100;
         *--buffer = Data::DIGITS[index + 1];
@@ -1409,8 +1409,8 @@ private:
 
     // The following methods are private to disallow formatting of wide
     // characters and strings into narrow strings as in
-    //   fmt::format("{}", L"test");
-    // To fix this, use a wide format string: fmt::format(L"{}", L"test").
+    //   fmt::format("{}", L"adhoc");
+    // To fix this, use a wide format string: fmt::format(L"{}", L"adhoc").
 #if !FMT_MSC_VER || defined(_NATIVE_WCHAR_T_DEFINED)
     MakeValue(typename WCharHelper<wchar_t, Char>::Unsupported);
 #endif
@@ -1637,7 +1637,7 @@ private:
         // values are stored in values_, otherwise they are stored in args_.
         // This is done to reduce compiled code size as storing larger objects
         // may require more code (at least on x86-64) even if the same amount of
-        // data is actually copied to stack. It saves ~10% on the bloat test.
+        // data is actually copied to stack. It saves ~10% on the bloat adhoc.
         const internal::Value *values_;
         const internal::Arg *args_;
     };
@@ -3793,7 +3793,7 @@ private:
         {
             // Integer division is slow so do it for a group of two digits instead
             // of for every digit. The idea comes from the talk by Alexandrescu
-            // "Three Optimization Tips for C++". See speed-test for a comparison.
+            // "Three Optimization Tips for C++". See speed-adhoc for a comparison.
             unsigned index = static_cast<unsigned>((value % 100) * 2);
             value /= 100;
             *--buffer_end = internal::Data::DIGITS[index + 1];

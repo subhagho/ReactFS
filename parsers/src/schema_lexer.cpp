@@ -25,7 +25,7 @@
 /* %if-c++-only */
     /* The c++ scanner is a mess. The FlexLexer.h header file relies on the
      * following macro. This is required in order to pass the c++-multiple-scanners
-     * test in the regression suite. We get reports that it breaks inheritance.
+     * adhoc in the regression suite. We get reports that it breaks inheritance.
      * We will address this in a future release of flex, or omit the C++ scanner
      * altogether.
      */
@@ -1466,11 +1466,11 @@ case YY_STATE_EOF(INITIAL):
 			YY_CURRENT_BUFFER_LVALUE->yy_buffer_status = YY_BUFFER_NORMAL;
 			}
 
-		/* Note that here we test for yy_c_buf_p "<=" to the position
+		/* Note that here we adhoc for yy_c_buf_p "<=" to the position
 		 * of the first EOB in the buffer, since yy_c_buf_p will
 		 * already have been incremented past the NUL character
 		 * (since all states make transitions on EOB to the
-		 * end-of-buffer state).  Contrast this with the test
+		 * end-of-buffer state).  Contrast this with the adhoc
 		 * in input().
 		 */
 		if ( (yy_c_buf_p) <= &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )

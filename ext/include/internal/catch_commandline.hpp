@@ -105,7 +105,7 @@ namespace Catch {
             .bind( &ConfigData::showHelp );
 
         cli["-l"]["--list-tests"]
-            .describe( "list all/matching test cases" )
+            .describe( "list all/matching adhoc cases" )
             .bind( &ConfigData::listTests );
 
         cli["-t"]["--list-tags"]
@@ -161,15 +161,15 @@ namespace Catch {
 //            .placeholder( "level" );
 
         cli[_]
-            .describe( "which test or tests to use" )
-            .bind( &addTestOrTags, "test name, pattern or tags" );
+            .describe( "which adhoc or tests to use" )
+            .bind( &addTestOrTags, "adhoc name, pattern or tags" );
 
         cli["-d"]["--durations"]
-            .describe( "show test durations" )
+            .describe( "show adhoc durations" )
             .bind( &setShowDurations, "yes|no" );
 
         cli["-f"]["--input-file"]
-            .describe( "load test names to run from a file" )
+            .describe( "load adhoc names to run from a file" )
             .bind( &loadTestNamesFromFile, "filename" );
 
         cli["-#"]["--filenames-as-tags"]
@@ -177,8 +177,8 @@ namespace Catch {
             .bind( &ConfigData::filenamesAsTags );
 
         // Less common commands which don't have a short form
-        cli["--list-test-names-only"]
-            .describe( "list all/matching test cases names only" )
+        cli["--list-adhoc-names-only"]
+            .describe( "list all/matching adhoc cases names only" )
             .bind( &ConfigData::listTestNamesOnly );
 
         cli["--list-reporters"]
@@ -186,7 +186,7 @@ namespace Catch {
             .bind( &ConfigData::listReporters );
 
         cli["--order"]
-            .describe( "test case order (defaults to decl)" )
+            .describe( "adhoc case order (defaults to decl)" )
             .bind( &setOrder, "decl|lex|rand" );
 
         cli["--rng-seed"]

@@ -24,7 +24,7 @@ namespace Catch {
         virtual ~CompactReporter();
 
         static std::string getDescription() {
-            return "Reports test results on a single line, suitable for IDEs";
+            return "Reports adhoc results on a single line, suitable for IDEs";
         }
 
         virtual ReporterPreferences getPreferences() const {
@@ -34,7 +34,7 @@ namespace Catch {
         }
 
         virtual void noMatchingTestCases( std::string const& spec ) {
-            stream << "No test cases matched '" << spec << "'" << std::endl;
+            stream << "No adhoc cases matched '" << spec << "'" << std::endl;
         }
 
         virtual void assertionStarting( AssertionInfo const& ) {
@@ -248,8 +248,8 @@ namespace Catch {
 
         // Colour, message variants:
         // - white: No tests ran.
-        // -   red: Failed [both/all] N test cases, failed [both/all] M assertions.
-        // - white: Passed [both/all] N test cases (no assertions).
+        // -   red: Failed [both/all] N adhoc cases, failed [both/all] M assertions.
+        // - white: Passed [both/all] N adhoc cases (no assertions).
         // -   red: Failed N tests cases, failed M assertions.
         // - green: Passed [both/all] N tests cases with M assertions.
 
@@ -268,27 +268,27 @@ namespace Catch {
                         bothOrAll( totals.assertions.failed ) : "";
                 stream <<
                     "Failed " << bothOrAll( totals.testCases.failed )
-                              << pluralise( totals.testCases.failed, "test case"  ) << ", "
+                              << pluralise( totals.testCases.failed, "adhoc case"  ) << ", "
                     "failed " << qualify_assertions_failed <<
                                  pluralise( totals.assertions.failed, "assertion" ) << ".";
             }
             else if( totals.assertions.total() == 0 ) {
                 stream <<
                     "Passed " << bothOrAll( totals.testCases.total() )
-                              << pluralise( totals.testCases.total(), "test case" )
+                              << pluralise( totals.testCases.total(), "adhoc case" )
                               << " (no assertions).";
             }
             else if( totals.assertions.failed ) {
                 Colour colour( Colour::ResultError );
                 stream <<
-                    "Failed " << pluralise( totals.testCases.failed, "test case"  ) << ", "
+                    "Failed " << pluralise( totals.testCases.failed, "adhoc case"  ) << ", "
                     "failed " << pluralise( totals.assertions.failed, "assertion" ) << ".";
             }
             else {
                 Colour colour( Colour::ResultSuccess );
                 stream <<
                     "Passed " << bothOrAll( totals.testCases.passed )
-                              << pluralise( totals.testCases.passed, "test case"  ) <<
+                              << pluralise( totals.testCases.passed, "adhoc case"  ) <<
                     " with "  << pluralise( totals.assertions.passed, "assertion" ) << ".";
             }
         }

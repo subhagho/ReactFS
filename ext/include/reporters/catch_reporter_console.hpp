@@ -23,11 +23,11 @@ namespace Catch {
 
         virtual ~ConsoleReporter() CATCH_OVERRIDE;
         static std::string getDescription() {
-            return "Reports test results as plain lines of text";
+            return "Reports adhoc results as plain lines of text";
         }
 
         virtual void noMatchingTestCases( std::string const& spec ) CATCH_OVERRIDE {
-            stream << "No test cases matched '" << spec << "'" << std::endl;
+            stream << "No adhoc cases matched '" << spec << "'" << std::endl;
         }
 
         virtual void assertionStarting( AssertionInfo const& ) CATCH_OVERRIDE {
@@ -64,7 +64,7 @@ namespace Catch {
                 if( m_sectionStack.size() > 1 )
                     stream << "\nNo assertions in section";
                 else
-                    stream << "\nNo assertions in test case";
+                    stream << "\nNo assertions in adhoc case";
                 stream << " '" << _sectionStats.sectionInfo.name << "'\n" << std::endl;
             }
             if( m_headerPrinted ) {
@@ -278,7 +278,7 @@ namespace Catch {
                 Colour colourGuard( Colour::Headers );
 
                 std::vector<SectionInfo>::const_iterator
-                    it = m_sectionStack.begin()+1, // Skip first section (test case)
+                    it = m_sectionStack.begin()+1, // Skip first section (adhoc case)
                     itEnd = m_sectionStack.end();
                 for( ; it != itEnd; ++it )
                     printHeaderString( it->name, 2 );
@@ -353,7 +353,7 @@ namespace Catch {
                 stream << Colour( Colour::ResultSuccess ) << "All tests passed";
                 stream << " ("
                         << pluralise( totals.assertions.passed, "assertion" ) << " in "
-                        << pluralise( totals.testCases.passed, "test case" ) << ")"
+                        << pluralise( totals.testCases.passed, "adhoc case" ) << ")"
                         << "\n";
             }
             else {
@@ -372,7 +372,7 @@ namespace Catch {
                                         .addRow( totals.testCases.failedButOk )
                                         .addRow( totals.assertions.failedButOk ) );
 
-                printSummaryRow( "test cases", columns, 0 );
+                printSummaryRow( "adhoc cases", columns, 0 );
                 printSummaryRow( "assertions", columns, 1 );
             }
         }

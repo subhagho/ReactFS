@@ -30,7 +30,7 @@ namespace Catch {
         virtual ~JunitReporter() CATCH_OVERRIDE;
 
         static std::string getDescription() {
-            return "Reports test results in an XML format that looks like Ant's junitreport target";
+            return "Reports adhoc results in an XML format that looks like Ant's junitreport target";
         }
 
         virtual void noMatchingTestCases( std::string const& /*spec*/ ) CATCH_OVERRIDE {}
@@ -84,7 +84,7 @@ namespace Catch {
                 xml.writeAttribute( "time", suiteTime );
             xml.writeAttribute( "timestamp", "tbd" ); // !TBD
 
-            // Write test cases
+            // Write adhoc cases
             for( TestGroupNode::ChildNodes::const_iterator
                     it = groupNode.children.begin(), itEnd = groupNode.children.end();
                     it != itEnd;
@@ -98,8 +98,8 @@ namespace Catch {
         void writeTestCase( TestCaseNode const& testCaseNode ) {
             TestCaseStats const& stats = testCaseNode.value;
 
-            // All test cases have exactly one section - which represents the
-            // test case itself. That section may have 0-n nested sections
+            // All adhoc cases have exactly one section - which represents the
+            // adhoc case itself. That section may have 0-n nested sections
             assert( testCaseNode.children.size() == 1 );
             SectionNode const& rootSection = *testCaseNode.children.front();
 

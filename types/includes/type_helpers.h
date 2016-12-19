@@ -885,6 +885,7 @@ REACTFS_NS_CORE
                                 }
                                 return handler;
                             }
+                            return nullptr;
                         }
 
                         virtual __base_datatype_io *

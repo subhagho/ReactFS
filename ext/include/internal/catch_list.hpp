@@ -23,9 +23,9 @@ namespace Catch {
 
         TestSpec testSpec = config.testSpec();
         if( config.testSpec().hasFilters() )
-            Catch::cout() << "Matching test cases:\n";
+            Catch::cout() << "Matching adhoc cases:\n";
         else {
-            Catch::cout() << "All available test cases:\n";
+            Catch::cout() << "All available adhoc cases:\n";
             testSpec = TestSpecParser( ITagAliasRegistry::get() ).parse( "*" ).testSpec();
         }
 
@@ -51,9 +51,9 @@ namespace Catch {
         }
 
         if( !config.testSpec().hasFilters() )
-            Catch::cout() << pluralise( matchedTests, "test case" ) << "\n" << std::endl;
+            Catch::cout() << pluralise( matchedTests, "adhoc case" ) << "\n" << std::endl;
         else
-            Catch::cout() << pluralise( matchedTests, "matching test case" ) << "\n" << std::endl;
+            Catch::cout() << pluralise( matchedTests, "matching adhoc case" ) << "\n" << std::endl;
         return matchedTests;
     }
 
@@ -97,7 +97,7 @@ namespace Catch {
     inline std::size_t listTags( Config const& config ) {
         TestSpec testSpec = config.testSpec();
         if( config.testSpec().hasFilters() )
-            Catch::cout() << "Tags for matching test cases:\n";
+            Catch::cout() << "Tags for matching adhoc cases:\n";
         else {
             Catch::cout() << "All available tags:\n";
             testSpec = TestSpecParser( ITagAliasRegistry::get() ).parse( "*" ).testSpec();

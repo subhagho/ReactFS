@@ -29,7 +29,7 @@ namespace Catch {
         virtual ~XmlReporter() CATCH_OVERRIDE;
 
         static std::string getDescription() {
-            return "Reports test results as an XML document";
+            return "Reports adhoc results as an XML document";
         }
 
     public: // StreamingReporterBase

@@ -43,9 +43,9 @@ namespace Catch {
     struct ResultDisposition { enum Flags {
         Normal = 0x01,
 
-        ContinueOnFailure = 0x02,   // Failures fail test, but execution continues
+        ContinueOnFailure = 0x02,   // Failures fail adhoc, but execution continues
         FalseTest = 0x04,           // Prefix expression with !
-        SuppressFail = 0x08         // Failures are reported but do not fail the test
+        SuppressFail = 0x08         // Failures are reported but do not fail the adhoc
     }; };
 
     inline ResultDisposition::Flags operator | ( ResultDisposition::Flags lhs, ResultDisposition::Flags rhs ) {

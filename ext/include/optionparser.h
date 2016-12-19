@@ -1573,7 +1573,7 @@ struct MSC_Builtin_CLZ
                         while (usage[i1].longopt != 0 && !streqabbr(usage[i1].longopt, longopt_name, min_abbr_len))
                             ++i1;
                         if (usage[i1].longopt != 0)
-                        { // now test if the match is unambiguous by checking for another match
+                        { // now adhoc if the match is unambiguous by checking for another match
                             int i2 = i1 + 1;
                             while (usage[i2].longopt != 0 && !streqabbr(usage[i2].longopt, longopt_name, min_abbr_len))
                                 ++i2;
@@ -1947,7 +1947,7 @@ struct MSC_Builtin_CLZ
                             ++len;
                         }
                         // ch is the decoded unicode code point
-                        if (ch >= 0x1100 && isWideChar(ch)) // the test for 0x1100 is here to avoid the function call in the Latin case
+                        if (ch >= 0x1100 && isWideChar(ch)) // the adhoc for 0x1100 is here to avoid the function call in the Latin case
                             ++screenlen;
                     }
                 }
@@ -2317,7 +2317,7 @@ struct MSC_Builtin_CLZ
 
                 while (len > 0)
                 {
-                    if (len <= width) // quick test that works because utf8width <= len (all wide chars have at least 2 bytes)
+                    if (len <= width) // quick adhoc that works because utf8width <= len (all wide chars have at least 2 bytes)
                     {
                         output(write, data, len);
                         len = 0;
@@ -2343,7 +2343,7 @@ struct MSC_Builtin_CLZ
                                     ++charbytes;
                                 }
                                 // ch is the decoded unicode code point
-                                if (ch >= 0x1100 && isWideChar(ch)) // the test for 0x1100 is here to avoid the function call in the Latin case
+                                if (ch >= 0x1100 && isWideChar(ch)) // the adhoc for 0x1100 is here to avoid the function call in the Latin case
                                 {
                                     if (utf8width + 2 > width)
                                         break;

@@ -46,16 +46,16 @@ namespace Catch {
         virtual ~TeamCityReporter() CATCH_OVERRIDE;
 
         static std::string getDescription() {
-            return "Reports test results as TeamCity service messages";
+            return "Reports adhoc results as TeamCity service messages";
         }
 
         virtual void skipTest( TestCaseInfo const& testInfo ) CATCH_OVERRIDE {
             stream  << "##teamcity[testIgnored name='"
                     << escape( testInfo.name ) << "'";
             if( testInfo.isHidden() )
-                stream << " message='hidden test'";
+                stream << " message='hidden adhoc'";
             else
-                stream << " message='test skipped because it didn|'t match the test spec'";
+                stream << " message='adhoc skipped because it didn|'t match the adhoc spec'";
             stream << "]\n";
         }
 
@@ -104,7 +104,7 @@ namespace Catch {
                         msg << "explicit failure";
                         break;
 
-                    // We shouldn't get here because of the isOk() test
+                    // We shouldn't get here because of the isOk() adhoc
                     case ResultWas::Ok:
                     case ResultWas::Info:
                     case ResultWas::Warning:
@@ -175,7 +175,7 @@ namespace Catch {
                 os << getLineOfChars<'-'>() << "\n";
 
                 std::vector<SectionInfo>::const_iterator
-                it = m_sectionStack.begin()+1, // Skip first section (test case)
+                it = m_sectionStack.begin()+1, // Skip first section (adhoc case)
                 itEnd = m_sectionStack.end();
                 for( ; it != itEnd; ++it )
                     printHeaderString( os, it->name );

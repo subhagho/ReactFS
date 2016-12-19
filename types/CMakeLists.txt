@@ -2,12 +2,9 @@ cmake_minimum_required(VERSION 3.1)
 
 project(reactfs-types VERSION 0.1.0)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+INCLUDE(../makefiles/CMakeInclude.txt)
 
-INCLUDE(../makefiles/CMakeInclude.txt /usr/local/opt/flex/include)
-
-LINK_DIRECTORIES(/usr/lib ../common/cmake ../watergate/cmake)
+LINK_DIRECTORIES(${EXT_LINK_DIRS} ${RFS_BUILD_COMMON})
 
 set(TYPES_LIB_NAME ${PROJECT_NAME})
 
@@ -18,15 +15,7 @@ list(REMOVE_DUPLICATES RFS_C_SOURCES)
 
 MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
-if (${APPLE})
-    MESSAGE("Host platform: MAC OS X")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lcrypto -lssl")
-elseif (${UNIX})
-    MESSAGE("Host platform:  Other UNIX")
-    set(RFS_C_LIBRARIES "-lreactfs-common -lpthread -luuid -lrt -lcrypto -lssl")
-endif ()
-
-MESSAGE("Using libraries : #" ${RFS_C_LIBRARIES} "#")
+MESSAGE("Using libraries : #" ${RFS_COMMON_LIBS} "#")
 
 add_library(${TYPES_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
-target_link_libraries(${TYPES_LIB_NAME} ${RFS_C_LIBRARIES})
+target_link_libraries(${TYPES_LIB_NAME} ${RFS_COMMON_LIBS})

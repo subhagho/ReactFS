@@ -1,0 +1,46 @@
+set(LOCAL_INCLUDES "/usr/local/include")
+
+INCLUDE_DIRECTORIES(${PROJECT_ROOT_DIR} ${PROJECT_EXT_DIR} ${LOCAL_INCLUDES})
+
+if (${APPLE})
+    set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk)
+endif ()
+
+set(CMAKE_C_COMPILER gcc)
+set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+
+if (${APPLE})
+    set(RFS_SYS_LIBRARIES "-lcrypto -lssl -lz")
+    set(EXT_LINK_DIRS /opt/local/lib)
+    set(SYS_LOCAL_INCLUDES "/opt/local/include")
+    set(JAVA_INCLUDES /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers/)
+elseif (${UNIX})
+    set(RFS_C_LIBRARIES "-lpthread -luuid -lrt -lcrypto -lssl -lz")
+    set(JNI_BASE_INCLUDE $ENV{JDK_LIB_HOME}/include)
+    set(JAVA_INCLUDES ${JNI_BASE_INCLUDE} ${JNI_BASE_INCLUDE}/linux)
+    set(EXT_LINK_DIRS /usr/lib)
+endif ()
+
+INCLUDE_DIRECTORIES(${SYS_LOCAL_INCLUDES} ${JAVA_INCLUDES})
+
+set(RFS_COMMON_LIB "-lreactfs-common")
+set(RFS_PARSER_LIB "-lreactfs-parsers")
+set(RFS_TYPES_LIB "-lreactfs-types")
+set(RFS_WGATE_LIB "-lwatergate")
+set(RFS_CORE_LIB "-lreactfs-core")
+
+set(RFS_COMMON_LIBS ${RFS_COMMON_LIB} ${RFS_SYS_LIBRARIES})
+set(RFS_TYPES_LIBS ${RFS_TYPES_LIB} ${RFS_COMMON_LIBS})
+set(RFS_PARSER_LIBS ${RFS_PARSER_LIB} ${RFS_TYPES_LIBS})
+set(RFS_WGATE_LIBS ${RFS_WGATE_LIB} ${RFS_COMMON_LIBS})
+set(RFS_CORE_LIBS ${RFS_CORE_LIB} ${RFS_TYPES_LIBS} ${RFS_WGATE_LIB})
+
+set(RFS_BUILD_COMMON ${PROJECT_ROOT_DIR}/common/cmake)
+set(RFS_BUILD_PARSER ${PROJECT_ROOT_DIR}/parsers/cmake)
+set(RFS_BUILD_TYPES ${PROJECT_ROOT_DIR}/types/cmake)
+set(RFS_BUILD_WGATE ${PROJECT_ROOT_DIR}/watergate/cmake)
+set(RFS_BUILD_CORE ${PROJECT_ROOT_DIR}/core/cmake)

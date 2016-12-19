@@ -28,7 +28,7 @@ TEST_CASE("Basic path tests", "[com::watergate::common::file_utils]") {
     const Config *config = env_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
-    Path p("/tmp/test/dir/file.txt");
+    Path p("/tmp/adhoc/dir/file.txt");
     LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());
     p = Path("who/cares/file.txt");
     LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());

@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 
         LOG_DEBUG("Current directory [%s]", dir);
 
-        Path p("/tmp/test/dir/file.txt");
+        Path p("/tmp/adhoc/dir/file.txt");
         LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());
         p = Path("who/cares/file.txt");
         LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());

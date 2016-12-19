@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
         CHECK_NOT_NULL(env);
 
         {
-            string name = "test-thread-pool";
+            string name = "adhoc-thread-pool";
             __thread_pool pool(name, 4);
             pool.create_task_queue(1000, true);
             pool.start();
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
             }
         }
         {
-            string name = "test-registry-pool";
+            string name = "adhoc-registry-pool";
             __thread_pool pool(name, 4);
             pool.create_task_registry(1000);
             pool.start();

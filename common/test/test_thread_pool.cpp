@@ -13,7 +13,7 @@ TEST_CASE("Check thread pool tasks", "[com::wookler::reactfs::common::__thread_p
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
-    string name = "test-thread-pool";
+    string name = "adhoc-thread-pool";
     __thread_pool pool(name, 4);
     pool.create_task_queue(1000, true);
     pool.start();
@@ -37,7 +37,7 @@ TEST_CASE("Check thread pool registry", "[com::wookler::reactfs::common::__threa
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
-    string name = "test-registry-pool";
+    string name = "adhoc-registry-pool";
     __thread_pool pool(name, 4);
     pool.create_task_registry(1000);
     pool.start();

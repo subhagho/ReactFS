@@ -232,7 +232,7 @@ namespace Catch {
 
             handleUnfinishedSections();
 
-            // Recreate section for test case (as we will lose the one that was in scope)
+            // Recreate section for adhoc case (as we will lose the one that was in scope)
             TestCaseInfo const& testCaseInfo = m_activeTestCase->getTestCaseInfo();
             SectionInfo testCaseSection( testCaseInfo.lineInfo, testCaseInfo.name, testCaseInfo.description );
 
@@ -287,7 +287,7 @@ namespace Catch {
                 duration = timer.getElapsedSeconds();
             }
             catch( TestFailureException& ) {
-                // This just means the test was aborted due to failure
+                // This just means the adhoc was aborted due to failure
             }
             catch(...) {
                 makeUnexpectedResultBuilder().useActiveException();
