@@ -4,6 +4,11 @@ enable_testing()
 
 INCLUDE(../../makefiles/CMakeTestInclude.txt)
 
+set(PROJECT_CMAKE_COMMON ${PROJECT_ROOT_DIR}/makefiles/CMakeCommon.txt)
+MESSAGE("Including common makefile : " ${PROJECT_CMAKE_COMMON})
+
+INCLUDE(${PROJECT_CMAKE_COMMON})
+
 find_package(Threads)
 
 # Build Catch unit tests

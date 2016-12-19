@@ -8,6 +8,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 INCLUDE(../makefiles/CMakeInclude.txt)
+set(PROJECT_CMAKE_COMMON ${PROJECT_ROOT_DIR}/makefiles/CMakeCommon.txt)
+MESSAGE("Including common makefile : " ${PROJECT_CMAKE_COMMON})
+
+INCLUDE(${PROJECT_CMAKE_COMMON})
 
 set(COMMON_LIB_NAME ${PROJECT_NAME})
 

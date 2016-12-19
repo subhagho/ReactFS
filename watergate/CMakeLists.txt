@@ -4,6 +4,10 @@ cmake_minimum_required(VERSION 3.1)
 project(watergate VERSION 0.1.0)
 
 INCLUDE(../makefiles/CMakeInclude.txt)
+set(PROJECT_CMAKE_COMMON ${PROJECT_ROOT_DIR}/makefiles/CMakeCommon.txt)
+MESSAGE("Including common makefile : " ${PROJECT_CMAKE_COMMON})
+
+INCLUDE(${PROJECT_CMAKE_COMMON})
 
 set(WATERGATE_LIB_NAME ${PROJECT_NAME})
 

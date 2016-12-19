@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.1)
 project(reactfs-parsers VERSION 0.1.0)
 
 INCLUDE(../makefiles/CMakeInclude.txt)
+set(PROJECT_CMAKE_COMMON ${PROJECT_ROOT_DIR}/makefiles/CMakeCommon.txt)
+MESSAGE("Including common makefile : " ${PROJECT_CMAKE_COMMON})
+
+INCLUDE(${PROJECT_CMAKE_COMMON})
 
 INCLUDE_DIRECTORIES(${PROJECT_ROOT_DIR}/parsers/includes/ ${PROJECT_ROOT_DIR}/parsers/src/)
 
@@ -48,4 +52,4 @@ add_library(${PRASERS_LIB_NAME} SHARED ${YSchemaOutput} ${LSchemaOutput} ${RFS_C
 target_link_libraries(${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS})
 
 add_executable(main_schema_p adhoc/main_schema_p.cpp)
-target_link_libraries(main_schema_p ${PRASERS_LIB_NAME} ${RFS_BUILD_PARSER})
+target_link_libraries(main_schema_p ${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS})

@@ -4,4 +4,3 @@ set(PROJECT_EXT_DIR ${PROJECT_ROOT_DIR}/ext)
 MESSAGE("Project root directory : " ${PROJECT_ROOT_DIR})
 MESSAGE("Project ext directory : " ${PROJECT_EXT_DIR})
 
-INCLUDE(${PROJECT_ROOT_DIR}/makefiles/CMakeCommon.txt)

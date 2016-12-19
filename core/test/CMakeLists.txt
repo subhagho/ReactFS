@@ -4,6 +4,11 @@ enable_testing()
 
 INCLUDE(../../makefiles/CMakeTestInclude.txt)
 
+set(PROJECT_CMAKE_COMMON ${PROJECT_ROOT_DIR}/makefiles/CMakeCommon.txt)
+MESSAGE("Including common makefile : " ${PROJECT_CMAKE_COMMON})
+
+INCLUDE(${PROJECT_CMAKE_COMMON})
+
 find_package(Threads)
 
 LINK_DIRECTORIES(${EXT_LINK_DIRS} ${RFS_BUILD_COMMON} ${RFS_BUILD_TYPES} ${RFS_BUILD_PARSER} ${RFS_BUILD_CORE} ${RFS_BUILD_WGATE})

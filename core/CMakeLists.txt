@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.1)
 project(reactfs-core VERSION 0.1.0)
 
 INCLUDE(../makefiles/CMakeInclude.txt)
+set(PROJECT_CMAKE_COMMON ${PROJECT_ROOT_DIR}/makefiles/CMakeCommon.txt)
+MESSAGE("Including common makefile : " ${PROJECT_CMAKE_COMMON})
+
+INCLUDE(${PROJECT_CMAKE_COMMON})
 
 INCLUDE_DIRECTORIES(${PROJECT_ROOT_DIR}/parsers/includes/ ${PROJECT_ROOT_DIR}/parsers/src/)
 
