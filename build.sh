@@ -20,23 +20,11 @@ fi
 echo "Using makefiles [$CMAKE]..."
 
 DIRS="common watergate types parsers core"
-DIRS_TO_BUILD=""
-
-for dir in $DIRS;
-do
-    DIRS_TO_BUILD="$DIRS_TO_BUILD $dir"
-	if [ -d "$dir/test" ];then
-        if [ -f "$dir/test/CMakeLists.txt" ]; then
-            DIRS_TO_BUILD="$DIRS_TO_BUILD $dir/test"
-        fi
-	fi
-done
-
-echo "Building directories [$DIRS_TO_BUILD] ..."
+echo "Building directories [$DIRS] ..."
 
 ROOTDIR=$PWD
 
-for dir in $DIRS_TO_BUILD;
+for dir in $DIRS;
 do
     if [ ! -d "$dir/cmake" ]; then
 	    cd $dir

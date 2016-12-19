@@ -45,3 +45,17 @@ target_link_libraries(main_node_client ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
 
 add_executable(main_typed_b adhoc/main_typed_b.cpp)
 target_link_libraries(main_typed_b ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
+
+find_package(Threads)
+
+MESSAGE("Using libraries : #" ${RFS_CORE_LIBS} "#")
+
+add_executable(test_node_client test/test_node_client.cpp)
+target_link_libraries(test_node_client ${CMAKE_THREAD_LIBS_INIT} ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
+add_test(NAME test_node_client COMMAND test_node_client)
+
+add_executable(test_node_manager test/test_node_manager.cpp)
+target_link_libraries(test_node_manager ${CMAKE_THREAD_LIBS_INIT} ${CORE_LIB_NAME} ${RFS_CORE_DEP_LIBS})
+add_test(NAME test_node_manager COMMAND test_node_manager)
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")

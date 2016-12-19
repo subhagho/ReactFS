@@ -36,3 +36,21 @@ target_link_libraries(main_sems ${RFS_WGATE_LIBS})
 add_executable(main_lock_table adhoc/main_lock_table.cpp)
 target_link_libraries(main_lock_table ${RFS_WGATE_LIBS})
 
+find_package(Threads)
+
+LINK_DIRECTORIES(${EXT_LINK_DIRS} ${RFS_BUILD_COMMON})
+MESSAGE("Using libraries : [" ${RFS_BUILD_COMMON} "]")
+
+
+add_executable(test_sem_lock test/test_sem_lock.cpp)
+target_link_libraries(test_sem_lock watergate ${CMAKE_THREAD_LIBS_INIT} ${RFS_WGATE_LIBS})
+add_test(NAME test_sem_lock COMMAND test_sem_lock)
+
+add_executable(test_lock_client test/test_lock_client.cpp)
+target_link_libraries(test_lock_client watergate ${CMAKE_THREAD_LIBS_INIT} ${RFS_WGATE_LIBS})
+
+add_executable(test_lock_table test/test_lock_table.cpp)
+target_link_libraries(test_lock_table watergate ${CMAKE_THREAD_LIBS_INIT} ${RFS_WGATE_LIBS})
+add_test(NAME test_lock_table COMMAND test_lock_table)
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")

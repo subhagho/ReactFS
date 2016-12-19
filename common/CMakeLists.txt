@@ -28,13 +28,44 @@ MESSAGE("Using libraries : [" ${RFS_SYS_LIBRARIES} "]")
 target_link_libraries(${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
 
 add_executable(main_common adhoc/main_common.cpp)
-target_link_libraries(main_common ${RFS_COMMON_LIBS})
+target_link_libraries(main_common ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
 
 add_executable(main_shared_lock adhoc/main_shared_lock.cpp)
-target_link_libraries(main_shared_lock ${RFS_COMMON_LIBS})
+target_link_libraries(main_shared_lock ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
 
 add_executable(main_thread_pool adhoc/main_thread_pool.cpp)
-target_link_libraries(main_thread_pool ${RFS_COMMON_LIBS})
+target_link_libraries(main_thread_pool ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
 
 add_executable(adhoc adhoc/adhoc.cpp)
-target_link_libraries(adhoc ${RFS_COMMON_LIBS})
+target_link_libraries(adhoc ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
+
+
+find_package(Threads)
+
+# Build Catch unit tests
+add_library(catch INTERFACE)
+target_include_directories(catch INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+MESSAGE("Using libraries : [" ${RFS_COMMON_LIBS} "]")
+
+add_executable(test_config test/test_config.cpp)
+target_link_libraries(test_config ${CMAKE_THREAD_LIBS_INIT} ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
+add_test(NAME test_config COMMAND test_config)
+
+add_executable(test_alarm test/test_alarm.cpp)
+target_link_libraries(test_alarm ${CMAKE_THREAD_LIBS_INIT} ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
+add_test(NAME test_alarm COMMAND test_alarm)
+
+add_executable(test_file_utils test/test_file_utils.cpp)
+target_link_libraries(test_file_utils ${CMAKE_THREAD_LIBS_INIT} ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
+add_test(NAME test_file_utils COMMAND test_file_utils)
+
+add_executable(test_shared_lock test/test_shared_lock.cpp)
+target_link_libraries(test_shared_lock ${CMAKE_THREAD_LIBS_INIT} ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
+add_test(NAME test_shared_lock COMMAND test_shared_lock)
+
+add_executable(test_thread_pool test/test_thread_pool.cpp)
+target_link_libraries(test_thread_pool ${CMAKE_THREAD_LIBS_INIT} ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
+add_test(NAME test_thread_pool COMMAND test_thread_pool)
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs")
