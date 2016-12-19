@@ -811,10 +811,6 @@ REACTFS_NS_CORE
                                 return 0;
                             }
                             uint64_t t_size = sizeof(uint64_t);
-                            __base_datatype_io *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
-                            CHECK_NOT_NULL(kt_handler);
-                            __base_datatype_io *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
-                            CHECK_NOT_NULL(vt_handler);
 
                             for (auto iter = data->begin(); iter != data->end(); iter++) {
                                 t_size += kt_handler->compute_size(&(iter->first), -1);
@@ -841,10 +837,6 @@ REACTFS_NS_CORE
                          * @return - Return estimated storage size.
                          */
                         virtual uint32_t estimate_size() override {
-                            __base_datatype_io *kt_handler = __type_defs_utils::get_type_handler(this->key_type);
-                            CHECK_NOT_NULL(kt_handler);
-                            __base_datatype_io *vt_handler = __type_defs_utils::get_type_handler(this->value_type);
-                            CHECK_NOT_NULL(vt_handler);
                             uint32_t k_size = kt_handler->estimate_size();
                             uint32_t v_size = vt_handler->estimate_size();
                             return ((k_size * COLLECTION_SIZE_FACTOR) + (v_size * COLLECTION_SIZE_FACTOR));

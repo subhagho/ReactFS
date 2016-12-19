@@ -291,7 +291,7 @@ REACTFS_NS_CORE
                             w_size += sizeof(uint8_t);
 
                             // Write the field index
-                            ptr = common_utils::increment_data_ptr(ptr, w_size);
+                            ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
                             memcpy(ptr, &index, sizeof(uint8_t));
                             w_size += sizeof(uint8_t);
 
@@ -317,7 +317,7 @@ REACTFS_NS_CORE
                                 bits = bitset_utils::set_uint8_bit(bits, BIT_TYPE_DEFAULT_VALUE);
                             }
                             // Write the extended data bits.
-                            ptr = common_utils::increment_data_ptr(ptr, w_size);
+                            ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
                             memcpy(ptr, &bits, sizeof(uint8_t));
                             w_size += sizeof(uint8_t);
 
@@ -341,7 +341,6 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t read(void *buffer, uint64_t offset) {
                             CHECK_NOT_NULL(buffer);
-                            CHECK_NOT_NULL(type_handler);
                             __base_datatype_io *string_handler = __type_defs_utils::get_type_handler(
                                     __type_def_enum::TYPE_STRING);
                             CHECK_NOT_NULL(string_handler);
@@ -365,7 +364,7 @@ REACTFS_NS_CORE
                             r_size += sizeof(uint8_t);
 
                             // Read the field index.
-                            ptr = common_utils::increment_data_ptr(ptr, r_size);
+                            ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
                             uint8_t *index = static_cast<uint8_t *>(ptr);
                             this->index = *index;
                             r_size += sizeof(uint8_t);
@@ -594,7 +593,8 @@ REACTFS_NS_CORE
                         virtual __base_datatype_io *get_complex_type_handler(__native_type *type) = 0;
 
                         virtual __base_datatype_io *
-                        get_array_type_handler(__field_type field_type, __type_def_enum inner_type, __native_type *type) = 0;
+                        get_array_type_handler(__field_type field_type, __type_def_enum inner_type,
+                                               __native_type *type) = 0;
 
                         virtual __base_datatype_io *
                         get_map_type_handler(__type_def_enum key_type, __type_def_enum value_type,
@@ -775,6 +775,8 @@ REACTFS_NS_CORE
 
                             unordered_map<uint8_t, __native_type *>::iterator iter;
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
+                                LOG_DEBUG("Writing field [type=%d][name=%s][index=%d]", iter->second->get_datatype(),
+                                          iter->second->get_name().c_str(), iter->second->get_index());
                                 w_size += iter->second->write(buffer, (offset + w_size));
                             }
                             return w_size;
@@ -912,7 +914,8 @@ REACTFS_NS_CORE
                         __array_type(__native_type *parent, const uint8_t index, const string &name,
                                      const __type_def_enum inner_type,
                                      const uint32_t max_size, __native_type *type) : __sized_type(parent, index, name,
-                                                                             __type_def_enum::TYPE_ARRAY, max_size) {
+                                                                                                  __type_def_enum::TYPE_ARRAY,
+                                                                                                  max_size) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
                             CHECK_NOT_NULL(type);
 
@@ -921,7 +924,8 @@ REACTFS_NS_CORE
                             this->inner = type;
                             __complex_type_helper *loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
-                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type, this->inner);
+                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type,
+                                                                                this->inner);
                             CHECK_NOT_NULL(this->type_handler);
                         }
 
@@ -991,7 +995,8 @@ REACTFS_NS_CORE
 
                             __complex_type_helper *loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
-                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type, this->inner);
+                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type,
+                                                                                this->inner);
                             CHECK_NOT_NULL(this->type_handler);
                             return r_size;
                         }
@@ -1030,8 +1035,8 @@ REACTFS_NS_CORE
 
                         __list_type(__native_type *parent, const uint8_t index, const string &name,
                                     const __type_def_enum inner_type, __native_type *type) : __native_type(parent,
-                                                                                      index, name,
-                                                                                      __type_def_enum::TYPE_LIST) {
+                                                                                                           index, name,
+                                                                                                           __type_def_enum::TYPE_LIST) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
 
                             this->inner_type = inner_type;
@@ -1040,7 +1045,8 @@ REACTFS_NS_CORE
 
                             __complex_type_helper *loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
-                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type, this->inner);
+                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type,
+                                                                                this->inner);
                             CHECK_NOT_NULL(this->type_handler);
                         }
 
@@ -1109,7 +1115,8 @@ REACTFS_NS_CORE
 
                             __complex_type_helper *loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
-                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type, this->inner);
+                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type,
+                                                                                this->inner);
                             CHECK_NOT_NULL(this->type_handler);
                             return r_size;
                         }
@@ -1168,7 +1175,7 @@ REACTFS_NS_CORE
                             __complex_type_helper *loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
                             this->type_handler = loader->get_map_type_handler(this->key_type,
-                                                                                  this->value_type, this->value);
+                                                                              this->value_type, this->value);
                             CHECK_NOT_NULL(this->type_handler);
                         }
 
@@ -1236,7 +1243,7 @@ REACTFS_NS_CORE
                             __complex_type_helper *loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
                             this->type_handler = loader->get_map_type_handler(this->key_type,
-                                                                               this->value_type, this->value);
+                                                                              this->value_type, this->value);
                             CHECK_NOT_NULL(this->type_handler);
                             return r_size;
                         }

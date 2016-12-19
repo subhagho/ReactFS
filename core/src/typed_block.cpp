@@ -21,6 +21,7 @@ string com::wookler::reactfs::core::typed_block::create(uint64_t block_id, uint6
 
     void *ptr = common_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
     uint64_t *type_header_size = static_cast<uint64_t *>(ptr);
+    *type_header_size = 0;
 
     ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
     *type_header_size = this->datetype->write(ptr, 0);
@@ -42,7 +43,7 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     ptr = common_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
     uint64_t *type_header_size = static_cast<uint64_t *>(ptr);
 
-    this->read_ptr = common_utils::increment_data_ptr(ptr, (sizeof(uint64_t) + *type_header_size));
+    this->read_ptr = common_utils::increment_data_ptr(ptr, (sizeof(uint64_t) + (*type_header_size) * sizeof(BYTE)));
     void *bptr = get_data_ptr();
     CHECK_NOT_NULL(bptr);
 
@@ -51,6 +52,10 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     } else {
         write_ptr = nullptr;
     }
+
+    ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
+    this->datetype = new __complex_type(nullptr);
+    this->datetype->read(ptr, 0);
 
     state.set_state(__state_enum::Available);
 }

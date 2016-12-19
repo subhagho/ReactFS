@@ -238,7 +238,6 @@ REACTFS_NS_CORE
                          */
                         __complex_type *
                         create_type(__native_type *parent, string &name, __reference_type *type, uint8_t index) {
-                            CHECK_NOT_NULL(parent);
                             CHECK_NOT_NULL(type);
                             CHECK_NOT_EMPTY(name);
 
