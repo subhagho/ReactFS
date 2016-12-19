@@ -560,7 +560,6 @@ REACTFS_NS_COMMON
                         CHECK_STATE_AVAILABLE(state);
 
                         string thread_id = thread_utils::get_current_thread();
-                        bool locked = false;
                         return release_read_lock(thread_id);
                     }
 

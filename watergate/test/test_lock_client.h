@@ -41,7 +41,7 @@
 #define TCL_CONFIG_VALUE_TRIES "lock.tries"
 
 #define CONTROL_NAME "dummy-resource-1"
-#define FS_CONTROL_NAME "/private/tmp"
+#define FS_CONTROL_NAME "/private/tmp/"
 
 using namespace com::wookler::watergate::core;
 using namespace com::wookler::reactfs::common;

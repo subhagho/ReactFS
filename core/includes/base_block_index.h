@@ -259,7 +259,7 @@ namespace com {
                         version.minor = BLOCK_INDEX_VERSION_MINOR;
                     }
 
-                    ~base_block_index() {
+                    virtual ~base_block_index() {
                         this->close();
                     }
 

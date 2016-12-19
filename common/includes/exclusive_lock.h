@@ -36,14 +36,12 @@
 #define DEFAULT_LOCK_MODE 0760 /// Default lock create mode.
 #define DEFAULT_LOCK_RETRY_TIME 500
 #define DEFAULT_LOCK_TIMEOUT 30 * 1000 /// Default lock timeout is 30 secs.
-#define EXCLUSIVE_LOCK_PREFIX "/ExLk"
+#define EXCLUSIVE_LOCK_PREFIX "/EL"
 
 #define CONST_LOCK_ERROR_PREFIX "Lock Error : "
 
-
 #define LOCK_ERROR(fmt, ...) lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define LOCK_ERROR_PTR(fmt, ...) new lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-
 
 #define CHECK_SEMAPHORE_PTR(s, name) do { \
     if (IS_NULL(s) || s == SEM_FAILED) { \
@@ -100,6 +98,8 @@ REACTFS_NS_COMMON
                     /// Unique name associated with this lock. Since the locks are shared between
                     /// processes, this name should be unique per machine.
                     string *name = nullptr;
+                    /// Name of the semaphore handle.
+                    string sem_name;
                     /// More with which this lock should be created.
                     mode_t mode = DEFAULT_LOCK_MODE;
                     /// Semaphore handle backing this lock.
@@ -134,11 +134,12 @@ REACTFS_NS_COMMON
                      * @return
                      */
                     exclusive_lock(const string *name) {
+                        this->name = new string(*name);
+                        CHECK_ALLOC(this->name, TYPE_NAME(string));
                         string ss = common_utils::get_name_hash(*name);
                         PRECONDITION(!IS_EMPTY(ss));
-                        this->name = new string(EXCLUSIVE_LOCK_PREFIX);
-                        CHECK_ALLOC(this->name, TYPE_NAME(string));
-                        this->name->append(ss);
+                        this->sem_name = string(EXCLUSIVE_LOCK_PREFIX);
+                        this->sem_name.append(ss);
                     }
 
                     /*!<constructor
@@ -150,11 +151,12 @@ REACTFS_NS_COMMON
                      * @return
                      */
                     exclusive_lock(const string *name, mode_t mode) {
+                        this->name = new string(*name);
+                        CHECK_ALLOC(this->name, TYPE_NAME(string));
                         string ss = common_utils::get_name_hash(*name);
                         PRECONDITION(!IS_EMPTY(ss));
-                        string n = get_lock_name(&ss);
-                        this->name = new string(n);
-                        CHECK_ALLOC(this->name, TYPE_NAME(string));
+                        this->sem_name = string(EXCLUSIVE_LOCK_PREFIX);
+                        this->sem_name.append(ss);
                         this->mode = mode;
                     }
 
@@ -221,7 +223,7 @@ REACTFS_NS_COMMON
                      * Create/Initialize this instance of the shared lock.
                      */
                     void __create() {
-                        semaphore = sem_open(name->c_str(), O_CREAT, mode, 1);
+                        semaphore = sem_open(sem_name.c_str(), O_CREAT, mode, 1);
                         if (IS_NULL(semaphore) || semaphore == SEM_FAILED) {
                             lock_error e = LOCK_ERROR("Error creating lock. [name=%s][errno=%s]", name->c_str(),
                                                       strerror(errno));
@@ -322,7 +324,7 @@ REACTFS_NS_COMMON
                      */
                     bool dispose() {
                         CHECK_SEMAPHORE_PTR(semaphore, name);
-                        if (sem_unlink(name->c_str()) != 0) {
+                        if (sem_unlink(this->sem_name.c_str()) != 0) {
                             LOG_ERROR("Error closing semaphore. [name=%s][error=%s]", name->c_str(), strerror(errno));
                             return false;
                         } else {
@@ -330,18 +332,6 @@ REACTFS_NS_COMMON
                         }
                     }
 
-                    /*!
-                     * Utility function to get the associated lock name for the specified name.
-                     *
-                     * @param name - Resource name.
-                     * @return - Associated lock name.
-                     */
-                    static string get_lock_name(const string *name) {
-                        string n = string(EXCLUSIVE_LOCK_PREFIX);
-                        n.append(*name);
-
-                        return n;
-                    }
                 };
 
                 /*!

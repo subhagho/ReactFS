@@ -233,11 +233,34 @@ REACTFS_NS_COMMON
                             MD5_Update(&ctx, name.c_str(), name.length());
                             MD5_Final(digest, &ctx);
 
-                            char mdString[33];
-                            for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
-                                sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
+                            for (uint8_t ii = 0; ii < MD5_DIGEST_LENGTH; ii++) {
+                                if (digest[ii] == 0) {
+                                    digest[ii] = '#';
+                                }
+                            }
+                            string str = common_utils::format("__%s", digest);
+                            str = common_utils::get_replaced_string(str, '/', '_');
+                            str = common_utils::get_replaced_string(str, '\\', '-');
 
-                            return string(mdString);
+                            return str;
+                        }
+                        return common_consts::EMPTY_STRING;
+                    }
+
+                    static string get_replaced_string(string name, char o, char n) {
+                        if (!IS_EMPTY(name)) {
+                            char buff[name.length() + 1];
+                            for (uint32_t ii = 0; ii < name.length(); ii++) {
+                                char c = name[ii];
+                                c = tolower(c);
+                                if (c != o) {
+                                    buff[ii] = c;
+                                } else {
+                                    buff[ii] = n;
+                                }
+                            }
+                            buff[name.length()] = 0;
+                            return string(buff);
                         }
                         return common_consts::EMPTY_STRING;
                     }

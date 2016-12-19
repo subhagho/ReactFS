@@ -57,7 +57,8 @@ void com::wookler::watergate::core::control_def::add_resource_lock(const __app *
     }
     sem->init(app, config, (server && overwrite));
 
-    semaphores.insert(make_pair(*sem->get_name(), sem));
+    semaphores.insert(make_pair(*(sem->get_name()), sem));
+    LOG_DEBUG("Added resource lock [%s]", sem->get_name()->c_str());
 
     for (int ii = 0; ii < sem->get_max_priority(); ii++) {
         string m = get_metrics_name(METRIC_LOCK_PREFIX, *sem->get_name(), ii);

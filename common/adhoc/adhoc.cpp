@@ -15,8 +15,8 @@ using namespace com::wookler::reactfs::common;
 int main(int argc, char *argv[]) {
    string s1 = common_utils::uuid();
    string s2 = common_utils::uuid();
-   string s3 = common_utils::uuid(); 
-    
+   string s3 = common_utils::uuid();
+
    string h1 = common_utils::get_name_hash(s1);
    cout << "Name hash [" << s1 << ":" << h1 << "\n";
 

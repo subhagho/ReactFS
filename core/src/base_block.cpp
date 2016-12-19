@@ -337,7 +337,6 @@ void com::wookler::reactfs::core::base_block::process_record_data(__record *ptr,
             CHECK_NOT_NULL(compression);
 
             void *data_ptr = (use_buffer ? buffer->get_ptr() : ptr->data_ptr);
-            uint64_t data_size = (use_buffer ? buffer->get_used_size() : ptr->header->data_size);
 
             temp_buffer *buff = (use_buffer ? writebuff : buffer);
             int ret = compression->read_archive_data(data_ptr, ptr->header->uncompressed_size, buff);

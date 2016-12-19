@@ -20,7 +20,6 @@
 
 #include "common/includes/lock_record_def.h"
 #include "watergate/includes/control.h"
-#include "common/includes/__alarm.h"
 #include "watergate/includes/resource_factory.h"
 
 
@@ -40,11 +39,12 @@ void com::wookler::watergate::core::__semaphore::create(const __app *app, const 
     TRACE("Resource name : [%s]", r_name.c_str());
     this->resource = resource_factory::get_resource(r_name);
 
-    string ss = common_utils::get_name_hash(*(this->resource->get_resource_name()));
+    string ss = *(this->resource->get_resource_name());
 
     this->name = new string(ss);
     CHECK_ALLOC(this->name, TYPE_NAME(string));
 
+    this->sem_name = common_utils::get_name_hash(*(this->name));
     this->is_server = server;
 
     const BasicConfigValue *v_prior = Config::get_value(CONST_SEM_CONFIG_NODE_PRIORITIES, config);
@@ -75,7 +75,7 @@ void com::wookler::watergate::core::__semaphore::create(const __app *app, const 
 
 
     semaphores = (sem_t **) malloc(this->priorities * sizeof(sem_t *));
-    CHECK_ALLOC(semaphores, TYPE_NAME(sem_t *));
+    CHECK_ALLOC(semaphores, TYPE_NAME(sem_t * ));
 
     memset(semaphores, 0, this->priorities * sizeof(sem_t *));
 
@@ -95,11 +95,11 @@ void com::wookler::watergate::core::__semaphore::create(const __app *app, const 
 void com::wookler::watergate::core::__semaphore::create_sem(int index) {
     PRECONDITION(index >= 0 && index < priorities);
 
-    string sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
+    string ss = get_sem_name(index);
 
-    sem_t *ptr = sem_open(sem_name.c_str(), O_CREAT, mode, max_concurrent);
+    sem_t *ptr = sem_open(ss.c_str(), O_CREAT, mode, max_concurrent);
     if (!IS_VALID_SEM_PTR(ptr)) {
-        throw CONTROL_ERROR("Error creating semaphore. [name=%s][errno=%s]", sem_name.c_str(), strerror(errno));
+        throw CONTROL_ERROR("Error creating semaphore. [name=%s][errno=%s]", name->c_str(), strerror(errno));
     }
 
     semaphores[index] = ptr;
@@ -114,8 +114,8 @@ void com::wookler::watergate::core::__semaphore::delete_sem(int index) {
                 LOG_ERROR("Error disposing semaphore. [index=%s][errno=%s]", index, strerror(errno));
             }
         } else {
-            string sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
-            if (sem_unlink(sem_name.c_str()) != 0) {
+            string ss = get_sem_name(index);
+            if (sem_unlink(ss.c_str()) != 0) {
                 LOG_ERROR("Error disposing semaphore. [index=%s][errno=%s]", index, strerror(errno));
             }
         }

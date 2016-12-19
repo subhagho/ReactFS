@@ -84,6 +84,7 @@ namespace com {
 
                 protected:
                     string *name = nullptr;
+                    string sem_name;
                     uint8_t priorities = 0;
                     uint16_t max_concurrent = 0;
                     uint16_t max_lock_clients = 0;
@@ -101,6 +102,9 @@ namespace com {
                         return semaphores[index];
                     }
 
+                    string get_sem_name(int index) {
+                        return common_utils::format("/WL%s-%d", this->sem_name.c_str(), index);
+                    }
 
                     bool is_priority_valid(int p) {
                         return (p >= 0 && p < this->priorities);

@@ -181,10 +181,9 @@ namespace com {
                         if (index >= 0) {
                             __mount_point mp = mounts->mounts[index];
                             if (mp.state != __mount_state::MP_UNAVAILABLE) {
-                                string name_l = common_utils::get_name_hash(mp.lock_name);
-                                POSTCONDITION(!IS_EMPTY(name_l));
-                                string n = exclusive_lock::get_lock_name(&name_l);
-                                return get_mount_lock(&n);
+                                string name_l = string(mp.lock_name);
+                                CHECK_NOT_EMPTY(name_l);
+                                return get_mount_lock(&name_l);
                             }
                         }
                         return nullptr;

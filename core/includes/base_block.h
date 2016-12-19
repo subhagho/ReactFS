@@ -614,11 +614,8 @@ namespace com {
                                           bool overwrite) {
                         string uuid = __create_block(block_id, parent_id, filename, usage, __block_def::BASIC,
                                                      block_size, start_index, overwrite);
-                        uint32_t estimated_records = (block_size / est_record_size);
                         close();
-
                         POSTCONDITION(!IS_EMPTY(uuid));
-
                         return uuid;
                     }
 

@@ -29,7 +29,7 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
     try {
         PRECONDITION(!IS_EMPTY(name));
 
-        this->name = common_utils::get_name_hash(name);
+        this->name = common_utils::get_normalized_name(name);
 
         string l_name(WG_LOCK_TABLE_LOCK_PREFIX);
         l_name.append(this->name);

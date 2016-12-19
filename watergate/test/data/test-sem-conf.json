@@ -23,7 +23,7 @@
           "name": "fs-temp-0",
           "class": "com::wookler::watergate::core::io::filesystem_driver",
           "params": {
-            "fs.path.root": "/private/tmp",
+            "fs.path.root": "/private/tmp/",
             "fs.quota.bytes": "2000",
             "fs.quota.lease.time": "500",
             "fs.concurrency.max": "8"
@@ -46,7 +46,7 @@
       }
     },
     "test-lock-client": {
-      "process": "/work/dev/wookler/ReactFS/watergate/test/cmake/test_lock_client",
+      "process": "/work/dev/wookler/ReactFS/watergate/cmake/test_lock_client",
       "process.count": "12",
       "sleep.time": "30",
       "lock.tries": "100"

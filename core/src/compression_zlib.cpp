@@ -10,8 +10,6 @@ int com::wookler::reactfs::core::compression_zlib::read_archive_data(void *sourc
     CHECK_NOT_NULL(out_buffer);
     PRECONDITION(in_size > 0);
 
-    BYTE *c_ptr = static_cast<BYTE *>(source);
-
     z_stream _z_stream = {0};
     _z_stream.total_in = _z_stream.avail_in = in_size;
     _z_stream.total_out = _z_stream.avail_out = out_buffer->get_size();
