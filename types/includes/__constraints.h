@@ -29,6 +29,7 @@
 #include "common/includes/common_utils.h"
 #include "common/includes/time_utils.h"
 #include "common/includes/base_error.h"
+#include "common/includes/buffer_utils.h"
 #include "core/includes/core.h"
 
 #include "types_common.h"
@@ -185,13 +186,9 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t write(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-
                             uint8_t type = __constraint_type_utils::get_number_value(
                                     __constraint_type::CONSTRAINT_NOT_NULLABLE);
-                            memcpy(ptr, &type, sizeof(uint8_t));
-
-                            return sizeof(uint8_t);
+                            return buffer_utils::write<uint8_t>(buffer, &offset, type);
                         }
 
                         /*!
@@ -203,13 +200,14 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t *type = static_cast<uint8_t *>(ptr);
+                            uint8_t *type = nullptr;
+                            uint64_t r_size = buffer_utils::read<uint8_t>(buffer, &offset, &type);
+                            CHECK_NOT_NULL(type);
                             POSTCONDITION(*type ==
                                           __constraint_type_utils::get_number_value(
                                                   __constraint_type::CONSTRAINT_NOT_NULLABLE));
 
-                            return sizeof(uint8_t);
+                            return r_size;
                         }
 
                         /*!
@@ -284,12 +282,10 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t write(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-
+                            uint64_t off = offset;
                             uint8_t type = __constraint_type_utils::get_number_value(
                                     __constraint_type::CONSTRAINT_REGEX);
-                            memcpy(ptr, &type, sizeof(uint8_t));
-                            uint16_t w_size = sizeof(uint8_t);
+                            uint16_t w_size = buffer_utils::write<uint8_t>(buffer, &off, type);
                             w_size += handler->write(buffer, &pattern, (offset + w_size), ULONG_MAX);
 
                             return w_size;
@@ -304,16 +300,18 @@ REACTFS_NS_CORE
                         */
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t *type = static_cast<uint8_t *>(ptr);
+                            uint64_t off = offset;
+                            uint8_t *type = nullptr;
+                            uint16_t r_size = buffer_utils::read<uint8_t>(buffer, &off, &type);
+                            CHECK_NOT_NULL(type);
                             POSTCONDITION(*type ==
                                           __constraint_type_utils::get_number_value(
                                                   __constraint_type::CONSTRAINT_REGEX));
                             string *value = nullptr;
-                            uint16_t r_size = sizeof(uint8_t);
                             r_size += handler->read(buffer, &value, (offset + r_size), ULONG_MAX);
                             CHECK_NOT_NULL(value);
                             set_pattern(*value);
+                            CHECK_AND_FREE(value);
 
                             return r_size;
                         }
@@ -343,7 +341,7 @@ REACTFS_NS_CORE
                      */
                     template<typename __T, __type_def_enum __type>
                     class __range_constraint : public __constraint {
-                    private:
+                    protected:
                         /// Datatype enum of the supported range type.
                         __type_def_enum value_type = __type;
                         /// Min value of the range
@@ -425,14 +423,13 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
 
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint64_t off = offset;
                             uint8_t type = __constraint_type_utils::get_number_value(
                                     __constraint_type::CONSTRAINT_RANGE);
-                            memcpy(ptr, &type, sizeof(uint8_t));
+                            uint64_t w_size = buffer_utils::write<uint8_t>(buffer, &off, type);
 
-                            uint64_t w_size = sizeof(uint8_t);
                             // Write the min value first.
-                            uint64_t off = (offset + w_size);
+                            off = (offset + w_size);
                             w_size += handler->write(buffer, &min_value, off,
                                                      ULONG_MAX); // Note: Don't need to worry about buffer size here.
                             // Write the max value next.
@@ -453,15 +450,15 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
 
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t *type = static_cast<uint8_t *>(ptr);
+                            uint64_t off = offset;
+                            uint8_t *type = nullptr;
+                            uint16_t r_size = buffer_utils::read<uint8_t>(buffer, &off, &type);
+                            CHECK_NOT_NULL(type);
                             POSTCONDITION(*type == __constraint_type_utils::get_number_value(
                                     __constraint_type::CONSTRAINT_RANGE));
 
-                            uint64_t r_size = sizeof(uint8_t);
-
                             // Read the min value first.
-                            uint64_t off = offset + r_size;
+                            off = offset + r_size;
                             __T *t = nullptr;
                             r_size += handler->read(buffer, &t, off, ULONG_MAX);
                             CHECK_NOT_NULL(t);
@@ -488,6 +485,46 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    class string_range_constraint : public __range_constraint<string, __type_def_enum::TYPE_STRING> {
+                    public:
+                        /*!
+                        * Read (de-serialize) the constraint instance.
+                        *
+                        * @param buffer - Input buffer to read data from.
+                        * @param offset - Offset in the input buffer to read from.
+                        * @return - Number of bytes consumed.
+                        */
+                        virtual uint32_t read(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(handler);
+
+                            uint64_t off = offset;
+                            uint8_t *type = nullptr;
+                            uint16_t r_size = buffer_utils::read<uint8_t>(buffer, &off, &type);
+                            CHECK_NOT_NULL(type);
+                            POSTCONDITION(*type == __constraint_type_utils::get_number_value(
+                                    __constraint_type::CONSTRAINT_RANGE));
+
+                            // Read the min value first.
+                            off = offset + r_size;
+                            string *t = nullptr;
+                            r_size += handler->read(buffer, &t, off, ULONG_MAX);
+                            CHECK_NOT_NULL(t);
+                            min_value = string(*t);
+                            CHECK_AND_FREE(t);
+
+                            // Read the max value next.
+                            t = nullptr;
+                            off = offset + r_size;
+                            r_size += handler->read(buffer, &t, off, ULONG_MAX);
+                            CHECK_NOT_NULL(t);
+                            max_value = string(*t);
+                            CHECK_AND_FREE(t);
+
+                            return r_size;
+                        }
+                    };
+
                     typedef __range_constraint<char, __type_def_enum::TYPE_CHAR> char_range_constraint;
                     typedef __range_constraint<short, __type_def_enum::TYPE_SHORT> short_range_constraint;
                     typedef __range_constraint<int, __type_def_enum::TYPE_INTEGER> int_range_constraint;
@@ -495,18 +532,16 @@ REACTFS_NS_CORE
                     typedef __range_constraint<float, __type_def_enum::TYPE_FLOAT> float_range_constraint;
                     typedef __range_constraint<double, __type_def_enum::TYPE_DOUBLE> double_range_constraint;
                     typedef __range_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP> timestamp_range_constraint;
-                    typedef __range_constraint<string, __type_def_enum::TYPE_STRING> string_range_constraint;
 
 
                     template<typename __T, __type_def_enum __type, __constraint_operator __operator>
                     class __oper_constraint : public __constraint {
-                    private:
+                    protected:
                         __constraint_operator oper = __operator;
                         __type_def_enum value_type = __type;
                         __T value;
                         __base_datatype_io *handler = nullptr;
 
-                    protected:
                         string get_oper_string(__constraint_operator oper) const {
                             switch (oper) {
                                 case __constraint_operator::EQ:
@@ -576,12 +611,11 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
 
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint64_t off = offset;
                             uint8_t type = __constraint_type_utils::get_number_value(get_constraint_type());
-                            memcpy(ptr, &type, sizeof(uint8_t));
+                            uint64_t w_size = buffer_utils::write<uint8_t>(buffer, &off, type);
 
-                            uint64_t w_size = sizeof(uint8_t);
-                            uint64_t off = (offset + w_size);
+                            off = (offset + w_size);
                             w_size += handler->write(buffer, &value, off,
                                                      ULONG_MAX); // Note: Don't need to worry about buffer size here.
 
@@ -592,14 +626,13 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
 
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t *type = static_cast<uint8_t *>(ptr);
+                            uint64_t off = offset;
+                            uint8_t *type = nullptr;
+                            uint64_t r_size = buffer_utils::read<uint8_t>(buffer, &off, &type);
+                            CHECK_NOT_NULL(type);
                             POSTCONDITION(*type == __constraint_type_utils::get_number_value(get_constraint_type()));
-                            ptr = common_utils::increment_data_ptr(ptr, sizeof(uint8_t));
 
-                            uint64_t r_size = sizeof(uint8_t);
-
-                            uint64_t off = offset + r_size;
+                            off = offset + r_size;
                             __T *t = nullptr;
                             r_size += handler->read(buffer, &t, off, ULONG_MAX);
                             CHECK_NOT_NULL(t);
@@ -615,6 +648,31 @@ REACTFS_NS_CORE
                             string o = get_oper_string(this->oper);
                             LOG_INFO("\tconstraint : %s compare(%s %s) datatype=%s", n.c_str(), o.c_str(), v.c_str(),
                                      t.c_str());
+                        }
+                    };
+
+                    template<__constraint_operator __operator>
+                    class string_oper_constraint
+                            : public __oper_constraint<string, __type_def_enum::TYPE_STRING, __operator> {
+                    public:
+                        virtual uint32_t read(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(handler);
+
+                            uint64_t off = offset;
+                            uint8_t *type = nullptr;
+                            uint64_t r_size = buffer_utils::read<uint8_t>(buffer, &off, &type);
+                            CHECK_NOT_NULL(type);
+                            POSTCONDITION(*type == __constraint_type_utils::get_number_value(get_constraint_type()));
+
+                            off = offset + r_size;
+                            string *t = nullptr;
+                            r_size += handler->read(buffer, &t, off, ULONG_MAX);
+                            CHECK_NOT_NULL(t);
+                            value = string(*t);
+                            CHECK_AND_FREE(t);
+
+                            return r_size;
                         }
                     };
 
@@ -682,18 +740,14 @@ REACTFS_NS_CORE
                     typedef __oper_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP,
                             __constraint_operator::LTEQ> timestamp_lteq_constraint;
 
-                    typedef __oper_constraint<string, __type_def_enum::TYPE_STRING,
-                            __constraint_operator::GT> string_gt_constraint;
-                    typedef __oper_constraint<string, __type_def_enum::TYPE_STRING,
-                            __constraint_operator::GTEQ> string_gteq_constraint;
-                    typedef __oper_constraint<string, __type_def_enum::TYPE_STRING,
-                            __constraint_operator::LT> string_lt_constraint;
-                    typedef __oper_constraint<string, __type_def_enum::TYPE_STRING,
-                            __constraint_operator::LTEQ> string_lteq_constraint;
+                    typedef string_oper_constraint<__constraint_operator::GT> string_gt_constraint;
+                    typedef string_oper_constraint<__constraint_operator::GTEQ> string_gteq_constraint;
+                    typedef string_oper_constraint<__constraint_operator::LT> string_lt_constraint;
+                    typedef string_oper_constraint<__constraint_operator::LTEQ> string_lteq_constraint;
 
                     template<typename __T, __type_def_enum __type>
                     class __value_constraint : public __constraint {
-                    private:
+                    protected:
                         __type_def_enum value_type = __type;
                         vector<__T> values;
                         __base_datatype_io *handler = nullptr;
@@ -736,16 +790,14 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
 
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            uint64_t off = offset;
                             uint8_t type = __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN);
-                            memcpy(ptr, &type, sizeof(uint8_t));
+                            uint64_t w_size = buffer_utils::write<uint8_t>(buffer, &off, type);
 
                             uint16_t count = values.size();
-                            uint64_t w_size = sizeof(uint8_t);
-                            memcpy(ptr, &count, sizeof(uint16_t));
-                            w_size += sizeof(uint16_t);
+                            w_size += buffer_utils::write<uint16_t>(buffer, &off, count);
                             for (__T t : values) {
-                                uint64_t off = (offset + w_size);
+                                off = (offset + w_size);
                                 w_size += handler->write(buffer, &t, off,
                                                          ULONG_MAX); // Note: Don't need to worry about buffer size here.
                             }
@@ -756,17 +808,18 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
 
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t *type = static_cast<uint8_t *>(ptr);
+                            uint64_t off = offset;
+                            uint8_t *type = nullptr;
+                            uint64_t r_size = buffer_utils::read<uint8_t>(buffer, &off, &type);
+                            CHECK_NOT_NULL(type);
                             POSTCONDITION(*type ==
                                           __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN));
-                            ptr = common_utils::increment_data_ptr(ptr, sizeof(uint8_t));
-
-                            uint16_t *count = static_cast<uint16_t *>(ptr);
-                            uint64_t r_size = sizeof(uint16_t) + sizeof(uint8_t);
-                            if (count > 0) {
+                            uint16_t *count = nullptr;
+                            r_size += buffer_utils::read<uint16_t>(buffer, &off, &count);
+                            CHECK_NOT_NULL(count);
+                            if (*count > 0) {
                                 for (uint16_t ii = 0; ii < *count; ii++) {
-                                    uint64_t off = offset + r_size;
+                                    off = offset + r_size;
                                     __T *t = nullptr;
                                     r_size += handler->read(buffer, &t, off, ULONG_MAX);
                                     CHECK_NOT_NULL(t);
@@ -793,6 +846,36 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    class string_value_constraint : public __value_constraint<string, __type_def_enum::TYPE_STRING> {
+                    public:
+                        virtual uint32_t read(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(handler);
+
+                            uint64_t off = offset;
+                            uint8_t *type = nullptr;
+                            uint64_t r_size = buffer_utils::read<uint8_t>(buffer, &off, &type);
+                            CHECK_NOT_NULL(type);
+                            POSTCONDITION(*type ==
+                                          __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN));
+                            uint16_t *count = nullptr;
+                            r_size += buffer_utils::read<uint16_t>(buffer, &off, &count);
+                            CHECK_NOT_NULL(count);
+                            if (*count > 0) {
+                                for (uint16_t ii = 0; ii < *count; ii++) {
+                                    off = offset + r_size;
+                                    string *t = nullptr;
+                                    r_size += handler->read(buffer, &t, off, ULONG_MAX);
+                                    CHECK_NOT_NULL(t);
+
+                                    values.push_back(string(*t));
+                                    CHECK_AND_FREE(t);
+                                }
+                            }
+                            return r_size;
+                        }
+                    };
+
                     typedef __value_constraint<char, __type_def_enum::TYPE_CHAR> char_value_constraint;
                     typedef __value_constraint<short, __type_def_enum::TYPE_SHORT> short_value_constraint;
                     typedef __value_constraint<int, __type_def_enum::TYPE_INTEGER> int_value_constraint;
@@ -800,8 +883,6 @@ REACTFS_NS_CORE
                     typedef __value_constraint<float, __type_def_enum::TYPE_FLOAT> float_value_constraint;
                     typedef __value_constraint<uint64_t, __type_def_enum::TYPE_TIMESTAMP> timestamp_value_constraint;
                     typedef __value_constraint<double, __type_def_enum::TYPE_DOUBLE> double_value_constraint;
-                    typedef __value_constraint<string, __type_def_enum::TYPE_STRING> string_value_constraint;
-
 
                 }
 REACTFS_NS_CORE_END

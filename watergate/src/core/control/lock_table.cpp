@@ -21,6 +21,7 @@
 #include "common/includes/__env.h"
 #include "common/includes/init_utils.h"
 #include "common/includes/lock_record_def.h"
+#include "common/includes/buffer_utils.h"
 #include "watergate/includes/lock_table.h"
 
 bool
@@ -84,12 +85,12 @@ com::wookler::watergate::core::lock_table::create(string name, resource_def *res
                 header_ptr->used_record = 0;
             }
 
-            void *ptr = common_utils::increment_data_ptr(base_ptr, h_size);
+            void *ptr = buffer_utils::increment_data_ptr(base_ptr, h_size);
             uint32_t *iptr = reinterpret_cast<uint32_t *>(ptr);
             bit_index = new com::wookler::reactfs::common::__bitset(iptr, b_size);
             CHECK_ALLOC(bit_index, TYPE_NAME(__bitset));
 
-            ptr = common_utils::increment_data_ptr(ptr, b_size);
+            ptr = buffer_utils::increment_data_ptr(ptr, b_size);
             record_ptr = reinterpret_cast<__lock_record *>(ptr);
 
         } catch (const exception &ei) {

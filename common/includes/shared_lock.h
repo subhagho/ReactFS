@@ -35,10 +35,10 @@
 #include "timer.h"
 #include "__alarm.h"
 #include "process_utils.h"
-#include "unordered_map"
 #include "__bitset.h"
 #include "mapped_data.h"
 #include "lock_structs_v0.h"
+#include "buffer_utils.h"
 
 #define DEFAULT_LOCK_MGR_SLEEP 30 * 1000
 #define DEFAULT_READ_LOCK_TIMEOUT 5 * 60 * 1000
@@ -110,7 +110,7 @@ REACTFS_NS_COMMON
                      */
                     void *get_data_ptr() {
                         uint64_t h_size = sizeof(__shared_lock_data);
-                        return common_utils::increment_data_ptr(mm_data->get_base_ptr(), h_size);
+                        return buffer_utils::increment_data_ptr(mm_data->get_base_ptr(), h_size);
                     }
 
                 public:

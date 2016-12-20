@@ -26,6 +26,7 @@
 
 #include "common/includes/common.h"
 #include "common/includes/log_utils.h"
+#include "common/includes/buffer_utils.h"
 #include "core/includes/core.h"
 
 #include "types_common.h"
@@ -274,39 +275,26 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t write(void *buffer, uint64_t offset) {
                             CHECK_NOT_NULL(buffer);
-                            __base_datatype_io *string_handler = __type_defs_utils::get_type_handler(
-                                    __type_def_enum::TYPE_STRING);
-                            CHECK_NOT_NULL(string_handler);
+                            uint64_t w_offset = offset;
 
                             // Write the field type.
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
                             uint8_t ft = __field_type_helper::get_type_number(this->type);
-                            memcpy(ptr, &ft, sizeof(uint8_t));
-                            uint32_t w_size = sizeof(uint8_t);
+                            uint32_t w_size = buffer_utils::write<uint8_t>(buffer, &w_offset, ft);
 
                             // Write the field datatype
                             uint8_t dt = (uint8_t) this->datatype;
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
-                            memcpy(ptr, &dt, sizeof(uint8_t));
-                            w_size += sizeof(uint8_t);
+                            w_size += buffer_utils::write<uint8_t>(buffer, &w_offset, dt);
 
                             // Write the field index
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
-                            memcpy(ptr, &index, sizeof(uint8_t));
-                            w_size += sizeof(uint8_t);
+                            w_size += buffer_utils::write<uint8_t>(buffer, &w_offset, index);
 
                             // Write the field name.
-                            w_size += string_handler->write(buffer, &name, (offset + w_size), ULONG_MAX);
-                            uint8_t bits = 0;
-                            if (NOT_NULL(constraint)) {
-                                bits = bitset_utils::set_uint8_bit(bits, BIT_TYPE_CONSTRAINT);
-                            }
+                            w_size += buffer_utils::write_8str(buffer, &w_offset, this->name);
 
                             // Write is nullable
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
-                            memcpy(ptr, &(this->nullable), sizeof(bool));
-                            w_size += sizeof(bool);
+                            w_size += buffer_utils::write<bool>(buffer, &w_offset, this->nullable);
 
+                            uint8_t bits = 0;
                             // Set constraint bit
                             if (NOT_NULL(constraint)) {
                                 bits = bitset_utils::set_uint8_bit(bits, BIT_TYPE_CONSTRAINT);
@@ -317,9 +305,7 @@ REACTFS_NS_CORE
                                 bits = bitset_utils::set_uint8_bit(bits, BIT_TYPE_DEFAULT_VALUE);
                             }
                             // Write the extended data bits.
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
-                            memcpy(ptr, &bits, sizeof(uint8_t));
-                            w_size += sizeof(uint8_t);
+                            w_size += buffer_utils::write<uint8_t>(buffer, &w_offset, bits);
 
                             // Write the constraint (if any)
                             if (NOT_NULL(constraint)) {
@@ -341,51 +327,49 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t read(void *buffer, uint64_t offset) {
                             CHECK_NOT_NULL(buffer);
-                            __base_datatype_io *string_handler = __type_defs_utils::get_type_handler(
-                                    __type_def_enum::TYPE_STRING);
-                            CHECK_NOT_NULL(string_handler);
+                            uint64_t r_offset = offset;
 
                             // Read the field type.
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t *ft = static_cast<uint8_t *>(ptr);
+                            uint8_t *ft = nullptr;
+                            uint32_t r_size = buffer_utils::read<uint8_t>(buffer, &r_offset, &ft);
+                            CHECK_NOT_NULL(ft);
                             POSTCONDITION(*ft == __field_type_helper::get_type_number(this->type));
-                            uint32_t r_size = sizeof(uint8_t);
 
 
                             // Read the field datatype
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
-                            uint8_t *dt = static_cast<uint8_t *>(ptr);
+                            uint8_t *dt = nullptr;
+                            r_size += buffer_utils::read<uint8_t>(buffer, &r_offset, &dt);
+                            CHECK_NOT_NULL(dt);
                             this->datatype = __type_enum_helper::parse_type(*dt);
+                            POSTCONDITION(this->datatype != __type_def_enum::TYPE_UNKNOWN);
                             if (__type_enum_helper::is_native(this->datatype) ||
                                 this->datatype == __type_def_enum::TYPE_TEXT) {
                                 type_handler = __type_defs_utils::get_type_handler(this->datatype);
                                 CHECK_NOT_NULL(type_handler);
                             }
-                            r_size += sizeof(uint8_t);
 
                             // Read the field index.
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
-                            uint8_t *index = static_cast<uint8_t *>(ptr);
+                            uint8_t *index = nullptr;
+                            r_size += buffer_utils::read<uint8_t>(buffer, &r_offset, &index);
+                            CHECK_NOT_NULL(index);
                             this->index = *index;
-                            r_size += sizeof(uint8_t);
 
                             // Read the field name.
-                            string *sp = nullptr;
-                            r_size += string_handler->read(buffer, &sp, (offset + r_size), ULONG_MAX);
+                            string *sp = new string();
+                            CHECK_ALLOC(sp, TYPE_NAME(string));
+                            r_size += buffer_utils::read_8str(buffer, &r_offset, sp);
                             CHECK_NOT_NULL(sp);
                             this->name = string(*sp);
                             CHECK_AND_FREE(sp);
 
                             // Read is nullable
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
-                            bool *nn = static_cast<bool *>(ptr);
+                            bool *nn = nullptr;
+                            r_size += buffer_utils::read<bool>(buffer, &r_offset, &nn);
                             this->nullable = *nn;
-                            r_size += sizeof(bool);
 
                             // Read the extended data bitmap
-                            ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
-                            uint8_t *bits = static_cast<uint8_t *>(ptr);
-                            r_size += sizeof(uint8_t);
+                            uint8_t *bits = nullptr;
+                            r_size += buffer_utils::read<uint8_t>(buffer, &r_offset, &bits);
 
                             // If constriant bit is set, read the constraint definition.
                             if (bitset_utils::check_uint8_bit(*bits, BIT_TYPE_CONSTRAINT)) {
@@ -523,9 +507,8 @@ REACTFS_NS_CORE
                         virtual uint32_t write(void *buffer, uint64_t offset) override {
                             uint32_t w_size = __native_type::write(buffer, offset);
                             // Write the max_size value.
-                            void *ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
-                            memcpy(ptr, &max_size, sizeof(uint32_t));
-                            w_size += sizeof(uint32_t);
+                            uint64_t w_offset = (offset + w_size);
+                            w_size += buffer_utils::write<uint32_t>(buffer, &w_offset, this->max_size);
 
                             return w_size;
                         }
@@ -539,11 +522,13 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             uint32_t r_size = __native_type::read(buffer, offset);
+
                             // Read the max_size value.
-                            void *ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
-                            uint32_t *s = static_cast<uint32_t *>(ptr);
-                            this->max_size = *s;
-                            r_size += sizeof(uint32_t);
+                            uint64_t r_offset = (offset + r_size);
+                            uint32_t *size = nullptr;
+                            r_size += buffer_utils::read<uint32_t>(buffer, &r_offset, &size);
+                            CHECK_NOT_NULL(size);
+                            this->max_size = *size;
 
                             return r_size;
                         }
@@ -767,11 +752,11 @@ REACTFS_NS_CORE
                          */
                         virtual uint32_t write(void *buffer, uint64_t offset) override {
                             uint32_t w_size = __native_type::write(buffer, offset);
-                            // Write the max_size value.
-                            void *ptr = common_utils::increment_data_ptr(buffer, (offset + w_size));
+                            uint64_t w_offset = (offset + w_size);
+
+                            // Write the number of fields in this definition.
                             uint8_t size = (uint8_t) fields.size();
-                            memcpy(ptr, &size, sizeof(uint8_t));
-                            w_size += sizeof(uint8_t);
+                            w_size += buffer_utils::write<uint8_t >(buffer, &w_offset, size);
 
                             unordered_map<uint8_t, __native_type *>::iterator iter;
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
@@ -792,10 +777,12 @@ REACTFS_NS_CORE
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(loader);
                             uint32_t r_size = __native_type::read(buffer, offset);
-                            // Read the max_size value.
-                            void *ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
-                            uint8_t *size = static_cast<uint8_t *>(ptr);
-                            r_size += sizeof(uint8_t);
+                            uint64_t r_offset = offset;
+
+                            // Read the number of fields in this definition.
+                            uint8_t *size = nullptr;
+                            r_size += buffer_utils::read<uint8_t >(buffer, &r_offset, &size);
+                            CHECK_NOT_NULL(size);
 
                             vector<__native_type *> types;
                             loader->read(this, buffer, (offset + r_size), *size, &types, &r_size);
@@ -857,8 +844,10 @@ REACTFS_NS_CORE
                         static __native_type *
                         read_inner_type(__native_type *parent, void *buffer, uint64_t offset, uint32_t *size) {
                             // Read the field type.
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t *ft = static_cast<uint8_t *>(ptr);
+                            uint8_t *ft = nullptr;
+                            uint64_t r_offset = offset;
+                            buffer_utils::read<uint8_t >(buffer, &r_offset, &ft);
+                            CHECK_NOT_NULL(ft);
 
                             __field_type field_type = __field_type_helper::get_type(*ft);
                             if (field_type == __field_type::NATIVE) {
@@ -887,8 +876,10 @@ REACTFS_NS_CORE
                         static __native_type *
                         read_key_type(__native_type *parent, void *buffer, uint64_t offset, uint32_t *size) {
                             // Read the field type.
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
-                            uint8_t *ft = static_cast<uint8_t *>(ptr);
+                            uint8_t *ft = nullptr;
+                            uint64_t r_offset = offset;
+                            buffer_utils::read<uint8_t >(buffer, &r_offset, &ft);
+                            CHECK_NOT_NULL(ft);
 
                             __field_type field_type = __field_type_helper::get_type(*ft);
                             if (field_type == __field_type::NATIVE) {

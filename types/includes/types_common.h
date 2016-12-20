@@ -30,6 +30,7 @@
 #include "common/includes/common_utils.h"
 #include "common/includes/time_utils.h"
 #include "common/includes/base_error.h"
+#include "common/includes/buffer_utils.h"
 #include "core/includes/core.h"
 
 #define SIZE_MAX_TYPE_STRING 256
@@ -442,7 +443,7 @@ REACTFS_NS_CORE
                         void *get_data_ptr(void *source, uint64_t size, uint64_t offset, uint64_t max_length) {
                             CHECK_NOT_NULL(source);
                             PRECONDITION((offset + size) < max_length);
-                            return common_utils::increment_data_ptr(source, offset);
+                            return buffer_utils::increment_data_ptr(source, offset);
                         }
 
                     public:
@@ -543,6 +544,7 @@ REACTFS_NS_CORE
                          */
                         uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             void *ptr = get_data_ptr(buffer, sizeof(uint8_t), offset, max_length);
                             memcpy(ptr, value, sizeof(uint8_t));
                             return sizeof(uint8_t);
@@ -617,6 +619,7 @@ REACTFS_NS_CORE
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             char **T = (char **) t;
+
                             void *ptr = get_data_ptr(buffer, sizeof(char), offset, max_length);
                             *T = (char *) ptr;
                             return sizeof(char);
@@ -633,6 +636,7 @@ REACTFS_NS_CORE
                          */
                         uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             void *ptr = get_data_ptr(buffer, sizeof(char), offset, max_length);
                             memcpy(ptr, value, sizeof(char));
                             return sizeof(char);
@@ -707,6 +711,7 @@ REACTFS_NS_CORE
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             bool **T = (bool **) t;
+
                             void *ptr = get_data_ptr(buffer, sizeof(bool), offset, max_length);
                             *T = (bool *) ptr;
                             return sizeof(bool);
@@ -723,6 +728,7 @@ REACTFS_NS_CORE
                          */
                         uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             void *ptr = get_data_ptr(buffer, sizeof(bool), offset, max_length);
                             memcpy(ptr, value, sizeof(bool));
                             return sizeof(bool);
@@ -787,6 +793,7 @@ REACTFS_NS_CORE
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             short **T = (short **) t;
+
                             void *ptr = get_data_ptr(buffer, sizeof(short), offset, max_length);
                             *T = (short *) ptr;
                             return sizeof(short);
@@ -803,6 +810,7 @@ REACTFS_NS_CORE
                          */
                         uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             void *ptr = get_data_ptr(buffer, sizeof(short), offset, max_length);
                             memcpy(ptr, value, sizeof(short));
                             return sizeof(short);
@@ -877,6 +885,7 @@ REACTFS_NS_CORE
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             int **T = (int **) t;
+
                             void *ptr = get_data_ptr(buffer, sizeof(int), offset, max_length);
                             *T = (int *) ptr;
                             return sizeof(int);
@@ -893,6 +902,7 @@ REACTFS_NS_CORE
                          */
                         uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             void *ptr = get_data_ptr(buffer, sizeof(int), offset, max_length);
                             memcpy(ptr, value, sizeof(int));
                             return sizeof(int);
@@ -967,6 +977,7 @@ REACTFS_NS_CORE
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             long **T = (long **) t;
+
                             void *ptr = get_data_ptr(buffer, sizeof(long), offset, max_length);
                             *T = (long *) ptr;
                             return sizeof(long);
@@ -983,6 +994,7 @@ REACTFS_NS_CORE
                         */
                         uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             void *ptr = get_data_ptr(buffer, sizeof(long), offset, max_length);
                             memcpy(ptr, value, sizeof(long));
                             return sizeof(long);
@@ -1057,6 +1069,7 @@ REACTFS_NS_CORE
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             uint64_t **T = (uint64_t **) t;
+
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             *T = (uint64_t *) ptr;
                             return sizeof(uint64_t);
@@ -1073,6 +1086,7 @@ REACTFS_NS_CORE
                         */
                         uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
                             memcpy(ptr, value, sizeof(uint64_t));
                             return sizeof(uint64_t);
@@ -1150,14 +1164,17 @@ REACTFS_NS_CORE
                          */
                         uint64_t readstr(void *buffer, string *str, uint64_t offset, uint64_t max_length,
                                          const string &format = common_consts::EMPTY_STRING) {
-                            uint64_t *ts = nullptr;
+                            CHECK_NOT_NULL(str);
+                            uint64_t *ts = (uint64_t *) malloc(sizeof(uint64_t));
+                            CHECK_ALLOC(ts, TYPE_NAME(uint64_t));
+
                             uint64_t r = read(buffer, &ts, offset, max_length);
-                            CHECK_NOT_NULL(ts);
                             POSTCONDITION(r == sizeof(uint64_t));
                             if (!IS_EMPTY(format))
                                 str->assign(time_utils::get_time_string(*ts, format));
                             else
                                 str->assign(time_utils::get_time_string(*ts));
+                            FREE_PTR(ts);
                             return r;
                         }
 
@@ -1210,6 +1227,7 @@ REACTFS_NS_CORE
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             float **T = (float **) t;
+
                             void *ptr = get_data_ptr(buffer, sizeof(float), offset, max_length);
                             *T = (float *) ptr;
                             return sizeof(float);
@@ -1226,6 +1244,7 @@ REACTFS_NS_CORE
                         */
                         uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             void *ptr = get_data_ptr(buffer, sizeof(float), offset, max_length);
                             memcpy(ptr, value, sizeof(float));
                             return sizeof(float);
@@ -1300,6 +1319,7 @@ REACTFS_NS_CORE
                         uint64_t read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             double **T = (double **) t;
+
                             void *ptr = get_data_ptr(buffer, sizeof(double), offset, max_length);
                             *T = (double *) ptr;
                             return sizeof(double);
@@ -1316,6 +1336,7 @@ REACTFS_NS_CORE
                         */
                         uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(value);
                             void *ptr = get_data_ptr(buffer, sizeof(double), offset, max_length);
                             memcpy(ptr, value, sizeof(double));
                             return sizeof(double);
@@ -1394,21 +1415,10 @@ REACTFS_NS_CORE
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             string **T = (string **) t;
-                            void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
-                            // Get the size of the string data (uint64_t)
-                            uint64_t size = 0;
-                            memcpy(&size, ptr, sizeof(uint64_t));
-                            // If size if 0, then the string is null.
-                            if (size > 0) {
-                                uint64_t d_size = (size * sizeof(char));
-                                ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
-                                PRECONDITION((offset + d_size + sizeof(uint64_t)) < max_length);
-                                char *cptr = (char *) ptr;
-                                *T = new string(cptr, d_size);
-                                CHECK_ALLOC(*T, TYPE_NAME(string));
-                                return (d_size + sizeof(uint64_t));
-                            }
-                            return sizeof(uint64_t);
+                            *T = new string();
+                            CHECK_ALLOC(*T, TYPE_NAME(string));
+                            uint64_t r_size = buffer_utils::read_32str(buffer, &offset, *T);
+                            return r_size;
                         }
 
                         /*!
@@ -1422,19 +1432,10 @@ REACTFS_NS_CORE
                         */
                         virtual uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
+                            CHECK_NOT_NULL(value);
                             string *s = (string *) value;
-                            uint64_t size = (s->length() * sizeof(char));
-                            // Write the size of the string buffer. (uint64_t)
-                            memcpy(ptr, &size, sizeof(uint64_t));
-                            // If size is greater than 0, write the string buffer.
-                            if (size > 0) {
-                                PRECONDITION((offset + sizeof(uint64_t) + size) < max_length);
-                                ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
-                                memcpy(ptr, s->c_str(), s->length());
-                                return (size + sizeof(uint64_t));
-                            }
-                            return sizeof(uint64_t);
+                            uint64_t w_size = buffer_utils::write_32str(buffer, &offset, *s);
+                            return w_size;
                         }
 
                         /*!
@@ -1505,21 +1506,10 @@ REACTFS_NS_CORE
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             string **T = (string **) t;
-                            void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
-                            uint16_t size = 0;
-                            // Get the size of the string data (uint16_t)
-                            memcpy(&size, ptr, sizeof(uint16_t));
-                            // If size if 0, then the string is null.
-                            if (size > 0) {
-                                uint64_t d_size = (size * sizeof(char));
-                                ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
-                                PRECONDITION((offset + d_size + sizeof(uint64_t)) < max_length);
-                                char *cptr = (char *) ptr;
-                                *T = new string(cptr, d_size);
-                                CHECK_ALLOC(*T, TYPE_NAME(string));
-                                return (d_size + sizeof(uint16_t));
-                            }
-                            return sizeof(uint16_t);
+                            *T = new string();
+                            CHECK_ALLOC(*T, TYPE_NAME(string));
+                            uint64_t r_size = buffer_utils::read_8str(buffer, &offset, *T);
+                            return r_size;
                         }
 
                         /*!
@@ -1533,20 +1523,10 @@ REACTFS_NS_CORE
                         */
                         virtual uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            void *ptr = get_data_ptr(buffer, sizeof(uint64_t), offset, max_length);
+                            CHECK_NOT_NULL(value);
                             string *s = (string *) value;
-                            PRECONDITION(s->length() < SIZE_MAX_TYPE_STRING);
-                            uint16_t size = (s->length() * sizeof(char));
-                            // Write the size of the string buffer. (uint16_t)
-                            memcpy(ptr, &size, sizeof(uint16_t));
-                            // If size if 0, then the string is null.
-                            if (size > 0) {
-                                PRECONDITION((offset + sizeof(uint16_t) + size) < max_length);
-                                ptr = common_utils::increment_data_ptr(ptr, sizeof(uint16_t));
-                                memcpy(ptr, s->c_str(), s->length());
-                                return (size + sizeof(uint16_t));
-                            }
-                            return sizeof(uint16_t);
+                            uint64_t w_size = buffer_utils::write_8str(buffer, &offset, *s);
+                            return w_size;
                         }
 
                         /*!
@@ -1561,7 +1541,7 @@ REACTFS_NS_CORE
                             }
                             const string *d = static_cast<const string *>(data);
                             CHECK_NOT_NULL(data);
-                            return (sizeof(uint16_t) + (sizeof(char) * d->length()));
+                            return (sizeof(uint8_t) + (sizeof(char) * d->length()));
                         }
                     };
 
