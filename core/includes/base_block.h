@@ -31,6 +31,7 @@
 #include "common/includes/__alarm.h"
 #include "common/includes/shared_lock_utils.h"
 #include "common/includes/mapped_data.h"
+#include "common/includes/buffer_utils.h"
 
 #include "common_structs.h"
 #include "fs_error_base.h"
@@ -168,7 +169,7 @@ namespace com {
                      * @return - Base data address
                      */
                     virtual void *get_data_ptr() {
-                        return common_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
+                        return buffer_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
                     }
 
 
@@ -227,7 +228,7 @@ namespace com {
                      */
                     void *get_write_ptr() {
                         PRECONDITION(in_transaction());
-                        return common_utils::increment_data_ptr(write_ptr, rollback_info->write_offset);
+                        return buffer_utils::increment_data_ptr(write_ptr, rollback_info->write_offset);
                     }
 
                     uint64_t get_write_offset() {

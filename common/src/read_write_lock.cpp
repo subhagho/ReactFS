@@ -39,7 +39,7 @@ com::wookler::reactfs::common::__rw_lock_struct *com::wookler::reactfs::common::
         __rw_lock_struct *ptr = locks;
         int found_index = -1;
         int free_index = -1;
-        for (int ii = 0; ii < header_ptr->max_count; ii++) {
+        for (uint32_t ii = 0; ii < header_ptr->max_count; ii++) {
             if (ptr->w_lock_struct.used) {
                 if (strlen(ptr->w_lock_struct.name) == name.length() &&
                     strncmp(ptr->w_lock_struct.name, name.c_str(), name.length()) == 0) {
@@ -88,7 +88,7 @@ bool com::wookler::reactfs::common::rw_lock_table::remove_lock(string name, uint
     try {
         __rw_lock_struct *ptr = locks;
         int found_index = -1;
-        for (int ii = 0; ii < header_ptr->max_count; ii++) {
+        for (uint32_t ii = 0; ii < header_ptr->max_count; ii++) {
             if (ptr->w_lock_struct.used) {
                 if (strlen(ptr->w_lock_struct.name) == name.length() &&
                     strncmp(ptr->w_lock_struct.name, name.c_str(), name.length()) == 0) {

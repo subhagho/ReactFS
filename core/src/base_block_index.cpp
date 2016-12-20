@@ -166,7 +166,7 @@ __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(
     uint64_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
 
     void *ptr = get_data_ptr();
-    void *rptr = common_utils::increment_data_ptr(ptr, offset);
+    void *rptr = buffer_utils::increment_data_ptr(ptr, offset);
     __record_index_ptr *iptr = static_cast<__record_index_ptr *>(rptr);
     if (iptr->index != index) {
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
@@ -186,7 +186,7 @@ bool com::wookler::reactfs::core::base_block_index::delete_index(uint64_t index,
 
     uint64_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
     void *ptr = get_data_ptr();
-    void *rptr = common_utils::increment_data_ptr(ptr, offset);
+    void *rptr = buffer_utils::increment_data_ptr(ptr, offset);
     __record_index_ptr *iptr = static_cast<__record_index_ptr *>(rptr);
     if (iptr->index != index) {
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,

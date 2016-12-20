@@ -194,7 +194,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
     record->header->state = __record_state::R_DIRTY;
     record->header->checksum = checksum;
 
-    w_ptr = common_utils::increment_data_ptr(w_ptr, sizeof(__record_header));
+    w_ptr = buffer_utils::increment_data_ptr(w_ptr, sizeof(__record_header));
     record->data_ptr = w_ptr;
 
     memcpy(record->data_ptr, source, size);
@@ -220,11 +220,11 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint64_t 
     PRECONDITION(index >= header->start_index && index <= header->last_index);
 
     void *ptr = get_data_ptr();
-    void *rptr = common_utils::increment_data_ptr(ptr, offset);
+    void *rptr = buffer_utils::increment_data_ptr(ptr, offset);
     __record *record = (__record *) malloc(sizeof(__record));
     CHECK_ALLOC(record, TYPE_NAME(__record));
     record->header = static_cast<__record_header *>(rptr);
-    rptr = common_utils::increment_data_ptr(rptr, sizeof(__record_header));
+    rptr = buffer_utils::increment_data_ptr(rptr, sizeof(__record_header));
     record->data_ptr = rptr;
 
     POSTCONDITION(record->header->index == index);
@@ -248,13 +248,13 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index) {
         __record_header *r_header = static_cast<__record_header *>(ptr);
         POSTCONDITION(r_header->index == ii);
         uint64_t offset = r_header->data_size + sizeof(__record_header);
-        ptr = common_utils::increment_data_ptr(ptr, offset);
+        ptr = buffer_utils::increment_data_ptr(ptr, offset);
         ii++;
     }
     __record *record = (__record *) malloc(sizeof(__record));
     CHECK_ALLOC(record, TYPE_NAME(__record));
     record->header = static_cast<__record_header *>(ptr);
-    ptr = common_utils::increment_data_ptr(ptr, sizeof(__record_header));
+    ptr = buffer_utils::increment_data_ptr(ptr, sizeof(__record_header));
     record->data_ptr = ptr;
 
     POSTCONDITION(record->header->index == index);
@@ -368,17 +368,6 @@ uint32_t com::wookler::reactfs::core::base_block::read(uint64_t index, uint32_t 
     temp_buffer *writebuff = new temp_buffer();
     CHECK_ALLOC(writebuff, TYPE_NAME(temp_buffer));
 
-    bool r_type = false;
-    switch (r_state) {
-        case __record_state::R_DELETED:
-        case __record_state::R_DIRTY:
-        case __record_state::R_ALL:
-            r_type = true;
-            break;
-        default:
-            break;
-    }
-
     uint64_t read_bytes = 0;
     nano_timer t;
     t.start();
@@ -430,7 +419,7 @@ void com::wookler::reactfs::core::base_block::commit(string transaction_id) {
     uint64_t offset = header->write_offset;
     uint32_t added = 0;
     while (offset < rollback_info->write_offset) {
-        void *ptr = common_utils::increment_data_ptr(d_ptr, offset);
+        void *ptr = buffer_utils::increment_data_ptr(d_ptr, offset);
         __record_header *header = static_cast<__record_header *>(ptr);
         header->state = __record_state::R_READABLE;
         offset += (sizeof(__record_header) + header->data_size);
@@ -480,7 +469,7 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
 __block_check_record *com::wookler::reactfs::core::base_block::check_block_sanity() {
     CHECK_STATE_AVAILABLE(state);
 
-    long block_checksum = 0;
+    uint64_t block_checksum = 0;
     uint32_t total_records = 0;
     uint32_t deleted_records = 0;
 

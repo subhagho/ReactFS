@@ -19,11 +19,11 @@ string com::wookler::reactfs::core::typed_block::create(uint64_t block_id, uint6
     index_ptr->create_index(header->block_id, header->block_uid, this->filename, estimated_records,
                             header->start_index, overwrite);
 
-    void *ptr = common_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
+    void *ptr = buffer_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
     uint64_t *type_header_size = static_cast<uint64_t *>(ptr);
     *type_header_size = 0;
 
-    ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
+    ptr = buffer_utils::increment_data_ptr(ptr, sizeof(uint64_t));
     *type_header_size = this->datetype->write(ptr, 0);
 
     close();
@@ -40,10 +40,10 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     CHECK_ALLOC(index_ptr, TYPE_NAME(base_block_index));
     index_ptr->open_index(header->block_id, header->block_uid, this->filename);
 
-    ptr = common_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
+    ptr = buffer_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
     uint64_t *type_header_size = static_cast<uint64_t *>(ptr);
 
-    this->read_ptr = common_utils::increment_data_ptr(ptr, (sizeof(uint64_t) + (*type_header_size) * sizeof(BYTE)));
+    this->read_ptr = buffer_utils::increment_data_ptr(ptr, (sizeof(uint64_t) + (*type_header_size) * sizeof(BYTE)));
     void *bptr = get_data_ptr();
     CHECK_NOT_NULL(bptr);
 
@@ -53,7 +53,7 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
         write_ptr = nullptr;
     }
 
-    ptr = common_utils::increment_data_ptr(ptr, sizeof(uint64_t));
+    ptr = buffer_utils::increment_data_ptr(ptr, sizeof(uint64_t));
     this->datetype = new __complex_type(nullptr);
     this->datetype->read(ptr, 0);
 

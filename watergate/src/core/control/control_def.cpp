@@ -182,7 +182,7 @@ bool com::wookler::watergate::core::control_client::has_valid_lock(string name, 
 }
 
 __lock_state
-com::wookler::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout,
+com::wookler::watergate::core::control_client::lock_get(string name, int priority, double quota, long __timeout,
                                                         int *err) const {
     CHECK_NOT_NULL(err);
     timer t;
@@ -190,12 +190,15 @@ com::wookler::watergate::core::control_client::lock_get(string name, int priorit
 
     pid_t pid = getpid();
     string thread_id = thread_utils::get_current_thread();
-
+    uint64_t timeout = 0;
+    if (__timeout > 0) {
+        timeout = (uint64_t) __timeout;
+    }
     __lock_state ret = wait_lock(name, priority, priority, quota);
     if (ret == Error) {
         throw CONTROL_ERROR("Error acquiring base lock. [name=%s]", name.c_str());
     } else if (ret == Locked) {
-        if (t.get_current_elapsed() > timeout && (priority != 0)) {
+        if ((t.get_current_elapsed() > timeout) && (priority != 0)) {
             release_lock(name, priority, priority);
             *err = ERR_CORE_CONTROL_TIMEOUT;
             ret = Timeout;

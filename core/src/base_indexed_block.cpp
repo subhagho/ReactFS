@@ -116,7 +116,7 @@ void com::wookler::reactfs::core::base_indexed_block::commit(string transaction_
     uint64_t offset = header->write_offset;
     uint32_t added = 0;
     while (offset < rollback_info->write_offset) {
-        void *ptr = common_utils::increment_data_ptr(d_ptr, offset);
+        void *ptr = buffer_utils::increment_data_ptr(d_ptr, offset);
         __record_header *header = static_cast<__record_header *>(ptr);
         header->state = __record_state::R_READABLE;
         offset += (sizeof(__record_header) + header->data_size);
@@ -164,7 +164,7 @@ void com::wookler::reactfs::core::base_indexed_block::open(uint64_t block_id, st
 __block_check_record *com::wookler::reactfs::core::base_indexed_block::check_block_sanity() {
     CHECK_STATE_AVAILABLE(state);
 
-    long block_checksum = 0;
+    uint64_t block_checksum = 0;
     uint32_t total_records = 0;
     uint32_t deleted_records = 0;
 

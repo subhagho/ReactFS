@@ -34,6 +34,7 @@
 #include "common/includes/__alarm.h"
 #include "common/includes/read_write_lock.h"
 #include "common/includes/mapped_data.h"
+#include "common/includes/buffer_utils.h"
 
 #include "common_structs.h"
 #include "fs_error_base.h"
@@ -131,7 +132,7 @@ namespace com {
                      * @return - Base data address
                      */
                     void *get_data_ptr() {
-                        return common_utils::increment_data_ptr(base_ptr, sizeof(__record_index_header));
+                        return buffer_utils::increment_data_ptr(base_ptr, sizeof(__record_index_header));
                     }
 
                     /*!
@@ -202,9 +203,9 @@ namespace com {
                      */
                     void *get_write_ptr() {
                         if (in_transaction()) {
-                            return common_utils::increment_data_ptr(write_ptr, rollback_info->write_offset);
+                            return buffer_utils::increment_data_ptr(write_ptr, rollback_info->write_offset);
                         } else {
-                            return common_utils::increment_data_ptr(write_ptr, header->write_offset);
+                            return buffer_utils::increment_data_ptr(write_ptr, header->write_offset);
                         }
                     }
 
@@ -325,7 +326,7 @@ namespace com {
 
                         uint64_t offset = rollback_info->start_offset;
                         while (offset < rollback_info->write_offset) {
-                            void *ptr = common_utils::increment_data_ptr(write_ptr, offset);
+                            void *ptr = buffer_utils::increment_data_ptr(write_ptr, offset);
                             __record_index_ptr *iptr = reinterpret_cast<__record_index_ptr *>(ptr);
                             if (iptr->readable) {
                                 throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,

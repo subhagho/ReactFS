@@ -32,6 +32,7 @@
 #include "common/includes/init_utils.h"
 #include "common/includes/exclusive_lock.h"
 #include "common/includes/__threads.h"
+#include "common/includes/buffer_utils.h"
 
 #include "node_env_structs.h"
 #include "common_structs.h"
@@ -66,7 +67,7 @@ namespace com {
 
                     void *get_write_pointer() {
                         PRECONDITION(header->write_offset < header->data_size);
-                        void *ptr = common_utils::increment_data_ptr(base_ptr, header->write_offset);
+                        void *ptr = buffer_utils::increment_data_ptr(base_ptr, header->write_offset);
                         CHECK_NOT_NULL(ptr);
 
                         return ptr;
@@ -82,11 +83,11 @@ namespace com {
                         memset(ptr, 0, SIZE_KEY_MAX);
                         memcpy(ptr, key->c_str(), key->length());
 
-                        ptr = common_utils::increment_data_ptr(ptr, SIZE_KEY_MAX);
+                        ptr = buffer_utils::increment_data_ptr(ptr, SIZE_KEY_MAX);
                         memset(ptr, 0, (size + sizeof(uint32_t)));
                         memcpy(ptr, &size, sizeof(uint32_t));
 
-                        ptr = common_utils::increment_data_ptr(ptr, sizeof(uint32_t));
+                        ptr = buffer_utils::increment_data_ptr(ptr, sizeof(uint32_t));
                         CHECK_NOT_NULL(ptr);
                         memcpy(ptr, data, size);
 
@@ -115,7 +116,7 @@ namespace com {
                         void *ptr = base_ptr;
                         offset += sizeof(__env_header);
 
-                        return common_utils::increment_data_ptr(ptr, offset);
+                        return buffer_utils::increment_data_ptr(ptr, offset);
                     }
 
                     bool is_valid_offset(uint32_t offset) {
@@ -143,10 +144,10 @@ namespace com {
                             memset(record, 0, sizeof(__env_record));
 
                             memcpy(record->key, ptr, SIZE_KEY_MAX);
-                            ptr = common_utils::increment_data_ptr(ptr, SIZE_KEY_MAX);
+                            ptr = buffer_utils::increment_data_ptr(ptr, SIZE_KEY_MAX);
 
                             memcpy(&record->size, ptr, sizeof(uint32_t));
-                            ptr = common_utils::increment_data_ptr(ptr, sizeof(uint32_t));
+                            ptr = buffer_utils::increment_data_ptr(ptr, sizeof(uint32_t));
 
                             record->data = ptr;
 

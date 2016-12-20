@@ -133,11 +133,15 @@ namespace com {
 #define REACTFS_NS_COMMON_PREFIX REACTFS_NS_PREFIX::common
 
 #ifndef ULONG_MAX
-#define ULONG_MAX std::numeric_limits<long>::max()
+#define ULONG_MAX std::numeric_limits<unsigned long>::max()
 #endif
 
 #ifndef UCHAR_MAX
-#define UCHAR_MAX std::numeric_limits<char>::max()
+#define UCHAR_MAX std::numeric_limits<unsigned char>::max()
+#endif
+
+#ifndef USHRT_MAX
+#define USHRT_MAX std::numeric_limits<unsigned short>::max()
 #endif
 
 #endif

@@ -519,7 +519,7 @@ void com::wookler::watergate::core::__semaphore_owner::check_expired_locks(uint6
                      counts[ii]);
             sem_t *sem = get(ii);
             if (IS_VALID_SEM_PTR(sem)) {
-                for (int jj = 0; jj < counts[ii]; jj++) {
+                for (uint16_t jj = 0; jj < counts[ii]; jj++) {
                     sem_post(sem);
                 }
             } else {

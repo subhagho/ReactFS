@@ -242,7 +242,7 @@ namespace com {
                         memset(b_ptr, 0, com::wookler::reactfs::common::__bitset::get_byte_size(MM_MAX_BLOCKS));
                         block_bitset = new com::wookler::reactfs::common::__bitset(b_ptr, MM_MAX_BLOCKS);
 
-                        ptr = common_utils::increment_data_ptr(ptr,
+                        ptr = buffer_utils::increment_data_ptr(ptr,
                                                                com::wookler::reactfs::common::__bitset::get_byte_size(
                                                                        MM_MAX_BLOCKS));
                         header = static_cast<__mm_data_header *>(ptr);
@@ -384,7 +384,7 @@ namespace com {
                         uint32_t *b_ptr = static_cast<uint32_t *>(ptr);
                         block_bitset = new com::wookler::reactfs::common::__bitset(b_ptr, MM_MAX_BLOCKS);
 
-                        ptr = common_utils::increment_data_ptr(ptr,
+                        ptr = buffer_utils::increment_data_ptr(ptr,
                                                                com::wookler::reactfs::common::__bitset::get_byte_size(
                                                                        MM_MAX_BLOCKS));
                         header = static_cast<__mm_data_header *>(ptr);

@@ -155,7 +155,7 @@ ConfigValue *com::wookler::reactfs::common::Config::process_list_node(string nam
         if (!IS_EMPTY(values)) {
             ListConfigValue *node = new ListConfigValue(name, parent);
             CHECK_ALLOC(node, TYPE_NAME(ListConfigValue));
-            for (int ii = 0; ii < values.size(); ii++) {
+            for (uint32_t ii = 0; ii < values.size(); ii++) {
                 Json j = values[ii];
                 process_node(name, j, node);
             }
