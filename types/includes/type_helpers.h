@@ -805,7 +805,7 @@ REACTFS_NS_CORE
                             uint32_t r_size = 0;
                             for (uint8_t ii = 0; ii < count; ii++) {
                                 // Read the field type.
-                                void *ptr = common_utils::increment_data_ptr(buffer, (offset + r_size));
+                                void *ptr = buffer_utils::increment_data_ptr(buffer, (offset + r_size));
                                 uint8_t *ft = static_cast<uint8_t *>(ptr);
                                 __field_type type = __field_type_helper::get_type(*ft);
                                 if (type == __field_type::NATIVE) {

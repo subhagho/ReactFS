@@ -657,19 +657,20 @@ REACTFS_NS_CORE
                     public:
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
-                            CHECK_NOT_NULL(handler);
+                            CHECK_NOT_NULL(this->handler);
 
                             uint64_t off = offset;
                             uint8_t *type = nullptr;
                             uint64_t r_size = buffer_utils::read<uint8_t>(buffer, &off, &type);
                             CHECK_NOT_NULL(type);
-                            POSTCONDITION(*type == __constraint_type_utils::get_number_value(get_constraint_type()));
+                            POSTCONDITION(
+                                    *type == __constraint_type_utils::get_number_value(this->get_constraint_type()));
 
                             off = offset + r_size;
                             string *t = nullptr;
-                            r_size += handler->read(buffer, &t, off, ULONG_MAX);
+                            r_size += this->handler->read(buffer, &t, off, ULONG_MAX);
                             CHECK_NOT_NULL(t);
-                            value = string(*t);
+                            this->value = string(*t);
                             CHECK_AND_FREE(t);
 
                             return r_size;

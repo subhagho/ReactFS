@@ -23,6 +23,7 @@
 #ifndef REACTFS_SCHEMA_HELPERS_H
 #define REACTFS_SCHEMA_HELPERS_H
 
+#include "common/includes/buffer_utils.h"
 #include "core/includes/core.h"
 
 #include "schema_common.h"
@@ -527,7 +528,7 @@ REACTFS_NS_CORE
                         read(void *buffer, uint64_t offset, __type_def_enum datatype, uint64_t *size) {
                             CHECK_NOT_NULL(buffer);
                             __constraint *c = nullptr;
-                            void *ptr = common_utils::increment_data_ptr(buffer, offset);
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             uint8_t *type = static_cast<uint8_t *>(ptr);
                             if (*type == __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN)) {
                                 c = read_value(buffer, offset, datatype, size);
