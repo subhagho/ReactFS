@@ -103,6 +103,7 @@ void debug_r(const char *s, ...);
 %token			IN
 %token			BETWEEN
 %token			NULLABLE
+%token			NAMESPACE
 %token			NOT
 %token			LT
 %token			GT
@@ -129,7 +130,7 @@ void debug_r(const char *s, ...);
 %%
 
 parse:
-		opt_types schema opt_indexes
+		opt_namespace opt_types schema opt_indexes
 	;
 
 schema:
@@ -143,6 +144,20 @@ schema_declare:
 							driver.create_schema(ss);
 							FREE_PTR($2);
 						}
+opt_namespace:
+		/* null */
+	|	namespace
+	;
+
+namespace:
+		NAMESPACE nested_variable TYPE_END	{
+							std::string ss($2);
+							debug_r("namespace [%s]", ss.c_str());
+							driver.set_namespace(ss);
+							FREE_PTR($2);
+
+						}
+	;
 opt_indexes:
 		/* null */
 	|	indexes

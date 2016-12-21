@@ -208,6 +208,12 @@ void debug_r(const char *s, ...);
             		return (token::BETWEEN);
 
             	}
+"namespace"		{
+			debug_r("[lexer]  token : %s", yytext);
+            		return (token::NAMESPACE);
+
+            	}
+
 "!"			{
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::NOT);

@@ -36,6 +36,7 @@
 #include "common/includes/mapped_data.h"
 #include "common/includes/buffer_utils.h"
 
+#include "core.h"
 #include "common_structs.h"
 #include "fs_error_base.h"
 
@@ -46,10 +47,7 @@ using namespace com::wookler::reactfs::core;
 #define BLOCK_INDEX_VERSION_MAJOR ((uint16_t) 0)
 #define BLOCK_INDEX_VERSION_MINOR ((uint16_t) 1)
 
-namespace com {
-    namespace wookler {
-        namespace reactfs {
-            namespace core {
+REACTFS_NS_CORE
                 class base_block_index {
                 protected:
                     __version_header version;
@@ -446,10 +444,6 @@ namespace com {
                         return __read_index(index, all);
                     }
                 };
-            }
-        }
-    }
-}
-
+REACTFS_NS_CORE_END
 
 #endif //REACTFS_BASE_BLOCK_INDEX_H

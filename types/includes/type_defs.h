@@ -289,14 +289,8 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(r_count);
 
                             __T **d_ptr = (__T **) t;
-                            va_list vl;
-                            va_start(vl, max_length);
-                            int asize = va_arg(vl, int);
-                            va_end(vl);
 
-                            uint16_t a_size = (uint16_t) asize;
-                            PRECONDITION(a_size >= *r_count);
-                            if (a_size > 0) {
+                            if (r_count > 0) {
                                 for (uint16_t ii = 0; ii < *r_count; ii++) {
                                     uint64_t r = type_handler->read(buffer, d_ptr[ii], r_offset, max_length);
                                     r_offset += r;

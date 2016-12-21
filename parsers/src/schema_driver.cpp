@@ -21,6 +21,7 @@ com::wookler::reactfs::core::parsers::schema_driver::~schema_driver() {
         free_index_def(iter->second);
     }
     indexes.clear();
+    CHECK_AND_FREE(name_space);
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::create_schema(const string &name) {
@@ -313,6 +314,11 @@ void com::wookler::reactfs::core::parsers::schema_driver::set_nullable() {
     } else if (state == __schema_parse_state::SPS_IN_SCHEMA) {
         schema_stack->declare.nullable = true;
     }
+}
+
+void com::wookler::reactfs::core::parsers::schema_driver::set_namespace(const string &names) {
+    CHECK_NOT_EMPTY(names);
+    this->name_space = new string(names);
 }
 
 void com::wookler::reactfs::core::parsers::schema_driver::set_primary_key(const string &keys) {

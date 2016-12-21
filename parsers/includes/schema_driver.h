@@ -115,6 +115,7 @@ REACTFS_NS_CORE
                     */
                     class __schema_stack {
                     public:
+
                         /// Schema definition instance.
                         __schema_def *current_schema = nullptr;
                         /// Fields declared for this schema definition.
@@ -494,6 +495,9 @@ REACTFS_NS_CORE
                         __schema_stack *schema_stack = nullptr;
                         /// Index stack instance to capture indexes being parsed.
                         __index_stack *index_stack = nullptr;
+                        /// Namespace of the schema definition.
+                        /// Used by code generator.
+                        string *name_space = nullptr;
 
                         /// Map of parsed types defined in the schema file.
                         unordered_map<string, __reference_type *> types;
@@ -745,6 +749,8 @@ REACTFS_NS_CORE
                         void set_primary_key(const string &keys);
 
                         void finish_def();
+
+                        void set_namespace(const string &names);
 
                         /**
                         * parse - parse from a file
