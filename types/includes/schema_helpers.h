@@ -555,7 +555,6 @@ REACTFS_NS_CORE
                                 c = read_operator(buffer, offset, datatype, __constraint_operator::LT, size);
                             }
                             CHECK_NOT_NULL(c);
-                            *size += sizeof(uint8_t);
                             return c;
                         }
 

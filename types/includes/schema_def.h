@@ -45,17 +45,17 @@ REACTFS_NS_CORE
                      */
                     typedef enum __field_type__ {
                         /// Field type is a native type.
-                                NATIVE = 0,
+                                NATIVE = 1,
                         /// Field type is a sized type.
-                                SIZED = 1,
+                                SIZED = 2,
                         /// Field type is a complex type.
-                                COMPLEX = 2,
+                                COMPLEX = 3,
                         /// Field type is an array.
-                                ARRAY = 3,
+                                ARRAY = 4,
                         /// Field type is a list
-                                LIST = 4,
+                                LIST = 5,
                         /// Field type is a map
-                                MAP = 5
+                                MAP = 6
                     } __field_type;
 
                     /*!
@@ -80,17 +80,17 @@ REACTFS_NS_CORE
                          * @return - Type enum.
                          */
                         static __field_type get_type(uint8_t ii) {
-                            if (ii == 0) {
+                            if (ii == 1) {
                                 return __field_type::NATIVE;
-                            } else if (ii == 1) {
-                                return __field_type::SIZED;
                             } else if (ii == 2) {
-                                return __field_type::COMPLEX;
+                                return __field_type::SIZED;
                             } else if (ii == 3) {
-                                return __field_type::ARRAY;
+                                return __field_type::COMPLEX;
                             } else if (ii == 4) {
-                                return __field_type::LIST;
+                                return __field_type::ARRAY;
                             } else if (ii == 5) {
+                                return __field_type::LIST;
+                            } else if (ii == 6) {
                                 return __field_type::MAP;
                             }
                             throw BASE_ERROR("Not field type defined for value. [value=%d]", ii);
@@ -128,6 +128,7 @@ REACTFS_NS_CORE
                          */
                         __native_type(__native_type *parent) {
                             this->parent = parent;
+                            this->type = __field_type::NATIVE;
                         }
 
                         /*!
@@ -279,19 +280,29 @@ REACTFS_NS_CORE
 
                             // Write the field type.
                             uint8_t ft = __field_type_helper::get_type_number(this->type);
+                            TRACE("[write][type=%d][name=%s] [field type] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), w_offset);
                             uint32_t w_size = buffer_utils::write<uint8_t>(buffer, &w_offset, ft);
 
                             // Write the field datatype
                             uint8_t dt = (uint8_t) this->datatype;
+                            TRACE("[write][type=%d][name=%s] [datatype] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), w_offset);
                             w_size += buffer_utils::write<uint8_t>(buffer, &w_offset, dt);
 
                             // Write the field index
+                            TRACE("[write][type=%d][name=%s] [index] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), w_offset);
                             w_size += buffer_utils::write<uint8_t>(buffer, &w_offset, index);
 
                             // Write the field name.
+                            TRACE("[write][type=%d][name=%s] [name] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), w_offset);
                             w_size += buffer_utils::write_8str(buffer, &w_offset, this->name);
 
                             // Write is nullable
+                            TRACE("[write][type=%d][name=%s] [nullable] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), w_offset);
                             w_size += buffer_utils::write<bool>(buffer, &w_offset, this->nullable);
 
                             uint8_t bits = 0;
@@ -305,14 +316,20 @@ REACTFS_NS_CORE
                                 bits = bitset_utils::set_uint8_bit(bits, BIT_TYPE_DEFAULT_VALUE);
                             }
                             // Write the extended data bits.
+                            TRACE("[write][type=%d][name=%s] [bits] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), w_offset);
                             w_size += buffer_utils::write<uint8_t>(buffer, &w_offset, bits);
 
                             // Write the constraint (if any)
                             if (NOT_NULL(constraint)) {
+                                TRACE("[write][type=%d][name=%s] [constraint] Offset = %d", this->type,
+                                      this->get_canonical_name().c_str(), w_offset);
                                 w_size += this->constraint->write(buffer, (offset + w_size));
                             }
                             // Write the default value (if any)
                             if (NOT_NULL(default_value)) {
+                                TRACE("[write][type=%d][name=%s] [default value] Offset = %d", this->type,
+                                      this->get_canonical_name().c_str(), w_offset);
                                 w_size += this->default_value->write(buffer, (offset + w_size));
                             }
                             return w_size;
@@ -331,6 +348,8 @@ REACTFS_NS_CORE
 
                             // Read the field type.
                             uint8_t *ft = nullptr;
+                            TRACE("[read][type=%d][name=%s] [field type] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), r_offset);
                             uint32_t r_size = buffer_utils::read<uint8_t>(buffer, &r_offset, &ft);
                             CHECK_NOT_NULL(ft);
                             POSTCONDITION(*ft == __field_type_helper::get_type_number(this->type));
@@ -338,6 +357,8 @@ REACTFS_NS_CORE
 
                             // Read the field datatype
                             uint8_t *dt = nullptr;
+                            TRACE("[read][type=%d][name=%s] [datatype] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), r_offset);
                             r_size += buffer_utils::read<uint8_t>(buffer, &r_offset, &dt);
                             CHECK_NOT_NULL(dt);
                             this->datatype = __type_enum_helper::parse_type(*dt);
@@ -350,6 +371,8 @@ REACTFS_NS_CORE
 
                             // Read the field index.
                             uint8_t *index = nullptr;
+                            TRACE("[read][type=%d][name=%s] [index] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), r_offset);
                             r_size += buffer_utils::read<uint8_t>(buffer, &r_offset, &index);
                             CHECK_NOT_NULL(index);
                             this->index = *index;
@@ -357,6 +380,8 @@ REACTFS_NS_CORE
                             // Read the field name.
                             string *sp = new string();
                             CHECK_ALLOC(sp, TYPE_NAME(string));
+                            TRACE("[read][type=%d][name=%s] [name] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), r_offset);
                             r_size += buffer_utils::read_8str(buffer, &r_offset, sp);
                             CHECK_NOT_NULL(sp);
                             this->name = string(*sp);
@@ -364,15 +389,21 @@ REACTFS_NS_CORE
 
                             // Read is nullable
                             bool *nn = nullptr;
+                            TRACE("[read][type=%d][name=%s] [nullable] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), r_offset);
                             r_size += buffer_utils::read<bool>(buffer, &r_offset, &nn);
                             this->nullable = *nn;
 
                             // Read the extended data bitmap
                             uint8_t *bits = nullptr;
+                            TRACE("[read][type=%d][name=%s] [bits] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), r_offset);
                             r_size += buffer_utils::read<uint8_t>(buffer, &r_offset, &bits);
 
                             // If constriant bit is set, read the constraint definition.
                             if (bitset_utils::check_uint8_bit(*bits, BIT_TYPE_CONSTRAINT)) {
+                                TRACE("[read][type=%d][name=%s] [constraint] Offset = %d", this->type,
+                                      this->get_canonical_name().c_str(), (offset + r_size));
                                 uint64_t size = 0;
                                 this->constraint = __constraint_loader::read(buffer, (offset + r_size), this->datatype,
                                                                              &size);
@@ -382,6 +413,8 @@ REACTFS_NS_CORE
                             }
                             // If the default value bit is set, read the default value definition
                             if (bitset_utils::check_uint8_bit(*bits, BIT_TYPE_DEFAULT_VALUE)) {
+                                TRACE("[read][type=%d][name=%s] [default value] Offset = %d", this->type,
+                                      this->get_canonical_name().c_str(), (offset + r_size));
                                 uint64_t size = 0;
                                 this->default_value = __defaults_loader::read(buffer, (offset + r_size), this->datatype,
                                                                               &size);
@@ -432,7 +465,7 @@ REACTFS_NS_CORE
                         virtual void print() const {
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string n = this->get_canonical_name();
-                            LOG_INFO("[index=%d] [name=%s] %s", this->index, n.c_str(), t.c_str());
+                            LOG_DEBUG("[index=%d] [name=%s] %s", this->index, n.c_str(), t.c_str());
                             if (NOT_NULL(constraint)) {
                                 constraint->print();
                             }
@@ -468,7 +501,7 @@ REACTFS_NS_CORE
                          * when reading the definition from buffer.
                          */
                         __sized_type(__native_type *parent) : __native_type(parent) {
-
+                            this->type = __field_type::SIZED;
                         }
 
                         /*!
@@ -508,6 +541,8 @@ REACTFS_NS_CORE
                             uint32_t w_size = __native_type::write(buffer, offset);
                             // Write the max_size value.
                             uint64_t w_offset = (offset + w_size);
+                            TRACE("[write][type=%d][name=%s] [size] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), w_offset);
                             w_size += buffer_utils::write<uint32_t>(buffer, &w_offset, this->max_size);
 
                             return w_size;
@@ -526,6 +561,8 @@ REACTFS_NS_CORE
                             // Read the max_size value.
                             uint64_t r_offset = (offset + r_size);
                             uint32_t *size = nullptr;
+                            TRACE("[read][type=%d][name=%s] [size] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), r_offset);
                             r_size += buffer_utils::read<uint32_t>(buffer, &r_offset, &size);
                             CHECK_NOT_NULL(size);
                             this->max_size = *size;
@@ -539,7 +576,7 @@ REACTFS_NS_CORE
                         virtual void print() const override {
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string n = this->get_canonical_name();
-                            LOG_INFO("[index=%d] [name=%s] %s[%d]", this->index, n.c_str(), t.c_str(), this->max_size);
+                            LOG_DEBUG("[index=%d] [name=%s] %s[%d]", this->index, n.c_str(), t.c_str(), this->max_size);
                             if (NOT_NULL(constraint)) {
                                 constraint->print();
                             }
@@ -756,7 +793,10 @@ REACTFS_NS_CORE
 
                             // Write the number of fields in this definition.
                             uint8_t size = (uint8_t) fields.size();
-                            w_size += buffer_utils::write<uint8_t >(buffer, &w_offset, size);
+                            LOG_DEBUG("[type=%d][name=%s] Size = %d", this->type, this->name.c_str(), size);
+                            TRACE("[write][type=%d][name=%s] [field count] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), w_offset);
+                            w_size += buffer_utils::write<uint8_t>(buffer, &w_offset, size);
 
                             unordered_map<uint8_t, __native_type *>::iterator iter;
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
@@ -777,12 +817,15 @@ REACTFS_NS_CORE
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(loader);
                             uint32_t r_size = __native_type::read(buffer, offset);
-                            uint64_t r_offset = offset;
+                            uint64_t r_offset = (offset + r_size);
 
                             // Read the number of fields in this definition.
                             uint8_t *size = nullptr;
-                            r_size += buffer_utils::read<uint8_t >(buffer, &r_offset, &size);
+                            TRACE("[read][type=%d][name=%s] [field count] Offset = %d", this->type,
+                                  this->get_canonical_name().c_str(), r_offset);
+                            r_size += buffer_utils::read<uint8_t>(buffer, &r_offset, &size);
                             CHECK_NOT_NULL(size);
+                            LOG_DEBUG("[type=%d][name=%s] Field count = %d", this->type, this->name.c_str(), *size);
 
                             vector<__native_type *> types;
                             loader->read(this, buffer, (offset + r_size), *size, &types, &r_size);
@@ -799,7 +842,7 @@ REACTFS_NS_CORE
                         virtual void print() const override {
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string n = this->get_canonical_name();
-                            LOG_INFO("[index=%d] [name=%s] %s", this->index, n.c_str(), t.c_str());
+                            LOG_DEBUG("[index=%d] [name=%s] %s", this->index, n.c_str(), t.c_str());
                             unordered_map<uint8_t, __native_type *>::const_iterator iter;
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
                                 __native_type *t = iter->second;
@@ -846,7 +889,7 @@ REACTFS_NS_CORE
                             // Read the field type.
                             uint8_t *ft = nullptr;
                             uint64_t r_offset = offset;
-                            buffer_utils::read<uint8_t >(buffer, &r_offset, &ft);
+                            buffer_utils::read<uint8_t>(buffer, &r_offset, &ft);
                             CHECK_NOT_NULL(ft);
 
                             __field_type field_type = __field_type_helper::get_type(*ft);
@@ -878,7 +921,7 @@ REACTFS_NS_CORE
                             // Read the field type.
                             uint8_t *ft = nullptr;
                             uint64_t r_offset = offset;
-                            buffer_utils::read<uint8_t >(buffer, &r_offset, &ft);
+                            buffer_utils::read<uint8_t>(buffer, &r_offset, &ft);
                             CHECK_NOT_NULL(ft);
 
                             __field_type field_type = __field_type_helper::get_type(*ft);
@@ -1003,7 +1046,7 @@ REACTFS_NS_CORE
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string it = __type_enum_helper::get_type_string(this->inner_type);
                             string n = inner->get_canonical_name();
-                            LOG_INFO("[index=%d] [name=%s] %s<%s>[%d]", this->index, n.c_str(), t.c_str(), it.c_str(),
+                            LOG_DEBUG("[index=%d] [name=%s] %s<%s>[%d]", this->index, n.c_str(), t.c_str(), it.c_str(),
                                      this->max_size);
                             if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
                                 this->inner->print();
@@ -1123,7 +1166,7 @@ REACTFS_NS_CORE
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string it = __type_enum_helper::get_type_string(this->inner_type);
                             string n = inner->get_canonical_name();
-                            LOG_INFO("[index=%d] [name=%s] %s<%s>", this->index, n.c_str(), t.c_str(), it.c_str());
+                            LOG_DEBUG("[index=%d] [name=%s] %s<%s>", this->index, n.c_str(), t.c_str(), it.c_str());
                             if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
                                 this->inner->print();
                             }
@@ -1251,7 +1294,7 @@ REACTFS_NS_CORE
                             string kt = __type_enum_helper::get_type_string(this->key_type);
                             string vt = __type_enum_helper::get_type_string(this->value_type);
                             string n = this->get_canonical_name();
-                            LOG_INFO("[index=%d] [name=%s] %s<%s, %s>", this->index, n.c_str(), t.c_str(), kt.c_str(),
+                            LOG_DEBUG("[index=%d] [name=%s] %s<%s, %s>", this->index, n.c_str(), t.c_str(), kt.c_str(),
                                      vt.c_str());
                             if (this->value_type == __type_def_enum::TYPE_STRUCT) {
                                 this->value->print();

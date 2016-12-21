@@ -456,7 +456,7 @@ REACTFS_NS_CORE
                         void print() const override {
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string v = __type_enum_helper::get_string_value(&value, this->datatype);
-                            LOG_INFO("\t[type=%s] value='%s'", t.c_str(), v.c_str());
+                            LOG_DEBUG("\t[type=%s] value='%s'", t.c_str(), v.c_str());
                         }
                     };
 

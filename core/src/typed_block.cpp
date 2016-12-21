@@ -56,6 +56,7 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     ptr = buffer_utils::increment_data_ptr(ptr, sizeof(uint64_t));
     this->datetype = new __complex_type(nullptr);
     this->datetype->read(ptr, 0);
+    this->datetype->print();
 
     state.set_state(__state_enum::Available);
 }

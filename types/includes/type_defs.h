@@ -38,8 +38,7 @@
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
-#define SIZE_MAX_TYPE_STRING 256
-#define COLLECTION_SIZE_FACTOR 32
+#define COLLECTION_SIZE_FACTOR 4
 
 REACTFS_NS_CORE
                 namespace types {

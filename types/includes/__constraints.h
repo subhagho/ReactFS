@@ -222,7 +222,7 @@ REACTFS_NS_CORE
 
                         void print() const override {
                             string n = (is_not ? "NOT" : "");
-                            LOG_INFO("\tconstraint : %s nullable", n.c_str());
+                            LOG_DEBUG("\tconstraint : %s nullable", n.c_str());
                         }
                     };
 
@@ -328,7 +328,7 @@ REACTFS_NS_CORE
 
                         void print() const override {
                             string n = (is_not ? "NOT" : "");
-                            LOG_INFO("\t constraint: %s regex(%s)", n.c_str(), pattern.c_str());
+                            LOG_DEBUG("\t constraint: %s regex(%s)", n.c_str(), pattern.c_str());
                         }
                     };
 
@@ -480,7 +480,7 @@ REACTFS_NS_CORE
                             string rmin = __type_enum_helper::get_string_value(&min_value, this->value_type);
                             string rmax = __type_enum_helper::get_string_value(&max_value, this->value_type);
 
-                            LOG_INFO("\tconstraint : %s range[%s, %s] datatype=%s", n.c_str(), rmin.c_str(),
+                            LOG_DEBUG("\tconstraint : %s range[%s, %s] datatype=%s", n.c_str(), rmin.c_str(),
                                      rmax.c_str(), t.c_str());
                         }
                     };
@@ -646,7 +646,7 @@ REACTFS_NS_CORE
                             string t = __type_enum_helper::get_type_string(this->value_type);
                             string v = __type_enum_helper::get_string_value(&(this->value), this->value_type);
                             string o = get_oper_string(this->oper);
-                            LOG_INFO("\tconstraint : %s compare(%s %s) datatype=%s", n.c_str(), o.c_str(), v.c_str(),
+                            LOG_DEBUG("\tconstraint : %s compare(%s %s) datatype=%s", n.c_str(), o.c_str(), v.c_str(),
                                      t.c_str());
                         }
                     };
@@ -842,7 +842,7 @@ REACTFS_NS_CORE
                                 }
                                 v.append(tv);
                             }
-                            LOG_INFO("\tconstraint : %s in(%s) datatype=%s", n.c_str(), v.c_str(),
+                            LOG_DEBUG("\tconstraint : %s in(%s) datatype=%s", n.c_str(), v.c_str(),
                                      t.c_str());
                         }
                     };
