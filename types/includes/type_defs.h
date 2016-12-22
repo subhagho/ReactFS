@@ -43,16 +43,16 @@ using namespace REACTFS_NS_COMMON_PREFIX;
 REACTFS_NS_CORE
                 namespace types {
 
-                    typedef unordered_map<uint8_t, void *> __struct_datatype__;
+                    typedef unordered_map<string, void *> __struct_datatype__;
 
                     class __dt_struct : public __base_datatype_io {
                     private:
                         __version_header *version = nullptr;
                         __complex_type *fields = nullptr;
 
-                        void *get_field_value(const unordered_map<uint8_t, void *> *map, __native_type *type) {
+                        void *get_field_value(const __struct_datatype__ *map, __native_type *type) {
                             CHECK_NOT_NULL(type);
-                            unordered_map<uint8_t, void *>::const_iterator iter = map->find(type->get_index());
+                            __struct_datatype__::const_iterator iter = map->find(type->get_name());
                             if (iter == map->end())
                                 return nullptr;
                             return iter->second;
@@ -90,8 +90,8 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(v);
 
                             POSTCONDITION(version_utils::compatible(*(this->version), *v));
-                            unordered_map<uint8_t, void *> **T = (unordered_map<uint8_t, void *> **) t;
-                            *T = new unordered_map<uint8_t, void *>();
+                            __struct_datatype__ **T = (__struct_datatype__ **) t;
+                            *T = new __struct_datatype__();
 
                             uint64_t r_offset = offset + sizeof(__version_header);
                             uint64_t t_size = sizeof(__version_header);
@@ -115,7 +115,7 @@ REACTFS_NS_CORE
                                 void *value = nullptr;
                                 r = handler->read(buffer, &value, r_offset, max_length);
                                 CHECK_NOT_NULL(value);
-                                (*T)->insert({type->get_index(), value});
+                                (*T)->insert({type->get_name(), value});
                                 t_size += r;
                                 r_offset += r;
                                 *size -= r;
@@ -125,7 +125,7 @@ REACTFS_NS_CORE
 
                         virtual uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            const unordered_map<uint8_t, void *> *map = (const unordered_map<uint8_t, void *> *) value;
+                            const __struct_datatype__ *map = (const __struct_datatype__ *) value;
                             CHECK_NOT_EMPTY_P(map);
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             memcpy(ptr, this->version, sizeof(__version_header));
@@ -166,7 +166,11 @@ REACTFS_NS_CORE
                                                                    type->get_canonical_name().c_str());
                                         }
                                     }
-                                    uint64_t r = handler->write(buffer, d, r_offset, max_length);
+                                    uint8_t ci = type->get_index();
+                                    uint64_t r = buffer_utils::write<uint8_t>(buffer, &r_offset, ci);
+                                    t_size += r;
+                                    *w_size += r;
+                                    r = handler->write(buffer, d, r_offset, max_length);
                                     r_offset += r;
                                     t_size += r;
                                     *w_size += r;
@@ -179,7 +183,7 @@ REACTFS_NS_CORE
                             if (IS_NULL(data)) {
                                 return 0;
                             }
-                            const unordered_map<uint8_t, void *> *map = (const unordered_map<uint8_t, void *> *) data;
+                            const __struct_datatype__ *map = (const __struct_datatype__ *) data;
                             CHECK_NOT_EMPTY_P(map);
                             uint64_t t_size = sizeof(__version_header) + sizeof(uint64_t);
                             unordered_map<uint8_t, __native_type *> types = fields->get_fields();

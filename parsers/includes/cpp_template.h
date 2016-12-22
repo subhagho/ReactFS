@@ -13,6 +13,8 @@
 #include "common/includes/base_error.h"
 #include "core/includes/core.h"
 
+#define VARNAME_LOCAL_INIT "allocated"
+
 using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
@@ -31,7 +33,7 @@ REACTFS_NS_CORE
                         virtual ~cpp_variable() {}
 
                         virtual string get_type() {
-                            return common_utils::format("%s *", this->type);
+                            return this->type;
                         }
 
                         string get_name() {
@@ -39,12 +41,12 @@ REACTFS_NS_CORE
                         }
 
                         virtual string get_return() {
-                            return this->name;
+                            return common_utils::format("%s *", this->type);
                         }
 
                         virtual void print(ofstream &ofs, const string &tab_offset) {
-                            string line = common_utils::format("%s%s *%s = nullptr;\n", tab_offset.c_str(),
-                                                               type.c_str(),
+                            string line = common_utils::format("%s%s%s = nullptr;\n", tab_offset.c_str(),
+                                                               get_return().c_str(),
                                                                name.c_str());
 
                             ofs << line;
@@ -52,21 +54,57 @@ REACTFS_NS_CORE
 
                         virtual void print_getter(ofstream &ofs, const string &tab_offset) {
                             string line = common_utils::format("%sconst %s get_%s(void) {\n", tab_offset.c_str(),
-                                                               this->get_type().c_str(), this->name.c_str());
+                                                               this->get_return().c_str(), this->name.c_str());
                             ofs << line;
-                            line = common_utils::format("%s\treturn %s;\n", tab_offset.c_str(), this->name.c_str());
+                            line = common_utils::format("%s\treturn this->%s;\n", tab_offset.c_str(),
+                                                        this->name.c_str());
                             ofs << line;
                             line = common_utils::format("%s}\n\n", tab_offset.c_str());
                             ofs << line;
                         }
 
                         virtual void print_setter(ofstream &ofs, const string &tab_offset) {
-                            string line = common_utils::format("%svoid set_%s(%s%s) {\n", tab_offset.c_str(),
-                                                               this->name.c_str(), this->get_type().c_str(),
+                            string line = common_utils::format("%svoid set_%s(%s %s) {\n", tab_offset.c_str(),
+                                                               this->name.c_str(), this->get_return().c_str(),
                                                                this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\tPRECONDITION(%s == false);\n", tab_offset.c_str(),
+                                                        VARNAME_LOCAL_INIT);
                             ofs << line;
                             line = common_utils::format("%s\tthis->%s = %s;\n", tab_offset.c_str(), this->name.c_str(),
                                                         this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s}\n\n", tab_offset.c_str());
+                            ofs << line;
+
+                            line = common_utils::format("%svoid set_%s(%s %s) {\n", tab_offset.c_str(),
+                                                        this->name.c_str(), this->get_type().c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\tPRECONDITION(%s == true);\n", tab_offset.c_str(),
+                                                        VARNAME_LOCAL_INIT);
+                            ofs << line;
+                            line = common_utils::format("%s\tFREE_PTR(this->%s);\n", tab_offset.c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\tif (NOT_NULL(%s)) {\n", tab_offset.c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t\tthis->%s = (%s) malloc(sizeof(%s));\n",
+                                                        tab_offset.c_str(),
+                                                        this->name.c_str(), this->get_return().c_str(),
+                                                        this->get_type().c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t\tCHECK_ALLOC(this->%s, TYPE_NAME(%s));\n",
+                                                        tab_offset.c_str(),
+                                                        this->name.c_str(),
+                                                        this->get_type().c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t\t*this->%s = %s;\n", tab_offset.c_str(),
+                                                        this->name.c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t}\n", tab_offset.c_str());
                             ofs << line;
                             line = common_utils::format("%s}\n\n", tab_offset.c_str());
                             ofs << line;
@@ -80,9 +118,19 @@ REACTFS_NS_CORE
                         }
 
                         virtual void print_free(ofstream &ofs, const string &tab_offset) {
-                            string line = common_utils::format("%sthis->%s = nullptr;\n", tab_offset.c_str(),
-                                                               name.c_str());
+                            string line = common_utils::format("%sif(%s == true) {\n", tab_offset.c_str(),
+                                                               VARNAME_LOCAL_INIT);
+                            ofs << line;
+                            line = common_utils::format("%s\tFREE_PTR(this->%s);\n", tab_offset.c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s} else {\n", tab_offset.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\tthis->%s = nullptr;\n", tab_offset.c_str(),
+                                                        name.c_str());
 
+                            ofs << line;
+                            line = common_utils::format("%s}\n", tab_offset.c_str());
                             ofs << line;
                         }
                     };
@@ -90,58 +138,80 @@ REACTFS_NS_CORE
                     class string_variable : public cpp_variable {
                     public:
                         string_variable(const string &name) : cpp_variable(name,
-                                                                           "std::string") {
+                                                                           "CHARBUFF") {
                         }
 
                         virtual string get_type() override {
                             return common_utils::format("%s *", this->type.c_str());
                         }
 
-                        virtual void print_free(ofstream &ofs, const string &tab_offset) {
-                            string line = common_utils::format("%sCHECK_AND_FREE(this->%s);\n", tab_offset.c_str(),
-                                                               name.c_str());
+                        virtual string get_return() override {
+                            return this->type;
+                        }
 
+                        virtual void print_setter(ofstream &ofs, const string &tab_offset) override {
+                            string line = common_utils::format("%svoid set_%s(%s %s) {\n", tab_offset.c_str(),
+                                                               this->name.c_str(), this->get_return().c_str(),
+                                                               this->name.c_str());
                             ofs << line;
-                        }
-                    };
 
-                    class array_variable : public cpp_variable {
-                        uint8_t size = 0;
-                    public:
-                        array_variable(const string &name, const string &type, uint8_t size) : cpp_variable(name,
-                                                                                                            type) {
-                            PRECONDITION(size > 0);
-                            this->size = size;
-                        }
-
-                        virtual string get_type() override {
-                            return common_utils::format("%s *", this->type.c_str());
-                        }
-
-                        virtual void print(ofstream &ofs, const string &tab_offset) override {
-                            string line = common_utils::format("%s%s *%s = nullptr;\n", line.c_str(), type.c_str(),
-                                                               name.c_str());
+                            line = common_utils::format("%s\tthis->%s = %s;\n", tab_offset.c_str(), this->name.c_str(),
+                                                        this->name.c_str());
                             ofs << line;
-                            line = common_utils::format("%suint32_t __size_%s = %d;\n", line.c_str(), type.c_str(),
-                                                        name.c_str(),
-                                                        size);
+                            line = common_utils::format("%s}\n\n", tab_offset.c_str());
                             ofs << line;
-                        }
 
-                        virtual void print_getter(ofstream &ofs, const string &tab_offset) {
-                            cpp_variable::print_getter(ofs, tab_offset);
-
+                            line = common_utils::format("%svoid set_%s(string &%s) {\n", tab_offset.c_str(),
+                                                        this->name.c_str(), this->get_type().c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\tPRECONDITION(%s == true);\n", tab_offset.c_str(),
+                                                        VARNAME_LOCAL_INIT);
+                            ofs << line;
+                            line = common_utils::format("%s\tFREE_PTR(this->%s);\n", tab_offset.c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\tif (NOT_NULL(%s)) {\n", tab_offset.c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t\tuint32_t size = %s.length() + 1;\n", tab_offset.c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t\tthis->%s = (%s) malloc(sizeof(%s) * size);\n",
+                                                        tab_offset.c_str(),
+                                                        this->name.c_str(), this->get_return().c_str(),
+                                                        this->get_type().c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t\tCHECK_ALLOC(this->%s, TYPE_NAME(%s));\n",
+                                                        tab_offset.c_str(),
+                                                        this->name.c_str(),
+                                                        this->get_type().c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t\tmemset(this->%s, 0, size);\n", tab_offset.c_str(),
+                                                        this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t\tmemcpy(this->%s, %s, (size - 1));\n", tab_offset.c_str(),
+                                                        this->name.c_str(), this->name.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s\t}\n", tab_offset.c_str());
+                            ofs << line;
+                            line = common_utils::format("%s}\n\n", tab_offset.c_str());
+                            ofs << line;
                         }
                     };
 
                     class list_variable : public cpp_variable {
+                    private:
+                        cpp_variable inner_type;
                     public:
-                        list_variable(const string &name, const string &type) : cpp_variable(name,
-                                                                                             type) {
+                        list_variable(cpp_variable &inner_type, const string &name, const string &type) : cpp_variable(
+                                name,
+                                "std::vector") {
+                            this->inner_type = inner_type;
                         }
 
                         virtual string get_type() override {
-                            return common_utils::format("std::vector<%s> *", this->type.c_str());
+                            return common_utils::format("std::vector<%s> *", this->inner_type.get_return());
                         }
 
                         virtual string get_return() {
@@ -149,19 +219,9 @@ REACTFS_NS_CORE
                         }
 
                         virtual void print(ofstream &ofs, const string &tab_offset) override {
-                            string line(tab_offset);
-                            if (!IS_EMPTY(modifiers)) {
-                                int c = 0;
-                                for (string m : modifiers) {
-                                    if (c != 0) {
-                                        line.append(" ");
-                                    }
-                                    line.append(m);
-                                    c++;
-                                }
-                            }
-                            line = common_utils::format("%s std::vector<%s> %s;\n", line.c_str(), type.c_str(),
-                                                        name.c_str());
+                            string line = common_utils::format("%s std::vector<%s> %s;\n", tab_offset.c_str(),
+                                                               type.c_str(),
+                                                               name.c_str());
                             ofs << line;
                         }
                     };
@@ -195,20 +255,10 @@ REACTFS_NS_CORE
                         }
 
                         virtual void print(ofstream &ofs, const string &tab_offset) override {
-                            string line(tab_offset);
-                            if (!IS_EMPTY(modifiers)) {
-                                int c = 0;
-                                for (string m : modifiers) {
-                                    if (c != 0) {
-                                        line.append(" ");
-                                    }
-                                    line.append(m);
-                                    c++;
-                                }
-                            }
-                            line = common_utils::format("%s std::unordered_map<%s, %s> %s;\n", line.c_str(),
-                                                        key_type.c_str(), value_type.c_str(),
-                                                        name.c_str());
+                            string line = common_utils::format("%s std::unordered_map<%s, %s> %s;\n",
+                                                               tab_offset.c_str(),
+                                                               key_type.c_str(), value_type.c_str(),
+                                                               name.c_str());
                             ofs << line;
                         }
                     };

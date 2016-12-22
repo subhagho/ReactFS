@@ -1,0 +1,207 @@
+VARIABLE_NATIVE_DEF:
+${type} *${name} = nullptr;
+;;
+
+VARIABLE_LIST_DEF:
+std::vector<${type} *> *${name} = nullptr;
+;;
+
+VARIABLE_MAP_DEF:
+std::unordered_map<${key}, ${value} *> *${name} = nullptr;
+;;
+
+VARIABLE_INIT_PTR:
+this->${name} = nullptr;
+;;
+
+VARIABLE_NATIVE_FREE:
+FREE_PTR(this->${name});
+;;
+
+VARIABLE_LIST_NATIVE_FREE:
+for(auto elem : this->${name}) {
+    FREE_PTR(elem);
+}
+CHECK_AND_FREE(this->${name});
+;;
+
+VARIABLE_LIST_TYPE_FREE:
+for(auto elem : this->${name}) {
+    CHECK_AND_FREE(elem);
+}
+CHECK_AND_FREE(this->${name});
+;;
+
+VARIABLE_MAP_NATIVE_FREE:
+for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {
+    FREE_PTR(kv->second);
+}
+CHECK_AND_FREE(this->${name});
+;;
+
+VARIABLE_MAP_TYPE_FREE:
+for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {
+    CHECK_AND_FREE(kv->second);
+}
+CHECK_AND_FREE(this->${name});
+;;
+
+FUNC_GETTER_DEF:
+${return} get_${name}(void) {
+    return this->${name};
+}
+;;
+
+FUNC_SETTER_PTR_DEF:
+void set_${name}(${type} ${name}) {
+    this->${name} = ${name};
+}
+;;
+
+FUNC_NATIVE_SETTER_DEF:
+void set_${name}(${type} ${name}) {
+    PRECONDITION(${modevar} == true);
+    FREE_PTR(this->${name});
+    this->${name} = (${type} *)malloc(sizeof(${type});
+    CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
+    *(this->${name}) = ${name};
+}
+;;
+
+FUNC_STRING_SETTER_DEF:
+void set_${name}(string &${name}) {
+    PRECONDITION(${modevar} == true);
+    FREE_PTR(this->${name});
+    if (!IS_EMPTY(${name}) {
+        uint32_t __size = name.length() + 1;
+        this->${name} = (char) malloc(sizeof(char) * __size);
+        CHECK_ALLOC(this->${name}, TYPE_NAME(char *));
+        memset(this->${name}, 0, __size);
+        memcpy(this->${name}, ${name}.c_str(), (__size - 1));
+    }
+}
+;;
+
+FUNC_LIST_NATIVE_ADD_DEF:
+void add_to_${name}(${type} &${name}) {
+    PRECONDITION(${modevar} == true);
+    if (IS_NULL(this->${name})) {
+        this->${name} = new std::vector<${type} *>();
+        CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
+    }
+    ${type} *__var = (${type} *)malloc(sizeof(${type}));
+    CHECK_ALLOC(__var, TYPE_NAME(${type}));
+    *__var = ${name};
+    this->${name}->push_back(__var);
+}
+;;
+
+FUNC_LIST_STRING_ADD_DEF:
+void add_to_${name}(string &${name}) {
+    PRECONDITION(${modevar} == true);
+    if (IS_NULL(this->${name})) {
+        this->${name} = new std::vector<${type} *>();
+        CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
+    }
+    if (!IS_EMPTY(${name}) {
+        uint32_t __size = name.length() + 1;
+        char *__var = (char *)malloc(sizeof(char) * __size);
+        CHECK_ALLOC(__var, TYPE_NAME(char *));
+        memset(__var, 0, __size);
+        memcpy(__var, ${name}.c_str(), (__size - 1));
+        this->${name}->push_back(var);
+    }
+}
+;;
+
+FUNC_LIST_TYPE_ADD_DEF:
+void add_to_${name}(${type} *${name}) {
+    PRECONDITION(${modevar} == true);
+    CHECK_NOT_NULL(${name});
+    if (IS_NULL(this->${name})) {
+        this->${name} = new std::vector<${type} *>();
+        CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
+    }
+    his->${name}->push_back(${name});
+}
+;;
+
+FUNC_MAP_NATIVE_ADD_DEF:
+void add_to_${name}(${key_type} ${key}, ${value_type} &${value}) {
+    PRECONDITION(${modevar} == true);
+    if (IS_NULL(this->${name})) {
+        this->${name} = new std::unordered_map<${key_type}, ${value_type} *>();
+        CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
+    }
+    ${value_type} *__var = (${value_type} *)malloc(sizeof(${value_type}));
+    CHECK_ALLOC(__var, TYPE_NAME(${value_type}));
+    *__var = ${value};
+    this->${name}->insert(${key}, __var});
+}
+;;
+
+FUNC_MAP_NATIVE_TYPE_DEF:
+void add_to_${name}(${key_type} ${key}, ${value_type} *${value}) {
+    PRECONDITION(${modevar} == true);
+    if (IS_NULL(this->${name})) {
+        this->${name} = new std::unordered_map<${key_type}, ${value_type} *>();
+        CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
+    }
+    his->${name}->insert(${key}, ${value}});
+}
+;;
+
+FUNC_SETTER_FROM_MAP:
+void set_value_${name}(__struct_datatype__ *data) {
+    if (NOT_NULL(data)) {
+        __struct_datatype__::const_iterator iter = data->find("${name}");
+        if (iter != data->end()) {
+            void *__ptr = iter->second;
+            if (NOT_NULL(__ptr)) {
+                ${type} *__var = static_cast<${type} *>(__ptr);
+                CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));
+                this->${name} = __var;
+            } else {
+                this->${name} = nullptr;
+            }
+        } else {
+            this->${name} = nullptr;
+        }
+    } else {
+        this->${name} = nullptr;
+    }
+}
+;;
+
+FUNC_SETTER_TO_MAP:
+void set_map_${name}(__struct_datatype__ *data) {
+    CHECK_NOT_NULL(data);
+    if (NOT_NULL(this->${name})) {
+        data->insert({"${name}", this->${name}});
+    }
+}
+;;
+
+CALL_SETTER_FROM_MAP:
+this->set_value_${name}(${data_var});
+;;
+
+CALL_SETTER_TO_MAP:
+this->set_map_${name}(${data_var});
+
+FUNC_SERIALIZE:
+__struct_datatype__ *serialize() override {
+    __struct_datatype__ *__map = new __struct_datatype__();
+    CHECK_ALLOC(__map, TYPE_NAME(__struct_datatype__));
+    ${set_map_calls}
+    return __map;
+}
+;;
+
+FUNC_DESERIALIZE:
+void deserialize(__struct_datatype__ *data) {
+    CHECK_NOT_NULL(data);
+    ${read_map_calls};
+}
+;;
+
