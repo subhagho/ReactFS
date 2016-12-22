@@ -68,6 +68,7 @@
 
 typedef uint8_t BYTE;
 typedef uint8_t *BYTE_PTR;
+typedef char * CHARBUFF;
 
 #define PADCHAR(i, s) char __padchar_##i[s]
 #define PADINT(i) uint32_t __padint_##i

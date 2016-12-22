@@ -207,41 +207,40 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
         DATETIME = 273,
         STRING = 274,
         TEXT = 275,
-        ARRAY = 276,
-        LIST = 277,
-        MAP = 278,
-        LTYPEBRACE = 279,
-        RTYPEBRACE = 280,
-        LINBRACE = 281,
-        RINBRACE = 282,
-        LSZBRACE = 283,
-        RSZBRACE = 284,
-        COMMA = 285,
-        ON = 286,
-        DEFAULT = 287,
-        TYPE_END = 288,
-        KEY_FIELDS = 289,
-        INDEX = 290,
-        SCHEMA = 291,
-        CONSTRAINT = 292,
-        REGEX = 293,
-        IN = 294,
-        BETWEEN = 295,
-        NULLABLE = 296,
-        NAMESPACE = 297,
-        NOT = 298,
-        LT = 299,
-        GT = 300,
-        LTEQ = 301,
-        GTEQ = 302,
-        ASC = 303,
-        DESC = 304,
-        COLON = 305,
-        DOT = 306,
-        NEWLINE = 307,
-        FULLTEXT_INDEX = 308,
-        HASH_INDEX = 309,
-        TREE_INDEX = 310
+        LIST = 276,
+        MAP = 277,
+        LTYPEBRACE = 278,
+        RTYPEBRACE = 279,
+        LINBRACE = 280,
+        RINBRACE = 281,
+        LSZBRACE = 282,
+        RSZBRACE = 283,
+        COMMA = 284,
+        ON = 285,
+        DEFAULT = 286,
+        TYPE_END = 287,
+        KEY_FIELDS = 288,
+        INDEX = 289,
+        SCHEMA = 290,
+        CONSTRAINT = 291,
+        REGEX = 292,
+        IN = 293,
+        BETWEEN = 294,
+        NULLABLE = 295,
+        NAMESPACE = 296,
+        NOT = 297,
+        LT = 298,
+        GT = 299,
+        LTEQ = 300,
+        GTEQ = 301,
+        ASC = 302,
+        DESC = 303,
+        COLON = 304,
+        DOT = 305,
+        NEWLINE = 306,
+        FULLTEXT_INDEX = 307,
+        HASH_INDEX = 308,
+        TREE_INDEX = 309
       };
     };
 
@@ -402,7 +401,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     /// \param yyvalue   the value to check
     static bool yy_table_value_is_error_ (int yyvalue);
 
-    static const short int yypact_ninf_;
+    static const signed char yypact_ninf_;
     static const signed char yytable_ninf_;
 
     /// Convert a scanner token number \a t to a symbol number.
@@ -429,7 +428,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   // number is the opposite.  If YYTABLE_NINF, syntax error.
   static const unsigned char yytable_[];
 
-  static const short int yycheck_[];
+  static const unsigned char yycheck_[];
 
   // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
   // symbol of state STATE-NUM.
@@ -546,12 +545,12 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     enum
     {
       yyeof_ = 0,
-      yylast_ = 213,     ///< Last index in yytable_.
-      yynnts_ = 45,  ///< Number of nonterminal symbols.
+      yylast_ = 181,     ///< Last index in yytable_.
+      yynnts_ = 42,  ///< Number of nonterminal symbols.
       yyfinal_ = 8, ///< Termination state number.
       yyterror_ = 1,
       yyerrcode_ = 256,
-      yyntokens_ = 56  ///< Number of tokens.
+      yyntokens_ = 55  ///< Number of tokens.
     };
 
 
@@ -563,7 +562,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 
 #line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 } } } } } // com::wookler::reactfs::core::parsers
-#line 567 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 566 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 

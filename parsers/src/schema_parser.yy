@@ -82,7 +82,6 @@ void debug_r(const char *s, ...);
 %token			DATETIME
 %token			STRING
 %token			TEXT
-%token			ARRAY
 %token			LIST
 %token			MAP
 %token 			LTYPEBRACE
@@ -118,11 +117,11 @@ void debug_r(const char *s, ...);
 %token 			HASH_INDEX
 %token 			TREE_INDEX
 %type<dval>		DVALUE
-%type<lval>		IVALUE size_def opt_nullable
+%type<lval>		IVALUE opt_nullable
 %type<str>		FULLTEXT_INDEX HASH_INDEX TREE_INDEX
-%type<str>		SVALUE VARNAME STRING DOUBLE BYTE CHAR BOOL SHORT INTEGER LONG FLOAT TIMESTAMP DATETIME  TEXT ARRAY LIST MAP ASC DESC
+%type<str>		SVALUE VARNAME STRING DOUBLE BYTE CHAR BOOL SHORT INTEGER LONG FLOAT TIMESTAMP DATETIME  TEXT LIST MAP ASC DESC
 %type<str>		value values datatype variable nested_variable opt_sort column columns key_fields sort
-%type<str>		declare declare_native declare_ref declare_native_arr declare_ref_arr declare_native_list declare_ref_list declare_netive_map declare_ref_map
+%type<str>		declare declare_native declare_ref declare_native_list declare_ref_list declare_netive_map declare_ref_map
 
 
 %locations
@@ -302,8 +301,6 @@ declarations:
 declare:
 		declare_native	
 	|	declare_ref
-	|	declare_native_arr
-	|	declare_ref_arr
 	|	declare_native_list
 	|	declare_ref_list
 	|	declare_netive_map
@@ -329,33 +326,6 @@ declare_ref:
 							std::string n($3);
 							driver.add_declaration(n, t, true, $6); 
 						}
-	;
-
-declare_native_arr:
-		ARRAY LT datatype GT  variable size_def opt_constraint opt_default opt_nullable	{
-									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $3, $5, $6);
-									debug_r("varname=%s nullable=%d", $5, $9);
-									std::string t($3);
-									std::string n($5);
-									int s = $6;
-									driver.add_array_decl(n, s, t, false, $9);
-									FREE_PTR($3);
-									FREE_PTR($5);
-								}
-	;
-
-declare_ref_arr:
-		ARRAY LT DATATYPE variable GT variable size_def opt_constraint opt_default opt_nullable	{
-									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", $4, $6, $7);
-									debug_r("varname=%s nullable=%d", $6, $10);
-									std::string t($4);
-									std::string n($6);
-									int s = $7;
-									driver.add_array_decl(n, s, t, true, $10);
-									FREE_PTR($4);
-									FREE_PTR($6);
-	
-								}
 	;
 
 declare_native_list:
@@ -464,9 +434,6 @@ datatype:
 	|	TEXT				{ debug_r("datatype=%s", $1); $$ = strdup($1); }
 	| 	STRING 				{ debug_r("datatype=%s", $1); $$ = strdup($1); }
 	;
-
-size_def:
-	LSZBRACE IVALUE RSZBRACE 		{ debug_r("size=%d", $2); $$=$2; };
 
 declare_finish:
 	TYPE_END	{ driver.finish_def(); }

@@ -420,8 +420,8 @@ int yyFlexLexer::yylex()
 	(yy_c_buf_p) = yy_cp;
 
 /* %% [4.0] data tables for the DFA and the user's section 1 definitions go here */
-#define YY_NUM_RULES 56
-#define YY_END_OF_BUFFER 57
+#define YY_NUM_RULES 55
+#define YY_END_OF_BUFFER 56
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -429,31 +429,31 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_accept[211] =
+static yyconst flex_int16_t yy_accept[206] =
     {   0,
-        0,    0,   57,   56,    1,   54,   40,   56,   23,   24,
-       27,   56,   52,   56,    2,   51,   31,   41,   43,   56,
-       56,   56,   56,   56,   56,   25,   26,   56,   56,   56,
-       56,   56,   56,   56,   56,   56,   56,   56,   56,   56,
-       21,   22,    1,    0,    4,    0,    0,    2,    3,   53,
-        3,    2,   55,   42,   44,   55,   55,   55,   55,   55,
-       55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
-       37,   55,   55,   55,   55,   55,   30,   55,   55,   55,
-       55,   55,   55,   55,   55,   53,    3,   46,   55,   55,
-       55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+        0,    0,   56,   55,    1,   53,   39,   55,   22,   23,
+       26,   55,   51,   55,    2,   50,   30,   40,   42,   55,
+       55,   55,   55,   55,   55,   24,   25,   55,   55,   55,
+       55,   55,   55,   55,   55,   55,   55,   55,   55,   20,
+       21,    1,    0,    4,    0,    0,    2,    3,   52,    3,
+        2,   54,   41,   43,   54,   54,   54,   54,   54,   54,
+       54,   54,   54,   54,   54,   54,   54,   54,   36,   54,
+       54,   54,   54,   54,   29,   54,   54,   54,   54,   54,
+       54,   54,   54,   52,    3,   45,   54,   54,   54,   54,
+       54,   54,   54,   54,   54,   54,   54,   54,   54,   54,
 
-       55,   55,   55,   55,   55,   55,   20,   55,   55,   55,
-       55,   55,   55,   55,   55,   55,   55,   47,   55,   49,
-       50,   55,   55,   55,    6,    7,   55,   55,   55,   55,
-       55,   55,   55,   19,   11,   55,   55,   55,   55,   55,
-       55,   55,   17,   55,    5,   55,   18,   55,   55,   55,
-       55,   55,   55,   12,   33,   55,   55,   55,   36,   55,
-       55,    9,   55,   55,   55,   55,   55,   55,   55,   55,
-       55,   13,   55,   55,   55,   34,   55,   16,   55,   55,
-       55,   38,    8,   55,   55,   28,   10,   55,   55,   55,
-       55,   29,   48,   55,   15,   55,   45,   55,   55,   55,
+       54,   54,   54,   19,   54,   54,   54,   54,   54,   54,
+       54,   54,   54,   54,   46,   54,   48,   49,   54,   54,
+        6,    7,   54,   54,   54,   54,   54,   54,   54,   18,
+       11,   54,   54,   54,   54,   54,   54,   54,   17,   54,
+        5,   54,   54,   54,   54,   54,   54,   54,   12,   32,
+       54,   54,   54,   35,   54,   54,    9,   54,   54,   54,
+       54,   54,   54,   54,   54,   54,   13,   54,   54,   54,
+       33,   54,   16,   54,   54,   54,   37,    8,   54,   54,
+       27,   10,   54,   54,   54,   54,   28,   47,   54,   15,
+       54,   44,   54,   54,   54,   38,   54,   14,   34,   54,
 
-       39,   55,   14,   35,   55,   55,   55,   55,   32,    0
+       54,   54,   54,   31,    0
     } ;
 
 static yyconst YY_CHAR yy_ec[256] =
@@ -498,119 +498,116 @@ static yyconst YY_CHAR yy_meta[59] =
         3,    3,    3,    3,    3,    3,    1,    1
     } ;
 
-static yyconst flex_uint16_t yy_base[214] =
+static yyconst flex_uint16_t yy_base[209] =
     {   0,
-        0,    0,  412,  413,  409,  413,  413,   54,  413,  413,
-      413,   50,  398,  398,   51,  413,  413,  392,  391,   54,
-      396,   55,   56,   57,   58,  413,  413,   59,   60,   62,
-       63,   61,   66,   64,   68,   70,   72,   78,   83,   85,
-      413,  413,  403,   82,  413,  401,  391,   79,  390,    0,
-      389,   80,  390,  413,  413,  111,   69,   90,   91,  116,
-       84,   87,  117,  119,  120,  122,  123,  126,  127,  130,
-      132,  134,  135,  137,  133,  136,  389,  142,  146,  138,
-      139,  141,  140,  143,  144,    0,  386,  387,  147,  148,
-      150,  154,  162,  149,  151,  153,  152,  158,  167,  184,
+        0,    0,  403,  404,  400,  404,  404,   54,  404,  404,
+      404,   50,  389,  389,   51,  404,  404,  383,  382,   54,
+      387,   55,   56,   57,   58,  404,  404,   59,   60,   61,
+       66,   63,   69,   62,   68,   72,   77,   81,   83,  404,
+      404,  394,   69,  404,  392,  382,   78,  381,    0,  380,
+       82,  381,  404,  404,   79,  103,   70,  104,  114,   73,
+       94,   95,  117,   96,  118,  119,  122,  124,  125,  127,
+      134,  130,  128,  131,  380,  139,  140,  135,  136,  138,
+      141,  143,  144,    0,  377,  378,  145,  146,  159,  151,
+      147,  150,  152,  148,  154,  158,  157,  175,  180,  184,
 
-      188,  190,  189,  191,  194,  195,  386,  198,  197,  200,
-      201,  204,  202,  205,  203,  206,  208,  385,  207,  384,
-      383,  210,  211,  212,  382,  381,  213,  216,  217,  219,
-      221,  222,  231,  379,  373,  223,  224,  233,  234,  239,
-      243,  244,  372,  246,  248,  247,  371,  250,  251,  252,
-      253,  261,  265,  370,  369,  266,  268,  257,  368,  272,
-      269,  367,  271,  274,  275,  280,  277,  282,  284,  289,
-      290,  366,  291,  293,  299,  363,  301,  362,  303,  305,
-      306,  361,  357,  308,  310,  355,  353,  311,  313,  312,
-      315,  350,  348,  317,  346,  320,  345,  322,  321,  323,
+      189,  156,  176,  377,  190,  192,  193,  194,  196,  197,
+      199,  200,  202,  204,  376,  203,  375,  374,  206,  209,
+      373,  372,  208,  210,  211,  212,  214,  215,  217,  371,
+      370,  216,  224,  225,  226,  229,  230,  228,  368,  234,
+      236,  239,  240,  241,  243,  244,  245,  253,  362,  361,
+      255,  246,  261,  360,  264,  259,  359,  267,  258,  268,
+      271,  273,  274,  278,  279,  281,  358,  286,  292,  290,
+      357,  293,  356,  294,  299,  295,  355,  351,  301,  302,
+      349,  345,  305,  304,  296,  306,  343,  341,  307,  340,
+      308,  338,  316,  309,  312,  336,  314,  335,  330,  321,
 
-      344,  326,  343,  340,  327,  329,  330,  333,  337,  413,
-      384,   80,  387
+      318,  324,  322,  328,  404,  373,  334,  376
     } ;
 
-static yyconst flex_int16_t yy_def[214] =
+static yyconst flex_int16_t yy_def[209] =
     {   0,
-      210,    1,  210,  210,  210,  210,  210,  211,  210,  210,
-      210,  210,  210,  210,  212,  210,  210,  210,  210,  212,
-      212,  212,  212,  212,  212,  210,  210,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      210,  210,  210,  211,  210,  211,  210,  210,  210,  213,
-      210,  212,  212,  210,  210,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  213,  210,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
+      205,    1,  205,  205,  205,  205,  205,  206,  205,  205,
+      205,  205,  205,  205,  207,  205,  205,  205,  205,  207,
+      207,  207,  207,  207,  207,  205,  205,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  205,
+      205,  205,  206,  205,  206,  205,  205,  205,  208,  205,
+      207,  207,  205,  205,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  208,  205,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
 
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
-      212,  212,  212,  212,  212,  212,  212,  212,  212,  212,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
+      207,  207,  207,  207,  207,  207,  207,  207,  207,  207,
 
-      212,  212,  212,  212,  212,  212,  212,  212,  212,    0,
-      210,  210,  210
+      207,  207,  207,  207,    0,  205,  205,  205
     } ;
 
-static yyconst flex_uint16_t yy_nxt[472] =
+static yyconst flex_uint16_t yy_nxt[463] =
     {   0,
         4,    5,    6,    7,    8,    9,   10,   11,   12,   13,
        14,   15,   16,   17,   18,    4,   19,   20,   21,   21,
        22,   21,   23,   24,   21,   21,   21,   25,   21,   21,
-       26,    4,   27,   21,   28,   29,   30,   31,   21,   32,
-       21,   21,   33,   21,   34,   35,   36,   37,   21,   38,
-       39,   40,   21,   21,   21,   21,   41,   42,   45,   47,
-       51,   48,   52,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,   59,  210,   57,  210,  210,  210,
-       56,  210,   53,   60,   58,   46,   45,  210,   51,   51,
-       48,   52,  210,  210,  210,   89,  210,   67,   62,  210,
+       26,    4,   27,   21,   21,   28,   29,   30,   21,   31,
+       21,   21,   32,   21,   33,   34,   35,   36,   21,   37,
+       38,   39,   21,   21,   21,   21,   40,   41,   44,   46,
+       50,   47,   51,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,   44,   58,  205,   56,  205,  205,  205,
+       55,  205,  205,   59,   57,   45,  205,   50,  205,   47,
+      205,   50,  205,   51,   88,   65,   72,   60,   86,   66,
 
-      210,   68,   74,   65,   75,   70,   72,   63,   61,   66,
-       69,   73,   71,   46,   90,   64,   78,   91,   77,   79,
-      210,   80,   76,   83,   81,  210,  210,   84,  210,  210,
-       88,  210,  210,   93,   82,  210,  210,   92,   94,  210,
-       85,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,   97,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,   95,  100,  118,  210,   98,  103,
-       96,  210,  119,  120,   99,  121,  210,  102,  108,  101,
-      109,  106,  110,  104,  105,  107,  113,  111,  116,  112,
-      114,  125,  117,  210,  115,  124,  122,  210,  210,  210,
+       45,   63,   73,  205,  205,  205,   61,   64,   67,   69,
+       68,   70,  205,  205,   62,   76,   71,   77,   75,   78,
+       74,   81,   79,  205,   91,   82,  205,  205,  205,   87,
+       89,  205,   80,  205,  205,   90,  205,  205,   83,  205,
+      205,   92,   95,  205,  205,  205,   93,  205,  205,  205,
+      205,   94,  205,  205,  205,  205,  205,  205,   97,  205,
+      205,  205,  100,  205,  115,  205,  205,  205,  205,   96,
+      116,   99,  118,  105,   98,  106,  101,  102,  104,  107,
+      103,  108,  117,  110,  205,  205,  109,  111,  113,  205,
+      121,  125,  114,  205,  120,  112,  124,  122,  205,  205,
 
-      210,  126,  123,  210,  210,  128,  210,  210,  127,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  129,  210,
-      210,  210,  210,  130,  131,  210,  210,  132,  210,  133,
-      210,  210,  210,  210,  146,  135,  136,  140,  138,  139,
-      210,  137,  210,  210,  144,  134,  145,  142,  210,  148,
-      149,  141,  210,  210,  143,  210,  210,  210,  158,  210,
-      210,  210,  210,  153,  150,  147,  210,  151,  166,  152,
-      210,  156,  154,  157,  210,  210,  155,  210,  210,  160,
-      210,  210,  161,  210,  210,  168,  210,  159,  167,  210,
-      163,  210,  175,  210,  162,  170,  164,  165,  210,  210,
+      119,  205,  205,  205,  123,  205,  205,  130,  205,  205,
+      126,  205,  205,  205,  127,  205,  131,  205,  205,  205,
+      205,  205,  128,  205,  205,  205,  205,  129,  132,  136,
+      142,  134,  135,  205,  205,  205,  133,  205,  205,  205,
+      140,  138,  141,  205,  143,  205,  137,  144,  205,  205,
+      205,  139,  205,  205,  205,  205,  148,  151,  153,  145,
+      161,  146,  205,  147,  205,  149,  152,  205,  205,  150,
+      205,  155,  156,  205,  158,  163,  205,  205,  162,  154,
+      205,  157,  205,  205,  159,  160,  165,  205,  205,  166,
+      205,  167,  164,  168,  169,  205,  170,  172,  171,  205,
 
-      210,  169,  210,  172,  173,  171,  176,  177,  210,  181,
-      210,  178,  210,  180,  210,  210,  174,  210,  184,  210,
-      210,  210,  210,  182,  210,  179,  210,  188,  183,  210,
-      210,  210,  210,  193,  185,  210,  210,  191,  210,  210,
-      187,  186,  210,  189,  192,  198,  210,  196,  195,  210,
-      194,  197,  210,  210,  210,  210,  190,  210,  201,  210,
-      199,  202,  210,  200,  210,  206,  210,  208,  205,  203,
-      210,  210,  210,  207,  204,  210,  210,  210,  210,  210,
-      210,  210,  210,  209,   44,   44,   44,   86,  210,   86,
-      210,  210,  210,  210,  210,  210,  210,   87,  210,  210,
+      176,  205,  205,  205,  205,  205,  175,  173,  205,  174,
+      205,  205,  179,  205,  205,  205,  205,  205,  205,  177,
+      178,  205,  188,  205,  180,  205,  183,  205,  186,  193,
+      205,  205,  181,  205,  184,  182,   52,  205,  187,  205,
+      190,  191,  192,  189,  205,  205,  196,  205,  185,  205,
+      205,  194,  205,  195,  205,  197,  200,  198,  205,  201,
+      205,  203,  202,  199,  205,  205,  205,  205,  205,  205,
+      205,  205,  204,   43,   43,   43,   84,  205,   84,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,   85,  205,
+      205,   85,   48,   48,  205,   42,  205,   54,   53,   49,
 
-       87,   49,   49,  210,   43,  210,   55,   54,   50,   49,
-       43,  210,    3,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210
+       48,   42,  205,    3,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205
     } ;
 
-static yyconst flex_int16_t yy_chk[472] =
+static yyconst flex_int16_t yy_chk[463] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -619,61 +616,60 @@ static yyconst flex_int16_t yy_chk[472] =
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    8,   12,
        15,   12,   15,   20,   22,   23,   24,   25,   28,   29,
-       32,   30,   31,   34,   24,   33,   22,   35,   57,   36,
-       20,   37,  212,   25,   23,    8,   44,   38,   48,   52,
-       48,   52,   39,   61,   40,   57,   62,   31,   29,   58,
+       30,   34,   32,   43,   24,   31,   22,   35,   33,   57,
+       20,   36,   60,   25,   23,    8,   37,   47,   55,   47,
+       38,   51,   39,   51,   57,   30,   34,   28,   55,   30,
 
-       59,   31,   35,   30,   36,   32,   34,   29,   28,   30,
-       31,   34,   33,   44,   58,   29,   38,   59,   37,   39,
-       56,   39,   36,   40,   39,   60,   63,   40,   64,   65,
-       56,   66,   67,   61,   39,   68,   69,   60,   62,   70,
-       40,   71,   75,   72,   73,   76,   74,   80,   81,   83,
-       82,   78,   84,   85,   65,   79,   89,   90,   94,   91,
-       95,   97,   96,   92,   63,   68,   89,   98,   66,   71,
-       64,   93,   90,   91,   67,   92,   99,   70,   75,   69,
-       76,   73,   78,   71,   72,   74,   81,   79,   84,   80,
-       82,   96,   85,  100,   83,   95,   93,  101,  103,  102,
+       43,   29,   35,   61,   62,   64,   28,   29,   30,   32,
+       31,   33,   56,   58,   28,   37,   33,   38,   36,   38,
+       35,   39,   38,   59,   60,   39,   63,   65,   66,   56,
+       58,   67,   38,   68,   69,   59,   70,   73,   39,   72,
+       74,   61,   64,   71,   78,   79,   62,   80,   76,   77,
+       81,   63,   82,   83,   87,   88,   91,   94,   66,   92,
+       90,   93,   69,   95,   87,  102,   97,   96,   89,   65,
+       88,   68,   90,   73,   67,   74,   69,   70,   72,   76,
+       71,   77,   89,   79,   98,  103,   78,   80,   82,   99,
+       93,   97,   83,  100,   92,   81,   96,   94,  101,  105,
 
-      104,   97,   94,  105,  106,   99,  109,  108,   98,  110,
-      111,  113,  115,  112,  114,  116,  119,  117,  100,  122,
-      123,  124,  127,  101,  102,  128,  129,  103,  130,  104,
-      131,  132,  136,  137,  119,  106,  108,  112,  110,  111,
-      133,  109,  138,  139,  116,  105,  117,  114,  140,  123,
-      124,  113,  141,  142,  115,  144,  146,  145,  137,  148,
-      149,  150,  151,  130,  127,  122,  158,  128,  146,  129,
-      152,  133,  131,  136,  153,  156,  132,  157,  161,  139,
-      163,  160,  140,  164,  165,  149,  167,  138,  148,  166,
-      142,  168,  158,  169,  141,  151,  144,  145,  170,  171,
+       91,  106,  107,  108,   95,  109,  110,  102,  111,  112,
+       98,  113,  116,  114,   99,  119,  103,  123,  120,  124,
+      125,  126,  100,  127,  128,  132,  129,  101,  105,  109,
+      116,  107,  108,  133,  134,  135,  106,  138,  136,  137,
+      113,  111,  114,  140,  119,  141,  110,  120,  142,  143,
+      144,  112,  145,  146,  147,  152,  126,  129,  133,  123,
+      142,  124,  148,  125,  151,  127,  132,  159,  156,  128,
+      153,  135,  136,  155,  138,  144,  158,  160,  143,  134,
+      161,  137,  162,  163,  140,  141,  146,  164,  165,  147,
+      166,  148,  145,  151,  152,  168,  153,  156,  155,  170,
 
-      173,  150,  174,  153,  156,  152,  160,  161,  175,  166,
-      177,  163,  179,  165,  180,  181,  157,  184,  169,  185,
-      188,  190,  189,  167,  191,  164,  194,  174,  168,  196,
-      199,  198,  200,  181,  170,  202,  205,  179,  206,  207,
-      173,  171,  208,  175,  180,  190,  209,  188,  185,  204,
-      184,  189,  203,  201,  197,  195,  177,  193,  196,  192,
-      191,  198,  187,  194,  186,  205,  183,  207,  202,  199,
-      182,  178,  176,  206,  200,  172,  162,  159,  155,  154,
-      147,  143,  135,  208,  211,  211,  211,  213,  134,  213,
-      126,  125,  121,  120,  118,  107,   88,   87,   77,   53,
+      161,  169,  172,  174,  176,  185,  160,  158,  175,  159,
+      179,  180,  164,  184,  183,  186,  189,  191,  194,  162,
+      163,  195,  176,  197,  165,  193,  169,  201,  174,  185,
+      200,  203,  166,  202,  170,  168,  207,  204,  175,  199,
+      180,  183,  184,  179,  198,  196,  191,  192,  172,  190,
+      188,  186,  187,  189,  182,  193,  197,  194,  181,  200,
+      178,  202,  201,  195,  177,  173,  171,  167,  157,  154,
+      150,  149,  203,  206,  206,  206,  208,  139,  208,  131,
+      130,  122,  121,  118,  117,  115,  104,   86,   85,   75,
+       52,   50,   48,   46,   45,   42,   21,   19,   18,   14,
 
-       51,   49,   47,   46,   43,   21,   19,   18,   14,   13,
-        5,    3,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210,  210,  210,  210,  210,  210,  210,  210,  210,  210,
-      210
+       13,    5,    3,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205,  205,  205,  205,  205,  205,  205,  205,  205,
+      205,  205
     } ;
 
-static yyconst flex_int16_t yy_rule_linenum[56] =
+static yyconst flex_int16_t yy_rule_linenum[55] =
     {   0,
        38,   40,   45,   49,   56,   62,   68,   74,   80,   86,
        92,   98,  104,  110,  116,  122,  128,  134,  140,  146,
-      152,  153,  154,  155,  156,  157,  158,  159,  164,  169,
-      175,  176,  181,  186,  191,  196,  201,  206,  211,  217,
-      222,  227,  232,  237,  242,  247,  253,  259,  265,  271,
-      278,  280,  282,  284,  286
+      147,  148,  149,  150,  151,  152,  153,  158,  163,  169,
+      170,  175,  180,  185,  190,  195,  200,  205,  211,  216,
+      221,  226,  231,  236,  241,  247,  253,  259,  265,  272,
+      274,  276,  278,  280
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -707,7 +703,7 @@ using namespace std;
 
 void debug_r(const char *s, ...);
 	
-#line 711 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
+#line 707 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
 
 #define INITIAL 0
 
@@ -911,7 +907,7 @@ YY_DECL
             yylval = lval;
 
 
-#line 915 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
+#line 911 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -940,13 +936,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 211 )
+				if ( yy_current_state >= 206 )
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 413 );
+		while ( yy_base[yy_current_state] != 404 );
 
 yy_find_action:
 /* %% [10.0] code to find the action number goes here */
@@ -969,12 +965,12 @@ do_action:	/* This label is used only to access EOF actions. */
 			{
 			if ( yy_act == 0 )
 				std::cerr << "--scanner backing up\n";
-			else if ( yy_act < 56 )
+			else if ( yy_act < 55 )
 				std::cerr << "--accepting rule at line " << yy_rule_linenum[yy_act] <<
 				         "(\"" << yytext << "\")\n";
-			else if ( yy_act == 56 )
+			else if ( yy_act == 55 )
 				std::cerr << "--accepting default rule (\"" << yytext << "\")\n";
-			else if ( yy_act == 57 )
+			else if ( yy_act == 56 )
 				std::cerr << "--(end of buffer or a NUL)\n";
 			else
 				std::cerr << "--EOF (start condition " << YY_START << ")\n";
@@ -1158,7 +1154,7 @@ YY_RULE_SETUP
 {
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::ARRAY);
+            		return (token::LIST);
 
             	}
 	YY_BREAK
@@ -1168,147 +1164,146 @@ YY_RULE_SETUP
 {
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::LIST);
+            		return (token::MAP);
 
             	}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 146 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::MAP);
-
-            	}
+{ debug_r("[lexer] token : %s", yytext); return (token::LTYPEBRACE); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 152 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ debug_r("[lexer] token : %s", yytext); return (token::LTYPEBRACE); }
+#line 147 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{ debug_r("[lexer] token : %s", yytext); return (token::RTYPEBRACE); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 153 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ debug_r("[lexer] token : %s", yytext); return (token::RTYPEBRACE); }
+#line 148 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{ debug_r("[lexer] token : %s", yytext); return (token::LINBRACE); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 154 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ debug_r("[lexer] token : %s", yytext); return (token::LINBRACE); }
+#line 149 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{ debug_r("[lexer] token : %s", yytext); return (token::RINBRACE); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 155 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ debug_r("[lexer] token : %s", yytext); return (token::RINBRACE); }
+#line 150 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{ debug_r("[lexer] token : %s", yytext); return (token::LSZBRACE); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 156 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ debug_r("[lexer] token : %s", yytext); return (token::LSZBRACE); }
+#line 151 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{ debug_r("[lexer] token : %s", yytext); return (token::RSZBRACE); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 157 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ debug_r("[lexer] token : %s", yytext); return (token::RSZBRACE); }
+#line 152 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{ debug_r("[lexer] token : %s", yytext); return (token::COMMA); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 158 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ debug_r("[lexer] token : %s", yytext); return (token::COMMA); }
-	YY_BREAK
-case 28:
-YY_RULE_SETUP
-#line 159 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 153 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::DEFAULT);
 
             	}
 	YY_BREAK
-case 29:
+case 28:
 YY_RULE_SETUP
-#line 164 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 158 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::DATATYPE);
 
             	}
 	YY_BREAK
-case 30:
+case 29:
 YY_RULE_SETUP
-#line 169 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 163 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::ON);
 
             	}
 	YY_BREAK
-case 31:
+case 30:
 YY_RULE_SETUP
-#line 175 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 169 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 return (token::TYPE_END);
 	YY_BREAK
-case 32:
+case 31:
 YY_RULE_SETUP
-#line 176 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 170 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::KEY_FIELDS);
 
             	}
 	YY_BREAK
-case 33:
+case 32:
 YY_RULE_SETUP
-#line 181 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 175 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::INDEX);
 
             	}
 	YY_BREAK
-case 34:
+case 33:
 YY_RULE_SETUP
-#line 186 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 180 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::SCHEMA);
 
             	}
 	YY_BREAK
-case 35:
+case 34:
 YY_RULE_SETUP
-#line 191 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 185 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::CONSTRAINT);
 
             	}
 	YY_BREAK
-case 36:
+case 35:
 YY_RULE_SETUP
-#line 196 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 190 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::REGEX);
 
             	}
 	YY_BREAK
-case 37:
+case 36:
 YY_RULE_SETUP
-#line 201 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 195 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::IN);
 
             	}
 	YY_BREAK
-case 38:
+case 37:
 YY_RULE_SETUP
-#line 206 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 200 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::BETWEEN);
+
+            	}
+	YY_BREAK
+case 38:
+YY_RULE_SETUP
+#line 205 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{
+			debug_r("[lexer]  token : %s", yytext);
+            		return (token::NAMESPACE);
 
             	}
 	YY_BREAK
@@ -1317,61 +1312,62 @@ YY_RULE_SETUP
 #line 211 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
-            		return (token::NAMESPACE);
+            		return (token::NOT);
 
             	}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 217 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{
-			debug_r("[lexer]  token : %s", yytext);
-            		return (token::NOT);
-
-            	}
-	YY_BREAK
-case 41:
-YY_RULE_SETUP
-#line 222 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 216 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::LT);
 
             	}
 	YY_BREAK
-case 42:
+case 41:
 YY_RULE_SETUP
-#line 227 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 221 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::LTEQ);
 
             	}
 	YY_BREAK
-case 43:
+case 42:
 YY_RULE_SETUP
-#line 232 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 226 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::GT);
 
             	}
 	YY_BREAK
-case 44:
+case 43:
 YY_RULE_SETUP
-#line 237 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 231 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::GTEQ);
 
             	}
 	YY_BREAK
-case 45:
+case 44:
 YY_RULE_SETUP
-#line 242 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 236 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 			debug_r("[lexer]  token : %s", yytext);
             		return (token::NULLABLE);
+
+            	}
+	YY_BREAK
+case 45:
+YY_RULE_SETUP
+#line 241 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{
+            		yylval->str = yytext;
+			debug_r("[lexer]  token : %s", yylval->str);
+            		return (token::ASC);
 
             	}
 	YY_BREAK
@@ -1381,7 +1377,7 @@ YY_RULE_SETUP
 {
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::ASC);
+            		return (token::DESC);
 
             	}
 	YY_BREAK
@@ -1391,7 +1387,7 @@ YY_RULE_SETUP
 {
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::DESC);
+            		return (token::FULLTEXT_INDEX);
 
             	}
 	YY_BREAK
@@ -1401,7 +1397,7 @@ YY_RULE_SETUP
 {
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::FULLTEXT_INDEX);
+            		return (token::HASH_INDEX);
 
             	}
 	YY_BREAK
@@ -1411,56 +1407,46 @@ YY_RULE_SETUP
 {
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::HASH_INDEX);
+            		return (token::TREE_INDEX);
 
             	}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 271 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::TREE_INDEX);
-
-            	}
+#line 272 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{ debug_r("[lexer] token : %s", yytext); return (token::COLON); }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 278 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ debug_r("[lexer] token : %s", yytext); return (token::COLON); }
+#line 274 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{ debug_r("[lexer] token : %s", yytext); return (token::DOT); }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 280 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ debug_r("[lexer] token : %s", yytext); return (token::DOT); }
+#line 276 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+{ location->lines(); }
 	YY_BREAK
 case 53:
+/* rule 53 can match eol */
 YY_RULE_SETUP
-#line 282 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 278 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 { location->lines(); }
 	YY_BREAK
 case 54:
-/* rule 54 can match eol */
 YY_RULE_SETUP
-#line 284 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
-{ location->lines(); }
-	YY_BREAK
-case 55:
-YY_RULE_SETUP
-#line 286 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 280 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 {
 				yylval->str = yytext;
 				debug_r("[lexer]  varname : %s", yylval->str);
 				return (token::VARNAME);
 			}
 	YY_BREAK
-case 56:
+case 55:
 YY_RULE_SETUP
-#line 293 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 287 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 1464 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
+#line 1450 "/work/dev/wookler/ReactFS/parsers/src/schema_lexer.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1897,7 +1883,7 @@ int yyFlexLexer::yy_get_next_buffer()
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 211 )
+			if ( yy_current_state >= 206 )
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
@@ -1930,11 +1916,11 @@ int yyFlexLexer::yy_get_next_buffer()
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 211 )
+		if ( yy_current_state >= 206 )
 			yy_c = yy_meta[(unsigned int) yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-	yy_is_jam = (yy_current_state == 210);
+	yy_is_jam = (yy_current_state == 205);
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
@@ -2572,7 +2558,7 @@ void yyfree (void * ptr )
 
 /* %ok-for-header */
 
-#line 293 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
+#line 287 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.l"
 
 
 

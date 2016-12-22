@@ -16,8 +16,8 @@ class test_types {
     bool malloced = false;
     char *c = nullptr;
     int *i = nullptr;
-    string *s = nullptr;
-    vector<string *> *vs = nullptr;
+    CHARBUFF s = nullptr;
+    vector<CHARBUFF> *vs = nullptr;
     unordered_map<string, double *> *map = nullptr;
 
 public:
@@ -31,8 +31,8 @@ public:
             FREE_PTR(i);
         }
         if (NOT_NULL(vs)) {
-            for (string *ss : *vs) {
-                CHECK_AND_FREE(ss);
+            for (CHARBUFF ss : *vs) {
+                FREE_PTR(ss);
             }
             CHECK_AND_FREE(vs);
         }
@@ -73,34 +73,40 @@ public:
         return this->i;
     }
 
-    void set_s(string *s) {
+    void set_s(CHARBUFF s) {
         this->s = s;
     }
 
     void set_s(string s) {
-        this->s = new string(s);
-        CHECK_ALLOC(this->s, TYPE_NAME(string));
+        int size = s.length() * sizeof(char);
+        this->s = (CHARBUFF) malloc(size + 1);
+        CHECK_ALLOC(this->s, TYPE_NAME(CHARBUFF));
+        memset(this->s, 0, size + 1);
+        strncpy(this->s, s.c_str(), s.length());
     }
 
-    string *get_s() {
+    CHARBUFF get_s() {
         return this->s;
     }
 
-    void set_vs(vector<string *> *vs) {
+    void set_vs(vector<CHARBUFF> *vs) {
         this->vs = vs;
     }
 
     void add_vs(string s) {
         if (IS_NULL(vs)) {
-            vs = new vector<string *>();
+            vs = new vector<CHARBUFF>();
             CHECK_ALLOC(vs, TYPE_NAME(vector));
         }
-        string *ns = new string(s);
-        CHECK_ALLOC(ns, TYPE_NAME(string));
+        int size = s.length() * sizeof(char);
+        CHARBUFF ns = (CHARBUFF) malloc(size + 1);
+        CHECK_ALLOC(ns, TYPE_NAME(CHARBUFF));
+        memset(ns, 0, size + 1);
+        strncpy(ns, s.c_str(), s.length());
         vs->push_back(ns);
     }
 
-    vector<string *> *get_vs() {
+    vector<CHARBUFF> *get_vs() {
         return this->vs;
     }
 
@@ -116,6 +122,7 @@ public:
         double *dd = (double *) malloc(sizeof(double));
         CHECK_ALLOC(dd, TYPE_NAME(double));
         *dd = d;
+
         map->insert({key, dd});
     }
 
@@ -204,11 +211,11 @@ main(const int argc, const char **argv) {
                 offset += nt_i->get_type_handler()->read(dataptr, &i, offset, DATASET_SIZE);
                 CHECK_NOT_NULL(i);
                 tt->set_i(i);
-                string *s = nullptr;
+                CHARBUFF s = nullptr;
                 offset += nt_s->get_type_handler()->read(dataptr, &s, offset, DATASET_SIZE);
                 CHECK_NOT_NULL(s);
                 tt->set_s(s);
-                vector<string *> *vs = nullptr;
+                vector<CHARBUFF> *vs = nullptr;
                 offset += lt->get_type_handler()->read(dataptr, &vs, offset, DATASET_SIZE);
                 CHECK_NOT_NULL(vs);
                 tt->set_vs(vs);
@@ -216,7 +223,7 @@ main(const int argc, const char **argv) {
                 offset += mt->get_type_handler()->read(dataptr, &map, offset, DATASET_SIZE);
                 CHECK_NOT_NULL(map);
                 tt->set_map(map);
-                LOG_DEBUG("Read[%d] = [%d, %d, %s, %d, %d]", ii, *(tt->get_c()), *(tt->get_i()), tt->get_s()->c_str(),
+                LOG_DEBUG("Read[%d] = [%d, %d, %s, %d, %d]", ii, *(tt->get_c()), *(tt->get_i()), tt->get_s(),
                           tt->get_vs()->size(),
                           tt->get_map()->size());
             }

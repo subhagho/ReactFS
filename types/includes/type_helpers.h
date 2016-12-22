@@ -33,65 +33,6 @@ using namespace REACTFS_NS_CORE_PREFIX::types;
 REACTFS_NS_CORE
                 namespace types {
 
-                    class __array_init_utils {
-
-                    public:
-                        static __base_datatype_io *create_handler(__type_def_enum inner_type, __native_type *type) {
-                            __base_datatype_io *handler = nullptr;
-                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
-                            switch (inner_type) {
-                                case __type_def_enum::TYPE_BYTE:
-                                    handler = new __byte_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__byte_array));
-                                    break;
-                                case __type_def_enum::TYPE_CHAR:
-                                    handler = new __char_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__char_array));
-                                    break;
-                                case __type_def_enum::TYPE_SHORT:
-                                    handler = new __short_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__short_array));
-                                    break;
-                                case __type_def_enum::TYPE_INTEGER:
-                                    handler = new __int_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__int_array));
-                                    break;
-                                case __type_def_enum::TYPE_LONG:
-                                    handler = new __long_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__long_array));
-                                    break;
-                                case __type_def_enum::TYPE_FLOAT:
-                                    handler = new __float_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__float_array));
-                                    break;
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    handler = new __double_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__double_array));
-                                    break;
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                case __type_def_enum::TYPE_DATETIME:
-                                    handler = new __timestamp_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__timestamp_array));
-                                    break;
-                                case __type_def_enum::TYPE_STRING:
-                                    handler = new __string_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__string_array));
-                                    break;
-                                case __type_def_enum::TYPE_TEXT:
-                                    handler = new __text_array();
-                                    CHECK_ALLOC(handler, TYPE_NAME(__text_array));
-                                    break;
-                                case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __struct_array(type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__struct_array));
-                                    break;
-                                default:
-                                    throw BASE_ERROR("Specified type not supported. [type=%d]", inner_type);
-                            }
-                            return handler;
-                        }
-                    };
-
                     class __list_init_utils {
                     public:
 
@@ -204,12 +145,12 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_STRING>(
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_TEXT>(
+                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
@@ -269,12 +210,12 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_STRING>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_TEXT>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
@@ -334,12 +275,12 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_STRING>(
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_TEXT>(
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
@@ -399,12 +340,12 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_STRING>(
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_TEXT>(
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
@@ -464,12 +405,12 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_STRING>(
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_TEXT>(
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
@@ -529,12 +470,12 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_STRING>(
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_TEXT>(
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
@@ -594,12 +535,12 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_STRING>(
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_TEXT>(
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
@@ -660,12 +601,12 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_STRING>(
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, string, __type_def_enum::TYPE_TEXT>(
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
@@ -725,12 +666,12 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new string_key_map<string, __type_def_enum::TYPE_STRING>(
+                                    handler = new string_key_map<char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new string_key_map<string, __type_def_enum::TYPE_TEXT>(
+                                    handler = new string_key_map<char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
@@ -813,11 +754,6 @@ REACTFS_NS_CORE
                                                                                             (offset + r_size), &r_size);
                                     CHECK_NOT_NULL(ptr);
                                     fields->push_back(ptr);
-                                } else if (type == __field_type::ARRAY) {
-                                    __array_type *ptr = new __array_type(parent);
-                                    CHECK_ALLOC(ptr, TYPE_NAME(__array_type));
-                                    r_size += ptr->read(buffer, (offset + r_size));
-                                    fields->push_back(ptr);
                                 } else if (type == __field_type::LIST) {
                                     __list_type *ptr = new __list_type(parent);
                                     CHECK_ALLOC(ptr, TYPE_NAME(__array_type));
@@ -870,28 +806,6 @@ REACTFS_NS_CORE
                                     }
                                 }
                                 return handler;
-                            } else if (field_type == __field_type::ARRAY) {
-                                string key = __type_defs_utils::create_list_key(__type_def_enum::TYPE_ARRAY,
-                                                                                inner_type);
-                                __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
-                                if (IS_NULL(handler)) {
-                                    if (inner_type != __type_def_enum::TYPE_STRUCT) {
-                                        __base_datatype_io *ah = __array_init_utils::create_handler(inner_type,
-                                                                                                    nullptr);
-                                        CHECK_NOT_NULL(ah);
-                                        if (!__type_defs_utils::add_external_handler(key, ah)) {
-                                            CHECK_AND_FREE(ah);
-                                        }
-                                        handler = __type_defs_utils::get_type_handler(key);
-                                    } else {
-                                        CHECK_NOT_NULL(type);
-                                        __base_datatype_io *ah = __array_init_utils::create_handler(inner_type,
-                                                                                                    type);
-                                        CHECK_NOT_NULL(ah);
-                                        handler = ah;
-                                    }
-                                }
-                                return handler;
                             }
                             return nullptr;
                         }
@@ -932,20 +846,6 @@ REACTFS_NS_CORE
                             if (__type_enum_helper::is_native(type)) {
                                 __native_type *ptr = new __native_type(parent, index, name, type);
                                 CHECK_ALLOC(ptr, TYPE_NAME(__native_type));
-                                return ptr;
-                            } else if (type == __type_def_enum::TYPE_ARRAY) {
-                                va_list vl;
-                                va_start(vl, index);
-                                int i_type = va_arg(vl, int);
-                                __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
-                                int m_size = va_arg(vl, int);
-                                __native_type *nt = va_arg(vl, __native_type *);
-                                CHECK_NOT_NULL(nt);
-                                va_end(vl);
-                                POSTCONDITION(m_size > 0);
-
-                                __array_type *ptr = new __array_type(parent, index, name, inner_type, m_size, nt);
-                                CHECK_ALLOC(ptr, TYPE_NAME(__array_type));
                                 return ptr;
                             } else if (type == __type_def_enum::TYPE_LIST) {
                                 va_list vl;

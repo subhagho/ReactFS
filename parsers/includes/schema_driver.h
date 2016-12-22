@@ -37,7 +37,6 @@
 #include "schema.h"
 #include "schema_scanner.h"
 
-#define TYPE_NAME_ARRAY "array"
 #define TYPE_NAME_LIST "list"
 #define TYPE_NAME_MAP "map"
 #define COLUMN_SORT_DIR_ASC "ASC"
@@ -315,35 +314,6 @@ REACTFS_NS_CORE
                                 if (__type_enum_helper::is_native(ft)) {
                                     nt = new __native_type(type, index, *(field->variable), ft);
                                     CHECK_ALLOC(nt, TYPE_NAME(__native_type));
-                                } else if (ft == __type_def_enum::TYPE_ARRAY) { // Is an array definition.
-                                    uint32_t size = field->size;
-                                    POSTCONDITION(size > 0);
-
-                                    // Collections should always have inner type definition.
-                                    __declare *inner_type = field->inner_types;
-                                    CHECK_NOT_NULL(inner_type);
-                                    // Inner type is a native datatype (cannot include other collections)
-                                    if (!inner_type->is_reference) {
-                                        __type_def_enum it = __type_enum_helper::parse_type(*(inner_type->type));
-                                        POSTCONDITION(__type_enum_helper::is_inner_type_valid(it));
-
-                                        __native_type *inner = create_inner_type(nullptr, inner_type, *(field->variable));
-                                        CHECK_NOT_NULL(inner);
-                                        __array_type *at = new __array_type(type, index, *(field->variable), it, size, inner);
-                                        CHECK_ALLOC(at, TYPE_NAME(__array_type));
-                                        inner->set_parent(at);
-                                        nt = at;
-                                    } else {
-                                        // Inner type is a structure (complex type)
-                                        __type_def_enum it = __type_def_enum::TYPE_STRUCT;
-
-                                        __native_type *inner = create_inner_type(nullptr, inner_type, *(field->variable));
-                                        CHECK_NOT_NULL(inner);
-                                        __array_type *at = new __array_type(type, index, *(field->variable), it, size, inner);
-                                        CHECK_ALLOC(at, TYPE_NAME(__array_type));
-                                        inner->set_parent(at);
-                                        nt = at;
-                                    }
                                 } else if (ft == __type_def_enum::TYPE_LIST) { // Is a list definition.
                                     // Collections should always have inner type definition.
                                     __declare *inner_type = field->inner_types;
@@ -727,10 +697,6 @@ REACTFS_NS_CORE
 
                         void add_declaration(const string &varname, const string &type, bool is_ref,
                                              int nullable);
-
-                        void
-                        add_array_decl(const string &varname, uint16_t size, const string &type, bool is_ref,
-                                       int nullable);
 
                         void
                         add_list_decl(const string &varname, const string &type, bool is_ref,

@@ -298,7 +298,8 @@ REACTFS_NS_CORE
                             // Write the field name.
                             TRACE("[write][type=%d][name=%s] [name] Offset = %d", this->type,
                                   this->get_canonical_name().c_str(), w_offset);
-                            w_size += buffer_utils::write_8str(buffer, &w_offset, this->name);
+                            w_size += buffer_utils::write_8str(buffer, &w_offset, this->name.c_str(),
+                                                               this->name.length());
 
                             // Write is nullable
                             TRACE("[write][type=%d][name=%s] [nullable] Offset = %d", this->type,
@@ -483,106 +484,6 @@ REACTFS_NS_CORE
                         virtual uint32_t estimate_size() {
                             CHECK_NOT_NULL(this->type_handler);
                             return this->type_handler->estimate_size();
-                        }
-                    };
-
-                    /*!
-                     * Instance of a field that has a size definition along with the basic
-                     * definitions used by the native fields.
-                     */
-                    class __sized_type : public __native_type {
-                    protected:
-                        /// Max size defined for this field.
-                        uint32_t max_size = 0;
-
-                    public:
-                        /*!
-                         * Default empty constructor, to be instantiated
-                         * when reading the definition from buffer.
-                         */
-                        __sized_type(__native_type *parent) : __native_type(parent) {
-                            this->type = __field_type::SIZED;
-                        }
-
-                        /*!
-                         * Constructor for creating a new field definition.
-                         *
-                         * @param index - Index of this field in the complex type.
-                         * @param name - Name of this field.
-                         * @param datatype - Data type of this field.
-                         * @param max_size - Maximum size for this field type.
-                         */
-                        __sized_type(__native_type *parent, const uint8_t index, const string &name,
-                                     const __type_def_enum datatype,
-                                     const uint32_t max_size)
-                                : __native_type(parent, index, name, datatype) {
-                            PRECONDITION(max_size > 0);
-                            this->max_size = max_size;
-                            this->type = __field_type::SIZED;
-                        }
-
-                        /*!
-                         * Get the set max size of this type.
-                         *
-                         * @return - Max size.
-                         */
-                        const uint32_t get_max_size() const {
-                            return this->max_size;
-                        }
-
-                        /*!
-                         * Write (serialize) this field definition to the output buffer.
-                         *
-                         * @param buffer - Output write buffer.
-                         * @param offset - Offset to start writing from.
-                         * @return - Number of bytes written.
-                         */
-                        virtual uint32_t write(void *buffer, uint64_t offset) override {
-                            uint32_t w_size = __native_type::write(buffer, offset);
-                            // Write the max_size value.
-                            uint64_t w_offset = (offset + w_size);
-                            TRACE("[write][type=%d][name=%s] [size] Offset = %d", this->type,
-                                  this->get_canonical_name().c_str(), w_offset);
-                            w_size += buffer_utils::write<uint32_t>(buffer, &w_offset, this->max_size);
-
-                            return w_size;
-                        }
-
-                        /*!
-                         * Read (de-serialize) the field definition from the input buffer.
-                         *
-                         * @param buffer - Input data buffer.
-                         * @param offset - Offset to start reading from.
-                         * @return - Number of bytes read.
-                         */
-                        virtual uint32_t read(void *buffer, uint64_t offset) override {
-                            uint32_t r_size = __native_type::read(buffer, offset);
-
-                            // Read the max_size value.
-                            uint64_t r_offset = (offset + r_size);
-                            uint32_t *size = nullptr;
-                            TRACE("[read][type=%d][name=%s] [size] Offset = %d", this->type,
-                                  this->get_canonical_name().c_str(), r_offset);
-                            r_size += buffer_utils::read<uint32_t>(buffer, &r_offset, &size);
-                            CHECK_NOT_NULL(size);
-                            this->max_size = *size;
-
-                            return r_size;
-                        }
-
-                        /*!
-                         * Utility function to print a readable format of the type structure.
-                         */
-                        virtual void print() const override {
-                            string t = __type_enum_helper::get_type_string(this->datatype);
-                            string n = this->get_canonical_name();
-                            LOG_DEBUG("[index=%d] [name=%s] %s[%d]", this->index, n.c_str(), t.c_str(), this->max_size);
-                            if (NOT_NULL(constraint)) {
-                                constraint->print();
-                            }
-                            if (NOT_NULL(default_value)) {
-                                default_value->print();
-                            }
                         }
                     };
 
@@ -936,128 +837,6 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class __array_type : public __sized_type {
-                    private:
-                        __type_def_enum inner_type;
-                        __native_type *inner = nullptr;
-                    public:
-                        __array_type(__native_type *parent) : __sized_type(parent) {
-                            this->type = __field_type::ARRAY;
-                        }
-
-                        __array_type(__native_type *parent, const uint8_t index, const string &name,
-                                     const __type_def_enum inner_type,
-                                     const uint32_t max_size, __native_type *type) : __sized_type(parent, index, name,
-                                                                                                  __type_def_enum::TYPE_ARRAY,
-                                                                                                  max_size) {
-                            PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
-                            CHECK_NOT_NULL(type);
-
-                            this->inner_type = inner_type;
-                            this->type = __field_type::ARRAY;
-                            this->inner = type;
-                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
-                            CHECK_NOT_NULL(loader);
-                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type,
-                                                                                this->inner);
-                            CHECK_NOT_NULL(this->type_handler);
-                        }
-
-                        ~__array_type() {
-                            CHECK_AND_FREE(inner);
-                        }
-
-
-                        void set_inner_type(__native_type *type) {
-                            CHECK_NOT_NULL(type);
-                            this->inner = type;
-                        }
-
-                        /*!
-                         * Get the inner datatype of this array.
-                         *
-                         * @return - Inner datatype.
-                         */
-                        __type_def_enum get_inner_type() {
-                            return this->inner_type;
-                        }
-
-                        /*!
-                         * Set the constraint definition for this field.
-                         * Note:: Constraints cannot be defined for arrays. Call will throw exception.
-                         *
-                         * @param constraint - Field data constraint.
-                         */
-                        virtual void set_constraint(__constraint *constraint) override {
-                            throw BASE_ERROR("Constraints can only be defined for basic types.");
-                        }
-
-                        /*!
-                         * Set the default value for this field.
-                         * Note:: Default value cannot be defined for arrays. Call will throw exception.
-                         *
-                         * @param default_value - Field default value.
-                         */
-                        virtual void set_default_value(__default *default_value) override {
-                            throw BASE_ERROR("Default value can only be defined for basic types.");
-                        }
-
-                        /*!
-                         * Write (serialize) this field definition to the output buffer.
-                         *
-                         * @param buffer - Output write buffer.
-                         * @param offset - Offset to start writing from.
-                         * @return - Number of bytes written.
-                         */
-                        virtual uint32_t write(void *buffer, uint64_t offset) override {
-                            uint32_t w_size = __sized_type::write(buffer, offset);
-                            w_size += inner->write(buffer, (offset + w_size));
-                            return w_size;
-                        }
-
-                        /*!
-                         * Read (de-serialize) the field definition from the input buffer.
-                         *
-                         * @param buffer - Input data buffer.
-                         * @param offset - Offset to start reading from.
-                         * @return - Number of bytes read.
-                         */
-                        virtual uint32_t read(void *buffer, uint64_t offset) override {
-                            uint32_t r_size = __sized_type::read(buffer, offset);
-                            this->inner = __type_init_utils::read_inner_type(this, buffer, (offset + r_size), &r_size);
-                            this->inner_type = this->inner->get_datatype();
-
-                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
-                            CHECK_NOT_NULL(loader);
-                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type,
-                                                                                this->inner);
-                            CHECK_NOT_NULL(this->type_handler);
-                            return r_size;
-                        }
-
-                        string get_canonical_name() const override {
-                            if (NOT_NULL(parent)) {
-                                return parent->get_canonical_name();
-                            }
-                            return this->name;
-                        }
-
-                        virtual void print() const override {
-                            string t = __type_enum_helper::get_type_string(this->datatype);
-                            string it = __type_enum_helper::get_type_string(this->inner_type);
-                            string n = inner->get_canonical_name();
-                            LOG_DEBUG("[index=%d] [name=%s] %s<%s>[%d]", this->index, n.c_str(), t.c_str(), it.c_str(),
-                                     this->max_size);
-                            if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
-                                this->inner->print();
-                            }
-                        }
-
-                        virtual void get_field_index(unordered_map<string, __native_type *> *map) override {
-                            this->inner->get_field_index(map);
-                        }
-                    };
-
                     class __list_type : public __native_type {
                     private:
                         __type_def_enum inner_type;
@@ -1295,7 +1074,7 @@ REACTFS_NS_CORE
                             string vt = __type_enum_helper::get_type_string(this->value_type);
                             string n = this->get_canonical_name();
                             LOG_DEBUG("[index=%d] [name=%s] %s<%s, %s>", this->index, n.c_str(), t.c_str(), kt.c_str(),
-                                     vt.c_str());
+                                      vt.c_str());
                             if (this->value_type == __type_def_enum::TYPE_STRUCT) {
                                 this->value->print();
                             }

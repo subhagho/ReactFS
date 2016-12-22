@@ -121,53 +121,6 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const 
     }
 }
 
-void com::wookler::reactfs::core::parsers::schema_driver::add_array_decl(const string &varname, uint16_t size,
-                                                                         const string &type, bool is_ref,
-                                                                         int nullable) {
-    CHECK_NOT_EMPTY(varname);
-    CHECK_NOT_EMPTY(type);
-    PRECONDITION(size > 0);
-
-    if (is_ref) {
-        check_reference_type(type);
-    }
-
-    __declare *d = (__declare *) malloc(sizeof(__declare));
-    CHECK_ALLOC(d, TYPE_NAME(__declare));
-    memset(d, 0, sizeof(__declare));
-
-    d->is_reference = false;
-    d->is_nullable = (nullable > 0 ? true : false);
-    d->variable = new string(varname);
-    d->type = new string(TYPE_NAME_ARRAY);
-    d->size = size;
-
-    d->inner_types = (__declare *) malloc(sizeof(__declare));
-    CHECK_ALLOC(d->inner_types, TYPE_NAME(__declare));
-    d->inner_types->type = new string(type);
-    d->inner_types->is_reference = is_ref;
-
-    if (state == __schema_parse_state::SPS_IN_TYPE) {
-        CHECK_NOT_NULL(type_stack);
-
-        d->constraint = get_type_var_constraint(type);
-        d->default_value = get_type_default_value();
-
-        type_stack->declares.push_back(d);
-        FREE_PTR(type_stack->declare.current_constraint);
-        FREE_PTR(type_stack->declare.default_value);
-    } else if (state == __schema_parse_state::SPS_IN_SCHEMA) {
-        CHECK_NOT_NULL(schema_stack);
-
-        d->constraint = get_schema_var_constraint(type);
-        d->default_value = get_schema_default_value();
-
-        schema_stack->declares.push_back(d);
-        FREE_PTR(schema_stack->declare.current_constraint);
-        FREE_PTR(schema_stack->declare.default_value);
-    }
-}
-
 void com::wookler::reactfs::core::parsers::schema_driver::add_list_decl(const string &varname, const string &type,
                                                                         bool is_ref, int nullable) {
     CHECK_NOT_EMPTY(varname);

@@ -57,52 +57,104 @@ REACTFS_NS_COMMON
                         return sizeof(T);
                     }
 
-                    static inline uint64_t write_8str(void *buffer, uint64_t *offset, string &value) {
+                    static inline uint64_t
+                    write_8str(void *buffer, uint64_t *offset, const char *value, uint8_t size) {
                         CHECK_NOT_NULL(buffer);
                         CHECK_NOT_NULL(offset);
                         PRECONDITION(*offset >= 0);
-                        PRECONDITION((value.length() * sizeof(char)) < UCHAR_MAX);
-
-                        uint8_t size = value.length() * sizeof(char);
-
+                        size = ((size + 1) * sizeof(char));
                         uint64_t r_size = buffer_utils::write<uint8_t>(buffer, offset, size);
                         if (size > 0) {
                             void *ptr = increment_data_ptr(buffer, *offset);
-                            memcpy(ptr, value.c_str(), size);
+                            memset(ptr, 0, size);
+                            memcpy(ptr, value, (size - 1));
                             *offset += size;
                         }
                         return r_size + size;
                     }
 
-                    static inline uint64_t write_16str(void *buffer, uint64_t *offset, string &value) {
+                    static inline uint64_t
+                    write_16str(void *buffer, uint64_t *offset, const char *value, uint16_t size) {
                         CHECK_NOT_NULL(buffer);
                         CHECK_NOT_NULL(offset);
                         PRECONDITION(*offset >= 0);
-                        PRECONDITION((value.length() * sizeof(char)) < USHRT_MAX);
-
-                        uint16_t size = value.length() * sizeof(char);
+                        size = ((size + 1) * sizeof(char));
 
                         uint64_t r_size = buffer_utils::write<uint16_t>(buffer, offset, size);
                         if (size > 0) {
                             void *ptr = increment_data_ptr(buffer, *offset);
-                            memcpy(ptr, value.c_str(), size);
+                            memset(ptr, 0, (size + 1));
+                            memcpy(ptr, value, (size - 1));
                             *offset += size;
                         }
                         return r_size + size;
                     }
 
-                    static inline uint64_t write_32str(void *buffer, uint64_t *offset, string &value) {
+                    static inline uint64_t
+                    write_32str(void *buffer, uint64_t *offset, const char *value, uint32_t size) {
                         CHECK_NOT_NULL(buffer);
                         CHECK_NOT_NULL(offset);
                         PRECONDITION(*offset >= 0);
-                        PRECONDITION((value.length() * sizeof(char)) < ULONG_MAX);
-
-                        uint32_t size = value.length() * sizeof(char);
+                        size = ((size + 1) * sizeof(char));
 
                         uint64_t r_size = buffer_utils::write<uint32_t>(buffer, offset, size);
                         if (size > 0) {
                             void *ptr = increment_data_ptr(buffer, *offset);
-                            memcpy(ptr, value.c_str(), size);
+                            memset(ptr, 0, (size + 1));
+                            memcpy(ptr, value, (size - 1));
+                            *offset += size;
+                        }
+                        return r_size + size;
+                    }
+
+                    static inline uint64_t
+                    write_8str(void *buffer, uint64_t *offset, string &value) {
+                        CHECK_NOT_NULL(buffer);
+                        CHECK_NOT_NULL(offset);
+                        PRECONDITION(*offset >= 0);
+                        uint8_t size = value.length();
+                        size = ((size + 1) * sizeof(char));
+                        uint64_t r_size = buffer_utils::write<uint8_t>(buffer, offset, size);
+                        if (size > 0) {
+                            void *ptr = increment_data_ptr(buffer, *offset);
+                            memset(ptr, 0, (size + 1));
+                            memcpy(ptr, value.c_str(), (size - 1));
+                            *offset += size;
+                        }
+                        return r_size + size;
+                    }
+
+                    static inline uint64_t
+                    write_16str(void *buffer, uint64_t *offset, string &value) {
+                        CHECK_NOT_NULL(buffer);
+                        CHECK_NOT_NULL(offset);
+                        PRECONDITION(*offset >= 0);
+                        uint16_t size = value.length();
+                        size = ((size + 1) * sizeof(char));
+
+                        uint64_t r_size = buffer_utils::write<uint16_t>(buffer, offset, size);
+                        if (size > 0) {
+                            void *ptr = increment_data_ptr(buffer, *offset);
+                            memset(ptr, 0, (size + 1));
+                            memcpy(ptr, value.c_str(), (size - 1));
+                            *offset += size;
+                        }
+                        return r_size + size;
+                    }
+
+                    static inline uint64_t
+                    write_32str(void *buffer, uint64_t *offset, string &value) {
+                        CHECK_NOT_NULL(buffer);
+                        CHECK_NOT_NULL(offset);
+                        PRECONDITION(*offset >= 0);
+                        uint32_t size = value.length();
+                        size = ((size + 1) * sizeof(char));
+
+                        uint64_t r_size = buffer_utils::write<uint32_t>(buffer, offset, size);
+                        if (size > 0) {
+                            void *ptr = increment_data_ptr(buffer, *offset);
+                            memset(ptr, 0, (size + 1));
+                            memcpy(ptr, value.c_str(), (size - 1));
                             *offset += size;
                         }
                         return r_size + size;
@@ -121,6 +173,60 @@ REACTFS_NS_COMMON
                         return sizeof(T);
                     }
 
+                    static inline uint64_t read_8str(void *buffer, uint64_t *offset, CHARBUFF *value) {
+                        CHECK_NOT_NULL(buffer);
+                        CHECK_NOT_NULL(offset);
+                        PRECONDITION(*offset >= 0);
+                        CHECK_NOT_NULL(value);
+
+                        uint8_t *size = nullptr;
+                        uint64_t r_size = buffer_utils::read<uint8_t>(buffer, offset, &size);
+                        CHECK_NOT_NULL(size);
+                        POSTCONDITION(*size >= 0);
+                        if (*size > 0) {
+                            void *ptr = increment_data_ptr(buffer, *offset);
+                            *value = (char *) ptr;
+                            *offset += *size;
+                        }
+                        return (r_size + *size);
+                    }
+
+                    static inline uint64_t read_16str(void *buffer, uint64_t *offset, CHARBUFF *value) {
+                        CHECK_NOT_NULL(buffer);
+                        CHECK_NOT_NULL(offset);
+                        PRECONDITION(*offset >= 0);
+                        CHECK_NOT_NULL(value);
+
+                        uint16_t *size = nullptr;
+                        uint64_t r_size = buffer_utils::read<uint16_t>(buffer, offset, &size);
+                        CHECK_NOT_NULL(size);
+                        POSTCONDITION(*size >= 0);
+                        if (*size > 0) {
+                            void *ptr = increment_data_ptr(buffer, *offset);
+                            *value = (char *) ptr;
+                            *offset += *size;
+                        }
+                        return (r_size + *size);
+                    }
+
+                    static inline uint64_t read_32str(void *buffer, uint64_t *offset, CHARBUFF *value) {
+                        CHECK_NOT_NULL(buffer);
+                        CHECK_NOT_NULL(offset);
+                        PRECONDITION(*offset >= 0);
+                        CHECK_NOT_NULL(value);
+
+                        uint32_t *size = nullptr;
+                        uint64_t r_size = buffer_utils::read<uint32_t>(buffer, offset, &size);
+                        CHECK_NOT_NULL(size);
+                        POSTCONDITION(*size >= 0);
+                        if (*size > 0) {
+                            void *ptr = increment_data_ptr(buffer, *offset);
+                            *value = (char *) ptr;
+                            *offset += *size;
+                        }
+                        return (r_size + *size);
+                    }
+
                     static inline uint64_t read_8str(void *buffer, uint64_t *offset, string *value) {
                         CHECK_NOT_NULL(buffer);
                         CHECK_NOT_NULL(offset);
@@ -133,8 +239,8 @@ REACTFS_NS_COMMON
                         POSTCONDITION(*size >= 0);
                         if (*size > 0) {
                             void *ptr = increment_data_ptr(buffer, *offset);
-                            char *cptr = (char *) ptr;
-                            value->assign(cptr, *size);
+                            char *cp = (char *) ptr;
+                            value->assign(cp, (*size - 1));
                             *offset += *size;
                         }
                         return (r_size + *size);
@@ -152,8 +258,8 @@ REACTFS_NS_COMMON
                         POSTCONDITION(*size >= 0);
                         if (*size > 0) {
                             void *ptr = increment_data_ptr(buffer, *offset);
-                            char *cptr = (char *) ptr;
-                            value->assign(cptr, *size);
+                            char *cp = (char *) ptr;
+                            value->assign(cp, (*size - 1));
                             *offset += *size;
                         }
                         return (r_size + *size);
@@ -171,8 +277,8 @@ REACTFS_NS_COMMON
                         POSTCONDITION(*size >= 0);
                         if (*size > 0) {
                             void *ptr = increment_data_ptr(buffer, *offset);
-                            char *cptr = (char *) ptr;
-                            value->assign(cptr, *size);
+                            char *cp = (char *) ptr;
+                            value->assign(cp, (*size - 1));
                             *offset += *size;
                         }
                         return (r_size + *size);

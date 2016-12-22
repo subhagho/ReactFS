@@ -113,13 +113,7 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(handler);
                                 uint64_t r = 0;
                                 void *value = nullptr;
-                                if (type->get_datatype() == __type_def_enum::TYPE_ARRAY) {
-                                    __sized_type *st = static_cast<__sized_type *>(type);
-                                    const uint32_t a_size = st->get_max_size();
-                                    r = handler->read(buffer, &value, r_offset, max_length, a_size);
-                                } else {
-                                    r = handler->read(buffer, &value, r_offset, max_length);
-                                }
+                                r = handler->read(buffer, &value, r_offset, max_length);
                                 CHECK_NOT_NULL(value);
                                 (*T)->insert({type->get_index(), value});
                                 t_size += r;
@@ -221,218 +215,6 @@ REACTFS_NS_CORE
                             return fields->estimate_size();
                         }
 
-                    };
-
-
-                    /*!
-                     * Array type is a size bound collection of basic types or structs.
-                     *
-                     * Should generally be initialized
-                     * as an array rather than a double pointer.
-                     *
-                     * @tparam __T - Basic datatype of the array elements.
-                     * @tparam __type - Datatype enum of the array element type.
-                     */
-                    template<typename __T, __type_def_enum __type>
-                    class __dt_array : public __datatype_io<__T *> {
-                    protected:
-                        /// Datatype of the array elements (should be basic types or structs).
-                        __type_def_enum inner_type = __type;
-                        /// Datatype IO handler for the array type.
-                        __base_datatype_io *type_handler = nullptr;
-                    public:
-                        /*!<constructor
-                         * Default constructor.
-                         *
-                         */
-                        __dt_array(__native_type *type) : __datatype_io<__T *>(
-                                __type_def_enum::TYPE_ARRAY) {
-                            PRECONDITION(__type_enum_helper::is_inner_type_valid(this->inner_type));
-                            if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
-                                CHECK_NOT_NULL(type);
-                                __complex_type *ct = dynamic_cast<__complex_type *>(type);
-                                CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
-                                type_handler = new __dt_struct(ct);
-                                CHECK_ALLOC(type_handler, TYPE_NAME(__dt_struct));
-                            } else
-                                type_handler = __type_defs_utils::get_type_handler(this->inner_type);
-                            CHECK_NOT_NULL(type_handler);
-                        }
-
-                        /*!
-                         * Get the element type of this array.
-                         *
-                         * @return - Element datatype.
-                         */
-                        __type_def_enum get_inner_type() {
-                            return this->inner_type;
-                        }
-
-                        /*!
-                        * Read (de-serialize) data from the binary format for the typed array.
-                        *
-                        * @param buffer - Source data buffer (binary data)
-                        * @param t - Pointer to map the output data to.
-                        * @param offset - Start offset where the buffer is to be read from.
-                        * @param max_length - Max length of the data in the buffer.
-                        * @param size - Size of the input array (number of records).
-                        * @return - Total bytes consumed by this read.
-                        */
-                        virtual uint64_t
-                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
-                            CHECK_NOT_NULL(t);
-                            CHECK_NOT_NULL(type_handler);
-
-                            uint16_t *r_count = nullptr;
-                            uint64_t r_offset = offset;
-                            uint64_t t_size = buffer_utils::read<uint16_t>(buffer, &r_offset, &r_count);
-                            CHECK_NOT_NULL(r_count);
-
-                            __T **d_ptr = (__T **) t;
-
-                            if (r_count > 0) {
-                                for (uint16_t ii = 0; ii < *r_count; ii++) {
-                                    uint64_t r = type_handler->read(buffer, d_ptr[ii], r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                }
-                                return t_size;
-                            }
-                            return sizeof(uint16_t);
-                        }
-
-                        /*!
-                        * write (serialize) data for the array to the binary output buffer.
-                        *
-                        * @param buffer - output data buffer the data is to be copied to.
-                        * @param value - data value pointer to copy from.
-                        * @param offset - offset in the output buffer to start writing from.
-                        * @param max_length - max lenght of the output buffer.
-                        * @param size - size of the input array (number of records).
-                        * @return - total number of bytes written.
-                        */
-                        virtual uint64_t
-                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            CHECK_NOT_NULL(type_handler);
-                            CHECK_NOT_NULL(value);
-                            va_list vl;
-                            va_start(vl, max_length);
-                            int asize = va_arg(vl, int);
-                            va_end(vl);
-                            uint16_t a_size = (uint16_t) asize;
-                            uint64_t r_offset = offset;
-                            uint64_t t_size = buffer_utils::write<uint16_t>(buffer, &r_offset, a_size);
-
-                            if (a_size > 0) {
-                                __T *const *d_ptr = static_cast<__T *const *>(value);
-                                for (uint64_t ii = 0; ii < a_size; ii++) {
-                                    uint64_t r = type_handler->write(buffer, (d_ptr + ii), r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                }
-                                return t_size;
-                            }
-                            return sizeof(uint16_t);
-                        }
-
-                        /*!
-                         * Compute the storage size of the given type value.
-                         *
-                         * @param data - Value of the type (data size occupied by the array).
-                         * @param size - Must be specified if value is a double pointer. If it's an array
-                         *              size can be computed.
-                         * @return - Return storage size, if null returns 0.
-                         */
-                        virtual uint64_t compute_size(const void *value, int size = -1) override {
-                            if (IS_NULL(value)) {
-                                return 0;
-                            }
-
-                            __T *const *data = static_cast<__T *const *>(value);
-                            CHECK_NOT_NULL(data);
-                            __base_datatype_io *type_handler = __type_defs_utils::get_type_handler(this->inner_type);
-                            if (size < 0) {
-                                size = (sizeof(data) / sizeof(__T *));
-                            }
-                            CHECK_NOT_NULL(type_handler);
-                            uint64_t t_size = sizeof(uint16_t);
-                            for (int ii = 0; ii < size; ii++) {
-                                t_size += type_handler->compute_size((data + ii), -1);
-                            }
-                            return t_size;
-                        }
-
-                        /*!
-                         * Comparisons not supported for arrays. Will throw exception if called.
-                         *
-                         * @param source - Source value pointer
-                         * @param target - Target value pointer
-                         * @return - Is comparision true?
-                         */
-                        virtual bool
-                        compare(const void *source, void *target, __constraint_operator oper) override {
-                            throw BASE_ERROR("Compare only supported for native types.");
-                        }
-
-                        /*!
-                         * Estimate the storage size of the given type value.
-                         *
-                         * @return - Return estimated storage size.
-                         */
-                        virtual uint32_t estimate_size() override {
-                            uint32_t r_size = this->type_handler->estimate_size();
-                            return (r_size * COLLECTION_SIZE_FACTOR);
-                        }
-                    };
-
-                    class __char_array : public __dt_array<char, __type_def_enum::TYPE_CHAR> {
-                    public:
-                        __char_array() : __dt_array<char, __type_def_enum::TYPE_CHAR>(nullptr) {}
-                    };
-
-                    class __short_array : public __dt_array<short, __type_def_enum::TYPE_SHORT> {
-                    public:
-                        __short_array() : __dt_array<short, __type_def_enum::TYPE_SHORT>(nullptr) {}
-                    };
-
-                    class __byte_array : public __dt_array<uint8_t, __type_def_enum::TYPE_BYTE> {
-                    public:
-                        __byte_array() : __dt_array<uint8_t, __type_def_enum::TYPE_BYTE>(nullptr) {}
-                    };
-
-                    class __int_array : public __dt_array<int, __type_def_enum::TYPE_INTEGER> {
-                    public:
-                        __int_array() : __dt_array<int, __type_def_enum::TYPE_INTEGER>(nullptr) {}
-                    };
-
-                    class __long_array : public __dt_array<long, __type_def_enum::TYPE_LONG> {
-                    public:
-                        __long_array() : __dt_array<long, __type_def_enum::TYPE_LONG>(nullptr) {}
-                    };
-
-                    class __float_array : public __dt_array<float, __type_def_enum::TYPE_FLOAT> {
-                    public:
-                        __float_array() : __dt_array<float, __type_def_enum::TYPE_FLOAT>(nullptr) {}
-                    };
-
-                    class __double_array : public __dt_array<double, __type_def_enum::TYPE_DOUBLE> {
-                    public:
-                        __double_array() : __dt_array<double, __type_def_enum::TYPE_DOUBLE>(nullptr) {}
-                    };
-
-                    class __timestamp_array : public __dt_array<uint64_t, __type_def_enum::TYPE_TIMESTAMP> {
-                    public:
-                        __timestamp_array() : __dt_array<uint64_t, __type_def_enum::TYPE_TIMESTAMP>(nullptr) {}
-                    };
-
-                    class __string_array : public __dt_array<string, __type_def_enum::TYPE_STRING> {
-                    public:
-                        __string_array() : __dt_array<string, __type_def_enum::TYPE_STRING>(nullptr) {}
-                    };
-
-                    class __text_array : public __dt_array<string, __type_def_enum::TYPE_TEXT> {
-                    public:
-                        __text_array() : __dt_array<string, __type_def_enum::TYPE_TEXT>(nullptr) {}
                     };
 
                     /*!
@@ -635,14 +417,14 @@ REACTFS_NS_CORE
                         __timestamp_list() : __dt_list<uint64_t, __type_def_enum::TYPE_TIMESTAMP>(nullptr) {}
                     };
 
-                    class __string_list : public __dt_list<string, __type_def_enum::TYPE_STRING> {
+                    class __string_list : public __dt_list<char, __type_def_enum::TYPE_STRING> {
                     public:
-                        __string_list() : __dt_list<string, __type_def_enum::TYPE_STRING>(nullptr) {}
+                        __string_list() : __dt_list<char, __type_def_enum::TYPE_STRING>(nullptr) {}
                     };
 
-                    class __text_list : public __dt_list<string, __type_def_enum::TYPE_TEXT> {
+                    class __text_list : public __dt_list<char, __type_def_enum::TYPE_TEXT> {
                     public:
-                        __text_list() : __dt_list<string, __type_def_enum::TYPE_TEXT>(nullptr) {}
+                        __text_list() : __dt_list<char, __type_def_enum::TYPE_TEXT>(nullptr) {}
                     };
 
                     /*!
@@ -840,71 +622,55 @@ REACTFS_NS_CORE
                     };
 
                     template<typename __V, __type_def_enum __value_type>
-                    class __string_key_map : public __dt_map<string, __type_def_enum::TYPE_STRING, __V, __value_type> {
+                    class string_key_map : public __dt_map<string, __type_def_enum::TYPE_STRING, __V, __value_type> {
                     public:
                         /*!<constructor
                          * Default empty constructor.
                          */
-                        __string_key_map(__native_type *v_type)
+                        string_key_map(__native_type *v_type)
                                 : __dt_map<string, __type_def_enum::TYPE_STRING, __V, __value_type>(
                                 v_type) {
 
                         }
 
                         /*!
-                        * Read (de-serialize) data from the binary format for the typed unordered_map.
+                        * Write (serialize) data for the map (unordered_map) to the binary output buffer.
                         *
-                        * @param buffer - Source data buffer (binary data)
-                        * @param t - Pointer to map the output data to.
-                        * @param offset - Start offset where the buffer is to be read from.
-                        * @param max_length - Max length of the data in the buffer.
-                        * @return - Total bytes consumed by this read.
+                        * @param buffer - Output data buffer the data is to be copied to.
+                        * @param value - Data value pointer to copy from.
+                        * @param offset - Offset in the output buffer to start writing from.
+                        * @param max_length - Max lenght of the output buffer.
+                        * @return - Total number of bytes written.
                         */
                         virtual uint64_t
-                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
-                            CHECK_NOT_NULL(t);
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(this->kt_handler);
+                            CHECK_NOT_NULL(this->vt_handler);
+                            CHECK_NOT_NULL(value);
+
+                            const unordered_map<string, __V *> *map = (const unordered_map<string, __V *> *) value;
+                            CHECK_NOT_NULL(map);
+
                             CHECK_NOT_NULL(this->kt_handler);
                             CHECK_NOT_NULL(this->vt_handler);
 
-                            uint16_t *r_count = nullptr;
+                            uint16_t m_size = map->size();
                             uint64_t r_offset = offset;
-                            uint64_t t_size = buffer_utils::read<uint16_t>(buffer, &r_offset, &r_count);
-                            CHECK_NOT_NULL(r_count);
+                            uint64_t t_size = buffer_utils::write<uint16_t>(buffer, &r_offset, m_size);
 
-                            if (r_count > 0) {
-                                unordered_map<string, __V *> **T = (unordered_map<string, __V *> **) t;
-                                *T = new unordered_map<string, __V *>();
-
-                                for (uint16_t ii = 0; ii < *r_count; ii++) {
-                                    string *key = nullptr;
-                                    __V *value = nullptr;
-
-                                    uint64_t r = this->kt_handler->read(buffer, &key, r_offset, max_length);
-                                    CHECK_NOT_NULL(key);
+                            if (!map->empty()) {
+                                for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                    string key = (iter->first);
+                                    uint64_t r = this->kt_handler->write(buffer, key.c_str(), r_offset, max_length);
                                     r_offset += r;
                                     t_size += r;
-                                    r = this->vt_handler->read(buffer, &value, r_offset, max_length);
-                                    CHECK_NOT_NULL(value);
+                                    r = this->vt_handler->write(buffer, iter->second, r_offset, max_length);
                                     r_offset += r;
                                     t_size += r;
-
-                                    (*T)->insert({*key, value});
-                                    CHECK_AND_FREE(key);
                                 }
-
                                 return t_size;
                             }
-                            return sizeof(uint64_t);
-                        }
-                    };
-
-                    template<typename __V, __type_def_enum __value_type>
-                    class string_key_map : public __dt_map<string, __type_def_enum::TYPE_STRING, __V, __value_type> {
-
-                    public:
-                        string_key_map(__native_type *v_type)
-                                : __dt_map<string, __type_def_enum::TYPE_STRING, __V, __value_type>(v_type) {
-
+                            return sizeof(uint16_t);
                         }
 
                         /*!
@@ -932,7 +698,7 @@ REACTFS_NS_CORE
                                 *T = new unordered_map<string, __V *>();
 
                                 for (uint16_t ii = 0; ii < *r_count; ii++) {
-                                    string *key = nullptr;
+                                    CHARBUFF key = nullptr;
                                     __V *value = nullptr;
 
                                     uint64_t r = this->kt_handler->read(buffer, &key, r_offset, max_length);
@@ -943,22 +709,13 @@ REACTFS_NS_CORE
                                     CHECK_NOT_NULL(value);
                                     r_offset += r;
                                     t_size += r;
-
-                                    (*T)->insert({*key, value});
-                                    CHECK_AND_FREE(key);
+                                    string ss = string(key);
+                                    (*T)->insert({ss, value});
                                 }
 
                                 return t_size;
                             }
                             return sizeof(uint64_t);
-                        }
-                    };
-
-                    class __struct_array : public __dt_array<__struct_datatype__, __type_def_enum::TYPE_STRUCT> {
-                    public:
-                        __struct_array(__native_type *type)
-                                : __dt_array<__struct_datatype__, __type_def_enum::TYPE_STRUCT>(type) {
-
                         }
                     };
 

@@ -585,7 +585,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
           switch (yyn)
             {
   case 4:
-#line 141 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 140 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							std::string ss((yystack_[0].value.str));
 							debug_r("new schema [%s]", ss.c_str());
@@ -596,7 +596,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 7:
-#line 153 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 152 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							std::string ss((yystack_[1].value.str));
 							debug_r("namespace [%s]", ss.c_str());
@@ -608,7 +608,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 12:
-#line 172 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 171 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 
 						}
@@ -616,7 +616,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 13:
-#line 178 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 177 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 								debug_r("KEY FIELDS: (%s)", (yystack_[1].value.str));
 								std::string keys((yystack_[1].value.str));
@@ -627,25 +627,25 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 16:
-#line 191 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 190 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { driver.set_index_type((yystack_[0].value.str)); }
 #line 633 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 17:
-#line 192 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 191 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { driver.set_index_type((yystack_[0].value.str)); }
 #line 639 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 18:
-#line 193 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 192 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { driver.set_index_type((yystack_[0].value.str)); }
 #line 645 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 19:
-#line 197 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 196 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							std::string n((yystack_[2].value.str));
 							std::string s((yystack_[0].value.str));
@@ -658,7 +658,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 22:
-#line 213 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 212 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 								debug_r("KEY FIELDS: (%s)", (yystack_[1].value.str));
 								std::string keys((yystack_[1].value.str));
@@ -669,7 +669,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 23:
-#line 222 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 221 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							(yylhs.value.str) = strdup((yystack_[0].value.str));
 						}
@@ -677,7 +677,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 24:
-#line 225 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 224 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							int s = strlen((yystack_[2].value.str)) + strlen((yystack_[0].value.str)) + 3;
 							char *p = (char *)malloc(sizeof(char) * s);
@@ -694,7 +694,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 25:
-#line 239 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 238 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							debug_r("COLUMN [%s] SORT[%s]", (yystack_[1].value.str), (yystack_[0].value.str));
 							int s = strlen((yystack_[1].value.str) + 1);
@@ -715,7 +715,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 26:
-#line 258 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 257 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							(yylhs.value.str) = nullptr;
 						}
@@ -723,7 +723,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 27:
-#line 261 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 260 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 							(yylhs.value.str) = strdup((yystack_[0].value.str));
 							FREE_PTR((yystack_[0].value.str));
@@ -732,7 +732,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 28:
-#line 268 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 267 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							(yylhs.value.str) = strdup((yystack_[0].value.str));
 						}
@@ -740,7 +740,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 29:
-#line 271 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 270 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							(yylhs.value.str) = strdup((yystack_[0].value.str));
 						}
@@ -748,7 +748,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 34:
-#line 286 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 285 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 											
 										}
@@ -756,7 +756,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     break;
 
   case 35:
-#line 290 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 289 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							std::string ss((yystack_[0].value.str));
 							debug_r("new type [%s]", ss.c_str());
@@ -766,8 +766,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 #line 767 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 46:
-#line 314 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 44:
+#line 311 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 							debug_r("[type=%s] varname=%s nullable=%d", (yystack_[4].value.str), (yystack_[3].value.str), (yystack_[0].value.lval));
 							std::string t((yystack_[4].value.str));
@@ -779,8 +779,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 #line 780 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 47:
-#line 325 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 45:
+#line 322 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 							debug_r("[type=%s] varname=%s", (yystack_[4].value.str), (yystack_[3].value.str));
 							debug_r("varname=%s nullable=%d", (yystack_[3].value.str), (yystack_[0].value.lval));
@@ -791,39 +791,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 #line 792 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 48:
-#line 335 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    {
-									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", (yystack_[6].value.str), (yystack_[4].value.str), (yystack_[3].value.lval));
-									debug_r("varname=%s nullable=%d", (yystack_[4].value.str), (yystack_[0].value.lval));
-									std::string t((yystack_[6].value.str));
-									std::string n((yystack_[4].value.str));
-									int s = (yystack_[3].value.lval);
-									driver.add_array_decl(n, s, t, false, (yystack_[0].value.lval));
-									FREE_PTR((yystack_[6].value.str));
-									FREE_PTR((yystack_[4].value.str));
-								}
-#line 807 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
-    break;
-
-  case 49:
-#line 348 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    {
-									debug_r("type=[ARRAY] inner type=%s varname=%s size=%d", (yystack_[6].value.str), (yystack_[4].value.str), (yystack_[3].value.lval));
-									debug_r("varname=%s nullable=%d", (yystack_[4].value.str), (yystack_[0].value.lval));
-									std::string t((yystack_[6].value.str));
-									std::string n((yystack_[4].value.str));
-									int s = (yystack_[3].value.lval);
-									driver.add_array_decl(n, s, t, true, (yystack_[0].value.lval));
-									FREE_PTR((yystack_[6].value.str));
-									FREE_PTR((yystack_[4].value.str));
-	
-								}
-#line 823 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
-    break;
-
-  case 50:
-#line 362 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 46:
+#line 332 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 									debug_r("type=[LIST] inner type=%s varname=%s", (yystack_[5].value.str), (yystack_[3].value.str));
 									debug_r("varname=%s nullable=%d", (yystack_[3].value.str), (yystack_[0].value.lval));
@@ -834,11 +803,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 									FREE_PTR((yystack_[3].value.str));
 
 								}
-#line 838 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 807 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 51:
-#line 375 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 47:
+#line 345 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 									debug_r("type=[LIST] inner type=%s varname=%s", (yystack_[5].value.str), (yystack_[3].value.str));
 									debug_r("varname=%s nullable=%d", (yystack_[3].value.str), (yystack_[0].value.lval));
@@ -848,11 +817,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 									FREE_PTR((yystack_[5].value.str));
 									FREE_PTR((yystack_[3].value.str));	
 								}
-#line 852 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 821 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 52:
-#line 386 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 48:
+#line 356 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", (yystack_[7].value.str), (yystack_[5].value.str), (yystack_[3].value.str));
 									debug_r("varname=%s nullable=%d", (yystack_[3].value.str), (yystack_[0].value.lval));
@@ -864,11 +833,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 									FREE_PTR((yystack_[5].value.str));
 									FREE_PTR((yystack_[3].value.str));
 								}
-#line 868 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 837 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 53:
-#line 400 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 49:
+#line 370 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 									debug_r("type=[MAP] key type=%s value type=%s varname=%s", (yystack_[8].value.str), (yystack_[5].value.str), (yystack_[3].value.str));
 									debug_r("varname=%s nullable=%d", (yystack_[3].value.str), (yystack_[0].value.lval));
@@ -880,43 +849,43 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 									FREE_PTR((yystack_[5].value.str));
 									FREE_PTR((yystack_[3].value.str));
 								}
-#line 884 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 853 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 54:
-#line 414 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 50:
+#line 384 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 	(yylhs.value.lval) = 0; }
-#line 890 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 859 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 55:
-#line 415 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 51:
+#line 385 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 	(yylhs.value.lval) = 1; driver.set_nullable(); }
-#line 896 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 865 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 57:
-#line 420 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 53:
+#line 390 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							debug_r("Defualt : %s", (yystack_[0].value.str));
 							std::string v((yystack_[0].value.str));
 							driver.set_default_value(v);
 							FREE_PTR((yystack_[0].value.str));
 						}
-#line 907 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 876 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 60:
-#line 432 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 56:
+#line 402 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 							(yylhs.value.str) = strdup((yystack_[0].value.str));
 							FREE_PTR((yystack_[0].value.str));
 						}
-#line 916 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 885 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 61:
-#line 436 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 57:
+#line 406 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     {
 							int s = strlen((yystack_[2].value.str)) + strlen((yystack_[0].value.str)) + 2;
 							char *p = (char *)malloc(s * sizeof(char));
@@ -927,255 +896,249 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 							FREE_PTR((yystack_[0].value.str));
 							(yylhs.value.str) = p;
 						}
-#line 931 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 900 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+    break;
+
+  case 58:
+#line 420 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { debug_r("varaible=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
+#line 906 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+    break;
+
+  case 59:
+#line 424 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
+#line 912 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+    break;
+
+  case 60:
+#line 425 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
+#line 918 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+    break;
+
+  case 61:
+#line 426 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
+#line 924 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 62:
-#line 450 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { debug_r("varaible=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 937 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 427 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
+#line 930 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 63:
-#line 454 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 428 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 943 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 936 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 64:
-#line 455 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 429 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 949 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 942 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 65:
-#line 456 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 430 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 955 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 948 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 66:
-#line 457 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 431 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 961 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 954 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 67:
-#line 458 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 432 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 967 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 960 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 68:
-#line 459 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 433 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 973 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 966 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 69:
-#line 460 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 434 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 979 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 972 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 70:
-#line 461 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 435 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 985 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 978 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 71:
-#line 462 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 991 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
-    break;
-
-  case 72:
-#line 463 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 997 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 439 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { driver.finish_def(); }
+#line 984 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 73:
-#line 464 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 1003 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 445 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { 
+									const std::string p("REGEX"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
+								}
+#line 995 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 74:
-#line 465 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { debug_r("datatype=%s", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 1009 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 451 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { 
+									const std::string p("REGEX"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
+								}
+#line 1006 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 75:
-#line 469 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { debug_r("size=%d", (yystack_[1].value.lval)); (yylhs.value.lval)=(yystack_[1].value.lval); }
-#line 1015 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 457 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { 
+									const std::string p("IN"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, (yystack_[1].value.str));
+									FREE_PTR((yystack_[1].value.str));
+								}
+#line 1017 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 76:
-#line 472 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { driver.finish_def(); }
-#line 1021 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 463 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { 
+									const std::string p("IN"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(true, p, (yystack_[1].value.str));
+									FREE_PTR((yystack_[1].value.str));
+								}
+#line 1028 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+    break;
+
+  case 77:
+#line 469 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+    { 
+									const std::string p("BETWEEN"); 
+									debug_r("Constraint %s", p.c_str()); 
+									driver.set_constraint(false, p, (yystack_[1].value.str));
+									FREE_PTR((yystack_[1].value.str));
+								}
+#line 1039 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 78:
-#line 478 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 475 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("REGEX"); 
+									const std::string p("BETWEEN"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, (yystack_[0].value.str));
-									FREE_PTR((yystack_[0].value.str));
+									driver.set_constraint(true, p, (yystack_[1].value.str));
+									FREE_PTR((yystack_[1].value.str));
 								}
-#line 1032 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1050 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 79:
-#line 484 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 481 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("REGEX"); 
+									const std::string p("LT"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, (yystack_[0].value.str));
+									driver.set_constraint(false, p, (yystack_[0].value.str));
 									FREE_PTR((yystack_[0].value.str));
 								}
-#line 1043 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1061 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 80:
-#line 490 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 487 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("IN"); 
+									const std::string p("LT"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, (yystack_[1].value.str));
-									FREE_PTR((yystack_[1].value.str));
+									driver.set_constraint(true, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
 								}
-#line 1054 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1072 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 81:
-#line 496 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 493 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("IN"); 
+									const std::string p("LTEQ"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, (yystack_[1].value.str));
-									FREE_PTR((yystack_[1].value.str));
+									driver.set_constraint(false, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
 								}
-#line 1065 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1083 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 82:
-#line 502 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 499 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("BETWEEN"); 
+									const std::string p("LTEQ"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, (yystack_[1].value.str));
-									FREE_PTR((yystack_[1].value.str));
+									driver.set_constraint(true, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
 								}
-#line 1076 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1094 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 83:
-#line 508 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 506 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("BETWEEN"); 
+									const std::string p("GT"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, (yystack_[1].value.str));
-									FREE_PTR((yystack_[1].value.str));
+									driver.set_constraint(false, p, (yystack_[0].value.str));
+									FREE_PTR((yystack_[0].value.str));
 								}
-#line 1087 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1105 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 84:
-#line 514 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 512 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("LT"); 
+									const std::string p("GT"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, (yystack_[0].value.str));
+									driver.set_constraint(true, p, (yystack_[0].value.str));
 									FREE_PTR((yystack_[0].value.str));
 								}
-#line 1098 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1116 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 85:
-#line 520 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 518 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("LT"); 
+									const std::string p("GTEQ"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, (yystack_[0].value.str));
+									driver.set_constraint(false, p, (yystack_[0].value.str));
 									FREE_PTR((yystack_[0].value.str));
 								}
-#line 1109 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1127 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 86:
-#line 526 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 524 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
-									const std::string p("LTEQ"); 
+									const std::string p("GTEQ"); 
 									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, (yystack_[0].value.str));
+									driver.set_constraint(true, p, (yystack_[0].value.str));
 									FREE_PTR((yystack_[0].value.str));
 								}
-#line 1120 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1138 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
   case 87:
-#line 532 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { 
-									const std::string p("LTEQ"); 
-									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, (yystack_[0].value.str));
-									FREE_PTR((yystack_[0].value.str));
-								}
-#line 1131 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
-    break;
-
-  case 88:
-#line 539 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { 
-									const std::string p("GT"); 
-									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, (yystack_[0].value.str));
-									FREE_PTR((yystack_[0].value.str));
-								}
-#line 1142 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
-    break;
-
-  case 89:
-#line 545 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { 
-									const std::string p("GT"); 
-									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, (yystack_[0].value.str));
-									FREE_PTR((yystack_[0].value.str));
-								}
-#line 1153 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
-    break;
-
-  case 90:
-#line 551 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { 
-									const std::string p("GTEQ"); 
-									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(false, p, (yystack_[0].value.str));
-									FREE_PTR((yystack_[0].value.str));
-								}
-#line 1164 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
-    break;
-
-  case 91:
-#line 557 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
-    { 
-									const std::string p("GTEQ"); 
-									debug_r("Constraint %s", p.c_str()); 
-									driver.set_constraint(true, p, (yystack_[0].value.str));
-									FREE_PTR((yystack_[0].value.str));
-								}
-#line 1175 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
-    break;
-
-  case 92:
-#line 566 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+#line 533 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 						int size = strlen((yystack_[0].value.str));
 						char *ptr = (char *)malloc(sizeof(char) * size);
@@ -1186,11 +1149,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 						(yylhs.value.str) = ptr;
 						debug_r("VALUES {%s}", (yylhs.value.str)); 
  					}
-#line 1190 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1153 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 93:
-#line 576 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 88:
+#line 543 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 
 						int size = strlen((yystack_[2].value.str)) + strlen((yystack_[0].value.str)) + 4;
 						char *ptr = (char *)malloc(sizeof(char) * size);
@@ -1202,11 +1165,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 						(yylhs.value.str) = ptr;
 						debug_r("VALUES {%s}", (yylhs.value.str)); 
  					}
-#line 1206 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1169 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 94:
-#line 591 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 89:
+#line 558 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 	
 					char *ptr = (char *)malloc(sizeof(char) * DEFAULT_BUFFER_SIZE);
 					CHECK_ALLOC(ptr, TYPE_NAME(char));
@@ -1214,11 +1177,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 					sprintf(ptr, "%ld", (yystack_[0].value.lval));
 					(yylhs.value.str) = ptr; 
 				}
-#line 1218 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1181 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 95:
-#line 598 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 90:
+#line 565 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { 	
 					char *ptr = (char *)malloc(sizeof(char) * DEFAULT_BUFFER_SIZE);
 					CHECK_ALLOC(ptr, TYPE_NAME(char));
@@ -1226,17 +1189,17 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 					sprintf(ptr, "%f", (yystack_[0].value.dval));
 					(yylhs.value.str) = ptr; 
 				}
-#line 1230 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1193 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
-  case 96:
-#line 605 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
+  case 91:
+#line 572 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:859
     { debug_r("String value [%s]", (yystack_[0].value.str)); (yylhs.value.str) = strdup((yystack_[0].value.str)); }
-#line 1236 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1199 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
     break;
 
 
-#line 1240 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
+#line 1203 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:859
             default:
               break;
             }
@@ -1402,175 +1365,163 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   }
 
 
-  const short int schema_parser::yypact_ninf_ = -147;
+  const signed char schema_parser::yypact_ninf_ = -128;
 
   const signed char schema_parser::yytable_ninf_ = -1;
 
   const short int
   schema_parser::yypact_[] =
   {
-     -39,    14,    40,    35,  -147,  -147,   -29,  -147,  -147,    14,
-       8,    35,  -147,    41,  -147,    14,  -147,    14,    24,    48,
-    -147,   128,  -147,  -147,    14,  -147,    24,  -147,    55,   128,
-      14,  -147,  -147,  -147,  -147,  -147,  -147,  -147,  -147,  -147,
-    -147,  -147,  -147,    42,    43,    47,     4,  -147,  -147,  -147,
-    -147,  -147,  -147,  -147,  -147,  -147,    14,    61,  -147,    14,
-      15,    18,    14,   103,   154,   179,    60,   128,    59,    14,
-      19,  -147,   -35,  -147,  -147,  -147,    60,  -147,    69,    59,
-      14,    64,    14,    79,    74,  -147,  -147,  -147,   104,    97,
-    -147,  -147,  -147,    14,  -147,  -147,  -147,  -147,  -147,   105,
-      60,  -147,    97,    87,    14,    88,    14,   167,    -8,    73,
-      93,  -147,    14,  -147,    93,    14,    77,    14,    59,    14,
-     107,   106,   125,   126,   -21,    73,    73,    73,    73,   131,
-    -147,  -147,  -147,  -147,  -147,  -147,    25,  -147,    77,   151,
-      59,    59,    97,   114,    14,   141,    73,    73,   150,   173,
-     174,    73,    73,    73,    73,  -147,  -147,  -147,  -147,  -147,
-    -147,    59,   175,    97,    97,    93,    14,    59,  -147,    21,
-    -147,    27,   184,    73,    73,  -147,  -147,  -147,  -147,    97,
-    -147,    93,    93,  -147,    59,    97,  -147,    73,  -147,  -147,
-      32,    50,    93,  -147,  -147,    97,    93,  -147,  -147,  -147,
-    -147,    93,  -147,  -147
+     -27,    10,    27,    21,  -128,  -128,   -21,  -128,  -128,    10,
+      -2,    21,  -128,    16,  -128,    10,  -128,    10,    34,    46,
+    -128,    93,  -128,  -128,    10,  -128,    34,  -128,    45,    93,
+      10,  -128,  -128,  -128,  -128,  -128,  -128,  -128,  -128,  -128,
+    -128,  -128,  -128,    31,    39,   -12,  -128,  -128,  -128,  -128,
+    -128,  -128,  -128,    10,    42,  -128,    10,    -1,   -11,    10,
+     115,   146,    56,    93,    54,    10,     9,  -128,   -28,  -128,
+    -128,  -128,    56,  -128,    59,    54,    10,    49,    65,  -128,
+    -128,  -128,    70,    66,  -128,  -128,  -128,    10,  -128,  -128,
+    -128,  -128,  -128,    71,    56,  -128,    66,    55,    10,   134,
+      41,    57,    76,  -128,    10,  -128,    76,    10,    54,    10,
+      73,    69,    92,    94,   130,    57,    57,    57,    57,   110,
+    -128,  -128,  -128,  -128,  -128,  -128,    11,  -128,    54,    66,
+      95,    10,   101,    57,    57,    88,   111,   113,    57,    57,
+      57,    57,  -128,  -128,  -128,  -128,  -128,  -128,    66,    76,
+      10,    54,  -128,    13,  -128,    29,   151,    57,    57,  -128,
+    -128,  -128,  -128,    76,  -128,    54,    66,  -128,    57,  -128,
+    -128,    35,    37,  -128,    66,    76,  -128,  -128,  -128,    76,
+    -128,  -128
   };
 
   const unsigned char
   schema_parser::yydefact_[] =
   {
-       5,     0,     0,    30,     6,    62,     0,    60,     1,     0,
+       5,     0,     0,    30,     6,    58,     0,    56,     1,     0,
        0,    31,    32,     0,     7,     0,    35,     0,     8,     0,
-      33,     0,    61,     4,     0,     2,     9,    10,     0,     0,
-       0,    64,    65,    66,    67,    68,    69,    70,    63,    71,
-      72,    74,    73,     0,     0,     0,     0,    36,    38,    39,
-      40,    41,    42,    43,    44,    45,     0,     0,    11,     0,
-      14,     0,     0,     0,     0,     0,     0,     0,    58,     0,
-       0,    23,    26,    16,    17,    18,     0,    15,    20,    58,
-       0,     0,     0,     0,     0,    76,    34,    37,     0,    56,
-      59,    19,    13,     0,    28,    29,    25,    27,    12,     0,
-       0,    21,    56,     0,     0,     0,     0,     0,     0,     0,
-      54,    24,     0,     3,    54,     0,     0,     0,    58,     0,
+      33,     0,    57,     4,     0,     2,     9,    10,     0,     0,
+       0,    60,    61,    62,    63,    64,    65,    66,    59,    67,
+      68,    70,    69,     0,     0,     0,    36,    38,    39,    40,
+      41,    42,    43,     0,     0,    11,     0,    14,     0,     0,
+       0,     0,     0,     0,    54,     0,     0,    23,    26,    16,
+      17,    18,     0,    15,    20,    54,     0,     0,     0,    71,
+      34,    37,     0,    52,    55,    19,    13,     0,    28,    29,
+      25,    27,    12,     0,     0,    21,    52,     0,     0,     0,
+       0,     0,    50,    24,     0,     3,    50,     0,    54,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-      96,    94,    95,    57,    55,    46,     0,    47,     0,     0,
-      58,    58,    56,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,    84,    88,    86,    90,    77,
-      22,    58,     0,    56,    56,    54,     0,    58,    78,     0,
-      92,     0,     0,     0,     0,    85,    89,    87,    91,    56,
-      75,    54,    54,    50,    58,    56,    80,     0,    82,    79,
-       0,     0,    54,    48,    51,    56,    54,    93,    81,    83,
-      49,    54,    52,    53
+      91,    89,    90,    53,    51,    44,     0,    45,    54,    52,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,    79,    83,    81,    85,    72,    22,    52,    50,
+       0,    54,    73,     0,    87,     0,     0,     0,     0,    80,
+      84,    82,    86,    50,    46,    54,    52,    75,     0,    77,
+      74,     0,     0,    47,    52,    50,    88,    76,    78,    50,
+      48,    49
   };
 
   const short int
   schema_parser::yypgoto_[] =
   {
-    -147,  -147,  -147,  -147,  -147,  -147,  -147,  -147,   180,  -147,
-    -147,  -147,  -147,  -147,  -147,    95,   112,  -147,  -147,  -147,
-    -147,   197,  -147,   181,   142,  -147,  -147,  -147,  -147,  -147,
-    -147,  -147,  -147,  -107,   -97,   -77,   210,    -9,   -53,    75,
-     -67,  -147,  -147,  -146,   -26
+    -128,  -128,  -128,  -128,  -128,  -128,  -128,  -128,   145,  -128,
+    -128,  -128,  -128,  -128,  -128,    68,    90,  -128,  -128,  -128,
+    -128,   167,  -128,   150,   117,  -128,  -128,  -128,  -128,  -128,
+    -128,  -104,   -93,   -74,   180,    -9,   -56,   -62,  -128,  -128,
+    -127,   -92
   };
 
   const short int
   schema_parser::yydefgoto_[] =
   {
-      -1,     2,    18,    19,     3,     4,    25,    26,    27,    60,
-      76,    77,    28,   100,   101,    70,    71,    96,    97,    10,
-      11,    12,    13,    46,    47,    48,    49,    50,    51,    52,
-      53,    54,    55,   135,   110,    89,    72,     7,    56,   140,
-      86,    90,   129,   169,   170
+      -1,     2,    18,    19,     3,     4,    25,    26,    27,    57,
+      72,    73,    28,    94,    95,    66,    67,    90,    91,    10,
+      11,    12,    13,    45,    46,    47,    48,    49,    50,    51,
+      52,   125,   102,    83,    68,     7,    53,    80,    84,   119,
+     153,   154
   };
 
   const unsigned char
   schema_parser::yytable_[] =
   {
-      16,   171,   102,     1,    14,   114,    22,   137,    23,    98,
-      81,    83,    84,    94,    95,    57,    15,   148,   149,   150,
-       5,    62,    15,   151,   152,   153,   154,   190,   191,    66,
-     121,   122,   123,   113,    67,   124,   125,   126,   127,   128,
-       8,   142,     9,    78,    17,   165,    92,    68,    67,    93,
-     186,   187,   160,    79,   120,    93,   188,   187,   183,    24,
-      91,   198,   187,   163,   164,    21,   181,   182,    73,    74,
-      75,   103,    29,   105,   193,   194,   130,   131,   132,   199,
-     187,    59,   192,   133,   179,   200,    63,    64,   196,   202,
-     185,    65,    69,    85,   203,   116,    88,   118,   201,   155,
-     156,   157,   158,    99,   107,   139,   138,   195,   141,   104,
-     143,    80,    31,    32,    33,    34,    35,    36,    37,    38,
-      39,    40,    41,    42,   106,   175,   176,   177,   178,   109,
-     108,   112,   115,   117,   134,   167,    30,    31,    32,    33,
-      34,    35,    36,    37,    38,    39,    40,    41,    42,    43,
-      44,    45,   144,   146,   147,   162,   145,   184,   159,   166,
-     168,   197,    82,    31,    32,    33,    34,    35,    36,    37,
-      38,    39,    40,    41,    42,   119,    31,    32,    33,    34,
-      35,    36,    37,    38,    39,    40,    41,    42,    31,    32,
-      33,    34,    35,    36,    37,    38,    39,    40,    41,    42,
-     172,   173,   174,   189,   180,   111,    58,   136,    20,    87,
-      61,     6,     0,   161
+      16,    96,   127,   106,    77,    78,    22,   155,    23,   123,
+      92,    14,    62,    74,     1,    54,     5,    63,    63,    88,
+      89,    59,    15,   142,   143,   144,   145,     8,     9,    15,
+     171,   172,   105,    17,   129,    86,   149,   147,    87,    21,
+      87,   167,   168,   110,    64,   164,   159,   160,   161,   162,
+      75,    69,    70,    71,   148,   163,    85,   169,   168,   173,
+     120,   121,   122,   177,   168,   178,   168,    97,    24,    29,
+      56,   180,    65,   175,    60,   181,   176,   166,   111,   112,
+     113,   179,    61,   114,   115,   116,   117,   118,    79,   108,
+      82,   174,    93,    98,    99,   100,   104,   101,   128,   107,
+     130,    30,    31,    32,    33,    34,    35,    36,    37,    38,
+      39,    40,    41,    42,    43,    44,   124,   131,   132,   133,
+     152,   134,   151,    76,    31,    32,    33,    34,    35,    36,
+      37,    38,    39,    40,    41,    42,   146,   156,   157,   150,
+     158,   165,   109,    31,    32,    33,    34,    35,    36,    37,
+      38,    39,    40,    41,    42,    31,    32,    33,    34,    35,
+      36,    37,    38,    39,    40,    41,    42,   135,   136,   137,
+     170,    55,   126,   138,   139,   140,   141,   103,    20,    58,
+      81,     6
   };
 
-  const short int
+  const unsigned char
   schema_parser::yycheck_[] =
   {
-       9,   147,    79,    42,    33,   102,    15,   114,    17,    76,
-      63,    64,    65,    48,    49,    24,    51,    38,    39,    40,
-       6,    30,    51,    44,    45,    46,    47,   173,   174,    25,
-      38,    39,    40,   100,    30,    43,    44,    45,    46,    47,
-       0,   118,     7,    25,    36,   142,    27,    56,    30,    30,
-      29,    30,    27,    62,   107,    30,    29,    30,   165,    35,
-      69,    29,    30,   140,   141,    24,   163,   164,    53,    54,
-      55,    80,    24,    82,   181,   182,     3,     4,     5,    29,
-      30,    26,   179,   109,   161,   192,    44,    44,   185,   196,
-     167,    44,    31,    33,   201,   104,    37,   106,   195,   125,
-     126,   127,   128,    34,    30,    28,   115,   184,   117,    45,
-     119,     8,     9,    10,    11,    12,    13,    14,    15,    16,
-      17,    18,    19,    20,    45,   151,   152,   153,   154,    32,
-      26,    26,    45,    45,    41,   144,     8,     9,    10,    11,
-      12,    13,    14,    15,    16,    17,    18,    19,    20,    21,
-      22,    23,    45,    28,    28,     4,    50,   166,    27,    45,
-      19,   187,     8,     9,    10,    11,    12,    13,    14,    15,
-      16,    17,    18,    19,    20,     8,     9,    10,    11,    12,
-      13,    14,    15,    16,    17,    18,    19,    20,     9,    10,
-      11,    12,    13,    14,    15,    16,    17,    18,    19,    20,
-      50,    28,    28,    19,    29,    93,    26,   112,    11,    67,
-      29,     1,    -1,   138
+       9,    75,   106,    96,    60,    61,    15,   134,    17,   101,
+      72,    32,    24,    24,    41,    24,     6,    29,    29,    47,
+      48,    30,    50,   115,   116,   117,   118,     0,     7,    50,
+     157,   158,    94,    35,   108,    26,   129,    26,    29,    23,
+      29,    28,    29,    99,    53,   149,   138,   139,   140,   141,
+      59,    52,    53,    54,   128,   148,    65,    28,    29,   163,
+       3,     4,     5,    28,    29,    28,    29,    76,    34,    23,
+      25,   175,    30,   166,    43,   179,   168,   151,    37,    38,
+      39,   174,    43,    42,    43,    44,    45,    46,    32,    98,
+      36,   165,    33,    44,    29,    25,    25,    31,   107,    44,
+     109,     8,     9,    10,    11,    12,    13,    14,    15,    16,
+      17,    18,    19,    20,    21,    22,    40,    44,    49,    27,
+      19,    27,   131,     8,     9,    10,    11,    12,    13,    14,
+      15,    16,    17,    18,    19,    20,    26,    49,    27,    44,
+      27,   150,     8,     9,    10,    11,    12,    13,    14,    15,
+      16,    17,    18,    19,    20,     9,    10,    11,    12,    13,
+      14,    15,    16,    17,    18,    19,    20,    37,    38,    39,
+      19,    26,   104,    43,    44,    45,    46,    87,    11,    29,
+      63,     1
   };
 
   const unsigned char
   schema_parser::yystos_[] =
   {
-       0,    42,    57,    60,    61,     6,    92,    93,     0,     7,
-      75,    76,    77,    78,    33,    51,    93,    36,    58,    59,
-      77,    24,    93,    93,    35,    62,    63,    64,    68,    24,
+       0,    41,    56,    59,    60,     6,    89,    90,     0,     7,
+      74,    75,    76,    77,    32,    50,    90,    35,    57,    58,
+      76,    23,    90,    90,    34,    61,    62,    63,    67,    23,
        8,     9,    10,    11,    12,    13,    14,    15,    16,    17,
-      18,    19,    20,    21,    22,    23,    79,    80,    81,    82,
-      83,    84,    85,    86,    87,    88,    94,    93,    64,    26,
-      65,    79,    93,    44,    44,    44,    25,    30,    93,    31,
-      71,    72,    92,    53,    54,    55,    66,    67,    25,    93,
-       8,    94,     8,    94,    94,    33,    96,    80,    37,    91,
-      97,    93,    27,    30,    48,    49,    73,    74,    96,    34,
-      69,    70,    91,    93,    45,    93,    45,    30,    26,    32,
-      90,    72,    26,    96,    90,    45,    93,    45,    93,     8,
-      94,    38,    39,    40,    43,    44,    45,    46,    47,    98,
-       3,     4,     5,   100,    41,    89,    71,    89,    93,    28,
-      95,    93,    91,    93,    45,    50,    28,    28,    38,    39,
-      40,    44,    45,    46,    47,   100,   100,   100,   100,    27,
-      27,    95,     4,    91,    91,    90,    45,    93,    19,    99,
-     100,    99,    50,    28,    28,   100,   100,   100,   100,    91,
-      29,    90,    90,    89,    93,    91,    29,    30,    29,    19,
-      99,    99,    90,    89,    89,    91,    90,   100,    29,    29,
-      89,    90,    89,    89
+      18,    19,    20,    21,    22,    78,    79,    80,    81,    82,
+      83,    84,    85,    91,    90,    63,    25,    64,    78,    90,
+      43,    43,    24,    29,    90,    30,    70,    71,    89,    52,
+      53,    54,    65,    66,    24,    90,     8,    91,    91,    32,
+      92,    79,    36,    88,    93,    90,    26,    29,    47,    48,
+      72,    73,    92,    33,    68,    69,    88,    90,    44,    29,
+      25,    31,    87,    71,    25,    92,    87,    44,    90,     8,
+      91,    37,    38,    39,    42,    43,    44,    45,    46,    94,
+       3,     4,     5,    96,    40,    86,    70,    86,    90,    88,
+      90,    44,    49,    27,    27,    37,    38,    39,    43,    44,
+      45,    46,    96,    96,    96,    96,    26,    26,    88,    87,
+      44,    90,    19,    95,    96,    95,    49,    27,    27,    96,
+      96,    96,    96,    87,    86,    90,    88,    28,    29,    28,
+      19,    95,    95,    86,    88,    87,    96,    28,    28,    87,
+      86,    86
   };
 
   const unsigned char
   schema_parser::yyr1_[] =
   {
-       0,    56,    57,    58,    59,    60,    60,    61,    62,    62,
-      63,    63,    64,    65,    66,    66,    67,    67,    67,    68,
-      69,    69,    70,    71,    71,    72,    73,    73,    74,    74,
-      75,    75,    76,    76,    77,    78,    79,    79,    80,    80,
-      80,    80,    80,    80,    80,    80,    81,    82,    83,    84,
-      85,    86,    87,    88,    89,    89,    90,    90,    91,    91,
-      92,    92,    93,    94,    94,    94,    94,    94,    94,    94,
-      94,    94,    94,    94,    94,    95,    96,    97,    98,    98,
-      98,    98,    98,    98,    98,    98,    98,    98,    98,    98,
-      98,    98,    99,    99,   100,   100,   100
+       0,    55,    56,    57,    58,    59,    59,    60,    61,    61,
+      62,    62,    63,    64,    65,    65,    66,    66,    66,    67,
+      68,    68,    69,    70,    70,    71,    72,    72,    73,    73,
+      74,    74,    75,    75,    76,    77,    78,    78,    79,    79,
+      79,    79,    79,    79,    80,    81,    82,    83,    84,    85,
+      86,    86,    87,    87,    88,    88,    89,    89,    90,    91,
+      91,    91,    91,    91,    91,    91,    91,    91,    91,    91,
+      91,    92,    93,    94,    94,    94,    94,    94,    94,    94,
+      94,    94,    94,    94,    94,    94,    94,    95,    95,    96,
+      96,    96
   };
 
   const unsigned char
@@ -1580,12 +1531,12 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
        1,     2,     4,     3,     0,     1,     1,     1,     1,     4,
        0,     1,     4,     1,     3,     2,     0,     1,     1,     1,
        0,     1,     1,     2,     5,     2,     1,     3,     1,     1,
-       1,     1,     1,     1,     1,     1,     5,     6,     9,    10,
-       8,     9,    10,    11,     0,     1,     0,     2,     0,     1,
-       1,     3,     1,     1,     1,     1,     1,     1,     1,     1,
-       1,     1,     1,     1,     1,     3,     1,     4,     3,     4,
-       4,     5,     4,     5,     2,     3,     2,     3,     2,     3,
-       2,     3,     1,     3,     1,     1,     1
+       1,     1,     1,     1,     5,     6,     8,     9,    10,    11,
+       0,     1,     0,     2,     0,     1,     1,     3,     1,     1,
+       1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
+       1,     1,     4,     3,     4,     4,     5,     4,     5,     2,
+       3,     2,     3,     2,     3,     2,     3,     1,     3,     1,
+       1,     1
   };
 
 
@@ -1598,7 +1549,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   "\"end of file\"", "error", "$undefined", "SVALUE", "IVALUE", "DVALUE",
   "VARNAME", "TYPE", "DATATYPE", "BYTE", "CHAR", "BOOL", "SHORT",
   "INTEGER", "LONG", "FLOAT", "DOUBLE", "TIMESTAMP", "DATETIME", "STRING",
-  "TEXT", "ARRAY", "LIST", "MAP", "LTYPEBRACE", "RTYPEBRACE", "LINBRACE",
+  "TEXT", "LIST", "MAP", "LTYPEBRACE", "RTYPEBRACE", "LINBRACE",
   "RINBRACE", "LSZBRACE", "RSZBRACE", "COMMA", "ON", "DEFAULT", "TYPE_END",
   "KEY_FIELDS", "INDEX", "SCHEMA", "CONSTRAINT", "REGEX", "IN", "BETWEEN",
   "NULLABLE", "NAMESPACE", "NOT", "LT", "GT", "LTEQ", "GTEQ", "ASC",
@@ -1608,27 +1559,27 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   "index_fields", "opt_index_type", "index_type", "index_declare",
   "opt_key_fields", "key_fields", "columns", "column", "opt_sort", "sort",
   "opt_types", "types", "type", "type_declare", "declarations", "declare",
-  "declare_native", "declare_ref", "declare_native_arr", "declare_ref_arr",
-  "declare_native_list", "declare_ref_list", "declare_netive_map",
-  "declare_ref_map", "opt_nullable", "opt_default", "opt_constraint",
-  "nested_variable", "variable", "datatype", "size_def", "declare_finish",
-  "constraint", "constraint_type", "values", "value", YY_NULLPTR
+  "declare_native", "declare_ref", "declare_native_list",
+  "declare_ref_list", "declare_netive_map", "declare_ref_map",
+  "opt_nullable", "opt_default", "opt_constraint", "nested_variable",
+  "variable", "datatype", "declare_finish", "constraint",
+  "constraint_type", "values", "value", YY_NULLPTR
   };
 
 
   const unsigned short int
   schema_parser::yyrline_[] =
   {
-       0,   133,   133,   137,   141,   147,   149,   153,   161,   163,
-     167,   168,   172,   178,   185,   187,   191,   192,   193,   197,
-     207,   209,   213,   222,   225,   239,   258,   261,   268,   271,
-     276,   278,   282,   283,   286,   290,   297,   298,   303,   304,
-     305,   306,   307,   308,   309,   310,   314,   325,   335,   348,
-     362,   375,   386,   400,   414,   415,   418,   420,   426,   428,
-     432,   436,   450,   454,   455,   456,   457,   458,   459,   460,
-     461,   462,   463,   464,   465,   469,   472,   475,   478,   484,
-     490,   496,   502,   508,   514,   520,   526,   532,   539,   545,
-     551,   557,   566,   576,   591,   598,   605
+       0,   132,   132,   136,   140,   146,   148,   152,   160,   162,
+     166,   167,   171,   177,   184,   186,   190,   191,   192,   196,
+     206,   208,   212,   221,   224,   238,   257,   260,   267,   270,
+     275,   277,   281,   282,   285,   289,   296,   297,   302,   303,
+     304,   305,   306,   307,   311,   322,   332,   345,   356,   370,
+     384,   385,   388,   390,   396,   398,   402,   406,   420,   424,
+     425,   426,   427,   428,   429,   430,   431,   432,   433,   434,
+     435,   439,   442,   445,   451,   457,   463,   469,   475,   481,
+     487,   493,   499,   506,   512,   518,   524,   533,   543,   558,
+     565,   572
   };
 
   // Print the state stack on the debug stream.
@@ -1699,10 +1650,9 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
       15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
       25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
       35,    36,    37,    38,    39,    40,    41,    42,    43,    44,
-      45,    46,    47,    48,    49,    50,    51,    52,    53,    54,
-      55
+      45,    46,    47,    48,    49,    50,    51,    52,    53,    54
     };
-    const unsigned int user_token_number_max_ = 310;
+    const unsigned int user_token_number_max_ = 309;
     const token_number_type undef_token_ = 2;
 
     if (static_cast<int>(t) <= yyeof_)
@@ -1715,8 +1665,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
 
 #line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:1167
 } } } } } // com::wookler::reactfs::core::parsers
-#line 1719 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:1167
-#line 609 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:1168
+#line 1669 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.cpp" // lalr1.cc:1167
+#line 576 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:1168
 
 
 void com::wookler::reactfs::core::parsers::schema_parser::error( const location_type &l, const std::string &err_message ) {

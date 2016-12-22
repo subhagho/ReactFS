@@ -131,12 +131,6 @@ void debug_r(const char *s, ...);
             		return (token::TEXT);
 
             	}
-"array"			{
-            		yylval->str = yytext;
-			debug_r("[lexer]  token : %s", yylval->str);
-            		return (token::ARRAY);
-
-            	}
 "list"			{
             		yylval->str = yytext;
 			debug_r("[lexer]  token : %s", yylval->str);

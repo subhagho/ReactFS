@@ -42,6 +42,12 @@ using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
                 namespace types {
+                    struct cmp_str {
+                        bool operator()(char const *a, char const *b) {
+                            return std::strcmp(a, b) < 0;
+                        }
+                    };
+
                     /*!
                      * Enum defines the supported data types.
                      */
@@ -72,8 +78,6 @@ REACTFS_NS_CORE
                                 TYPE_STRING,
                         /// Text string datatype (no size limit)
                                 TYPE_TEXT,
-                        /// Array of Basic datatypes. (max size limited)
-                                TYPE_ARRAY,
                         /// List of Basic datatypes. (no size limit)
                                 TYPE_LIST,
                         /// Key/Value Map of basic types.
@@ -134,6 +138,7 @@ REACTFS_NS_CORE
                                     return to_string(*v);
                                 }
                                     break;
+                                case __type_def_enum::TYPE_TEXT:
                                 case __type_def_enum::TYPE_STRING: {
                                     string *v = (string *) value;
                                     return *v;
@@ -197,8 +202,6 @@ REACTFS_NS_CORE
                          */
                         static string get_type_string(__type_def_enum type) {
                             switch (type) {
-                                case __type_def_enum::TYPE_ARRAY:
-                                    return "array";
                                 case __type_def_enum::TYPE_BYTE:
                                     return "byte";
                                 case __type_def_enum::TYPE_CHAR:
@@ -255,8 +258,6 @@ REACTFS_NS_CORE
                                 return __type_def_enum::TYPE_TIMESTAMP;
                             } else if (t == get_type_string(__type_def_enum::TYPE_TEXT)) {
                                 return __type_def_enum::TYPE_TEXT;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_ARRAY)) {
-                                return __type_def_enum::TYPE_ARRAY;
                             } else if (t == get_type_string(__type_def_enum::TYPE_BYTE)) {
                                 return __type_def_enum::TYPE_BYTE;
                             } else if (t == get_type_string(__type_def_enum::TYPE_CHAR)) {
@@ -298,8 +299,6 @@ REACTFS_NS_CORE
                                 return __type_def_enum::TYPE_TIMESTAMP;
                             } else if (t == __type_def_enum::TYPE_TEXT) {
                                 return __type_def_enum::TYPE_TEXT;
-                            } else if (t == __type_def_enum::TYPE_ARRAY) {
-                                return __type_def_enum::TYPE_ARRAY;
                             } else if (t == __type_def_enum::TYPE_BYTE) {
                                 return __type_def_enum::TYPE_BYTE;
                             } else if (t == __type_def_enum::TYPE_CHAR) {
@@ -1391,7 +1390,7 @@ REACTFS_NS_CORE
                      * Note: The difference between TEXT and STRING types is that STRING
                      * has to be defined with a max-size and is limited to a max of USHRT_MAX.
                      */
-                    class __dt_text : public __datatype_io<string> {
+                    class __dt_text : public __datatype_io<CHARBUFF> {
 
                     public:
                         /*!<constructor
@@ -1414,10 +1413,8 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
-                            string **T = (string **) t;
-                            *T = new string();
-                            CHECK_ALLOC(*T, TYPE_NAME(string));
-                            uint64_t r_size = buffer_utils::read_32str(buffer, &offset, *T);
+                            CHARBUFF *T = (CHARBUFF *) t;
+                            uint64_t r_size = buffer_utils::read_32str(buffer, &offset, T);
                             return r_size;
                         }
 
@@ -1433,8 +1430,9 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(value);
-                            string *s = (string *) value;
-                            uint64_t w_size = buffer_utils::write_32str(buffer, &offset, *s);
+                            CHARBUFF s = (CHARBUFF) value;
+                            uint32_t size = strlen(s);
+                            uint64_t w_size = buffer_utils::write_32str(buffer, &offset, s, size);
                             return w_size;
                         }
 
@@ -1505,10 +1503,8 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
-                            string **T = (string **) t;
-                            *T = new string();
-                            CHECK_ALLOC(*T, TYPE_NAME(string));
-                            uint64_t r_size = buffer_utils::read_8str(buffer, &offset, *T);
+                            CHARBUFF *T = (CHARBUFF *) t;
+                            uint64_t r_size = buffer_utils::read_8str(buffer, &offset, T);
                             return r_size;
                         }
 
@@ -1524,8 +1520,9 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(value);
-                            string *s = (string *) value;
-                            uint64_t w_size = buffer_utils::write_8str(buffer, &offset, *s);
+                            CHARBUFF s = (CHARBUFF) value;
+                            uint8_t size = strlen(s);
+                            uint64_t w_size = buffer_utils::write_8str(buffer, &offset, s, size);
                             return w_size;
                         }
 
