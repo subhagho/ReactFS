@@ -8,7 +8,7 @@ MESSAGE("Including common makefile : " ${PROJECT_CMAKE_COMMON})
 
 INCLUDE(${PROJECT_CMAKE_COMMON})
 
-LINK_DIRECTORIES(${EXT_LINK_DIRS} ${RFS_BUILD_COMMON})
+LINK_DIRECTORIES(${EXT_LINK_DIRS} ${RFS_BUILD_COMMON} ${RFS_BUILD_TYPES})
 
 set(TYPES_LIB_NAME ${PROJECT_NAME})
 
@@ -23,3 +23,6 @@ MESSAGE("Using libraries : #" ${RFS_COMMON_LIBS} "#")
 
 add_library(${TYPES_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
 target_link_libraries(${TYPES_LIB_NAME} ${RFS_COMMON_LIBS})
+
+add_executable(main_types_test adhoc/main_types_test.cpp)
+target_link_libraries(main_types_test ${RFS_TYPES_LIBS})

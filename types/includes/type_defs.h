@@ -840,6 +840,65 @@ REACTFS_NS_CORE
                     };
 
                     template<typename __V, __type_def_enum __value_type>
+                    class __string_key_map : public __dt_map<string, __type_def_enum::TYPE_STRING, __V, __value_type> {
+                    public:
+                        /*!<constructor
+                         * Default empty constructor.
+                         */
+                        __string_key_map(__native_type *v_type)
+                                : __dt_map<string, __type_def_enum::TYPE_STRING, __V, __value_type>(
+                                v_type) {
+
+                        }
+
+                        /*!
+                        * Read (de-serialize) data from the binary format for the typed unordered_map.
+                        *
+                        * @param buffer - Source data buffer (binary data)
+                        * @param t - Pointer to map the output data to.
+                        * @param offset - Start offset where the buffer is to be read from.
+                        * @param max_length - Max length of the data in the buffer.
+                        * @return - Total bytes consumed by this read.
+                        */
+                        virtual uint64_t
+                        read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
+                            CHECK_NOT_NULL(t);
+                            CHECK_NOT_NULL(this->kt_handler);
+                            CHECK_NOT_NULL(this->vt_handler);
+
+                            uint16_t *r_count = nullptr;
+                            uint64_t r_offset = offset;
+                            uint64_t t_size = buffer_utils::read<uint16_t>(buffer, &r_offset, &r_count);
+                            CHECK_NOT_NULL(r_count);
+
+                            if (r_count > 0) {
+                                unordered_map<string, __V *> **T = (unordered_map<string, __V *> **) t;
+                                *T = new unordered_map<string, __V *>();
+
+                                for (uint16_t ii = 0; ii < *r_count; ii++) {
+                                    string *key = nullptr;
+                                    __V *value = nullptr;
+
+                                    uint64_t r = this->kt_handler->read(buffer, &key, r_offset, max_length);
+                                    CHECK_NOT_NULL(key);
+                                    r_offset += r;
+                                    t_size += r;
+                                    r = this->vt_handler->read(buffer, &value, r_offset, max_length);
+                                    CHECK_NOT_NULL(value);
+                                    r_offset += r;
+                                    t_size += r;
+
+                                    (*T)->insert({*key, value});
+                                    CHECK_AND_FREE(key);
+                                }
+
+                                return t_size;
+                            }
+                            return sizeof(uint64_t);
+                        }
+                    };
+
+                    template<typename __V, __type_def_enum __value_type>
                     class string_key_map : public __dt_map<string, __type_def_enum::TYPE_STRING, __V, __value_type> {
 
                     public:

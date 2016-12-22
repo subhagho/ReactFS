@@ -52,7 +52,6 @@ REACTFS_NS_CORE
                      * Base virtual destructor.
                      */
                     virtual ~typed_index_base() {
-                        this->close();
                     }
 
                     /*!
