@@ -158,9 +158,15 @@ void set_value_${name}(__struct_datatype__ *data) {
         if (iter != data->end()) {
             void *__ptr = iter->second;
             if (NOT_NULL(__ptr)) {
-                ${type} *__var = static_cast<${type} *>(__ptr);
-                CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));
-                this->${name} = __var;
+                if (this->is_native("${type}")) {
+                    ${type} *__var = static_cast<${type} *>(__ptr);
+                    CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));
+                    this->${name} = __var;
+                } else {
+                    ${type} *__var = deserialze_${name}(__ptr);
+                    CHECK_NOT_NULL(__var);
+                    this->${name} = __var;
+                }
             } else {
                 this->${name} = nullptr;
             }
@@ -177,7 +183,17 @@ FUNC_SETTER_TO_MAP:
 void set_map_${name}(__struct_datatype__ *data) {
     CHECK_NOT_NULL(data);
     if (NOT_NULL(this->${name})) {
-        data->insert({"${name}", this->${name}});
+        if (this->is_native("${type}")) {
+            data->insert({"${name}", this->${name}});
+        } else if (this->is_list("${type}" || this->is_map("${type}")) {
+            void *__ptr = serialize_${type}(this->${name});
+            CHECK_NOT_NULL(__ptr);
+            data->insert({"${name}", __ptr});
+        } else {
+            void *__ptr = serialize_${type}(this->${name});
+            CHECK_NOT_NULL(__ptr);
+            data->insert({"${name}", __ptr});
+        }
     }
 }
 ;;
@@ -205,3 +221,46 @@ void deserialize(__struct_datatype__ *data) {
 }
 ;;
 
+FUNC_TYPE_SERIALIZER:
+void *serialize_${type}(${type} *value) {
+    CHECK_NOT_NULL(value);
+    __struct_datatype__ *data = new __struct_datatype__();
+    CHECK_ALLOC(data, TYPE_NAME(__struct_datatype__));
+    ${set_map_calls}
+    return data;
+}
+;;
+
+FUNC_TYPE_LIST_SERIALIZER:
+std::vector<__struct_datatype__ *> *serialize_${name}(std::vector<${type} *> *value) {
+    CHECK_NOT_EMPTY_P(value);
+    std::vector<__struct_datatype__ *> *__list = new std::vector<__struct_datatype__ *>();
+    CHECK_ALLOC(__list, TYPE_NAME(vector));
+    for (${type} *rec : *(value)) {
+        CHECK_NOT_NULL(rec);
+        __struct_datatype__ *rv = this->serialize_${type}(rec);
+        CHECK_NOT_NULL(rv);
+        __list->push_back(rv);
+    }
+    return __list;
+}
+;;
+
+FUNC_TYPE_MAP_SERIALIZER:
+std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_${name}(std::unordered_map<${key_type}, ${value_type *}> *map) {
+    CHECK_NOT_EMPTY_P(map);
+    std::unordered_map<${key_type}, __struct_datatype__ *> *__map = new std::unordered_map<${key_type}, __struct_datatype__ *>();
+    CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
+
+    std::unordered_map<${key_type}, ${value_type *}>::iterator iter;
+    for(iter = map->begin(); iter != map.end(); iter++) {
+        const ${key_type} key = iter->first;
+        ${value_type} *value = iter->second;
+        CHECK_NOT_NULL(value);
+        __struct_datatype__ *rv = this->serialize_${value_type}(value);
+        CHECK_NOT_NULL(rv);
+        __map->insert({key, rv});
+    }
+    return __map;
+}
+;;
