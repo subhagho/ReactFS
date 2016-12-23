@@ -48,9 +48,12 @@ REACTFS_NS_CORE
                         }
 
                         string get_next_token(string &input, uint32_t *offset) {
-                            size_t index = input.find(CPPT_TOKEN_START, offset);
+                            string ts(CPPT_TOKEN_START);
+                            string te(CPPT_TOKEN_END);
+
+                            size_t index = input.find(ts, *offset);
                             if (index != string::npos) {
-                                size_t endi = input.find(CPPT_TOKEN_END, offset);
+                                size_t endi = input.find(te, *offset);
                                 if (endi == string::npos) {
                                     throw BASE_ERROR("Invalid token definition. Token terminator missing.");
                                 }
@@ -70,6 +73,9 @@ REACTFS_NS_CORE
                             uint32_t offset = 0;
                             while (offset < input.length()) {
                                 string token = get_next_token(input, &offset);
+                                if (IS_EMPTY(token)) {
+                                    break;
+                                }
                                 TRACE("Found token [%s]", token.c_str());
                             }
                         }
@@ -200,8 +206,8 @@ REACTFS_NS_CORE
                                 string tn = string_utils::toupper(titer->second);
                                 uint16_t len = tn.length() - 3;
                                 tn = tn.substr(2, len);
-                                outf << common_utils::format("#define %s%s \"%s\"\n", CPPT_TOKEN_DEF_PREFIX, tn,
-                                                             titer->first);
+                                outf << common_utils::format("#define %s%s \"%s\"\n", CPPT_TOKEN_DEF_PREFIX, tn.c_str(),
+                                                             titer->first.c_str());
                             }
                         }
 
@@ -259,6 +265,7 @@ REACTFS_NS_CORE
                                         if (!is_token_defined(str)) {
                                             __tokens.insert({str, str});
                                         }
+                                        continue;
                                     }
                                 } else {
                                     string str = string(line);
@@ -273,6 +280,7 @@ REACTFS_NS_CORE
                                     line = string_utils::escape(line);
                                     LOG_DEBUG("LINE [%s]", line.c_str());
                                     CHECK_NOT_EMPTY(token);
+                                    extract_tokens(line);
                                     unordered_map<string, vector<string> *>::iterator iter = __cpp_template.find(token);
                                     POSTCONDITION(iter != __cpp_template.end());
                                     iter->second->push_back(line);
