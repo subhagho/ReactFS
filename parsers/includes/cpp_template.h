@@ -53,7 +53,7 @@ REACTFS_NS_CORE
 
                             size_t index = input.find(ts, *offset);
                             if (index != string::npos) {
-                                size_t endi = input.find(te, *offset);
+                                size_t endi = input.find(te, index);
                                 if (endi == string::npos) {
                                     throw BASE_ERROR("Invalid token definition. Token terminator missing.");
                                 }
@@ -145,7 +145,7 @@ REACTFS_NS_CORE
 
                             outf << common_utils::format(
                                     "%s\tunordered_map<string, vector<string> *>::iterator iter;\n", tab.c_str());
-                            outf << common_utils::format("%s\tfor (iter = %s.being(); iter != %s.end(); iter++) {\n",
+                            outf << common_utils::format("%s\tfor (iter = %s.begin(); iter != %s.end(); iter++) {\n",
                                                          tab.c_str(), map_name.c_str(), map_name.c_str());
                             outf << common_utils::format("%s\t\tCHECK_AND_FREE(iter->second);", tab.c_str());
                             outf << common_utils::format("%s\t}\n", tab.c_str());

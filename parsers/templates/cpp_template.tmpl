@@ -41,6 +41,9 @@
 %token ${body}
 %token ${value}
 %token ${key}
+%token ${variable_inits}
+%token ${variable_frees}
+%token ${schema_name}
 
 VARIABLE_NATIVE_DEF:
 ${type} *${name} = nullptr;
@@ -170,7 +173,7 @@ void add_to_${name}(${type} *${name}) {
         this->${name} = new std::vector<${type} *>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
     }
-    his->${name}->push_back(${name});
+    this->${name}->push_back(${name});
 }
 ;;
 
@@ -295,12 +298,12 @@ std::vector<__struct_datatype__ *> *serialize_${name}(std::vector<${type} *> *__
 ;;
 
 FUNC_TYPE_MAP_SERIALIZER:
-std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_${name}(std::unordered_map<${key_type}, ${value_type *}> *__i_map) {
+std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_${name}(std::unordered_map<${key_type}, ${value_type} *> *__i_map) {
     CHECK_NOT_EMPTY_P(map);
     std::unordered_map<${key_type}, __struct_datatype__ *> *__map = new std::unordered_map<${key_type}, __struct_datatype__ *>();
     CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
-    std::unordered_map<${key_type}, ${value_type *}>::iterator iter;
+    std::unordered_map<${key_type}, ${value_type} *>::iterator iter;
     for(iter = __i_map->begin(); iter != __i_map.end(); iter++) {
         const ${key_type} key = iter->first;
         ${value_type} *value = iter->second;

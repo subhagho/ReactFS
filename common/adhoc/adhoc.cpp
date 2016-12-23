@@ -30,14 +30,37 @@ string set_token(const string &token, string &value, string &input) {
     return string(ss.str());
 }
 
-int main(int argc, char *argv[]) {
-    string str = "This is a ${string} that has \"${tokens}\" in the ${string}";
-    //str = string_utils::unescape(str);
-    string ts = "STRING";
-    string tt = "TOKENS";
-    string ns = set_token("${string}", ts, str);
-    ns = set_token("${tokens}", tt, ns);
+string get_next_token(string &input, uint32_t *offset) {
+    string ts("${");
+    string te("}");
 
-    cout << "INPUT STRING [" << str << "]\n";
-    cout << "OUTPUT STRING [" << ns << "]\n";
+    size_t index = input.find(ts, *offset);
+    if (index != string::npos) {
+        size_t endi = input.find(te, index);
+        if (endi == string::npos) {
+            throw BASE_ERROR("Invalid token definition. Token terminator missing.");
+        }
+        string::size_type len = (endi - index + 1);
+        string token = input.substr(index, len);
+        CHECK_NOT_EMPTY(token);
+        *offset = endi + 1;
+        return token;
+    }
+    return common_consts::EMPTY_STRING;
+}
+
+void extract_tokens(string &input) {
+    uint32_t offset = 0;
+    while (offset < input.length()) {
+        string token = get_next_token(input, &offset);
+        if (IS_EMPTY(token)) {
+            break;
+        }
+        cout << "Found token [" << token << "\n";
+    }
+}
+
+int main(int argc, char *argv[]) {
+    string str = "        } else if (this->is_list(\"${type}\") || this->is_map(\"${type}\")) {}";
+    extract_tokens(str);
 }
