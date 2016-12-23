@@ -42,12 +42,15 @@ REACTFS_NS_CORE
                         }
 
                         void write_includes(std::ofstream &outf) {
+                            short size = 6;
                             string includes[] = {"#include <unordered_map>",
                                                  "#include \"common/includes/common.h\"",
                                                  "#include \"common/includes/common_utils.h\"",
                                                  "#include \"common/includes/base_error.h\"",
-                                                 "#include \"common/includes/log_utils.h\""};
-                            for (int ii = 0; ii < 5; ii++) {
+                                                 "#include \"common/includes/log_utils.h\"",
+                                                 "#include \"core/includes/core.h\""};
+
+                            for (int ii = 0; ii < size; ii++) {
                                 outf << common_utils::format("%s\n", includes[ii].c_str());
                             }
                             outf << "\n";
@@ -86,7 +89,7 @@ REACTFS_NS_CORE
                         void write_constructor(std::ofstream &outf, string tab) {
                             tab.append("\t");
                             outf << common_utils::format("%s%s() {\n", tab.c_str(), CPPT_TEMPLATE_CLASSNAME);
-                            outf << common_utils::format("%s\tthis->__init();\n");
+                            outf << common_utils::format("%s\tthis->__init();\n", tab.c_str());
                             outf << common_utils::format("%s}\n\n", tab.c_str());
                         }
 
@@ -132,6 +135,7 @@ REACTFS_NS_CORE
                             outf << common_utils::format("%spublic:\n", tab.c_str());
                             write_constructor(outf, tab);
                             write_desructor(outf, tab, map_name);
+                            write_getter(outf, tab, map_name);
                             outf << common_utils::format("%s};\n", tab.c_str());
                         }
 
@@ -154,7 +158,6 @@ REACTFS_NS_CORE
                             bool in_comment = false;
 
                             while (std::getline(tfile, line)) {
-                                LOG_DEBUG("LINE [%s]", line.c_str());
                                 if (in_comment) {
                                     line = string_utils::trim(line);
                                     if (is_comment_end(line)) {
@@ -190,13 +193,17 @@ REACTFS_NS_CORE
                                         continue;
                                     }
                                 } else {
-                                    string str = string_utils::trim(line);
+                                    string str = string(line);
+                                    str = string_utils::trim(str);
                                     if (!IS_EMPTY(str)) {
                                         if (is_declare_end(str)) {
                                             in_declare = false;
                                             continue;
                                         }
                                     }
+
+                                    line = string_utils::escape(line);
+                                    LOG_DEBUG("LINE [%s]", line.c_str());
                                     CHECK_NOT_EMPTY(token);
                                     unordered_map<string, vector<string> *>::iterator iter = __cpp_template.find(token);
                                     POSTCONDITION(iter != __cpp_template.end());

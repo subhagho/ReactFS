@@ -205,6 +205,48 @@ REACTFS_NS_COMMON
                         }
                         return input;
                     }
+
+                    static string escape(const string &input) {
+                        if (!IS_EMPTY(input)) {
+                            stringstream ss;
+                            for (string::size_type ii = 0; ii < input.length(); ii++) {
+                                char c = input[ii];
+                                switch (c) {
+                                    case '\'':
+                                    case '\"':
+                                    case '\\':
+                                        ss << '\\';
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                ss << c;
+                            }
+                            return string(ss.str());
+                        }
+                        return input;
+                    }
+
+                    static string unescape(const string &input) {
+                        if (!IS_EMPTY(input)) {
+                            stringstream ss;
+                            for (string::size_type ii = 0; ii < input.length(); ii++) {
+                                char c = input[ii + 1];
+                                switch (c) {
+                                    case '\'':
+                                    case '\"':
+                                    case '\\':
+                                        ii++;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                ss << c;
+                            }
+                            return string(ss.str());
+                        }
+                        return input;
+                    }
                 };
 
                 class common_utils {
