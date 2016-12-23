@@ -1,3 +1,21 @@
+
+/*
+ * Copyright [2016] [Subhabrata Ghosh]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 VARIABLE_NATIVE_DEF:
 ${type} *${name} = nullptr;
 ;;
@@ -7,7 +25,7 @@ std::vector<${type} *> *${name} = nullptr;
 ;;
 
 VARIABLE_MAP_DEF:
-std::unordered_map<${key}, ${value} *> *${name} = nullptr;
+std::unordered_map<${key_type}, ${value_type} *> *${name} = nullptr;
 ;;
 
 VARIABLE_INIT_PTR:
@@ -16,6 +34,10 @@ this->${name} = nullptr;
 
 VARIABLE_NATIVE_FREE:
 FREE_PTR(this->${name});
+;;
+
+VARIABLE_TYPE_FREE:
+CHECK_AND_FREE(this->${name});
 ;;
 
 VARIABLE_LIST_NATIVE_FREE:
@@ -127,7 +149,7 @@ void add_to_${name}(${type} *${name}) {
 ;;
 
 FUNC_MAP_NATIVE_ADD_DEF:
-void add_to_${name}(${key_type} ${key}, ${value_type} &${value}) {
+void add_to_${name}(${key_type} ${v_key}, ${value_type} &${v_value}) {
     PRECONDITION(${modevar} == true);
     if (IS_NULL(this->${name})) {
         this->${name} = new std::unordered_map<${key_type}, ${value_type} *>();
@@ -141,7 +163,7 @@ void add_to_${name}(${key_type} ${key}, ${value_type} &${value}) {
 ;;
 
 FUNC_MAP_NATIVE_TYPE_DEF:
-void add_to_${name}(${key_type} ${key}, ${value_type} *${value}) {
+void add_to_${name}(${key_type} ${v_key}, ${value_type} *${v_value}) {
     PRECONDITION(${modevar} == true);
     if (IS_NULL(this->${name})) {
         this->${name} = new std::unordered_map<${key_type}, ${value_type} *>();
@@ -152,10 +174,10 @@ void add_to_${name}(${key_type} ${key}, ${value_type} *${value}) {
 ;;
 
 FUNC_SETTER_FROM_MAP:
-void set_value_${name}(__struct_datatype__ *data) {
-    if (NOT_NULL(data)) {
-        __struct_datatype__::const_iterator iter = data->find("${name}");
-        if (iter != data->end()) {
+void set_value_${name}(__struct_datatype__ *__data) {
+    if (NOT_NULL(__data)) {
+        __struct_datatype__::const_iterator iter = __data->find("${name}");
+        if (iter != __data->end()) {
             void *__ptr = iter->second;
             if (NOT_NULL(__ptr)) {
                 if (this->is_native("${type}")) {
@@ -180,19 +202,19 @@ void set_value_${name}(__struct_datatype__ *data) {
 ;;
 
 FUNC_SETTER_TO_MAP:
-void set_map_${name}(__struct_datatype__ *data) {
-    CHECK_NOT_NULL(data);
+void set_map_${name}(__struct_datatype__ *__data) {
+    CHECK_NOT_NULL(__data);
     if (NOT_NULL(this->${name})) {
         if (this->is_native("${type}")) {
-            data->insert({"${name}", this->${name}});
-        } else if (this->is_list("${type}" || this->is_map("${type}")) {
+            __data->insert({"${name}", this->${name}});
+        } else if (this->is_list("${type}") || this->is_map("${type}")) {
             void *__ptr = serialize_${type}(this->${name});
             CHECK_NOT_NULL(__ptr);
-            data->insert({"${name}", __ptr});
+            __data->insert({"${name}", __ptr});
         } else {
             void *__ptr = serialize_${type}(this->${name});
             CHECK_NOT_NULL(__ptr);
-            data->insert({"${name}", __ptr});
+            __data->insert({"${name}", __ptr});
         }
     }
 }
@@ -215,28 +237,28 @@ __struct_datatype__ *serialize() override {
 ;;
 
 FUNC_DESERIALIZE:
-void deserialize(__struct_datatype__ *data) {
-    CHECK_NOT_NULL(data);
+void deserialize(__struct_datatype__ *__data) {
+    CHECK_NOT_NULL(__data);
     ${read_map_calls};
 }
 ;;
 
 FUNC_TYPE_SERIALIZER:
-void *serialize_${type}(${type} *value) {
-    CHECK_NOT_NULL(value);
-    __struct_datatype__ *data = new __struct_datatype__();
-    CHECK_ALLOC(data, TYPE_NAME(__struct_datatype__));
+void *serialize_${type}(${type} *__value) {
+    CHECK_NOT_NULL(__value);
+    __struct_datatype__ *__data = new __struct_datatype__();
+    CHECK_ALLOC(__data, TYPE_NAME(__struct_datatype__));
     ${set_map_calls}
-    return data;
+    return __data;
 }
 ;;
 
 FUNC_TYPE_LIST_SERIALIZER:
-std::vector<__struct_datatype__ *> *serialize_${name}(std::vector<${type} *> *value) {
-    CHECK_NOT_EMPTY_P(value);
+std::vector<__struct_datatype__ *> *serialize_${name}(std::vector<${type} *> *__value) {
+    CHECK_NOT_EMPTY_P(__value);
     std::vector<__struct_datatype__ *> *__list = new std::vector<__struct_datatype__ *>();
     CHECK_ALLOC(__list, TYPE_NAME(vector));
-    for (${type} *rec : *(value)) {
+    for (${type} *rec : *(__value)) {
         CHECK_NOT_NULL(rec);
         __struct_datatype__ *rv = this->serialize_${type}(rec);
         CHECK_NOT_NULL(rv);
@@ -247,20 +269,75 @@ std::vector<__struct_datatype__ *> *serialize_${name}(std::vector<${type} *> *va
 ;;
 
 FUNC_TYPE_MAP_SERIALIZER:
-std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_${name}(std::unordered_map<${key_type}, ${value_type *}> *map) {
+std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_${name}(std::unordered_map<${key_type}, ${value_type *}> *__i_map) {
     CHECK_NOT_EMPTY_P(map);
     std::unordered_map<${key_type}, __struct_datatype__ *> *__map = new std::unordered_map<${key_type}, __struct_datatype__ *>();
     CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
     std::unordered_map<${key_type}, ${value_type *}>::iterator iter;
-    for(iter = map->begin(); iter != map.end(); iter++) {
+    for(iter = __i_map->begin(); iter != __i_map.end(); iter++) {
         const ${key_type} key = iter->first;
         ${value_type} *value = iter->second;
         CHECK_NOT_NULL(value);
         __struct_datatype__ *rv = this->serialize_${value_type}(value);
         CHECK_NOT_NULL(rv);
-        __map->insert({key, rv});
+        __i_map->insert({key, rv});
     }
     return __map;
 }
+;;
+
+INCLUDE_BASE:
+#include "common/includes/common.h"
+#include "common/includes/common_utils.h"
+#include "common/includes/base_error.h"
+#include "types/includes/type_defs.h"
+
+${includes}
+
+using namespace REACTFS_NS_COMMON_PREFIX;
+using namespace REACTFS_NS_CORE_PREFIX::types;
+
+;;
+
+NAMESPACE:
+namespace ${name} {
+    ${nested}
+}
+;;
+
+CLASS_DEF:
+class ${name} ${parent} {
+private:
+    ${declarations}
+
+    ${private_functions}
+public:
+    ${constructor}
+
+    ${destructor}
+
+    ${public_functions}
+};
+;;
+
+FILE_COMMENT:
+/*!
+ *  Auto-generated types for schema definition [source schema: ${schema_name}]
+ *
+ *  Reference Schema Version : ${version}
+ *  Generated by : ${username}
+ *  Generated on : ${date}
+ */
+;;
+
+FILE_DEF:
+${header}
+
+#ifndef ${guard_name}
+#define ${guard_name}
+${includes}
+
+${body}
+#endif // ${guard_name}
 ;;

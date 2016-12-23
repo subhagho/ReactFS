@@ -25,4 +25,4 @@ add_library(${TYPES_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
 target_link_libraries(${TYPES_LIB_NAME} ${RFS_COMMON_LIBS})
 
 add_executable(main_types_test adhoc/main_types_test.cpp)
-target_link_libraries(main_types_test ${RFS_TYPES_LIBS})
+target_link_libraries(main_types_test ${TYPES_LIB_NAME} ${RFS_COMMON_LIBS})
