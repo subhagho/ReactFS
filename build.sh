@@ -24,6 +24,13 @@ echo "Building directories [$DIRS] ..."
 
 ROOTDIR=$PWD
 
+if [ "$1" == "clean" ]; then
+	for dir in $DIRS;
+	do
+		rm -rf $dir/cmake
+	done
+fi
+
 for dir in $DIRS;
 do
     if [ ! -d "$dir/cmake" ]; then
