@@ -14,7 +14,7 @@ set(PRASERS_LIB_NAME ${PROJECT_NAME})
 
 FIND_PACKAGE(BISON REQUIRED)
 SET(YSchemaOutput ${PROJECT_ROOT_DIR}/parsers/src/schema_parser.cpp)
-IF(BISON_FOUND)
+IF (BISON_FOUND)
     ADD_CUSTOM_COMMAND(
             OUTPUT ${YSchemaOutput}
             COMMAND ${BISON_EXECUTABLE}
@@ -23,11 +23,11 @@ IF(BISON_FOUND)
             ${PROJECT_ROOT_DIR}/parsers/src/schema_parser.yy
             COMMENT "Generating schema_parser.cpp"
     )
-ENDIF()
+ENDIF ()
 
 FIND_PACKAGE(FLEX REQUIRED)
 SET(LSchemaOutput ${PROJECT_ROOT_DIR}/parsers/src/schema_lexer.cpp)
-IF(FLEX_FOUND)
+IF (FLEX_FOUND)
     ADD_CUSTOM_COMMAND(
             OUTPUT ${LSchemaOutput}
             COMMAND ${FLEX_EXECUTABLE}
@@ -35,7 +35,7 @@ IF(FLEX_FOUND)
             ${PROJECT_ROOT_DIR}/parsers/src/schema_parser.l
             COMMENT "Generating schema_lexer.cpp"
     )
-ENDIF()
+ENDIF ()
 
 file(GLOB_RECURSE RFS_C_SOURCES "src/*.cpp")
 file(GLOB_RECURSE RFS_C_INCLUDES "includes/*.h")
@@ -53,3 +53,6 @@ target_link_libraries(${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS})
 
 add_executable(main_schema_p adhoc/main_schema_p.cpp)
 target_link_libraries(main_schema_p ${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS})
+
+add_executable(template_util src/template_util.cpp)
+target_link_libraries(template_util ${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS})
