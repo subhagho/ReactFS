@@ -17,6 +17,11 @@
 #include "core/includes/core.h"
 #include "parsers/includes/cpp_template_defs.h"
 
+#define CPPT_TOKEN_PREFIX "CPPT_TOKEN_"
+#define CPPT_TOKEN_DEF_PREFIX "CPPT_TOKEN_DEF_"
+#define CPPT_TOKEN_START "${"
+#define CPPT_TOKEN_END "}"
+
 using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
@@ -24,6 +29,7 @@ REACTFS_NS_CORE
                     class cpp_template {
                     private:
                         unordered_map<string, vector<string> *> __cpp_template;
+                        unordered_map<string, string> __tokens;
 
                         bool is_comment_end(string &str) {
                             return (str == CPPT_COMMENT_END);
@@ -39,6 +45,40 @@ REACTFS_NS_CORE
 
                         bool is_declare_end(string &line) {
                             return (line == CPPT_DECLARE_END);
+                        }
+
+                        string get_next_token(string &input, uint32_t *offset) {
+                            size_t index = input.find(CPPT_TOKEN_START, offset);
+                            if (index != string::npos) {
+                                size_t endi = input.find(CPPT_TOKEN_END, offset);
+                                if (endi == string::npos) {
+                                    throw BASE_ERROR("Invalid token definition. Token terminator missing.");
+                                }
+                                string::size_type len = (endi - index + 1);
+                                string token = input.substr(index, len);
+                                CHECK_NOT_EMPTY(token);
+                                if (!is_token_defined(token)) {
+                                    throw BASE_ERROR("Missing token defnition. [token=%s]", token.c_str());
+                                }
+                                *offset = endi + 1;
+                                return token;
+                            }
+                            return common_consts::EMPTY_STRING;
+                        }
+
+                        void extract_tokens(string &input) {
+                            uint32_t offset = 0;
+                            while (offset < input.length()) {
+                                string token = get_next_token(input, &offset);
+                                TRACE("Found token [%s]", token.c_str());
+                            }
+                        }
+
+                        bool is_token_defined(string &token) {
+                            unordered_map<string, string>::iterator iter = __tokens.find(token);
+                            if (iter != __tokens.end())
+                                return true;
+                            return false;
                         }
 
                         void write_includes(std::ofstream &outf) {
@@ -148,6 +188,23 @@ REACTFS_NS_CORE
                             outf << common_utils::format("\t\t}\n%s\n", "REACTFS_NS_CORE_END");
                         }
 
+                        void write_defines(std::ofstream &outf) {
+                            unordered_map<string, vector<string> *>::iterator iter;
+                            for (iter = __cpp_template.begin(); iter != __cpp_template.end(); iter++) {
+                                const string key = iter->first;
+                                outf << common_utils::format("#define %s%s \"%s\"\n", CPPT_TOKEN_PREFIX, key.c_str(),
+                                                             key.c_str());
+                            }
+                            unordered_map<string, string>::iterator titer;
+                            for (titer = __tokens.begin(); titer != __tokens.end(); titer++) {
+                                string tn = string_utils::toupper(titer->second);
+                                uint16_t len = tn.length() - 3;
+                                tn = tn.substr(2, len);
+                                outf << common_utils::format("#define %s%s \"%s\"\n", CPPT_TOKEN_DEF_PREFIX, tn,
+                                                             titer->first);
+                            }
+                        }
+
                     public:
                         void read_template(string filename) {
                             std::ifstream tfile(filename);
@@ -192,6 +249,17 @@ REACTFS_NS_CORE
 
                                         continue;
                                     }
+                                    size_t index = line.find(CPPT_TOKEN_KEY);
+                                    if (index != string::npos) {
+                                        index += strlen(CPPT_TOKEN_KEY);
+                                        uint16_t len = (line.length() - index);
+                                        string str = line.substr(index, len);
+                                        CHECK_NOT_EMPTY(str);
+                                        str = string_utils::trim(str);
+                                        if (!is_token_defined(str)) {
+                                            __tokens.insert({str, str});
+                                        }
+                                    }
                                 } else {
                                     string str = string(line);
                                     str = string_utils::trim(str);
@@ -225,6 +293,7 @@ REACTFS_NS_CORE
                             outf << common_utils::format("#ifndef %s\n", CPPT_HEADER_GUARD);
                             outf << common_utils::format("#define %s\n", CPPT_HEADER_GUARD);
                             write_template_class(outf);
+                            write_defines(outf);
                             outf << common_utils::format("#endif // %s\n", CPPT_HEADER_GUARD);
                         }
                     };

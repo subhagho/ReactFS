@@ -247,6 +247,25 @@ REACTFS_NS_COMMON
                         }
                         return input;
                     }
+
+                    static string set_token(const string &token, string &value, string &input) {
+                        uint32_t offset = 0;
+                        stringstream ss;
+                        while (offset < input.length()) {
+                            size_t index = input.find(token, offset);
+                            if (index == string::npos) {
+                                string str = input.substr(offset, input.length());
+                                ss << str;
+                                break;
+                            }
+                            string::size_type len = (index - offset);
+                            string str = input.substr(offset, len);
+                            ss << str;
+                            ss << value;
+                            offset += (index + token.length());
+                        }
+                        return string(ss.str());
+                    }
                 };
 
                 class common_utils {

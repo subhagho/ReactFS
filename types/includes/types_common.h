@@ -193,6 +193,44 @@ REACTFS_NS_CORE
                             return false;
                         }
 
+                        /*!
+                         * Get the string value of the datatype enum.
+                         *
+                         * @param type - Datatype enum.
+                         * @return - String value of the enum.
+                         */
+                        static string get_datatype(__type_def_enum type) {
+                            switch (type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    return "byte";
+                                case __type_def_enum::TYPE_CHAR:
+                                    return "char";
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    return "double";
+                                case __type_def_enum::TYPE_FLOAT:
+                                    return "float";
+                                case __type_def_enum::TYPE_INTEGER:
+                                    return "int";
+                                case __type_def_enum::TYPE_LIST:
+                                    return "vector";
+                                case __type_def_enum::TYPE_LONG:
+                                    return "long";
+                                case __type_def_enum::TYPE_MAP:
+                                    return "unordered_map";
+                                case __type_def_enum::TYPE_SHORT:
+                                    return "short";
+                                case __type_def_enum::TYPE_STRING:
+                                case __type_def_enum::TYPE_TEXT:
+                                    return "CHARBUFF";
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    return "uint64_t";
+                                case __type_def_enum::TYPE_BOOL:
+                                    return "bool";
+                                default:
+                                    return "unkown";
+                            }
+                        }
 
                         /*!
                          * Get the string value of the datatype enum.

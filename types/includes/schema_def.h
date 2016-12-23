@@ -180,6 +180,15 @@ REACTFS_NS_CORE
                         }
 
                         /*!
+                         * Get the field type of this instance.
+                         *
+                         * @return - Field type enum.
+                         */
+                        __field_type get_type() const {
+                            return this->type;
+                        }
+
+                        /*!
                          * Get the datatype of this field.
                          *
                          * @return - Field datatype.
@@ -872,12 +881,16 @@ REACTFS_NS_CORE
                             this->inner = type;
                         }
 
+                        __native_type *get_inner_type() {
+                            return this->inner;
+                        }
+
                         /*!
                          * Get the inner datatype of this list.
                          *
                          * @return - Inner datatype.
                          */
-                        __type_def_enum get_inner_type() {
+                        __type_def_enum get_inner_datatype() {
                             return this->inner_type;
                         }
 
@@ -1007,12 +1020,20 @@ REACTFS_NS_CORE
                             this->value = type;
                         }
 
+                        __native_type *get_key_type() {
+                            return this->key;
+                        }
+
+                        __native_type *get_value_type() {
+                            return this->value;
+                        }
+
                         /*!
                          * Get the datatype of the Map key.
                          *
                          * @return - Key datatype
                          */
-                        __type_def_enum get_key_type() {
+                        __type_def_enum get_key_datatype() {
                             return this->key_type;
                         }
 
@@ -1021,7 +1042,7 @@ REACTFS_NS_CORE
                          *
                          * @return - Value type.
                          */
-                        __type_def_enum get_value_type() {
+                        __type_def_enum get_value_datatype() {
                             return this->value_type;
                         }
 

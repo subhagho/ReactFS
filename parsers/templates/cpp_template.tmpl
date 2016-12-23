@@ -15,6 +15,30 @@
  * limitations under the License.
  *
  */
+%token ${type}
+%token ${name}
+%token ${key_type}
+%token ${value_type}
+%token ${return}
+%token ${v_key}
+%token ${v_value}
+%token ${data_var}
+%token ${set_map_calls}
+%token ${read_map_calls}
+%token ${includes}
+%token ${nested}
+%token ${parent}
+%token ${declarations}
+%token ${private_functions}
+%token ${constructor}
+%token ${destructor}
+%token ${public_functions}
+%token ${header}
+%token ${version}
+%token ${username}
+%token ${date}
+%token ${guard_name}
+%token ${body}
 
 VARIABLE_NATIVE_DEF:
 ${type} *${name} = nullptr;
@@ -82,7 +106,7 @@ void set_${name}(${type} ${name}) {
 
 FUNC_NATIVE_SETTER_DEF:
 void set_${name}(${type} ${name}) {
-    PRECONDITION(${modevar} == true);
+    PRECONDITION(this->__is_allocated == true);
     FREE_PTR(this->${name});
     this->${name} = (${type} *)malloc(sizeof(${type});
     CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
@@ -92,7 +116,7 @@ void set_${name}(${type} ${name}) {
 
 FUNC_STRING_SETTER_DEF:
 void set_${name}(string &${name}) {
-    PRECONDITION(${modevar} == true);
+    PRECONDITION(this->__is_allocated == true);
     FREE_PTR(this->${name});
     if (!IS_EMPTY(${name}) {
         uint32_t __size = name.length() + 1;
@@ -106,7 +130,7 @@ void set_${name}(string &${name}) {
 
 FUNC_LIST_NATIVE_ADD_DEF:
 void add_to_${name}(${type} &${name}) {
-    PRECONDITION(${modevar} == true);
+    PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
         this->${name} = new std::vector<${type} *>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
@@ -120,7 +144,7 @@ void add_to_${name}(${type} &${name}) {
 
 FUNC_LIST_STRING_ADD_DEF:
 void add_to_${name}(string &${name}) {
-    PRECONDITION(${modevar} == true);
+    PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
         this->${name} = new std::vector<${type} *>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
@@ -138,7 +162,7 @@ void add_to_${name}(string &${name}) {
 
 FUNC_LIST_TYPE_ADD_DEF:
 void add_to_${name}(${type} *${name}) {
-    PRECONDITION(${modevar} == true);
+    PRECONDITION(this->__is_allocated == true);
     CHECK_NOT_NULL(${name});
     if (IS_NULL(this->${name})) {
         this->${name} = new std::vector<${type} *>();
@@ -150,7 +174,7 @@ void add_to_${name}(${type} *${name}) {
 
 FUNC_MAP_NATIVE_ADD_DEF:
 void add_to_${name}(${key_type} ${v_key}, ${value_type} &${v_value}) {
-    PRECONDITION(${modevar} == true);
+    PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
         this->${name} = new std::unordered_map<${key_type}, ${value_type} *>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
@@ -164,7 +188,7 @@ void add_to_${name}(${key_type} ${v_key}, ${value_type} &${v_value}) {
 
 FUNC_MAP_NATIVE_TYPE_DEF:
 void add_to_${name}(${key_type} ${v_key}, ${value_type} *${v_value}) {
-    PRECONDITION(${modevar} == true);
+    PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
         this->${name} = new std::unordered_map<${key_type}, ${value_type} *>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
@@ -239,7 +263,7 @@ __struct_datatype__ *serialize() override {
 FUNC_DESERIALIZE:
 void deserialize(__struct_datatype__ *__data) {
     CHECK_NOT_NULL(__data);
-    ${read_map_calls};
+    ${read_map_calls}
 }
 ;;
 
@@ -284,6 +308,19 @@ std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_${name}(std::u
         __i_map->insert({key, rv});
     }
     return __map;
+}
+;;
+
+FUNC_CONSTRUCTOR:
+${name}(bool __is_allocated) {
+    this->__is_allocated = __is_allocated;
+    ${variable_inits}
+}
+;;
+
+FUNC_DESTRUCTOR:
+~${name}() {
+    ${variable_frees}
 }
 ;;
 
