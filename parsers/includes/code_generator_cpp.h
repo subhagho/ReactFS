@@ -66,6 +66,7 @@ REACTFS_NS_CORE
                             unordered_map<uint8_t, __native_type *>::iterator iter;
 
                             stringstream f_declares;
+                            stringstream f_accessors;
 
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
                                 __native_type *t = iter->second;
@@ -74,20 +75,128 @@ REACTFS_NS_CORE
                                     string str = get_native_declare(t);
                                     CHECK_NOT_EMPTY(str);
                                     f_declares << str;
+                                    generate_setter(t, f_accessors, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
+                                    generate_setter(t, f_accessors, CPPT_TOKEN_FUNC_NATIVE_SETTER_DEF);
+                                    generate_getter(t, f_accessors, CPPT_TOKEN_FUNC_GETTER_DEF);
+                                    if (t->get_datatype() == __type_def_enum::TYPE_TEXT ||
+                                        t->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                        generate_setter(t, f_accessors, CPPT_TOKEN_FUNC_STRING_SETTER_DEF);
+                                    }
                                 } else if (t->get_type() == __field_type::LIST) {
                                     string str = get_list_declare(t);
                                     CHECK_NOT_EMPTY(str);
                                     f_declares << str;
+
+                                    __list_type *list = dynamic_cast<__list_type *>(type);
+                                    CHECK_CAST(list, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
+
+                                    __native_type *it = list->get_inner_type();
+                                    CHECK_NOT_NULL(it);
+
+                                    generate_getter(t, f_accessors, CPPT_TOKEN_FUNC_GETTER_DEF);
+                                    generate_setter(t, f_accessors, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
+
+                                    if (it->get_type() == __field_type::NATIVE) {
+                                        generate_setter(it, f_accessors, CPPT_TOKEN_FUNC_LIST_NATIVE_ADD_DEF);
+                                        if (it->get_datatype() == __type_def_enum::TYPE_TEXT ||
+                                            it->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                            generate_setter(it, f_accessors, CPPT_TOKEN_FUNC_LIST_STRING_ADD_DEF);
+                                        }
+                                    } else if (it->get_type() == __field_type::COMPLEX) {
+                                        generate_setter(it, f_accessors, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
+                                    }
+
                                 } else if (t->get_type() == __field_type::MAP) {
                                     string str = get_map_declare(t);
                                     CHECK_NOT_EMPTY(str);
                                     f_declares << str;
+
+                                    __map_type *map = dynamic_cast<__map_type *>(type);
+                                    CHECK_CAST(map, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
+
+                                    __native_type *vt = map->get_value_type();
+                                    CHECK_NOT_NULL(vt);
+
+                                    generate_getter(t, f_accessors, CPPT_TOKEN_FUNC_GETTER_DEF);
+                                    generate_setter(t, f_accessors, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
+
+                                    if (vt->get_type() == __field_type::NATIVE) {
+                                        generate_setter(vt, f_accessors, CPPT_TOKEN_FUNC_MAP_NATIVE_ADD_DEF);
+                                    } else if (vt->get_type() == __field_type::COMPLEX) {
+                                        generate_setter(vt, f_accessors, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
+                                    }
+                                } else if (t->get_type() == __field_type::COMPLEX) {
+                                    generate_getter(t, f_accessors, CPPT_TOKEN_FUNC_GETTER_DEF);
+                                    generate_setter(t, f_accessors, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
+                                    generate_getter(t, f_accessors, CPPT_TOKEN_FUNC_SETTER_TO_MAP);
+                                    generate_setter(t, f_accessors, CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
+                                    generate_type_serializer(t, f_accessors);
+                                    generate_type_deserializer(t, f_accessors);
                                 }
                             }
                         }
 
+                        void generate_type_serializer(__native_type *type, stringstream &stream) {
+                            __complex_type *ct = dynamic_cast<__complex_type *>(type);
+                            CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
+
+
+                        }
+
+                        void generate_type_deserializer(__native_type *type, stringstream &stream) {
+
+                        }
+
+                        void generate_setter(__native_type *type, stringstream &stream, string token) {
+                            vector<string> *ft = template_h.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            string tk_type = CPPT_VARNAME__TYPE;
+                            string tk_name = CPPT_VARNAME__NAME;
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                string dt = __type_enum_helper::get_datatype(type->get_datatype());
+                                CHECK_NOT_EMPTY(dt);
+                                string tn = type->get_name();
+                                CHECK_NOT_EMPTY(tn);
+
+                                str = string_utils::set_token(tk_type, dt, str);
+                                str = string_utils::set_token(tk_name, tn, str);
+
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+                            TRACE("GETTER [%s]", str.c_str());
+                            stream << str;
+                        }
+
+                        void generate_getter(__native_type *type, stringstream &stream, string token) {
+                            vector<string> *ft = template_h.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            string tk_type = CPPT_VARNAME__TYPE;
+                            string tk_name = CPPT_VARNAME__NAME;
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                string dt = __type_enum_helper::get_datatype(type->get_datatype());
+                                CHECK_NOT_EMPTY(dt);
+                                string tn = type->get_name();
+                                CHECK_NOT_EMPTY(tn);
+
+                                str = string_utils::set_token(tk_type, dt, str);
+                                str = string_utils::set_token(tk_name, tn, str);
+
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+                            TRACE("GETTER [%s]", str.c_str());
+                            stream << str;
+                        }
+
                         string get_list_declare(__native_type *type) {
                             __list_type *list = dynamic_cast<__list_type *>(type);
+                            CHECK_CAST(list, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
+
                             __native_type *t = list->get_inner_type();
                             CHECK_NOT_NULL(t);
                             vector<string> *ft = template_h.find_token(CPPT_TOKEN_VARIABLE_LIST_DEF);
@@ -114,6 +223,8 @@ REACTFS_NS_CORE
 
                         string get_map_declare(__native_type *type) {
                             __map_type *map = dynamic_cast<__map_type *>(type);
+                            CHECK_CAST(map, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
+
                             __native_type *kt = map->get_key_type();
                             CHECK_NOT_NULL(kt);
                             __native_type *vt = map->get_value_type();

@@ -191,7 +191,7 @@ void add_to_${name}(${key_type} ${v_key}, ${value_type} &${v_value}) {
 }
 ;;
 
-FUNC_MAP_NATIVE_TYPE_DEF:
+FUNC_MAP_TYPE_ADD_DEF:
 void add_to_${name}(${key_type} ${v_key}, ${value_type} *${v_value}) {
     PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
@@ -213,8 +213,16 @@ void set_value_${name}(__struct_datatype__ *__data) {
                     ${type} *__var = static_cast<${type} *>(__ptr);
                     CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));
                     this->${name} = __var;
+                } else if (this->is_map("${type}")) {
+                    ${type} *__var = deserialze_map_${type}(__ptr);
+                    CHECK_NOT_NULL(__var);
+                    this->${name} = __var;
+                } else if (this->is_list("${type}")) {
+                    ${type} *__var = deserialze_list_${type}(__ptr);
+                    CHECK_NOT_NULL(__var);
+                    this->${name} = __var;
                 } else {
-                    ${type} *__var = deserialze_${name}(__ptr);
+                    ${type} *__var = deserialze_${type}(__ptr);
                     CHECK_NOT_NULL(__var);
                     this->${name} = __var;
                 }
@@ -250,11 +258,8 @@ void set_map_${name}(__struct_datatype__ *__data) {
 ;;
 
 CALL_SETTER_FROM_MAP:
-this->set_value_${name}(${data_var});
+this->set_value_${name}(void * __data);
 ;;
-
-CALL_SETTER_TO_MAP:
-this->set_map_${name}(${data_var});
 
 FUNC_SERIALIZE:
 __struct_datatype__ *serialize() override {
@@ -275,15 +280,26 @@ void deserialize(__struct_datatype__ *__data) {
 FUNC_TYPE_SERIALIZER:
 void *serialize_${type}(${type} *__value) {
     CHECK_NOT_NULL(__value);
-    __struct_datatype__ *__data = new __struct_datatype__();
-    CHECK_ALLOC(__data, TYPE_NAME(__struct_datatype__));
-    ${set_map_calls}
+    __struct_datatype__ *__data = __value->serialize();
+    CHECK_NOT_NULL(__data);
+    return __data;
+}
+;;
+
+FUNC_TYPE_DESERIALIZER:
+${type} *deserialize_${type}(void *__input) {
+    CHECK_NOT_NULL(__input);
+    __struct_datatype__ *__value = (__struct_datatype__ *)__input;
+    CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(__struct_datatype__));
+    ${type} *__data = new ${type}(false);
+    CHECK_ALLOC(__data, TYPE_NAME(${type}));
+    __data->deserialize(__value);
     return __data;
 }
 ;;
 
 FUNC_TYPE_LIST_SERIALIZER:
-std::vector<__struct_datatype__ *> *serialize_${name}(std::vector<${type} *> *__value) {
+std::vector<__struct_datatype__ *> *serialize_list_${type}(std::vector<${type} *> *__value) {
     CHECK_NOT_EMPTY_P(__value);
     std::vector<__struct_datatype__ *> *__list = new std::vector<__struct_datatype__ *>();
     CHECK_ALLOC(__list, TYPE_NAME(vector));
@@ -297,8 +313,21 @@ std::vector<__struct_datatype__ *> *serialize_${name}(std::vector<${type} *> *__
 }
 ;;
 
+FUNC_TYPE_LIST_SERIALIZER:
+std::vector<${type} *> *deserialize_list_${type}(void *__input) {
+	CHECK_NOT_NULL(__input);
+	std::vector<__struct_datatype__ *> *__value = (std::vector<__struct_datatype__ *> *) __input;
+	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(vector));
+
+	std::vector<${type} *> *__list = new std::vector<${type} *>();
+	CHECK_ALLOC(__list, TYPE_NAME(vector));
+	
+	
+}
+;;
+
 FUNC_TYPE_MAP_SERIALIZER:
-std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_${name}(std::unordered_map<${key_type}, ${value_type} *> *__i_map) {
+std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${type}(std::unordered_map<${key_type}, ${value_type} *> *__i_map) {
     CHECK_NOT_EMPTY_P(map);
     std::unordered_map<${key_type}, __struct_datatype__ *> *__map = new std::unordered_map<${key_type}, __struct_datatype__ *>();
     CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
