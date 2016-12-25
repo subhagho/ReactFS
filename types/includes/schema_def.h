@@ -469,6 +469,10 @@ REACTFS_NS_CORE
                             return this->name;
                         }
 
+                        virtual string get_type_name() const {
+                            return __type_enum_helper::get_datatype(this->datatype);
+                        }
+
                         /*!
                          * Utility function to print a readable format of the type structure.
                          */
@@ -761,6 +765,10 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        virtual string get_type_name() const override {
+                            return this->name;
+                        }
+
                         virtual void get_field_index(unordered_map<string, __native_type *> *map) override {
                             unordered_map<uint8_t, __native_type *>::iterator iter;
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
@@ -967,6 +975,12 @@ REACTFS_NS_CORE
                         virtual void get_field_index(unordered_map<string, __native_type *> *map) override {
                             this->inner->get_field_index(map);
                         }
+
+                        virtual string get_type_name() const override {
+                            CHECK_NOT_NULL(inner);
+                            string it = inner->get_type_name();
+                            return common_utils::format("vector<%s *>", it.c_str());
+                        }
                     };
 
                     class __map_type : public __native_type {
@@ -1104,6 +1118,15 @@ REACTFS_NS_CORE
                         virtual void get_field_index(unordered_map<string, __native_type *> *map) override {
                             this->key->get_field_index(map);
                             this->value->get_field_index(map);
+                        }
+
+                        virtual string get_type_name() const override {
+                            CHECK_NOT_NULL(this->key);
+                            CHECK_NOT_NULL(this->value);
+                            string kt = this->key->get_type_name();
+                            string vt = this->value->get_type_name();
+
+                            return common_utils::format("unordered_map<%s, %s *>", kt.c_str(), vt.c_str());
                         }
                     };
 

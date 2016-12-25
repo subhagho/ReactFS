@@ -39,8 +39,6 @@
 %token ${date}
 %token ${guard_name}
 %token ${body}
-%token ${value}
-%token ${key}
 %token ${variable_inits}
 %token ${variable_frees}
 %token ${schema_name}
@@ -70,14 +68,14 @@ CHECK_AND_FREE(this->${name});
 ;;
 
 VARIABLE_LIST_NATIVE_FREE:
-for(auto elem : this->${name}) {
+for(auto elem : *this->${name}) {
     FREE_PTR(elem);
 }
 CHECK_AND_FREE(this->${name});
 ;;
 
 VARIABLE_LIST_TYPE_FREE:
-for(auto elem : this->${name}) {
+for(auto elem : *this->${name}) {
     CHECK_AND_FREE(elem);
 }
 CHECK_AND_FREE(this->${name});
@@ -186,8 +184,8 @@ void add_to_${name}(${key_type} ${v_key}, ${value_type} &${v_value}) {
     }
     ${value_type} *__var = (${value_type} *)malloc(sizeof(${value_type}));
     CHECK_ALLOC(__var, TYPE_NAME(${value_type}));
-    *__var = ${value};
-    this->${name}->insert(${key}, __var});
+    *__var = ${v_value};
+    this->${name}->insert(${v_key}, __var});
 }
 ;;
 
@@ -198,7 +196,7 @@ void add_to_${name}(${key_type} ${v_key}, ${value_type} *${v_value}) {
         this->${name} = new std::unordered_map<${key_type}, ${value_type} *>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
     }
-    his->${name}->insert(${key}, ${value}});
+    this->${name}->insert(${v_key}, ${v_value}});
 }
 ;;
 
@@ -209,23 +207,7 @@ void set_value_${name}(__struct_datatype__ *__data) {
         if (iter != __data->end()) {
             void *__ptr = iter->second;
             if (NOT_NULL(__ptr)) {
-                if (this->is_native("${type}")) {
-                    ${type} *__var = static_cast<${type} *>(__ptr);
-                    CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));
-                    this->${name} = __var;
-                } else if (this->is_map("${type}")) {
-                    ${type} *__var = deserialze_map_${type}(__ptr);
-                    CHECK_NOT_NULL(__var);
-                    this->${name} = __var;
-                } else if (this->is_list("${type}")) {
-                    ${type} *__var = deserialze_list_${type}(__ptr);
-                    CHECK_NOT_NULL(__var);
-                    this->${name} = __var;
-                } else {
-                    ${type} *__var = deserialze_${type}(__ptr);
-                    CHECK_NOT_NULL(__var);
-                    this->${name} = __var;
-                }
+		${read_map_calls}
             } else {
                 this->${name} = nullptr;
             }
@@ -238,23 +220,59 @@ void set_value_${name}(__struct_datatype__ *__data) {
 }
 ;;
 
+CALL_NATIVE_SETTER_FROM_MAP:
+${type} *__var = static_cast<${type} *>(__ptr);
+CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));
+this->${name} = __var;
+;;
+
+CALL_LIST_SETTER_FROM_MAP:
+${type} *__var = deserialze_list_${type}(__ptr);
+CHECK_NOT_NULL(__var);
+this->${name} = __var;
+;;
+
+CALL_MAP_SETTER_FROM_MAP:
+${type} *__var = deserialze_map_${type}(__ptr);
+CHECK_NOT_NULL(__var);
+this->${name} = __var;
+;;
+
+CALL_TYPE_SETTER_FROM_MAP:
+${type} *__var = deserialze_${type}(__ptr);
+CHECK_NOT_NULL(__var);
+this->${name} = __var;
+;;
+
 FUNC_SETTER_TO_MAP:
 void set_map_${name}(__struct_datatype__ *__data) {
     CHECK_NOT_NULL(__data);
     if (NOT_NULL(this->${name})) {
-        if (this->is_native("${type}")) {
-            __data->insert({"${name}", this->${name}});
-        } else if (this->is_list("${type}") || this->is_map("${type}")) {
-            void *__ptr = serialize_${type}(this->${name});
-            CHECK_NOT_NULL(__ptr);
-            __data->insert({"${name}", __ptr});
-        } else {
-            void *__ptr = serialize_${type}(this->${name});
-            CHECK_NOT_NULL(__ptr);
-            __data->insert({"${name}", __ptr});
-        }
+	${set_map_calls}	
     }
 }
+;;
+
+CALL_NATIVE_SETTER_TO_MAP:
+__data->insert({"${name}", this->${name}});
+;;
+
+CALL_TYPE_SETTER_TO_MAP:
+void *__ptr = serialize_${type}(this->${name});
+CHECK_NOT_NULL(__ptr);
+__data->insert({"${name}", __ptr});
+;;
+
+CALL_LIST_SETTER_TO_MAP:
+void *__ptr = serialize_list_${type}(this->${name});
+CHECK_NOT_NULL(__ptr);
+__data->insert({"${name}", __ptr});
+;;
+
+CALL_MAP_SETTER_TO_MAP:
+void *__ptr = serialize_map_${type}(this->${name});
+CHECK_NOT_NULL(__ptr);
+__data->insert({"${name}", __ptr});
 ;;
 
 CALL_SETTER_FROM_MAP:
@@ -313,7 +331,7 @@ std::vector<__struct_datatype__ *> *serialize_list_${type}(std::vector<${type} *
 }
 ;;
 
-FUNC_TYPE_LIST_SERIALIZER:
+FUNC_TYPE_LIST_DESERIALIZER:
 std::vector<${type} *> *deserialize_list_${type}(void *__input) {
 	CHECK_NOT_NULL(__input);
 	std::vector<__struct_datatype__ *> *__value = (std::vector<__struct_datatype__ *> *) __input;
@@ -321,8 +339,13 @@ std::vector<${type} *> *deserialize_list_${type}(void *__input) {
 
 	std::vector<${type} *> *__list = new std::vector<${type} *>();
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
-	
-	
+	for( __struct_datatype__ *v : *__value) {
+		CHECK_NOT_NULL(v);
+		${type} *__tv = deserialize_${type}(v);
+		CHECK_NOT_NULL(__tv);
+		__list->push_back(__tv);
+	}
+	return __list;
 }
 ;;
 
@@ -342,6 +365,25 @@ std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${type}(st
         __i_map->insert({key, rv});
     }
     return __map;
+}
+;;
+
+FUNC_TYPE_MAP_DESERIALIZER:
+std::unordered_map<${key_type}, ${value_type} *> *deserialize_map_${type}(void *__input) {
+	CHECK_NOT_NULL(__input);
+	std::unordered_map<${key_type}, __struct_datatype__ *> *__value = (std::unordered_map<${key_type}, __struct_datatype__ *>) __input;
+	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(unordered_map));
+	
+	std::unordered_map<${key_type}, ${value_type} *> __map = new std::unordered_map<${key_type}, ${value_type} *>();
+	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
+
+	std::unordered_map<${key_type}, __struct_datatype__ *>::iterator iter;
+	for (iter = __value->begin(); iter != __value->end(); iter++) {
+		${value_type} *__tv = deserialize_${value_type}(iter->second);
+		CHECK_NOT_NULL(__tv);
+		__map->insert({iter->first, __tv});
+	}
+	return __map;
 }
 ;;
 

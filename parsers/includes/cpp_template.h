@@ -61,7 +61,7 @@ REACTFS_NS_CORE
                                 string token = input.substr(index, len);
                                 CHECK_NOT_EMPTY(token);
                                 if (!is_token_defined(token)) {
-                                    throw BASE_ERROR("Missing token defnition. [token=%s]", token.c_str());
+                                    throw BASE_ERROR("Missing token definition. [token=%s]", token.c_str());
                                 }
                                 *offset = endi + 1;
                                 return token;

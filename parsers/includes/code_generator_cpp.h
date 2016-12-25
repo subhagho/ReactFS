@@ -62,6 +62,7 @@ REACTFS_NS_CORE
                                     return p.get_path();
                                 }
                             }
+                            unordered_map<string, bool> processed;
                             unordered_map<uint8_t, __native_type *> fields = type->get_fields();
                             unordered_map<uint8_t, __native_type *>::iterator iter;
 
@@ -104,6 +105,13 @@ REACTFS_NS_CORE
                                         }
                                     } else if (it->get_type() == __field_type::COMPLEX) {
                                         generate_setter(it, f_accessors, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
+                                        string tn = t->get_type_name();
+                                        CHECK_NOT_EMPTY(tn);
+                                        unordered_map<string, bool>::iterator iter = processed.find(tn);
+                                        if (iter == processed.end()) {
+                                            generate_type_serializer(t, f_accessors);
+                                            generate_type_deserializer(t, f_accessors);
+                                        }
                                     }
 
                                 } else if (t->get_type() == __field_type::MAP) {
@@ -124,27 +132,81 @@ REACTFS_NS_CORE
                                         generate_setter(vt, f_accessors, CPPT_TOKEN_FUNC_MAP_NATIVE_ADD_DEF);
                                     } else if (vt->get_type() == __field_type::COMPLEX) {
                                         generate_setter(vt, f_accessors, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
+                                        string tn = t->get_type_name();
+                                        CHECK_NOT_EMPTY(tn);
+                                        unordered_map<string, bool>::iterator iter = processed.find(tn);
+                                        if (iter == processed.end()) {
+                                            generate_type_serializer(t, f_accessors);
+                                            generate_type_deserializer(t, f_accessors);
+                                        }
                                     }
                                 } else if (t->get_type() == __field_type::COMPLEX) {
                                     generate_getter(t, f_accessors, CPPT_TOKEN_FUNC_GETTER_DEF);
                                     generate_setter(t, f_accessors, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
-                                    generate_getter(t, f_accessors, CPPT_TOKEN_FUNC_SETTER_TO_MAP);
-                                    generate_setter(t, f_accessors, CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
-                                    generate_type_serializer(t, f_accessors);
-                                    generate_type_deserializer(t, f_accessors);
+                                    string tn = t->get_type_name();
+                                    CHECK_NOT_EMPTY(tn);
+                                    unordered_map<string, bool>::iterator iter = processed.find(tn);
+                                    if (iter == processed.end()) {
+                                        generate_type_serializer(t, f_accessors);
+                                        generate_type_deserializer(t, f_accessors);
+                                    }
                                 }
                             }
+                        }
+
+                        string generate_class_def(__complex_type *type) {
+                            vector<string> *ft = template_h.find_token(CPPT_TOKEN_FILE_DEF);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            stringstream header;
                         }
 
                         void generate_type_serializer(__native_type *type, stringstream &stream) {
                             __complex_type *ct = dynamic_cast<__complex_type *>(type);
                             CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
 
+                            vector<string> *ft = template_h.find_token(CPPT_TOKEN_FUNC_TYPE_SERIALIZER);
+                            CHECK_NOT_EMPTY_P(ft);
+                            string tk_type = CPPT_VARNAME__TYPE;
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                string dt = __type_enum_helper::get_datatype(type->get_datatype());
+                                CHECK_NOT_EMPTY(dt);
+                                string tn = type->get_name();
+                                CHECK_NOT_EMPTY(tn);
 
+                                str = string_utils::set_token(tk_type, dt, str);
+
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+                            TRACE("GETTER [%s]", str.c_str());
+                            stream << str;
                         }
 
                         void generate_type_deserializer(__native_type *type, stringstream &stream) {
+                            __complex_type *ct = dynamic_cast<__complex_type *>(type);
+                            CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
 
+                            vector<string> *ft = template_h.find_token(CPPT_TOKEN_FUNC_TYPE_DESERIALIZER);
+                            CHECK_NOT_EMPTY_P(ft);
+                            string tk_type = CPPT_VARNAME__TYPE;
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                string dt = __type_enum_helper::get_datatype(type->get_datatype());
+                                CHECK_NOT_EMPTY(dt);
+                                string tn = type->get_name();
+                                CHECK_NOT_EMPTY(tn);
+
+                                str = string_utils::set_token(tk_type, dt, str);
+
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+                            TRACE("GETTER [%s]", str.c_str());
+                            stream << str;
                         }
 
                         void generate_setter(__native_type *type, stringstream &stream, string token) {
