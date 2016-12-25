@@ -560,6 +560,16 @@ REACTFS_NS_COMMON
                         }
                         return ~crc;
                     }
+
+                    static string get_username() {
+                        char buff[128];
+                        memset(buff, 0, 128);
+                        int r = getlogin_r(buff, 127);
+                        if (r != 0) {
+                            return common_consts::EMPTY_STRING;
+                        }
+                        return string(buff);
+                    }
                 };
 
                 class temp_buffer {
