@@ -27,7 +27,7 @@ REACTFS_NS_CORE
                         stringstream declare_s;
                         stringstream pr_methods_s;
                         stringstream pu_methods_s;
-                        vector<string> headers;
+                        unordered_map<string, string> headers;
 
                         string get_file_header(const string &classname, const string &schema_name,
                                                __version_header &version) {
@@ -114,12 +114,92 @@ REACTFS_NS_CORE
                             this->class_str = string(vs);
                         }
 
+                        string get_namespace(string &ns) {
+                            stringstream stream;
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_NAMESPACE);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            for (string ss : *ft) {
+                                stream << ss << "\n";
+                            }
+                            string tk = CPPT_TOKEN_DEF_NAME;
+                            string str = string(stream.str());
+                            str = string_utils::set_token(tk, ns, str);
+
+                            return str;
+                        }
+
+                        string get_namespace() {
+                            CHECK_NOT_EMPTY(this->name_space);
+                            vector<string> parts;
+                            string_utils::split(this->name_space, '.', &parts);
+                            CHECK_NOT_EMPTY(parts);
+
+                            string prev;
+                            for (uint8_t ii = parts.size() - 1; ii >= 0; ii--) {
+                                string ns = parts[ii];
+                                CHECK_NOT_EMPTY(ns);
+                                string n_str = get_namespace(ns);
+                                CHECK_NOT_EMPTY(n_str);
+                                if (!IS_EMPTY(prev)) {
+                                    string tk = CPPT_TOKEN_DEF_NESTED;
+                                    n_str = string_utils::set_token(tk, prev, n_str);
+                                    prev = n_str;
+                                } else {
+                                    prev = n_str;
+                                }
+                            }
+                            return prev;
+                        }
+
+                        string get_class_def() {
+                            string declares = declare_s.str();
+                            string pr_methods = pr_methods_s.str();
+                            string pu_methods = pu_methods_s.str();
+
+                            if (!IS_EMPTY(declares)) {
+                                string tk_declare = CPPT_TOKEN_DEF_DECLARATIONS;
+                                CHECK_NOT_EMPTY(tk_declare);
+
+                                this->class_str = string_utils::set_token(tk_declare, declares, this->class_str);
+                            }
+
+                            if (!IS_EMPTY(pr_methods)) {
+                                string tk_prm = CPPT_TOKEN_DEF_PRIVATE_FUNCTIONS;
+                                CHECK_NOT_EMPTY(tk_prm);
+
+                                this->class_str = string_utils::set_token(tk_prm, pr_methods, this->class_str);
+                            }
+
+                            if (!IS_EMPTY(pu_methods)) {
+                                string tk_pum = CPPT_TOKEN_DEF_PUBLIC_FUNCTIONS;
+                                CHECK_NOT_EMPTY(tk_pum);
+
+                                this->class_str = string_utils::set_token(tk_pum, pu_methods, this->class_str);
+                            }
+
+                            if (!IS_EMPTY(this->name_space)) {
+                                string nstr = get_namespace();
+                                CHECK_NOT_EMPTY(nstr);
+
+                                string tk = CPPT_TOKEN_DEF_NESTED;
+                                CHECK_NOT_EMPTY(tk);
+                                nstr = string_utils::set_token(tk, this->class_str, nstr);
+                                return nstr;
+                            }
+                            return this->class_str;
+                        }
+
                     public:
                         cpp_file_template(const string &classname, const string &schema_name, const string &name_space,
                                           __version_header &version) {
                             this->init_file_template(classname, schema_name, version);
                             this->init_class_template();
                             this->name_space = string(name_space);
+                        }
+
+                        string get_class_name() {
+                            return this->classname;
                         }
 
                         void add_declare(const string &declare) {
@@ -138,7 +218,7 @@ REACTFS_NS_CORE
                         }
 
                         void add_header(const string &header) {
-                            this->headers.push_back(header);
+                            this->headers.insert({header, header});
                         }
 
                         void generate_setter(__native_type *type, string token) {
@@ -213,7 +293,7 @@ REACTFS_NS_CORE
                             str = string_utils::set_token(tk_name, tn, str);
                             TRACE("DECLARE [%s]", str.c_str());
 
-                            declare_s << str << "\n";
+                            add_declare(str);
                             return str;
                         }
 
@@ -249,7 +329,7 @@ REACTFS_NS_CORE
                             str = string_utils::set_token(tk_name, tn, str);
 
                             TRACE("DECLARE [%s]", str.c_str());
-                            declare_s << str << "\n";
+                            add_declare(str);
                             return str;
                         }
 
@@ -273,7 +353,7 @@ REACTFS_NS_CORE
                             str = string_utils::set_token(tk_name, tn, str);
 
                             TRACE("DECLARE [%s]", str.c_str());
-                            declare_s << str << "\n";
+                            add_declare(str);
                             return str;
                         }
 
@@ -327,14 +407,39 @@ REACTFS_NS_CORE
                         }
 
                         string finish() {
+                            string includes;
                             if (!IS_EMPTY(headers)) {
                                 stringstream buff;
-                                for (string h : headers) {
-                                    buff << "#include \"" << h << "\"\n";
+                                unordered_map<string, string>::iterator iter;
+                                for (iter = headers.begin(); iter != headers.end(); iter++) {
+                                    buff << "#include \"" << iter->second << "\"\n";
                                 }
-                                string tk_header = CPPT_TOKEN_INCLUDE_BASE;
 
+                                includes = string(buff.str());
                             }
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_INCLUDE_BASE);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            string tk_includes = CPPT_TOKEN_DEF_INCLUDES;
+                            CHECK_NOT_EMPTY(tk_includes);
+
+                            stringstream ibuff;
+                            for (string str : *ft) {
+                                ibuff << str << "\n";
+                            }
+                            string header = string(ibuff.str());
+                            header = string_utils::set_token(tk_includes, includes, header);
+
+                            this->file_str = string_utils::set_token(tk_includes, header, this->file_str);
+
+                            string body = get_class_def();
+                            CHECK_NOT_EMPTY(body);
+
+                            string tk_body = CPPT_TOKEN_DEF_BODY;
+                            CHECK_NOT_EMPTY(tk_body);
+                            this->file_str = string_utils::set_token(tk_body, body, this->file_str);
+
+                            return this->file_str;
                         }
                     };
                 }

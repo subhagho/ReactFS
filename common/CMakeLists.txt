@@ -46,8 +46,6 @@ find_package(Threads)
 add_library(catch INTERFACE)
 target_include_directories(catch INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-MESSAGE("Using libraries : [" ${RFS_COMMON_LIBS} "]")
-
 add_executable(test_config test/test_config.cpp)
 target_link_libraries(test_config ${CMAKE_THREAD_LIBS_INIT} ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
 add_test(NAME test_config COMMAND test_config)

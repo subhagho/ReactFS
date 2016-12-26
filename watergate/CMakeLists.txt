@@ -39,8 +39,6 @@ target_link_libraries(main_lock_table ${RFS_WGATE_LIBS})
 find_package(Threads)
 
 LINK_DIRECTORIES(${EXT_LINK_DIRS} ${RFS_BUILD_COMMON})
-MESSAGE("Using libraries : [" ${RFS_BUILD_COMMON} "]")
-
 
 add_executable(test_sem_lock test/test_sem_lock.cpp)
 target_link_libraries(test_sem_lock watergate ${CMAKE_THREAD_LIBS_INIT} ${RFS_WGATE_LIBS})

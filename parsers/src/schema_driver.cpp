@@ -274,6 +274,13 @@ void com::wookler::reactfs::core::parsers::schema_driver::set_namespace(const st
     this->name_space = new string(names);
 }
 
+string com::wookler::reactfs::core::parsers::schema_driver::get_namespace() {
+    if (NOT_EMPTY_P(this->name_space)) {
+        return *(this->name_space);
+    }
+    return common_consts::EMPTY_STRING;
+}
+
 void com::wookler::reactfs::core::parsers::schema_driver::set_primary_key(const string &keys) {
     CHECK_NOT_EMPTY(keys);
     CHECK_NOT_NULL(schema_stack);

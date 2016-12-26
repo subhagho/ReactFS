@@ -4,6 +4,7 @@
 
 #include "common/includes/init_utils.h"
 #include "schema_driver.h"
+#include "code_generator_cpp.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 

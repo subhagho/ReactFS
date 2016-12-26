@@ -19,7 +19,7 @@ list(REMOVE_DUPLICATES RFS_C_SOURCES)
 
 MESSAGE("SOURCE FILES : [" ${RFS_C_SOURCES} "]")
 
-MESSAGE("Using libraries : #" ${RFS_COMMON_LIBS} "#")
+MESSAGE("Using libraries : [" ${RFS_COMMON_LIBS} "]")
 
 add_library(${TYPES_LIB_NAME} SHARED ${RFS_C_INCLUDES} ${RFS_C_SOURCES})
 target_link_libraries(${TYPES_LIB_NAME} ${RFS_COMMON_LIBS})

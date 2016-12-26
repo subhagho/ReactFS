@@ -57,6 +57,7 @@ int main(int argc, const char **argv) {
         generator.read_template(tempfile);
         generator.write_template_header(outdir);
 
+
         env_utils::dispose();
     } catch (const exception &e) {
         LOG_ERROR("Error occurred. [error=%s]", e.what());

@@ -718,6 +718,8 @@ REACTFS_NS_CORE
 
                         void set_namespace(const string &names);
 
+                        string get_namespace();
+
                         /**
                         * parse - parse from a file
                         * @param filename - valid string with input file

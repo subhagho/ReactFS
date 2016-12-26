@@ -570,6 +570,27 @@ REACTFS_NS_COMMON
                         }
                         return string(buff);
                     }
+
+
+                    static __version_header *parse_version(const string &str) {
+                        __version_header *v = (__version_header *) malloc(sizeof(__version_header));
+                        if (IS_NULL(v)) {
+                            return nullptr;
+                        }
+                        if (!IS_EMPTY(str)) {
+                            string parts[2];
+                            parts[0] = "0";
+                            parts[1] = "0";
+
+                            string_utils::split(str, '.', parts, 2);
+                            int min_v = std::stoi(parts[1]);
+                            int max_v = std::stoi(parts[0]);
+
+                            v->major = (uint16_t) max_v;
+                            v->minor = (uint16_t) min_v;
+                        }
+                        return v;
+                    }
                 };
 
                 class temp_buffer {

@@ -11,6 +11,8 @@
 #include "cpp_template_defs.h"
 #include "cpp_file_template.h"
 
+#define CPPT_CODE_TYPE "cpp"
+
 using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
@@ -71,11 +73,10 @@ REACTFS_NS_CORE
                             unordered_map<uint8_t, __native_type *> fields = type->get_fields();
                             unordered_map<uint8_t, __native_type *>::iterator iter;
 
-
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
                                 __native_type *t = iter->second;
                                 CHECK_NOT_NULL(t);
-                                if (t->get_type() == __field_type::NATIVE || t->get_type() == __field_type::COMPLEX) {
+                                if (t->get_type() == __field_type::NATIVE) {
                                     string str = cpp_template.get_native_declare(t);
                                     CHECK_NOT_EMPTY(str);
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
@@ -113,6 +114,9 @@ REACTFS_NS_CORE
                                             cpp_template.generate_type_serializer(t);
                                             cpp_template.generate_type_deserializer(t);
                                         }
+                                        string header = get_generated_header(it->get_name());
+                                        CHECK_NOT_EMPTY(header);
+                                        cpp_template.add_header(header);
                                     }
 
                                 } else if (t->get_type() == __field_type::MAP) {
@@ -139,6 +143,9 @@ REACTFS_NS_CORE
                                             cpp_template.generate_type_serializer(t);
                                             cpp_template.generate_type_deserializer(t);
                                         }
+                                        string header = get_generated_header(vt->get_name());
+                                        CHECK_NOT_EMPTY(header);
+                                        cpp_template.add_header(header);
                                     }
                                 } else if (t->get_type() == __field_type::COMPLEX) {
                                     cpp_template.generate_getter(t, CPPT_TOKEN_FUNC_GETTER_DEF);
@@ -150,9 +157,19 @@ REACTFS_NS_CORE
                                         cpp_template.generate_type_serializer(t);
                                         cpp_template.generate_type_deserializer(t);
                                     }
+                                    string header = get_generated_header(t->get_name());
+                                    CHECK_NOT_EMPTY(header);
+                                    cpp_template.add_header(header);
                                 }
                             }
-                            cpp_template.add_header(filename);
+                            string str = cpp_template.finish();
+                            CHECK_NOT_EMPTY(str);
+
+                            fstream outfs(p.get_path());
+                            outfs << str << "\n";
+
+                            LOG_DEBUG("Written header file for class. [class=%s][file=%s]",
+                                      cpp_template.get_class_name().c_str(), p.get_path().c_str());
                             return filename;
                         }
 
