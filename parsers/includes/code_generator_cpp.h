@@ -112,16 +112,27 @@ REACTFS_NS_CORE
                                         }
                                     } else if (it->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
-                                        string tn = t->get_type_name();
+                                        string tn = it->get_type_name();
                                         CHECK_NOT_EMPTY(tn);
                                         unordered_map<string, bool>::iterator iter = processed.find(tn);
                                         if (iter == processed.end()) {
                                             cpp_template.generate_type_serializer(it);
                                             cpp_template.generate_type_deserializer(it);
+                                            processed.insert({tn, true});
                                         }
                                         string header = get_generated_header(it->get_name());
                                         CHECK_NOT_EMPTY(header);
                                         cpp_template.add_header(header);
+
+                                        tn = t->get_type_name();
+                                        iter = processed.find(tn);
+                                        if (iter == processed.end()) {
+                                            cpp_template.generate_list_serde(list,
+                                                                             CPPT_TOKEN_FUNC_TYPE_LIST_SERIALIZER);
+                                            cpp_template.generate_list_serde(list,
+                                                                             CPPT_TOKEN_FUNC_TYPE_LIST_DESERIALIZER);
+                                            processed.insert({tn, true});
+                                        }
                                     }
 
                                 } else if (t->get_type() == __field_type::MAP) {
@@ -146,16 +157,26 @@ REACTFS_NS_CORE
                                         }
                                     } else if (vt->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
-                                        string tn = t->get_type_name();
+                                        string tn = vt->get_type_name();
                                         CHECK_NOT_EMPTY(tn);
                                         unordered_map<string, bool>::iterator iter = processed.find(tn);
                                         if (iter == processed.end()) {
                                             cpp_template.generate_type_serializer(vt);
                                             cpp_template.generate_type_deserializer(vt);
+                                            processed.insert({tn, true});
                                         }
                                         string header = get_generated_header(vt->get_name());
                                         CHECK_NOT_EMPTY(header);
                                         cpp_template.add_header(header);
+                                        tn = t->get_type_name();
+                                        iter = processed.find(tn);
+                                        if (iter == processed.end()) {
+                                            cpp_template.generate_map_serde(map,
+                                                                             CPPT_TOKEN_FUNC_TYPE_MAP_SERIALIZER);
+                                            cpp_template.generate_map_serde(map,
+                                                                             CPPT_TOKEN_FUNC_TYPE_MAP_DESERIALIZER);
+                                            processed.insert({tn, true});
+                                        }
                                     }
                                 } else if (t->get_type() == __field_type::COMPLEX) {
                                     string str = cpp_template.get_declare(t);
@@ -169,6 +190,7 @@ REACTFS_NS_CORE
                                     if (iter == processed.end()) {
                                         cpp_template.generate_type_serializer(t);
                                         cpp_template.generate_type_deserializer(t);
+                                        processed.insert({tn, true});
                                     }
                                     string header = get_generated_header(t->get_name());
                                     CHECK_NOT_EMPTY(header);

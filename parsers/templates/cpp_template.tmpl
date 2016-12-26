@@ -326,11 +326,11 @@ ${type} *deserialize_${name}(void *__input) {
 ;;
 
 FUNC_TYPE_LIST_SERIALIZER:
-std::vector<__struct_datatype__ *> *serialize_list_${name}(std::vector<${type} *> *__value) {
+std::vector<__struct_datatype__ *> *serialize_list_${name}(std::vector<${type_ptr}> *__value) {
     CHECK_NOT_EMPTY_P(__value);
     std::vector<__struct_datatype__ *> *__list = new std::vector<__struct_datatype__ *>();
     CHECK_ALLOC(__list, TYPE_NAME(vector));
-    for (${type} *rec : *(__value)) {
+    for (${type_ptr} rec : *(__value)) {
         CHECK_NOT_NULL(rec);
         __struct_datatype__ *rv = this->serialize_${type}(rec);
         CHECK_NOT_NULL(rv);
@@ -341,16 +341,16 @@ std::vector<__struct_datatype__ *> *serialize_list_${name}(std::vector<${type} *
 ;;
 
 FUNC_TYPE_LIST_DESERIALIZER:
-std::vector<${type} *> *deserialize_list_${name}(void *__input) {
+std::vector<${type_ptr}> *deserialize_list_${name}(void *__input) {
 	CHECK_NOT_NULL(__input);
 	std::vector<__struct_datatype__ *> *__value = (std::vector<__struct_datatype__ *> *) __input;
 	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(vector));
 
-	std::vector<${type} *> *__list = new std::vector<${type} *>();
+	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
 	for( __struct_datatype__ *v : *__value) {
 		CHECK_NOT_NULL(v);
-		${type} *__tv = deserialize_${type}(v);
+		${type_ptr} __tv = deserialize_${type}(v);
 		CHECK_NOT_NULL(__tv);
 		__list->push_back(__tv);
 	}
@@ -359,15 +359,15 @@ std::vector<${type} *> *deserialize_list_${name}(void *__input) {
 ;;
 
 FUNC_TYPE_MAP_SERIALIZER:
-std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${name}(std::unordered_map<${key_type}, ${value_type} *> *__i_map) {
+std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${name}(std::unordered_map<${key_type}, ${value_type_ptr}> *__i_map) {
     CHECK_NOT_EMPTY_P(map);
     std::unordered_map<${key_type}, __struct_datatype__ *> *__map = new std::unordered_map<${key_type}, __struct_datatype__ *>();
     CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
-    std::unordered_map<${key_type}, ${value_type} *>::iterator iter;
+    std::unordered_map<${key_type}, ${value_type_ptr}>::iterator iter;
     for(iter = __i_map->begin(); iter != __i_map.end(); iter++) {
         const ${key_type} key = iter->first;
-        ${value_type} *value = iter->second;
+        ${value_type_ptr} value = iter->second;
         CHECK_NOT_NULL(value);
         __struct_datatype__ *rv = this->serialize_${value_type}(value);
         CHECK_NOT_NULL(rv);
@@ -378,17 +378,17 @@ std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${name}(st
 ;;
 
 FUNC_TYPE_MAP_DESERIALIZER:
-std::unordered_map<${key_type}, ${value_type} *> *deserialize_map_${name}(void *__input) {
+std::unordered_map<${key_type}, ${value_type_ptr}> *deserialize_map_${name}(void *__input) {
 	CHECK_NOT_NULL(__input);
 	std::unordered_map<${key_type}, __struct_datatype__ *> *__value = (std::unordered_map<${key_type}, __struct_datatype__ *>) __input;
 	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(unordered_map));
 	
-	std::unordered_map<${key_type}, ${value_type} *> __map = new std::unordered_map<${key_type}, ${value_type} *>();
+	std::unordered_map<${key_type}, ${value_type_ptr}> __map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
 	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
 	std::unordered_map<${key_type}, __struct_datatype__ *>::iterator iter;
 	for (iter = __value->begin(); iter != __value->end(); iter++) {
-		${value_type} *__tv = deserialize_${value_type}(iter->second);
+		${value_type_ptr} __tv = deserialize_${value_type}(iter->second);
 		CHECK_NOT_NULL(__tv);
 		__map->insert({iter->first, __tv});
 	}

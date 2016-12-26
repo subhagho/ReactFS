@@ -221,6 +221,38 @@ REACTFS_NS_CORE
                             this->headers.insert({header, header});
                         }
 
+                        void generate_list_serde(__list_type *type, string token) {
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
+                            string tn = type->get_type_name();
+                            tn = common_utils::get_normalized_name(tn);
+                            CHECK_NOT_EMPTY(tn);
+                            string dt = type->get_inner_type()->get_type_name();
+                            CHECK_NOT_EMPTY(dt);
+                            string dtp = type->get_inner_type()->get_type_ptr();
+                            CHECK_NOT_EMPTY(dtp);
+
+                            str = string_utils::set_token(tk_name, tn, str);
+                            str = string_utils::set_token(tk_type, dt, str);
+                            str = string_utils::set_token(tk_type_ptr, dtp, str);
+
+                            TRACE("LIST SERIALIZER [%s]", str.c_str());
+
+                            add_public_method(str);
+                        }
+
                         void generate_list_add(__native_type *type, string token) {
                             __list_type *lt = dynamic_cast<__list_type *>(type);
                             CHECK_CAST(lt, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
@@ -249,6 +281,42 @@ REACTFS_NS_CORE
                             str = string_utils::set_token(tk_name, tn, str);
                             str = string_utils::set_token(tk_type, dt, str);
                             str = string_utils::set_token(tk_type_ptr, dtp, str);
+
+                            TRACE("SETTER [%s]", str.c_str());
+
+                            add_public_method(str);
+                        }
+
+                        void generate_map_serde(__map_type *type, string token) {
+
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            string k_type = type->get_key_type()->get_type_name();
+                            if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                k_type = "std::string";
+                            }
+                            string v_type = type->get_value_type()->get_type_name();
+                            string v_type_ptr = type->get_value_type()->get_type_ptr();
+                            string tn = type->get_type_name();
+                            tn = common_utils::get_normalized_name(tn);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_key = CPPT_TOKEN_DEF_KEY_TYPE;
+                            string tk_value = CPPT_TOKEN_DEF_VALUE_TYPE;
+                            string tk_value_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
+
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+
+                            str = string_utils::set_token(tk_name, tn, str);
+                            str = string_utils::set_token(tk_key, k_type, str);
+                            str = string_utils::set_token(tk_value, v_type, str);
+                            str = string_utils::set_token(tk_value_ptr, v_type_ptr, str);
 
                             TRACE("SETTER [%s]", str.c_str());
 
