@@ -221,6 +221,76 @@ REACTFS_NS_CORE
                             this->headers.insert({header, header});
                         }
 
+                        void generate_list_add(__native_type *type, string token) {
+                            __list_type *lt = dynamic_cast<__list_type *>(type);
+                            CHECK_CAST(lt, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
+
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+
+                            string tn = lt->get_name();
+                            CHECK_NOT_EMPTY(tn);
+                            string dt = lt->get_inner_type()->get_type_name();
+                            CHECK_NOT_EMPTY(dt);
+                            string dtp = lt->get_inner_type()->get_type_ptr();
+                            CHECK_NOT_EMPTY(dtp);
+
+                            str = string_utils::set_token(tk_name, tn, str);
+                            str = string_utils::set_token(tk_type, dt, str);
+                            str = string_utils::set_token(tk_type_ptr, dtp, str);
+
+                            TRACE("SETTER [%s]", str.c_str());
+
+                            add_public_method(str);
+                        }
+
+                        void generate_map_add(__native_type *type, string token) {
+                            __map_type *mt = dynamic_cast<__map_type *>(type);
+                            CHECK_CAST(mt, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
+
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            string k_type = mt->get_key_type()->get_type_name();
+                            if (mt->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                k_type = "std::string";
+                            }
+                            string v_type = mt->get_value_type()->get_type_name();
+                            string v_type_ptr = mt->get_value_type()->get_type_ptr();
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_key = CPPT_TOKEN_DEF_KEY_TYPE;
+                            string tk_value = CPPT_TOKEN_DEF_VALUE_TYPE;
+                            string tk_value_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
+
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+
+                            str = string_utils::set_token(tk_name, mt->get_name(), str);
+                            str = string_utils::set_token(tk_key, k_type, str);
+                            str = string_utils::set_token(tk_value, v_type, str);
+                            str = string_utils::set_token(tk_value_ptr, v_type_ptr, str);
+
+                            TRACE("SETTER [%s]", str.c_str());
+
+                            add_public_method(str);
+                        }
+
                         void generate_setter(__native_type *type, string token) {
                             vector<string> *ft = template_header.find_token(token);
                             CHECK_NOT_EMPTY_P(ft);
@@ -233,13 +303,41 @@ REACTFS_NS_CORE
                                 buff << str << "\n";
                             }
                             string str = string(buff.str());
-                            string dt = __type_enum_helper::get_datatype(type->get_datatype());
+                            string dt = type->get_type_ptr();
                             CHECK_NOT_EMPTY(dt);
                             string tn = type->get_name();
                             CHECK_NOT_EMPTY(tn);
 
                             str = string_utils::set_token(tk_type, dt, str);
                             str = string_utils::set_token(tk_name, tn, str);
+
+                            TRACE("SETTER [%s]", str.c_str());
+
+                            add_public_method(str);
+                        }
+
+                        void generate_native_setter(__native_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_NATIVE_SETTER_DEF);
+                            CHECK_NOT_EMPTY_P(ft);
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+                            string dt = type->get_type_name();
+                            CHECK_NOT_EMPTY(dt);
+                            string tn = type->get_name();
+                            CHECK_NOT_EMPTY(tn);
+                            string dtp = type->get_type_ptr();
+
+                            str = string_utils::set_token(tk_type, dt, str);
+                            str = string_utils::set_token(tk_name, tn, str);
+                            str = string_utils::set_token(tk_type_ptr, dtp, str);
 
                             TRACE("SETTER [%s]", str.c_str());
 
@@ -257,9 +355,9 @@ REACTFS_NS_CORE
                                 buff << str << "\n";
                             }
                             string str = string(buff.str());
-                            string dt = type->get_type_name();
+                            string dt = type->get_type_ptr();
                             CHECK_NOT_EMPTY(dt);
-                            dt = common_utils::format("%s *", dt.c_str());
+
                             string tn = type->get_name();
                             CHECK_NOT_EMPTY(tn);
 
@@ -270,72 +368,7 @@ REACTFS_NS_CORE
                         }
 
 
-                        string get_list_declare(__native_type *type) {
-                            __list_type *list = dynamic_cast<__list_type *>(type);
-                            CHECK_CAST(list, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
-
-                            __native_type *t = list->get_inner_type();
-                            CHECK_NOT_NULL(t);
-                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_VARIABLE_LIST_DEF);
-                            CHECK_NOT_EMPTY_P(ft);
-                            string tk_type = CPPT_TOKEN_DEF_TYPE;
-                            string tk_name = CPPT_TOKEN_DEF_NAME;
-                            stringstream buff;
-                            for (string ss : *ft) {
-                                string str = string(ss);
-                                buff << str << "\n";
-                            }
-                            string str = string(buff.str());
-                            string dt = __type_enum_helper::get_datatype(t->get_datatype());
-                            CHECK_NOT_EMPTY(dt);
-                            string tn = type->get_name();
-                            CHECK_NOT_EMPTY(tn);
-
-                            str = string_utils::set_token(tk_type, dt, str);
-                            str = string_utils::set_token(tk_name, tn, str);
-                            TRACE("DECLARE [%s]", str.c_str());
-
-                            add_declare(str);
-                            return str;
-                        }
-
-                        string get_map_declare(__native_type *type) {
-                            __map_type *map = dynamic_cast<__map_type *>(type);
-                            CHECK_CAST(map, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
-
-                            __native_type *kt = map->get_key_type();
-                            CHECK_NOT_NULL(kt);
-                            __native_type *vt = map->get_value_type();
-                            CHECK_NOT_NULL(vt);
-
-                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_VARIABLE_LIST_DEF);
-                            CHECK_NOT_EMPTY_P(ft);
-                            string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
-                            string tk_v_type = CPPT_TOKEN_DEF_VALUE_TYPE;
-                            string tk_name = CPPT_TOKEN_DEF_NAME;
-                            stringstream buff;
-                            for (string ss : *ft) {
-                                string str = string(ss);
-                                buff << str << "\n";
-                            }
-                            string str = string(buff.str());
-                            string kdt = __type_enum_helper::get_datatype(kt->get_datatype());
-                            CHECK_NOT_EMPTY(kdt);
-                            string vdt = __type_enum_helper::get_datatype(vt->get_datatype());
-                            CHECK_NOT_EMPTY(vdt);
-                            string tn = type->get_name();
-                            CHECK_NOT_EMPTY(tn);
-
-                            str = string_utils::set_token(tk_k_type, kdt, str);
-                            str = string_utils::set_token(tk_v_type, vdt, str);
-                            str = string_utils::set_token(tk_name, tn, str);
-
-                            TRACE("DECLARE [%s]", str.c_str());
-                            add_declare(str);
-                            return str;
-                        }
-
-                        string get_native_declare(__native_type *type) {
+                        string get_declare(__native_type *type) {
                             vector<string> *ft = template_header.find_token(CPPT_TOKEN_VARIABLE_NATIVE_DEF);
                             CHECK_NOT_EMPTY_P(ft);
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
@@ -346,7 +379,7 @@ REACTFS_NS_CORE
                                 buff << str << "\n";
                             }
                             string str = string(buff.str());
-                            string dt = __type_enum_helper::get_datatype(type->get_datatype());
+                            string dt = type->get_type_ptr();
                             CHECK_NOT_EMPTY(dt);
                             string tn = type->get_name();
                             CHECK_NOT_EMPTY(tn);
@@ -367,18 +400,19 @@ REACTFS_NS_CORE
                             vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_TYPE_SERIALIZER);
                             CHECK_NOT_EMPTY_P(ft);
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
                             stringstream buff;
                             for (string ss : *ft) {
                                 string str = string(ss);
                                 buff << str << "\n";
                             }
                             string str = string(buff.str());
-                            string dt = __type_enum_helper::get_datatype(type->get_datatype());
+                            string dt = type->get_type_name();
                             CHECK_NOT_EMPTY(dt);
-                            string tn = type->get_name();
-                            CHECK_NOT_EMPTY(tn);
+                            string tn = common_utils::get_normalized_name(dt);
 
                             str = string_utils::set_token(tk_type, dt, str);
+                            str = string_utils::set_token(tk_name, tn, str);
 
                             TRACE("SERIALIZER [%s]", str.c_str());
                             add_public_method(str);
@@ -391,19 +425,20 @@ REACTFS_NS_CORE
                             vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_TYPE_DESERIALIZER);
                             CHECK_NOT_EMPTY_P(ft);
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
                             stringstream buff;
                             for (string ss : *ft) {
-                                string str = string(ss);
-                                string dt = __type_enum_helper::get_datatype(type->get_datatype());
-                                CHECK_NOT_EMPTY(dt);
-                                string tn = type->get_name();
-                                CHECK_NOT_EMPTY(tn);
-
-                                str = string_utils::set_token(tk_type, dt, str);
-
-                                buff << str << "\n";
+                                buff << ss << "\n";
                             }
                             string str = string(buff.str());
+                            string dt = type->get_type_name();
+                            CHECK_NOT_EMPTY(dt);
+                            string tn = common_utils::get_normalized_name(dt);
+                            CHECK_NOT_EMPTY(tn);
+
+                            str = string_utils::set_token(tk_type, dt, str);
+                            str = string_utils::set_token(tk_name, tn, str);
+
                             TRACE("DESERIALIZER [%s]", str.c_str());
                             add_public_method(str);
                         }

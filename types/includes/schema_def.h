@@ -473,6 +473,12 @@ REACTFS_NS_CORE
                             return __type_enum_helper::get_datatype(this->datatype);
                         }
 
+                        virtual string get_type_ptr() const {
+                            string ptr = get_type_name();
+                            ptr = common_utils::format("%s *", ptr.c_str());
+                            return ptr;
+                        }
+
                         /*!
                          * Utility function to print a readable format of the type structure.
                          */
@@ -988,8 +994,8 @@ REACTFS_NS_CORE
 
                         virtual string get_type_name() const override {
                             CHECK_NOT_NULL(inner);
-                            string it = inner->get_type_name();
-                            return common_utils::format("vector<%s *>", it.c_str());
+                            string it = inner->get_type_ptr();
+                            return common_utils::format("vector<%s>", it.c_str());
                         }
                     };
 
@@ -1134,9 +1140,12 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(this->key);
                             CHECK_NOT_NULL(this->value);
                             string kt = this->key->get_type_name();
-                            string vt = this->value->get_type_name();
+                            if (this->key->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                kt = "std::string";
+                            }
+                            string vt = this->value->get_type_ptr();
 
-                            return common_utils::format("unordered_map<%s, %s *>", kt.c_str(), vt.c_str());
+                            return common_utils::format("unordered_map<%s, %s>", kt.c_str(), vt.c_str());
                         }
                     };
 

@@ -80,17 +80,18 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(t);
                                 TRACE("Type --> [name=%s][type=%s]", t->get_name().c_str(), t->get_type_name().c_str());
                                 if (t->get_type() == __field_type::NATIVE) {
-                                    string str = cpp_template.get_native_declare(t);
+                                    string str = cpp_template.get_declare(t);
                                     CHECK_NOT_EMPTY(str);
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
-                                    cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_NATIVE_SETTER_DEF);
                                     cpp_template.generate_getter(t, CPPT_TOKEN_FUNC_GETTER_DEF);
                                     if (t->get_datatype() == __type_def_enum::TYPE_TEXT ||
                                         t->get_datatype() == __type_def_enum::TYPE_STRING) {
                                         cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_STRING_SETTER_DEF);
+                                    } else {
+                                        cpp_template.generate_native_setter(t);
                                     }
                                 } else if (t->get_type() == __field_type::LIST) {
-                                    string str = cpp_template.get_list_declare(t);
+                                    string str = cpp_template.get_declare(t);
                                     CHECK_NOT_EMPTY(str);
 
                                     __list_type *list = dynamic_cast<__list_type *>(t);
@@ -103,13 +104,14 @@ REACTFS_NS_CORE
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
 
                                     if (it->get_type() == __field_type::NATIVE) {
-                                        cpp_template.generate_setter(it, CPPT_TOKEN_FUNC_LIST_NATIVE_ADD_DEF);
                                         if (it->get_datatype() == __type_def_enum::TYPE_TEXT ||
                                             it->get_datatype() == __type_def_enum::TYPE_STRING) {
-                                            cpp_template.generate_setter(it, CPPT_TOKEN_FUNC_LIST_STRING_ADD_DEF);
+                                            cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_STRING_ADD_DEF);
+                                        } else {
+                                            cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_NATIVE_ADD_DEF);
                                         }
                                     } else if (it->get_type() == __field_type::COMPLEX) {
-                                        cpp_template.generate_setter(it, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
+                                        cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
                                         string tn = t->get_type_name();
                                         CHECK_NOT_EMPTY(tn);
                                         unordered_map<string, bool>::iterator iter = processed.find(tn);
@@ -123,7 +125,7 @@ REACTFS_NS_CORE
                                     }
 
                                 } else if (t->get_type() == __field_type::MAP) {
-                                    string str = cpp_template.get_map_declare(t);
+                                    string str = cpp_template.get_declare(t);
                                     CHECK_NOT_EMPTY(str);
 
                                     __map_type *map = dynamic_cast<__map_type *>(t);
@@ -136,9 +138,14 @@ REACTFS_NS_CORE
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
 
                                     if (vt->get_type() == __field_type::NATIVE) {
-                                        cpp_template.generate_setter(vt, CPPT_TOKEN_FUNC_MAP_NATIVE_ADD_DEF);
+                                        if (vt->get_datatype() == __type_def_enum::TYPE_TEXT ||
+                                            vt->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                            cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_STRING_ADD_DEF);
+                                        } else {
+                                            cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_NATIVE_ADD_DEF);
+                                        }
                                     } else if (vt->get_type() == __field_type::COMPLEX) {
-                                        cpp_template.generate_setter(vt, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
+                                        cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
                                         string tn = t->get_type_name();
                                         CHECK_NOT_EMPTY(tn);
                                         unordered_map<string, bool>::iterator iter = processed.find(tn);
@@ -151,6 +158,9 @@ REACTFS_NS_CORE
                                         cpp_template.add_header(header);
                                     }
                                 } else if (t->get_type() == __field_type::COMPLEX) {
+                                    string str = cpp_template.get_declare(t);
+                                    CHECK_NOT_EMPTY(str);
+
                                     cpp_template.generate_getter(t, CPPT_TOKEN_FUNC_GETTER_DEF);
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
                                     string tn = t->get_type_name();

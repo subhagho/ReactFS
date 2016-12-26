@@ -16,12 +16,12 @@
  *
  */
 %token ${type}
+%token ${type_ptr}
 %token ${name}
 %token ${key_type}
 %token ${value_type}
+%token ${value_type_ptr}
 %token ${return}
-%token ${v_key}
-%token ${v_value}
 %token ${data_var}
 %token ${set_map_calls}
 %token ${read_map_calls}
@@ -44,15 +44,7 @@
 %token ${schema_name}
 
 VARIABLE_NATIVE_DEF:
-${type} *${name} = nullptr;
-;;
-
-VARIABLE_LIST_DEF:
-std::vector<${type} *> *${name} = nullptr;
-;;
-
-VARIABLE_MAP_DEF:
-std::unordered_map<${key_type}, ${value_type} *> *${name} = nullptr;
+${type} ${name} = nullptr;
 ;;
 
 VARIABLE_INIT_PTR:
@@ -108,10 +100,10 @@ void set_${name}(${type} ${name}) {
 ;;
 
 FUNC_NATIVE_SETTER_DEF:
-void set_${name}(${type} ${name}) {
+void set_${name}(${type} &${name}) {
     PRECONDITION(this->__is_allocated == true);
     FREE_PTR(this->${name});
-    this->${name} = (${type} *)malloc(sizeof(${type});
+    this->${name} = (${type_ptr})malloc(sizeof(${type}));
     CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
     *(this->${name}) = ${name};
 }
@@ -121,7 +113,7 @@ FUNC_STRING_SETTER_DEF:
 void set_${name}(string &${name}) {
     PRECONDITION(this->__is_allocated == true);
     FREE_PTR(this->${name});
-    if (!IS_EMPTY(${name}) {
+    if (!IS_EMPTY(${name})) {
         uint32_t __size = name.length() + 1;
         this->${name} = (char) malloc(sizeof(char) * __size);
         CHECK_ALLOC(this->${name}, TYPE_NAME(char *));
@@ -135,10 +127,10 @@ FUNC_LIST_NATIVE_ADD_DEF:
 void add_to_${name}(${type} &${name}) {
     PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
-        this->${name} = new std::vector<${type} *>();
+        this->${name} = new std::vector<${type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
     }
-    ${type} *__var = (${type} *)malloc(sizeof(${type}));
+    ${type_ptr} __var = (${type_ptr})malloc(sizeof(${type}));
     CHECK_ALLOC(__var, TYPE_NAME(${type}));
     *__var = ${name};
     this->${name}->push_back(__var);
@@ -149,10 +141,10 @@ FUNC_LIST_STRING_ADD_DEF:
 void add_to_${name}(string &${name}) {
     PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
-        this->${name} = new std::vector<${type} *>();
+        this->${name} = new std::vector<${type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
     }
-    if (!IS_EMPTY(${name}) {
+    if (!IS_EMPTY(${name})) {
         uint32_t __size = name.length() + 1;
         char *__var = (char *)malloc(sizeof(char) * __size);
         CHECK_ALLOC(__var, TYPE_NAME(char *));
@@ -164,11 +156,11 @@ void add_to_${name}(string &${name}) {
 ;;
 
 FUNC_LIST_TYPE_ADD_DEF:
-void add_to_${name}(${type} *${name}) {
+void add_to_${name}(${type_ptr} ${name}) {
     PRECONDITION(this->__is_allocated == true);
     CHECK_NOT_NULL(${name});
     if (IS_NULL(this->${name})) {
-        this->${name} = new std::vector<${type} *>();
+        this->${name} = new std::vector<${type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
     }
     this->${name}->push_back(${name});
@@ -176,27 +168,44 @@ void add_to_${name}(${type} *${name}) {
 ;;
 
 FUNC_MAP_NATIVE_ADD_DEF:
-void add_to_${name}(${key_type} ${v_key}, ${value_type} &${v_value}) {
+void add_to_${name}(${key_type} m_key, ${value_type} &m_value) {
     PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
-        this->${name} = new std::unordered_map<${key_type}, ${value_type} *>();
+        this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
     }
-    ${value_type} *__var = (${value_type} *)malloc(sizeof(${value_type}));
+    ${value_type_ptr} __var = (${value_type_ptr})malloc(sizeof(${value_type}));
     CHECK_ALLOC(__var, TYPE_NAME(${value_type}));
-    *__var = ${v_value};
-    this->${name}->insert(${v_key}, __var});
+    *__var = m_value;
+    this->${name}->insert(m_key, __var});
+}
+;;
+
+FUNC_MAP_STRING_ADD_DEF:
+void add_to_${name}(${key_type} m_key, string &m_value) {
+    PRECONDITION(this->__is_allocated == true);
+    if (IS_NULL(this->${name})) {
+        this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();
+        CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
+    }
+    CHECK_NOT_EMPTY(m_value);
+    uint32_t __size = (m_value.length() + 1) * sizeof(char);
+    char *__var = (char *)malloc(sizeof(char) * __size);
+    CHECK_ALLOC(__var, TYPE_NAME(char *));
+    memset(__var, 0, __size);
+    memcpy(__var, m_value.c_str(), (__size - 1));
+    this->${name}->insert(m_key, __var});
 }
 ;;
 
 FUNC_MAP_TYPE_ADD_DEF:
-void add_to_${name}(${key_type} ${v_key}, ${value_type} *${v_value}) {
+void add_to_${name}(${key_type} m_key, ${value_type_ptr} m_value) {
     PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
-        this->${name} = new std::unordered_map<${key_type}, ${value_type} *>();
+        this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
     }
-    this->${name}->insert(${v_key}, ${v_value}});
+    this->${name}->insert(m_key, m_value);
 }
 ;;
 
@@ -296,7 +305,7 @@ void deserialize(__struct_datatype__ *__data) {
 ;;
 
 FUNC_TYPE_SERIALIZER:
-void *serialize_${type}(${type} *__value) {
+void *serialize_${name}(${type} *__value) {
     CHECK_NOT_NULL(__value);
     __struct_datatype__ *__data = __value->serialize();
     CHECK_NOT_NULL(__data);
@@ -305,7 +314,7 @@ void *serialize_${type}(${type} *__value) {
 ;;
 
 FUNC_TYPE_DESERIALIZER:
-${type} *deserialize_${type}(void *__input) {
+${type} *deserialize_${name}(void *__input) {
     CHECK_NOT_NULL(__input);
     __struct_datatype__ *__value = (__struct_datatype__ *)__input;
     CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(__struct_datatype__));
@@ -317,7 +326,7 @@ ${type} *deserialize_${type}(void *__input) {
 ;;
 
 FUNC_TYPE_LIST_SERIALIZER:
-std::vector<__struct_datatype__ *> *serialize_list_${type}(std::vector<${type} *> *__value) {
+std::vector<__struct_datatype__ *> *serialize_list_${name}(std::vector<${type} *> *__value) {
     CHECK_NOT_EMPTY_P(__value);
     std::vector<__struct_datatype__ *> *__list = new std::vector<__struct_datatype__ *>();
     CHECK_ALLOC(__list, TYPE_NAME(vector));
@@ -332,7 +341,7 @@ std::vector<__struct_datatype__ *> *serialize_list_${type}(std::vector<${type} *
 ;;
 
 FUNC_TYPE_LIST_DESERIALIZER:
-std::vector<${type} *> *deserialize_list_${type}(void *__input) {
+std::vector<${type} *> *deserialize_list_${name}(void *__input) {
 	CHECK_NOT_NULL(__input);
 	std::vector<__struct_datatype__ *> *__value = (std::vector<__struct_datatype__ *> *) __input;
 	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(vector));
@@ -350,7 +359,7 @@ std::vector<${type} *> *deserialize_list_${type}(void *__input) {
 ;;
 
 FUNC_TYPE_MAP_SERIALIZER:
-std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${type}(std::unordered_map<${key_type}, ${value_type} *> *__i_map) {
+std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${name}(std::unordered_map<${key_type}, ${value_type} *> *__i_map) {
     CHECK_NOT_EMPTY_P(map);
     std::unordered_map<${key_type}, __struct_datatype__ *> *__map = new std::unordered_map<${key_type}, __struct_datatype__ *>();
     CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
@@ -369,7 +378,7 @@ std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${type}(st
 ;;
 
 FUNC_TYPE_MAP_DESERIALIZER:
-std::unordered_map<${key_type}, ${value_type} *> *deserialize_map_${type}(void *__input) {
+std::unordered_map<${key_type}, ${value_type} *> *deserialize_map_${name}(void *__input) {
 	CHECK_NOT_NULL(__input);
 	std::unordered_map<${key_type}, __struct_datatype__ *> *__value = (std::unordered_map<${key_type}, __struct_datatype__ *>) __input;
 	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(unordered_map));
