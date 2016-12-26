@@ -26,6 +26,7 @@ void generate(const string &type, __complex_type *schema, const string &name_spa
     string t = string_utils::tolower(type);
     if (t == CPPT_CODE_TYPE) {
         generate_cpp(schema, name_space, outdir, version, overwrite);
+        return;
     }
     throw BASE_ERROR("Un-supported code type. [type=%s]", t.c_str());
 }

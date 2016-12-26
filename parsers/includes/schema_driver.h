@@ -241,7 +241,7 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(type);
                             CHECK_NOT_EMPTY(name);
 
-                            __complex_type *ct = new __complex_type(parent, index, name);
+                            __complex_type *ct = new __complex_type(parent, index, name, *(type->name));
                             CHECK_ALLOC(ct, TYPE_NAME(__complex_type));
 
                             __declare *ptr = type->members;
@@ -323,7 +323,8 @@ REACTFS_NS_CORE
                                         __type_def_enum it = __type_enum_helper::parse_type(*(inner_type->type));
                                         POSTCONDITION(__type_enum_helper::is_inner_type_valid(it));
 
-                                        __native_type *inner = create_inner_type(nullptr, inner_type, *(field->variable));
+                                        __native_type *inner = create_inner_type(nullptr, inner_type,
+                                                                                 *(field->variable));
                                         CHECK_NOT_NULL(inner);
                                         __list_type *at = new __list_type(type, index, *(field->variable), it, inner);
                                         CHECK_ALLOC(at, TYPE_NAME(__list_type));
@@ -334,9 +335,10 @@ REACTFS_NS_CORE
                                         // Inner type is a structure (complex type)
                                         __type_def_enum it = __type_def_enum::TYPE_STRUCT;
 
-                                        __native_type *inner = create_inner_type(nullptr, inner_type, *(field->variable));
+                                        __native_type *inner = create_inner_type(nullptr, inner_type,
+                                                                                 *(field->variable));
                                         CHECK_NOT_NULL(inner);
-                                        __list_type *at = new __list_type(type, index, *(field->variable), it,inner);
+                                        __list_type *at = new __list_type(type, index, *(field->variable), it, inner);
                                         CHECK_ALLOC(at, TYPE_NAME(__list_type));
                                         inner->set_parent(at);
 
@@ -428,7 +430,8 @@ REACTFS_NS_CORE
                          * @return - Generated complex datatype.
                          */
                         __complex_type *translate() {
-                            __complex_type *type = new __complex_type(nullptr, *(schema_def->name));
+                            __complex_type *type = new __complex_type(nullptr, *(schema_def->name),
+                                                                      *(schema_def->name));
                             CHECK_ALLOC(type, TYPE_NAME(__complex_type));
                             __declare *ptr = schema_def->members;
                             uint8_t index = 0;

@@ -54,10 +54,12 @@ REACTFS_NS_CORE
                         string
                         create_type_file(const string &name_space, __complex_type *type, const string &schema_name,
                                          __version_header version) {
+                            CHECK_NOT_NULL(outpath);
                             CHECK_NOT_NULL(type);
-                            string type_name = type->get_name();
+                            string type_name = type->get_type_name();
                             string filename = get_type_filename(type_name);
-                            Path p = Path(filename);
+                            Path p = Path(this->outpath->get_path());
+                            p.append(filename);
                             if (p.exists()) {
                                 if (overwrite) {
                                     p.remove();
@@ -68,7 +70,7 @@ REACTFS_NS_CORE
                                 }
                             }
 
-                            cpp_file_template cpp_template(type->get_name(), schema_name, name_space, version);
+                            cpp_file_template cpp_template(type->get_type_name(), schema_name, name_space, version);
                             unordered_map<string, bool> processed;
                             unordered_map<uint8_t, __native_type *> fields = type->get_fields();
                             unordered_map<uint8_t, __native_type *>::iterator iter;
@@ -76,6 +78,7 @@ REACTFS_NS_CORE
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
                                 __native_type *t = iter->second;
                                 CHECK_NOT_NULL(t);
+                                TRACE("Type --> [name=%s][type=%s]", t->get_name().c_str(), t->get_type_name().c_str());
                                 if (t->get_type() == __field_type::NATIVE) {
                                     string str = cpp_template.get_native_declare(t);
                                     CHECK_NOT_EMPTY(str);
@@ -90,7 +93,7 @@ REACTFS_NS_CORE
                                     string str = cpp_template.get_list_declare(t);
                                     CHECK_NOT_EMPTY(str);
 
-                                    __list_type *list = dynamic_cast<__list_type *>(type);
+                                    __list_type *list = dynamic_cast<__list_type *>(t);
                                     CHECK_CAST(list, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
 
                                     __native_type *it = list->get_inner_type();
@@ -111,8 +114,8 @@ REACTFS_NS_CORE
                                         CHECK_NOT_EMPTY(tn);
                                         unordered_map<string, bool>::iterator iter = processed.find(tn);
                                         if (iter == processed.end()) {
-                                            cpp_template.generate_type_serializer(t);
-                                            cpp_template.generate_type_deserializer(t);
+                                            cpp_template.generate_type_serializer(it);
+                                            cpp_template.generate_type_deserializer(it);
                                         }
                                         string header = get_generated_header(it->get_name());
                                         CHECK_NOT_EMPTY(header);
@@ -123,7 +126,7 @@ REACTFS_NS_CORE
                                     string str = cpp_template.get_map_declare(t);
                                     CHECK_NOT_EMPTY(str);
 
-                                    __map_type *map = dynamic_cast<__map_type *>(type);
+                                    __map_type *map = dynamic_cast<__map_type *>(t);
                                     CHECK_CAST(map, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
 
                                     __native_type *vt = map->get_value_type();
@@ -140,8 +143,8 @@ REACTFS_NS_CORE
                                         CHECK_NOT_EMPTY(tn);
                                         unordered_map<string, bool>::iterator iter = processed.find(tn);
                                         if (iter == processed.end()) {
-                                            cpp_template.generate_type_serializer(t);
-                                            cpp_template.generate_type_deserializer(t);
+                                            cpp_template.generate_type_serializer(vt);
+                                            cpp_template.generate_type_deserializer(vt);
                                         }
                                         string header = get_generated_header(vt->get_name());
                                         CHECK_NOT_EMPTY(header);
@@ -165,7 +168,7 @@ REACTFS_NS_CORE
                             string str = cpp_template.finish();
                             CHECK_NOT_EMPTY(str);
 
-                            fstream outfs(p.get_path());
+                            std::ofstream outfs(p.get_path());
                             outfs << str << "\n";
 
                             LOG_DEBUG("Written header file for class. [class=%s][file=%s]",

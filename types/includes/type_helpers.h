@@ -875,8 +875,14 @@ REACTFS_NS_CORE
 
                                 return ptr;
                             } else if (type == __type_def_enum::TYPE_STRUCT) {
-                                __complex_type *ptr = new __complex_type(parent, index, name);
+                                va_list vl;
+                                va_start(vl, index);
+                                const char *i_type = va_arg(vl, const char *);
+                                CHECK_NOT_NULL(i_type);
+                                string tname = string(i_type);
+                                __complex_type *ptr = new __complex_type(parent, index, name, tname);
                                 CHECK_ALLOC(ptr, TYPE_NAME(__complex_type));
+                                va_end(vl);
 
                                 return ptr;
                             }

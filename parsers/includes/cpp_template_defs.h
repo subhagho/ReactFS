@@ -5,28 +5,6 @@
 #ifndef REACTFS_CPP_TEMPLATE_DEFS_H
 #define REACTFS_CPP_TEMPLATE_DEFS_H
 
-#define CPPT_VARNAME__NAME "${name}"
-#define CPPT_VARNAME__TYPE "${type}"
-#define CPPT_VARNAME_VALUE_TYPE "${value_type}"
-#define CPPT_VARNAME_KEY_TYPE "${key_type}"
-#define CPPT_VARNAME_INCLUDES "${includes}"
-#define CPPT_VARNAME_HEADER "${header}"
-#define CPPT_VARNAME_GUARD_NAME "${guard_name}"
-#define CPPT_VARNAME_CODE_BODY "${body}"
-#define CPPT_VARNAME_V_KEY "${v_key}"
-#define CPPT_VARNAME_V_VALUE "${v_value}"
-#define CPPT_VARNAME_DATA "${data_var}"
-#define CPPT_VARNAME_MAP_SET_CALLS "${set_map_calls}"
-#define CPPT_VARNAME_NESTED "${nested}"
-#define CPPT_VARNAME_PARENT "${parent}"
-#define CPPT_VARNAME_DECLARES "${declarations}"
-#define CPPT_VARNAME_FUNC_PRIVATE "${private_functions}"
-#define CPPT_VARNAME_CONTR "${constructor}"
-#define CPPT_VARNAME_DESTR "${destructor}"
-#define CPPT_VARNAME_FUNC_PUBLIC "${public_functions}"
-#define CPPT_VARNAME_MAP_READ_CALLS "${read_map_calls}"
-#define CPPT_VARNAME_RETURN_TYPE "${return}"
-
 #define CPPT_COMMENT_START "/*"
 #define CPPT_COMMENT_END "*/"
 #define CPPT_COMMENT_LINE "//"

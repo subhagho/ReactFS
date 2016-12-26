@@ -262,7 +262,7 @@ REACTFS_NS_COMMON
                             string str = input.substr(offset, len);
                             ss << str;
                             ss << value;
-                            offset += (index + token.length());
+                            offset = (index + token.length());
                         }
                         return string(ss.str());
                     }

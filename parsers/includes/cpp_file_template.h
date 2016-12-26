@@ -10,7 +10,7 @@
 #include "cpp_template_header.h"
 #include "cpp_template_defs.h"
 
-#define CPPT_CLASS_PARENT_TYPE "com::wookler::reactfs::types::__base_type"
+#define CPPT_CLASS_PARENT_TYPE " : public com::wookler::reactfs::types::__base_type"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
@@ -136,7 +136,7 @@ REACTFS_NS_CORE
                             CHECK_NOT_EMPTY(parts);
 
                             string prev;
-                            for (uint8_t ii = parts.size() - 1; ii >= 0; ii--) {
+                            for (uint8_t ii = parts.size() - 1; ii >= 0 && ii < parts.size(); ii--) {
                                 string ns = parts[ii];
                                 CHECK_NOT_EMPTY(ns);
                                 string n_str = get_namespace(ns);
@@ -224,8 +224,9 @@ REACTFS_NS_CORE
                         void generate_setter(__native_type *type, string token) {
                             vector<string> *ft = template_header.find_token(token);
                             CHECK_NOT_EMPTY_P(ft);
-                            string tk_type = CPPT_VARNAME__TYPE;
-                            string tk_name = CPPT_VARNAME__NAME;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+
                             stringstream buff;
                             for (string ss : *ft) {
                                 string str = string(ss);
@@ -248,16 +249,17 @@ REACTFS_NS_CORE
                         void generate_getter(__native_type *type, string token) {
                             vector<string> *ft = template_header.find_token(token);
                             CHECK_NOT_EMPTY_P(ft);
-                            string tk_type = CPPT_VARNAME__TYPE;
-                            string tk_name = CPPT_VARNAME__NAME;
+                            string tk_type = CPPT_TOKEN_DEF_RETURN;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
                             stringstream buff;
                             for (string ss : *ft) {
                                 string str = string(ss);
                                 buff << str << "\n";
                             }
                             string str = string(buff.str());
-                            string dt = __type_enum_helper::get_datatype(type->get_datatype());
+                            string dt = type->get_type_name();
                             CHECK_NOT_EMPTY(dt);
+                            dt = common_utils::format("%s *", dt.c_str());
                             string tn = type->get_name();
                             CHECK_NOT_EMPTY(tn);
 
@@ -276,8 +278,8 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(t);
                             vector<string> *ft = template_header.find_token(CPPT_TOKEN_VARIABLE_LIST_DEF);
                             CHECK_NOT_EMPTY_P(ft);
-                            string tk_type = CPPT_VARNAME__TYPE;
-                            string tk_name = CPPT_VARNAME__NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
                             stringstream buff;
                             for (string ss : *ft) {
                                 string str = string(ss);
@@ -308,9 +310,9 @@ REACTFS_NS_CORE
 
                             vector<string> *ft = template_header.find_token(CPPT_TOKEN_VARIABLE_LIST_DEF);
                             CHECK_NOT_EMPTY_P(ft);
-                            string tk_k_type = CPPT_VARNAME_KEY_TYPE;
-                            string tk_v_type = CPPT_VARNAME_VALUE_TYPE;
-                            string tk_name = CPPT_VARNAME__NAME;
+                            string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
+                            string tk_v_type = CPPT_TOKEN_DEF_VALUE_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
                             stringstream buff;
                             for (string ss : *ft) {
                                 string str = string(ss);
@@ -336,8 +338,8 @@ REACTFS_NS_CORE
                         string get_native_declare(__native_type *type) {
                             vector<string> *ft = template_header.find_token(CPPT_TOKEN_VARIABLE_NATIVE_DEF);
                             CHECK_NOT_EMPTY_P(ft);
-                            string tk_type = CPPT_VARNAME__TYPE;
-                            string tk_name = CPPT_VARNAME__NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
                             stringstream buff;
                             for (string ss : *ft) {
                                 string str = string(ss);
@@ -364,7 +366,7 @@ REACTFS_NS_CORE
 
                             vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_TYPE_SERIALIZER);
                             CHECK_NOT_EMPTY_P(ft);
-                            string tk_type = CPPT_VARNAME__TYPE;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
                             stringstream buff;
                             for (string ss : *ft) {
                                 string str = string(ss);
@@ -388,7 +390,7 @@ REACTFS_NS_CORE
 
                             vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_TYPE_DESERIALIZER);
                             CHECK_NOT_EMPTY_P(ft);
-                            string tk_type = CPPT_VARNAME__TYPE;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
                             stringstream buff;
                             for (string ss : *ft) {
                                 string str = string(ss);

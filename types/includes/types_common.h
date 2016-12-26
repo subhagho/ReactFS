@@ -221,7 +221,7 @@ REACTFS_NS_CORE
                                     return "short";
                                 case __type_def_enum::TYPE_STRING:
                                 case __type_def_enum::TYPE_TEXT:
-                                    return "CHARBUFF";
+                                    return "char";
                                 case __type_def_enum::TYPE_DATETIME:
                                 case __type_def_enum::TYPE_TIMESTAMP:
                                     return "uint64_t";

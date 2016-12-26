@@ -4,7 +4,6 @@ type test_type {
     string ss default "TEST STRING" nullable,
     double dd constraint (!in [2120.0, 1293.3, 98439.88, 980202.77]),
     float   fv  constraint(>=1000.00) default 8883.99,
-    array<integer> arr[256],
     list<string>   ll
 };
 

@@ -563,7 +563,8 @@ REACTFS_NS_CORE
                         unordered_map<string, __native_type *> name_index;
                         /// Type loader helper instance.
                         __complex_type_helper *loader = nullptr;
-
+                        /// Type name of this complex type.
+                        string type_name;
 
                         /*!
                          * Add a new field definition.
@@ -603,11 +604,15 @@ REACTFS_NS_CORE
                          * @param parent - Parent type of this instance.
                          * @param name - Schema name
                          */
-                        __complex_type(__native_type *parent, const string &name) : __native_type(parent) {
+                        __complex_type(__native_type *parent, const string &name, const string &type_name)
+                                : __native_type(parent) {
+                            CHECK_NOT_EMPTY(name);
+                            CHECK_NOT_EMPTY(type_name);
                             this->type = __field_type::COMPLEX;
                             this->datatype = __type_def_enum::TYPE_STRUCT;
                             this->name = string(name);
                             this->index = 0;
+                            this->type_name = string(type_name);
 
                             loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
@@ -622,10 +627,15 @@ REACTFS_NS_CORE
                          * @param index - Column index in the parent.
                          * @param name - Field name
                          */
-                        __complex_type(__native_type *parent, const uint8_t index, const string &name) : __native_type(
+                        __complex_type(__native_type *parent, const uint8_t index, const string &name,
+                                       const string &type_name) : __native_type(
                                 parent, index, name,
                                 __type_def_enum::TYPE_STRUCT) {
+                            CHECK_NOT_EMPTY(name);
+                            CHECK_NOT_EMPTY(type_name);
                             this->type = __field_type::COMPLEX;
+                            this->type_name = string(type_name);
+
                             loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
                             this->type_handler = loader->get_complex_type_handler(this);
@@ -766,7 +776,7 @@ REACTFS_NS_CORE
                         }
 
                         virtual string get_type_name() const override {
-                            return this->name;
+                            return this->type_name;
                         }
 
                         virtual void get_field_index(unordered_map<string, __native_type *> *map) override {
