@@ -248,7 +248,7 @@ REACTFS_NS_COMMON
                         return input;
                     }
 
-                    static string set_token(const string &token, string &value, string &input) {
+                    static string set_token(const string &token, const string &value, string &input) {
                         uint32_t offset = 0;
                         stringstream ss;
                         while (offset < input.length()) {

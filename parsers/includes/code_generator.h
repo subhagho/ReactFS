@@ -29,7 +29,9 @@ REACTFS_NS_CORE
                             CHECK_AND_FREE(outpath);
                         }
 
-                        virtual string generate_type_class(const string &name_space, __complex_type *type) = 0;
+                        virtual string
+                        generate_type_class(const string &name_space, __complex_type *type, const string &schema_name,
+                                            __version_header version) = 0;
                     };
                 }
 REACTFS_NS_CORE_END
