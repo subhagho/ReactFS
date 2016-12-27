@@ -68,10 +68,10 @@ namespace parsers {
 							__cpp_template.insert({"FUNC_TYPE_MAP_DESERIALIZER", values});
 							values->push_back("std::unordered_map<${key_type}, ${value_type_ptr}> *deserialize_map_${name}(void *__input) {");
 							values->push_back("	CHECK_NOT_NULL(__input);");
-							values->push_back("	std::unordered_map<${key_type}, __struct_datatype__ *> *__value = (std::unordered_map<${key_type}, __struct_datatype__ *>) __input;");
+							values->push_back("	std::unordered_map<${key_type}, __struct_datatype__ *> *__value = static_cast<std::unordered_map<${key_type}, __struct_datatype__ *> *>( __input);");
 							values->push_back("	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(unordered_map));");
 							values->push_back("	");
-							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> __map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
+							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
 							values->push_back("");
 							values->push_back("	std::unordered_map<${key_type}, __struct_datatype__ *>::iterator iter;");
@@ -89,18 +89,18 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_TYPE_MAP_SERIALIZER", values});
 							values->push_back("std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${name}(std::unordered_map<${key_type}, ${value_type_ptr}> *__i_map) {");
-							values->push_back("    CHECK_NOT_EMPTY_P(map);");
+							values->push_back("    CHECK_NOT_EMPTY_P(__i_map);");
 							values->push_back("    std::unordered_map<${key_type}, __struct_datatype__ *> *__map = new std::unordered_map<${key_type}, __struct_datatype__ *>();");
 							values->push_back("    CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
 							values->push_back("");
 							values->push_back("    std::unordered_map<${key_type}, ${value_type_ptr}>::iterator iter;");
-							values->push_back("    for(iter = __i_map->begin(); iter != __i_map.end(); iter++) {");
+							values->push_back("    for(iter = __i_map->begin(); iter != __i_map->end(); iter++) {");
 							values->push_back("        const ${key_type} key = iter->first;");
 							values->push_back("        ${value_type_ptr} value = iter->second;");
 							values->push_back("        CHECK_NOT_NULL(value);");
 							values->push_back("        __struct_datatype__ *rv = this->serialize_${value_type}(value);");
 							values->push_back("        CHECK_NOT_NULL(rv);");
-							values->push_back("        __i_map->insert({key, rv});");
+							values->push_back("        __map->insert({key, rv});");
 							values->push_back("    }");
 							values->push_back("    return __map;");
 							values->push_back("}");
@@ -112,7 +112,7 @@ namespace parsers {
 							__cpp_template.insert({"FUNC_TYPE_LIST_DESERIALIZER", values});
 							values->push_back("std::vector<${type_ptr}> *deserialize_list_${name}(void *__input) {");
 							values->push_back("	CHECK_NOT_NULL(__input);");
-							values->push_back("	std::vector<__struct_datatype__ *> *__value = (std::vector<__struct_datatype__ *> *) __input;");
+							values->push_back("	std::vector<__struct_datatype__ *> *__value = static_cast<std::vector<__struct_datatype__ *> *>( __input);");
 							values->push_back("	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(vector));");
 							values->push_back("");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
@@ -149,7 +149,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_TYPE_SERIALIZER", values});
-							values->push_back("void *serialize_${name}(${type_ptr} __value) {");
+							values->push_back("__struct_datatype__ *serialize_${name}(${type_ptr} __value) {");
 							values->push_back("    CHECK_NOT_NULL(__value);");
 							values->push_back("    __struct_datatype__ *__data = __value->serialize();");
 							values->push_back("    CHECK_NOT_NULL(__data);");
@@ -161,7 +161,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_DESERIALIZE", values});
-							values->push_back("void deserialize(__struct_datatype__ *__data) {");
+							values->push_back("void deserialize(__struct_datatype__ *__data) override {");
 							values->push_back("    CHECK_NOT_NULL(__data);");
 							values->push_back("    ${read_map_calls}");
 							values->push_back("}");
@@ -293,7 +293,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_TYPE_SETTER_FROM_MAP", values});
-							values->push_back("${type_ptr} __var = deserialze_${type}(__ptr);");
+							values->push_back("${type_ptr} __var = deserialize_${type}(__ptr);");
 							values->push_back("CHECK_NOT_NULL(__var);");
 							values->push_back("this->${name} = __var;");
 							// END KEY [CALL_TYPE_SETTER_FROM_MAP]
@@ -372,7 +372,7 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_MAP_NATIVE_FREE", values});
 							values->push_back("if (this->__is_allocated) {");
-							values->push_back("	for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {");
+							values->push_back("	for(auto kv = this->${name}->begin(); kv != this->${name}->end(); kv++) {");
 							values->push_back("    		FREE_PTR(kv->second);");
 							values->push_back("	}");
 							values->push_back("}");
@@ -416,8 +416,8 @@ namespace parsers {
 							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("    FREE_PTR(this->${name});");
 							values->push_back("    if (!IS_EMPTY(${name})) {");
-							values->push_back("        uint32_t __size = name.length() + 1;");
-							values->push_back("        this->${name} = (char) malloc(sizeof(char) * __size);");
+							values->push_back("        uint32_t __size = ${name}.length() + 1;");
+							values->push_back("        this->${name} = (char *) malloc(sizeof(char) * __size);");
 							values->push_back("        CHECK_ALLOC(this->${name}, TYPE_NAME(char *));");
 							values->push_back("        memset(this->${name}, 0, __size);");
 							values->push_back("        memcpy(this->${name}, ${name}.c_str(), (__size - 1));");
@@ -445,7 +445,7 @@ namespace parsers {
 							__cpp_template.insert({"FUNC_TYPE_DESERIALIZER", values});
 							values->push_back("${type_ptr} deserialize_${name}(void *__input) {");
 							values->push_back("    CHECK_NOT_NULL(__input);");
-							values->push_back("    __struct_datatype__ *__value = (__struct_datatype__ *)__input;");
+							values->push_back("    __struct_datatype__ *__value = static_cast<__struct_datatype__ *>(__input);");
 							values->push_back("    CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(__struct_datatype__));");
 							values->push_back("    ${type_ptr} __data = new ${type}(__value);");
 							values->push_back("    CHECK_ALLOC(__data, TYPE_NAME(${type}));");
@@ -540,7 +540,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_MAP_TYPE_FREE", values});
-							values->push_back("for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {");
+							values->push_back("for(auto kv = this->${name}->begin(); kv != this->${name}->end(); kv++) {");
 							values->push_back("	CHECK_AND_FREE(kv->second);");
 							values->push_back("}");
 							values->push_back("this->${name}->clear();");
@@ -558,12 +558,12 @@ namespace parsers {
 							values->push_back("        CHECK_ALLOC(this->${name}, TYPE_NAME(vector));");
 							values->push_back("    }");
 							values->push_back("    if (!IS_EMPTY(${name})) {");
-							values->push_back("        uint32_t __size = name.length() + 1;");
+							values->push_back("        uint32_t __size = ${name}.length() + 1;");
 							values->push_back("        char *__var = (char *)malloc(sizeof(char) * __size);");
 							values->push_back("        CHECK_ALLOC(__var, TYPE_NAME(char *));");
 							values->push_back("        memset(__var, 0, __size);");
 							values->push_back("        memcpy(__var, ${name}.c_str(), (__size - 1));");
-							values->push_back("        this->${name}->push_back(var);");
+							values->push_back("        this->${name}->push_back(__var);");
 							values->push_back("    }");
 							values->push_back("}");
 							// END KEY [FUNC_LIST_STRING_ADD_DEF]

@@ -60,3 +60,6 @@ target_link_libraries(template_util ${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS})
 
 add_executable(generator_util src/generator_util.cpp)
 target_link_libraries(generator_util ${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS} "-lastyle")
+
+add_executable(main_gen_class adhoc/main_gen_class.cpp)
+target_link_libraries(main_gen_class ${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS})

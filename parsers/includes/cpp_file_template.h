@@ -10,7 +10,7 @@
 #include "cpp_template_header.h"
 #include "cpp_template_defs.h"
 
-#define CPPT_CLASS_PARENT_TYPE " : public com::wookler::reactfs::types::__base_type"
+#define CPPT_CLASS_PARENT_TYPE " : public com::wookler::reactfs::core::types::__base_type"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
@@ -735,7 +735,7 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
 
                             string tn = type->get_name();
-                            string dt = type->get_type_name();
+                            string dt = __type_enum_helper::get_datatype(type->get_datatype());
                             string tp = type->get_type_ptr();
 
                             c_str = string_utils::set_token(tk_name, tn, c_str);
@@ -977,6 +977,9 @@ REACTFS_NS_CORE
 
                             string tn = type->get_name();
                             string kdt = kt->get_type_name();
+                            if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                kdt = "std::string";
+                            }
                             string vdtp = vt->get_type_ptr();
 
                             c_str = string_utils::set_token(tk_name, tn, c_str);
