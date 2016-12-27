@@ -18,6 +18,7 @@
 %token ${type}
 %token ${type_ptr}
 %token ${name}
+%token ${m_name}
 %token ${key_type}
 %token ${value_type}
 %token ${value_type_ptr}
@@ -177,7 +178,7 @@ void add_to_${name}(${key_type} m_key, ${value_type} &m_value) {
     ${value_type_ptr} __var = (${value_type_ptr})malloc(sizeof(${value_type}));
     CHECK_ALLOC(__var, TYPE_NAME(${value_type}));
     *__var = m_value;
-    this->${name}->insert(m_key, __var});
+    this->${name}->insert({m_key, __var});
 }
 ;;
 
@@ -194,7 +195,7 @@ void add_to_${name}(${key_type} m_key, string &m_value) {
     CHECK_ALLOC(__var, TYPE_NAME(char *));
     memset(__var, 0, __size);
     memcpy(__var, m_value.c_str(), (__size - 1));
-    this->${name}->insert(m_key, __var});
+    this->${name}->insert({m_key, __var});
 }
 ;;
 
@@ -205,8 +206,12 @@ void add_to_${name}(${key_type} m_key, ${value_type_ptr} m_value) {
         this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
     }
-    this->${name}->insert(m_key, m_value);
+    this->${name}->insert({m_key, m_value});
 }
+;;
+
+CALL_DESERIALIZE_VALUE:
+    this->set_value_${name}(__data);
 ;;
 
 FUNC_SETTER_FROM_MAP:
@@ -230,25 +235,25 @@ void set_value_${name}(__struct_datatype__ *__data) {
 ;;
 
 CALL_NATIVE_SETTER_FROM_MAP:
-${type} *__var = static_cast<${type} *>(__ptr);
+${type_ptr} __var = static_cast<${type_ptr}>(__ptr);
 CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));
 this->${name} = __var;
 ;;
 
-CALL_LIST_SETTER_FROM_MAP:
-${type} *__var = deserialze_list_${type}(__ptr);
+CALL_TYPE_LIST_SETTER_FROM_MAP:
+std::vector<${type_ptr}> *__var = deserialize_list_${m_name}(__ptr);
 CHECK_NOT_NULL(__var);
 this->${name} = __var;
 ;;
 
-CALL_MAP_SETTER_FROM_MAP:
-${type} *__var = deserialze_map_${type}(__ptr);
+CALL_TYPE_MAP_SETTER_FROM_MAP:
+std::unordered_map<${key_type}, ${value_type_ptr}> *__var = deserialize_map_${m_name}(__ptr);
 CHECK_NOT_NULL(__var);
 this->${name} = __var;
 ;;
 
 CALL_TYPE_SETTER_FROM_MAP:
-${type} *__var = deserialze_${type}(__ptr);
+${type_ptr} __var = deserialze_${type}(__ptr);
 CHECK_NOT_NULL(__var);
 this->${name} = __var;
 ;;
@@ -262,6 +267,11 @@ void set_map_${name}(__struct_datatype__ *__data) {
 }
 ;;
 
+
+CALL_SETTER_TO_MAP:
+this->set_map_${name}(__data);
+;;
+
 CALL_NATIVE_SETTER_TO_MAP:
 __data->insert({"${name}", this->${name}});
 ;;
@@ -272,28 +282,24 @@ CHECK_NOT_NULL(__ptr);
 __data->insert({"${name}", __ptr});
 ;;
 
-CALL_LIST_SETTER_TO_MAP:
-void *__ptr = serialize_list_${type}(this->${name});
+CALL_TYPE_LIST_SETTER_TO_MAP:
+void *__ptr = serialize_list_${m_name}(this->${name});
 CHECK_NOT_NULL(__ptr);
 __data->insert({"${name}", __ptr});
 ;;
 
-CALL_MAP_SETTER_TO_MAP:
-void *__ptr = serialize_map_${type}(this->${name});
+CALL_TYPE_MAP_SETTER_TO_MAP:
+void *__ptr = serialize_map_${m_name}(this->${name});
 CHECK_NOT_NULL(__ptr);
 __data->insert({"${name}", __ptr});
-;;
-
-CALL_SETTER_FROM_MAP:
-this->set_value_${name}(void * __data);
 ;;
 
 FUNC_SERIALIZE:
 __struct_datatype__ *serialize() override {
-    __struct_datatype__ *__map = new __struct_datatype__();
-    CHECK_ALLOC(__map, TYPE_NAME(__struct_datatype__));
+    __struct_datatype__ *__data = new __struct_datatype__();
+    CHECK_ALLOC(__data, TYPE_NAME(__struct_datatype__));
     ${set_map_calls}
-    return __map;
+    return __data;
 }
 ;;
 
@@ -305,7 +311,7 @@ void deserialize(__struct_datatype__ *__data) {
 ;;
 
 FUNC_TYPE_SERIALIZER:
-void *serialize_${name}(${type} *__value) {
+void *serialize_${name}(${type_ptr} __value) {
     CHECK_NOT_NULL(__value);
     __struct_datatype__ *__data = __value->serialize();
     CHECK_NOT_NULL(__data);
@@ -314,11 +320,11 @@ void *serialize_${name}(${type} *__value) {
 ;;
 
 FUNC_TYPE_DESERIALIZER:
-${type} *deserialize_${name}(void *__input) {
+${type_ptr} deserialize_${name}(void *__input) {
     CHECK_NOT_NULL(__input);
     __struct_datatype__ *__value = (__struct_datatype__ *)__input;
     CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(__struct_datatype__));
-    ${type} *__data = new ${type}(false);
+    ${type_ptr} __data = new ${type}(false);
     CHECK_ALLOC(__data, TYPE_NAME(${type}));
     __data->deserialize(__value);
     return __data;

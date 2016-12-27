@@ -18,7 +18,7 @@ schema test_schema {
     double dkey,
     short  sval default -128,
     typeref test_ref_type __map,
-    typeref test_type __ref
+    list<typeref test_type> __ref
 } set_key_fields(key, dkey);
 // comment.
 

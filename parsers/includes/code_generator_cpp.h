@@ -90,6 +90,8 @@ REACTFS_NS_CORE
                                     } else {
                                         cpp_template.generate_native_setter(t);
                                     }
+                                    cpp_template.generate_native_setter_from_map(t);
+                                    cpp_template.generate_native_setter_to_map(t);
                                 } else if (t->get_type() == __field_type::LIST) {
                                     string str = cpp_template.get_declare(t);
                                     CHECK_NOT_EMPTY(str);
@@ -110,6 +112,8 @@ REACTFS_NS_CORE
                                         } else {
                                             cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_NATIVE_ADD_DEF);
                                         }
+                                        cpp_template.generate_native_setter_from_map(t);
+                                        cpp_template.generate_native_setter_to_map(t);
                                     } else if (it->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
                                         string tn = it->get_type_name();
@@ -133,8 +137,9 @@ REACTFS_NS_CORE
                                                                              CPPT_TOKEN_FUNC_TYPE_LIST_DESERIALIZER);
                                             processed.insert({tn, true});
                                         }
+                                        cpp_template.generate_type_list_setter_from_map(list);
+                                        cpp_template.generate_type_list_setter_to_map(list);
                                     }
-
                                 } else if (t->get_type() == __field_type::MAP) {
                                     string str = cpp_template.get_declare(t);
                                     CHECK_NOT_EMPTY(str);
@@ -155,6 +160,8 @@ REACTFS_NS_CORE
                                         } else {
                                             cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_NATIVE_ADD_DEF);
                                         }
+                                        cpp_template.generate_native_setter_from_map(t);
+                                        cpp_template.generate_native_setter_to_map(t);
                                     } else if (vt->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
                                         string tn = vt->get_type_name();
@@ -172,11 +179,13 @@ REACTFS_NS_CORE
                                         iter = processed.find(tn);
                                         if (iter == processed.end()) {
                                             cpp_template.generate_map_serde(map,
-                                                                             CPPT_TOKEN_FUNC_TYPE_MAP_SERIALIZER);
+                                                                            CPPT_TOKEN_FUNC_TYPE_MAP_SERIALIZER);
                                             cpp_template.generate_map_serde(map,
-                                                                             CPPT_TOKEN_FUNC_TYPE_MAP_DESERIALIZER);
+                                                                            CPPT_TOKEN_FUNC_TYPE_MAP_DESERIALIZER);
                                             processed.insert({tn, true});
                                         }
+                                        cpp_template.generate_type_map_setter_from_map(map);
+                                        cpp_template.generate_type_map_setter_to_map(map);
                                     }
                                 } else if (t->get_type() == __field_type::COMPLEX) {
                                     string str = cpp_template.get_declare(t);
@@ -195,6 +204,11 @@ REACTFS_NS_CORE
                                     string header = get_generated_header(t->get_name());
                                     CHECK_NOT_EMPTY(header);
                                     cpp_template.add_header(header);
+
+                                    __complex_type *ct = dynamic_cast<__complex_type *>(t);
+                                    CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
+                                    cpp_template.generate_type_setter_from_map(ct);
+                                    cpp_template.generate_type_setter_to_map(ct);
                                 }
                             }
                             string str = cpp_template.finish();

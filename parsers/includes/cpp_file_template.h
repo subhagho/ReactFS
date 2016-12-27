@@ -28,6 +28,7 @@ REACTFS_NS_CORE
                         stringstream pr_methods_s;
                         stringstream pu_methods_s;
                         unordered_map<string, string> headers;
+                        vector<string> m_call_serde;
 
                         string get_file_header(const string &classname, const string &schema_name,
                                                __version_header &version) {
@@ -152,7 +153,80 @@ REACTFS_NS_CORE
                             return prev;
                         }
 
+                        void generate_deserializer() {
+                            stringstream stream;
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_DESERIALIZE);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            for (string ss : *ft) {
+                                stream << ss << "\n";
+                            }
+                            string fstr = string(stream.str());
+
+                            stringstream dstream;
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_DESERIALIZE_VALUE);
+                            CHECK_NOT_EMPTY_P(ft);
+                            for (string ss : *ft) {
+                                dstream << ss << "\n";
+                            }
+                            string callstr(dstream.str());
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+
+                            stringstream body;
+                            for (string ss : m_call_serde) {
+                                string c = string(callstr);
+                                c = string_utils::set_token(tk_name, ss, c);
+                                body << c << "\n";
+                            }
+                            string bstr(body.str());
+
+                            string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
+                            fstr = string_utils::set_token(tk_read, bstr, fstr);
+
+                            TRACE("DESERIALIZER [%s]", fstr.c_str());
+
+                            add_public_method(fstr);
+                        }
+
+                        void generate_serializer() {
+                            stringstream stream;
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_SERIALIZE);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            for (string ss : *ft) {
+                                stream << ss << "\n";
+                            }
+                            string fstr = string(stream.str());
+
+                            stringstream dstream;
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_SETTER_TO_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            for (string ss : *ft) {
+                                dstream << ss << "\n";
+                            }
+                            string callstr(dstream.str());
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+
+                            stringstream body;
+                            for (string ss : m_call_serde) {
+                                string c = string(callstr);
+                                c = string_utils::set_token(tk_name, ss, c);
+                                body << c << "\n";
+                            }
+                            string bstr(body.str());
+
+                            string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
+                            fstr = string_utils::set_token(tk_read, bstr, fstr);
+
+                            TRACE("DESERIALIZER [%s]", fstr.c_str());
+
+                            add_public_method(fstr);
+                        }
+
                         string get_class_def() {
+                            generate_deserializer();
+                            generate_serializer();
+
                             string declares = declare_s.str();
                             string pr_methods = pr_methods_s.str();
                             string pu_methods = pu_methods_s.str();
@@ -164,11 +238,13 @@ REACTFS_NS_CORE
                                 this->class_str = string_utils::set_token(tk_declare, declares, this->class_str);
                             }
 
-                            if (!IS_EMPTY(pr_methods)) {
-                                string tk_prm = CPPT_TOKEN_DEF_PRIVATE_FUNCTIONS;
-                                CHECK_NOT_EMPTY(tk_prm);
+                            string tk_prm = CPPT_TOKEN_DEF_PRIVATE_FUNCTIONS;
+                            CHECK_NOT_EMPTY(tk_prm);
 
+                            if (!IS_EMPTY(pr_methods)) {
                                 this->class_str = string_utils::set_token(tk_prm, pr_methods, this->class_str);
+                            } else {
+                                this->class_str = string_utils::set_token(tk_prm, "", this->class_str);
                             }
 
                             if (!IS_EMPTY(pu_methods)) {
@@ -250,7 +326,7 @@ REACTFS_NS_CORE
 
                             TRACE("LIST SERIALIZER [%s]", str.c_str());
 
-                            add_public_method(str);
+                            add_private_method(str);
                         }
 
                         void generate_list_add(__native_type *type, string token) {
@@ -320,7 +396,7 @@ REACTFS_NS_CORE
 
                             TRACE("SETTER [%s]", str.c_str());
 
-                            add_public_method(str);
+                            add_private_method(str);
                         }
 
                         void generate_map_add(__native_type *type, string token) {
@@ -469,6 +545,8 @@ REACTFS_NS_CORE
                             CHECK_NOT_EMPTY_P(ft);
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
                             stringstream buff;
                             for (string ss : *ft) {
                                 string str = string(ss);
@@ -476,14 +554,17 @@ REACTFS_NS_CORE
                             }
                             string str = string(buff.str());
                             string dt = type->get_type_name();
+                            string dtp = type->get_type_ptr();
+
                             CHECK_NOT_EMPTY(dt);
                             string tn = common_utils::get_normalized_name(dt);
 
                             str = string_utils::set_token(tk_type, dt, str);
                             str = string_utils::set_token(tk_name, tn, str);
+                            str = string_utils::set_token(tk_type_ptr, dtp, str);
 
                             TRACE("SERIALIZER [%s]", str.c_str());
-                            add_public_method(str);
+                            add_private_method(str);
                         }
 
                         void generate_type_deserializer(__native_type *type) {
@@ -494,21 +575,338 @@ REACTFS_NS_CORE
                             CHECK_NOT_EMPTY_P(ft);
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
                             stringstream buff;
                             for (string ss : *ft) {
                                 buff << ss << "\n";
                             }
+
                             string str = string(buff.str());
                             string dt = type->get_type_name();
+                            string dtp = type->get_type_ptr();
                             CHECK_NOT_EMPTY(dt);
                             string tn = common_utils::get_normalized_name(dt);
                             CHECK_NOT_EMPTY(tn);
 
                             str = string_utils::set_token(tk_type, dt, str);
                             str = string_utils::set_token(tk_name, tn, str);
+                            str = string_utils::set_token(tk_type_ptr, dtp, str);
 
                             TRACE("DESERIALIZER [%s]", str.c_str());
-                            add_public_method(str);
+                            add_private_method(str);
+                        }
+
+                        void generate_native_setter_to_map(__native_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_SETTER_TO_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_NATIVE_SETTER_TO_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream c_buff;
+                            for (string ss : *ft) {
+                                c_buff << ss << "\n";
+                            }
+                            string c_str = string(c_buff.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+
+                            string tn = type->get_name();
+
+                            c_str = string_utils::set_token(tk_name, tn, c_str);
+
+                            string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_read, c_str, f_str);
+
+                            TRACE("WRITE FROM MAP [%s]", f_str.c_str());
+                            add_private_method(f_str);
+                        }
+
+                        void generate_native_setter_from_map(__native_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_NATIVE_SETTER_FROM_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream c_buff;
+                            for (string ss : *ft) {
+                                c_buff << ss << "\n";
+                            }
+                            string c_str = string(c_buff.str());
+
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+
+                            string tn = type->get_name();
+                            string dt = type->get_type_name();
+                            string tp = type->get_type_ptr();
+
+                            c_str = string_utils::set_token(tk_name, tn, c_str);
+                            c_str = string_utils::set_token(tk_type, dt, c_str);
+                            c_str = string_utils::set_token(tk_type_ptr, tp, c_str);
+
+                            string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_read, c_str, f_str);
+
+                            TRACE("READ FROM MAP [%s]", f_str.c_str());
+                            add_private_method(f_str);
+
+                            m_call_serde.push_back(tn);
+                        }
+
+                        void generate_type_setter_to_map(__complex_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_SETTER_TO_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_TYPE_SETTER_TO_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream c_buff;
+                            for (string ss : *ft) {
+                                c_buff << ss << "\n";
+                            }
+                            string c_str = string(c_buff.str());
+
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+
+                            string tn = type->get_name();
+                            string dt = type->get_type_name();
+
+                            c_str = string_utils::set_token(tk_name, tn, c_str);
+                            c_str = string_utils::set_token(tk_type, dt, c_str);
+
+                            string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_read, c_str, f_str);
+
+                            TRACE("WRITE FROM MAP [%s]", f_str.c_str());
+                            add_private_method(f_str);
+
+                        }
+
+                        void generate_type_setter_from_map(__complex_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_TYPE_SETTER_FROM_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream c_buff;
+                            for (string ss : *ft) {
+                                c_buff << ss << "\n";
+                            }
+                            string c_str = string(c_buff.str());
+
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+
+                            string tn = type->get_name();
+                            string dt = type->get_type_name();
+                            string tp = type->get_type_ptr();
+
+                            c_str = string_utils::set_token(tk_name, tn, c_str);
+                            c_str = string_utils::set_token(tk_type, dt, c_str);
+                            c_str = string_utils::set_token(tk_type_ptr, tp, c_str);
+
+                            string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_read, c_str, f_str);
+
+                            TRACE("READ FROM MAP [%s]", f_str.c_str());
+                            add_private_method(f_str);
+
+                            m_call_serde.push_back(tn);
+                        }
+
+                        void generate_type_list_setter_to_map(__list_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_SETTER_TO_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_TYPE_LIST_SETTER_TO_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream c_buff;
+                            for (string ss : *ft) {
+                                c_buff << ss << "\n";
+                            }
+                            string c_str = string(c_buff.str());
+
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
+
+                            string tn = type->get_name();
+
+                            string mn = type->get_type_name();
+                            mn = common_utils::get_normalized_name(mn);
+
+                            c_str = string_utils::set_token(tk_name, tn, c_str);
+                            c_str = string_utils::set_token(tk_m_name, mn, c_str);
+
+                            string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_read, c_str, f_str);
+
+                            TRACE("WRITE FROM MAP [%s]", f_str.c_str());
+                            add_private_method(f_str);
+
+                        }
+
+                        void generate_type_list_setter_from_map(__list_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_TYPE_LIST_SETTER_FROM_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream c_buff;
+                            for (string ss : *ft) {
+                                c_buff << ss << "\n";
+                            }
+                            string c_str = string(c_buff.str());
+
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
+
+                            __native_type *it = type->get_inner_type();
+                            string tn = type->get_name();
+
+                            string dt = it->get_type_name();
+                            string tp = it->get_type_ptr();
+                            string mn = type->get_type_name();
+                            mn = common_utils::get_normalized_name(mn);
+
+                            c_str = string_utils::set_token(tk_name, tn, c_str);
+                            c_str = string_utils::set_token(tk_type, dt, c_str);
+                            c_str = string_utils::set_token(tk_type_ptr, tp, c_str);
+                            c_str = string_utils::set_token(tk_m_name, mn, c_str);
+
+                            string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_read, c_str, f_str);
+
+                            TRACE("READ FROM MAP [%s]", f_str.c_str());
+                            add_private_method(f_str);
+
+                            m_call_serde.push_back(tn);
+                        }
+
+                        void generate_type_map_setter_to_map(__map_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_SETTER_TO_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_TYPE_MAP_SETTER_TO_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream c_buff;
+                            for (string ss : *ft) {
+                                c_buff << ss << "\n";
+                            }
+                            string c_str = string(c_buff.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
+
+                            string mn = type->get_type_name();
+                            mn = common_utils::get_normalized_name(mn);
+
+                            string tn = type->get_name();
+
+                            c_str = string_utils::set_token(tk_name, tn, c_str);
+                            c_str = string_utils::set_token(tk_m_name, mn, c_str);
+
+                            string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_read, c_str, f_str);
+
+                            TRACE("READ FROM MAP [%s]", f_str.c_str());
+                            add_private_method(f_str);
+
+                        }
+
+                        void generate_type_map_setter_from_map(__map_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            ft = template_header.find_token(CPPT_TOKEN_CALL_TYPE_MAP_SETTER_FROM_MAP);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream c_buff;
+                            for (string ss : *ft) {
+                                c_buff << ss << "\n";
+                            }
+                            string c_str = string(c_buff.str());
+
+                            string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
+                            string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
+
+                            __native_type *kt = type->get_key_type();
+                            __native_type *vt = type->get_value_type();
+
+                            string mn = type->get_type_name();
+                            mn = common_utils::get_normalized_name(mn);
+
+                            string tn = type->get_name();
+                            string kdt = kt->get_type_name();
+                            string vdtp = vt->get_type_ptr();
+
+                            c_str = string_utils::set_token(tk_name, tn, c_str);
+                            c_str = string_utils::set_token(tk_k_type, kdt, c_str);
+                            c_str = string_utils::set_token(tk_v_type_ptr, vdtp, c_str);
+                            c_str = string_utils::set_token(tk_m_name, mn, c_str);
+
+                            string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_read, c_str, f_str);
+
+                            TRACE("READ FROM MAP [%s]", f_str.c_str());
+                            add_private_method(f_str);
+
+                            m_call_serde.push_back(tn);
                         }
 
                         string finish() {
