@@ -4,6 +4,7 @@ INCLUDE_DIRECTORIES(${PROJECT_ROOT_DIR} ${PROJECT_EXT_DIR} ${LOCAL_INCLUDES})
 
 if (${APPLE})
     set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk)
+    INCLUDE_DIRECTORIES("/opt/local/include")
 endif ()
 
 set(CMAKE_C_COMPILER gcc)

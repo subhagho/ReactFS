@@ -59,4 +59,4 @@ add_executable(template_util src/template_util.cpp)
 target_link_libraries(template_util ${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS})
 
 add_executable(generator_util src/generator_util.cpp)
-target_link_libraries(generator_util ${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS})
+target_link_libraries(generator_util ${PRASERS_LIB_NAME} ${RFS_TYPES_LIBS} "-lastyle")

@@ -48,12 +48,10 @@ VARIABLE_NATIVE_DEF:
 ${type} ${name} = nullptr;
 ;;
 
-VARIABLE_INIT_PTR:
-this->${name} = nullptr;
-;;
-
 VARIABLE_NATIVE_FREE:
-FREE_PTR(this->${name});
+if (this->__is_allocated) {
+	FREE_PTR(this->${name});
+}
 ;;
 
 VARIABLE_TYPE_FREE:
@@ -61,30 +59,38 @@ CHECK_AND_FREE(this->${name});
 ;;
 
 VARIABLE_LIST_NATIVE_FREE:
-for(auto elem : *this->${name}) {
-    FREE_PTR(elem);
+if (this->__is_allocated) {
+	for(auto elem : *this->${name}) {
+    		FREE_PTR(elem);
+	}
 }
+this->${name}->clear();
 CHECK_AND_FREE(this->${name});
 ;;
 
 VARIABLE_LIST_TYPE_FREE:
 for(auto elem : *this->${name}) {
-    CHECK_AND_FREE(elem);
+	CHECK_AND_FREE(elem);
 }
+this->${name}->clear();
 CHECK_AND_FREE(this->${name});
 ;;
 
 VARIABLE_MAP_NATIVE_FREE:
-for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {
-    FREE_PTR(kv->second);
+if (this->__is_allocated) {
+	for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {
+    		FREE_PTR(kv->second);
+	}
 }
+this->${name}->clear();
 CHECK_AND_FREE(this->${name});
 ;;
 
 VARIABLE_MAP_TYPE_FREE:
 for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {
-    CHECK_AND_FREE(kv->second);
+	CHECK_AND_FREE(kv->second);
 }
+this->${name}->clear();
 CHECK_AND_FREE(this->${name});
 ;;
 
@@ -324,9 +330,8 @@ ${type_ptr} deserialize_${name}(void *__input) {
     CHECK_NOT_NULL(__input);
     __struct_datatype__ *__value = (__struct_datatype__ *)__input;
     CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(__struct_datatype__));
-    ${type_ptr} __data = new ${type}(false);
+    ${type_ptr} __data = new ${type}(__value);
     CHECK_ALLOC(__data, TYPE_NAME(${type}));
-    __data->deserialize(__value);
     return __data;
 }
 ;;
@@ -402,10 +407,19 @@ std::unordered_map<${key_type}, ${value_type_ptr}> *deserialize_map_${name}(void
 }
 ;;
 
-FUNC_CONSTRUCTOR:
-${name}(bool __is_allocated) {
-    this->__is_allocated = __is_allocated;
+FUNC_CONSTRUCTOR_WRITABLE:
+${name}() {
+    this->__is_allocated = true;
     ${variable_inits}
+}
+;;
+
+FUNC_CONSTRUCTOR_READABLE:
+${name}(__struct_datatype__ *__data) {
+    CHECK_NOT_NULL(__data);
+    this->__is_allocated = false;
+    ${variable_inits}
+    this->deserialize(__data);
 }
 ;;
 
@@ -439,10 +453,6 @@ private:
 
     ${private_functions}
 public:
-    ${constructor}
-
-    ${destructor}
-
     ${public_functions}
 };
 ;;

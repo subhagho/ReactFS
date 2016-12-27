@@ -6,10 +6,12 @@
 #define REACTFS_CODE_GENERATOR_CPP_H
 
 #include "core/includes/core.h"
+
 #include "code_generator.h"
 #include "cpp_template_header.h"
 #include "cpp_template_defs.h"
 #include "cpp_file_template.h"
+#include "style.h"
 
 #define CPPT_CODE_TYPE "cpp"
 
@@ -92,6 +94,7 @@ REACTFS_NS_CORE
                                     }
                                     cpp_template.generate_native_setter_from_map(t);
                                     cpp_template.generate_native_setter_to_map(t);
+                                    cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_NATIVE_FREE);
                                 } else if (t->get_type() == __field_type::LIST) {
                                     string str = cpp_template.get_declare(t);
                                     CHECK_NOT_EMPTY(str);
@@ -114,6 +117,7 @@ REACTFS_NS_CORE
                                         }
                                         cpp_template.generate_native_setter_from_map(t);
                                         cpp_template.generate_native_setter_to_map(t);
+                                        cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_LIST_NATIVE_FREE);
                                     } else if (it->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
                                         string tn = it->get_type_name();
@@ -139,6 +143,7 @@ REACTFS_NS_CORE
                                         }
                                         cpp_template.generate_type_list_setter_from_map(list);
                                         cpp_template.generate_type_list_setter_to_map(list);
+                                        cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_LIST_TYPE_FREE);
                                     }
                                 } else if (t->get_type() == __field_type::MAP) {
                                     string str = cpp_template.get_declare(t);
@@ -162,6 +167,7 @@ REACTFS_NS_CORE
                                         }
                                         cpp_template.generate_native_setter_from_map(t);
                                         cpp_template.generate_native_setter_to_map(t);
+                                        cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_MAP_NATIVE_FREE);
                                     } else if (vt->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
                                         string tn = vt->get_type_name();
@@ -186,6 +192,7 @@ REACTFS_NS_CORE
                                         }
                                         cpp_template.generate_type_map_setter_from_map(map);
                                         cpp_template.generate_type_map_setter_to_map(map);
+                                        cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_MAP_TYPE_FREE);
                                     }
                                 } else if (t->get_type() == __field_type::COMPLEX) {
                                     string str = cpp_template.get_declare(t);
@@ -209,6 +216,7 @@ REACTFS_NS_CORE
                                     CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
                                     cpp_template.generate_type_setter_from_map(ct);
                                     cpp_template.generate_type_setter_to_map(ct);
+                                    cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_TYPE_FREE);
                                 }
                             }
                             string str = cpp_template.finish();
@@ -216,6 +224,11 @@ REACTFS_NS_CORE
 
                             std::ofstream outfs(p.get_path());
                             outfs << str << "\n";
+                            outfs.flush();
+                            outfs.close();
+
+                            styler style;
+                            style.style(p.get_path());
 
                             LOG_DEBUG("Written header file for class. [class=%s][file=%s]",
                                       cpp_template.get_class_name().c_str(), p.get_path().c_str());

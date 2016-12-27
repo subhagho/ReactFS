@@ -1,26 +1,26 @@
 namespace com.wookler.test;
 
 type test_type {
-    string ss default "TEST STRING" nullable,
-    double dd constraint (!in [2120.0, 1293.3, 98439.88, 980202.77]),
-    float   fv  constraint(>=1000.00) default 8883.99,
-    list<string>   ll,
-    map<double, string> str_map
+    string testString default "TEST STRING" nullable,
+    double testDouble constraint (!in [2120.0, 1293.3, 98439.88, 980202.77]),
+    float   testFloat  constraint(>=1000.00) default 8883.99,
+    list<string>   testListString,
+    map<double, string> testMapString
 };
 
 type test_ref_type {
     string name,
-    map<string, typeref test_type> r_map
+    map<string, typeref test_type> testRefMap
 };
 
 schema test_schema {
     string key,
-    double dkey,
-    short  sval default -128,
-    typeref test_ref_type __map,
-    list<typeref test_type> __ref
-} set_key_fields(key, dkey);
+    long testLong,
+    short  shortWithDefault default -128,
+    typeref test_ref_type testTypeRef,
+    list<typeref test_type> testListRef
+} set_key_fields(key, testLong);
 // comment.
 
-index i_test_schema_01 on test_schema (key, dkey DESC, __map.name) FULLTEXT;
-index i_test_schema_02 on test_schema (key, dkey DESC, __ref.ss) FULLTEXT;
+index i_test_schema_01 on test_schema (key, testLong DESC, testTypeRef.name) FULLTEXT;
+index i_test_schema_02 on test_schema (key, testLong DESC, testListRef.testString) FULLTEXT;

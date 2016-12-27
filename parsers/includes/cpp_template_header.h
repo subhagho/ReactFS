@@ -40,6 +40,28 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [NAMESPACE]
 
+							// KEY [FUNC_CONSTRUCTOR_READABLE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_CONSTRUCTOR_READABLE", values});
+							values->push_back("${name}(__struct_datatype__ *__data) {");
+							values->push_back("    CHECK_NOT_NULL(__data);");
+							values->push_back("    this->__is_allocated = false;");
+							values->push_back("    ${variable_inits}");
+							values->push_back("    this->deserialize(__data);");
+							values->push_back("}");
+							// END KEY [FUNC_CONSTRUCTOR_READABLE]
+
+							// KEY [FUNC_CONSTRUCTOR_WRITABLE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_CONSTRUCTOR_WRITABLE", values});
+							values->push_back("${name}() {");
+							values->push_back("    this->__is_allocated = true;");
+							values->push_back("    ${variable_inits}");
+							values->push_back("}");
+							// END KEY [FUNC_CONSTRUCTOR_WRITABLE]
+
 							// KEY [FUNC_TYPE_MAP_DESERIALIZER]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -192,15 +214,6 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [FUNC_SETTER_TO_MAP]
 
-							// KEY [CALL_TYPE_SETTER_FROM_MAP]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"CALL_TYPE_SETTER_FROM_MAP", values});
-							values->push_back("${type_ptr} __var = deserialze_${type}(__ptr);");
-							values->push_back("CHECK_NOT_NULL(__var);");
-							values->push_back("this->${name} = __var;");
-							// END KEY [CALL_TYPE_SETTER_FROM_MAP]
-
 							// KEY [CALL_TYPE_LIST_SETTER_FROM_MAP]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -276,6 +289,15 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [FUNC_MAP_STRING_ADD_DEF]
 
+							// KEY [CALL_TYPE_SETTER_FROM_MAP]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"CALL_TYPE_SETTER_FROM_MAP", values});
+							values->push_back("${type_ptr} __var = deserialze_${type}(__ptr);");
+							values->push_back("CHECK_NOT_NULL(__var);");
+							values->push_back("this->${name} = __var;");
+							// END KEY [CALL_TYPE_SETTER_FROM_MAP]
+
 							// KEY [CLASS_DEF]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -286,10 +308,6 @@ namespace parsers {
 							values->push_back("");
 							values->push_back("    ${private_functions}");
 							values->push_back("public:");
-							values->push_back("    ${constructor}");
-							values->push_back("");
-							values->push_back("    ${destructor}");
-							values->push_back("");
 							values->push_back("    ${public_functions}");
 							values->push_back("};");
 							// END KEY [CLASS_DEF]
@@ -353,9 +371,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_MAP_NATIVE_FREE", values});
-							values->push_back("for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {");
-							values->push_back("    FREE_PTR(kv->second);");
+							values->push_back("if (this->__is_allocated) {");
+							values->push_back("	for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {");
+							values->push_back("    		FREE_PTR(kv->second);");
+							values->push_back("	}");
 							values->push_back("}");
+							values->push_back("this->${name}->clear();");
 							values->push_back("CHECK_AND_FREE(this->${name});");
 							// END KEY [VARIABLE_MAP_NATIVE_FREE]
 
@@ -426,9 +447,8 @@ namespace parsers {
 							values->push_back("    CHECK_NOT_NULL(__input);");
 							values->push_back("    __struct_datatype__ *__value = (__struct_datatype__ *)__input;");
 							values->push_back("    CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(__struct_datatype__));");
-							values->push_back("    ${type_ptr} __data = new ${type}(false);");
+							values->push_back("    ${type_ptr} __data = new ${type}(__value);");
 							values->push_back("    CHECK_ALLOC(__data, TYPE_NAME(${type}));");
-							values->push_back("    __data->deserialize(__value);");
 							values->push_back("    return __data;");
 							values->push_back("}");
 							// END KEY [FUNC_TYPE_DESERIALIZER]
@@ -441,16 +461,6 @@ namespace parsers {
 							values->push_back("    return this->${name};");
 							values->push_back("}");
 							// END KEY [FUNC_GETTER_DEF]
-
-							// KEY [FUNC_CONSTRUCTOR]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"FUNC_CONSTRUCTOR", values});
-							values->push_back("${name}(bool __is_allocated) {");
-							values->push_back("    this->__is_allocated = __is_allocated;");
-							values->push_back("    ${variable_inits}");
-							values->push_back("}");
-							// END KEY [FUNC_CONSTRUCTOR]
 
 							// KEY [CALL_TYPE_MAP_SETTER_TO_MAP]
 							values = new std::vector<string>();
@@ -484,10 +494,24 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_LIST_TYPE_FREE", values});
 							values->push_back("for(auto elem : *this->${name}) {");
-							values->push_back("    CHECK_AND_FREE(elem);");
+							values->push_back("	CHECK_AND_FREE(elem);");
 							values->push_back("}");
+							values->push_back("this->${name}->clear();");
 							values->push_back("CHECK_AND_FREE(this->${name});");
 							// END KEY [VARIABLE_LIST_TYPE_FREE]
+
+							// KEY [VARIABLE_LIST_NATIVE_FREE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"VARIABLE_LIST_NATIVE_FREE", values});
+							values->push_back("if (this->__is_allocated) {");
+							values->push_back("	for(auto elem : *this->${name}) {");
+							values->push_back("    		FREE_PTR(elem);");
+							values->push_back("	}");
+							values->push_back("}");
+							values->push_back("this->${name}->clear();");
+							values->push_back("CHECK_AND_FREE(this->${name});");
+							// END KEY [VARIABLE_LIST_NATIVE_FREE]
 
 							// KEY [FUNC_MAP_TYPE_ADD_DEF]
 							values = new std::vector<string>();
@@ -507,7 +531,9 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_NATIVE_FREE", values});
-							values->push_back("FREE_PTR(this->${name});");
+							values->push_back("if (this->__is_allocated) {");
+							values->push_back("	FREE_PTR(this->${name});");
+							values->push_back("}");
 							// END KEY [VARIABLE_NATIVE_FREE]
 
 							// KEY [VARIABLE_MAP_TYPE_FREE]
@@ -515,8 +541,9 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_MAP_TYPE_FREE", values});
 							values->push_back("for(auto kv = this->${name}->being(); kv != this->${name}->end(); kv++) {");
-							values->push_back("    CHECK_AND_FREE(kv->second);");
+							values->push_back("	CHECK_AND_FREE(kv->second);");
 							values->push_back("}");
+							values->push_back("this->${name}->clear();");
 							values->push_back("CHECK_AND_FREE(this->${name});");
 							// END KEY [VARIABLE_MAP_TYPE_FREE]
 
@@ -558,23 +585,6 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [FUNC_LIST_NATIVE_ADD_DEF]
 
-							// KEY [VARIABLE_LIST_NATIVE_FREE]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"VARIABLE_LIST_NATIVE_FREE", values});
-							values->push_back("for(auto elem : *this->${name}) {");
-							values->push_back("    FREE_PTR(elem);");
-							values->push_back("}");
-							values->push_back("CHECK_AND_FREE(this->${name});");
-							// END KEY [VARIABLE_LIST_NATIVE_FREE]
-
-							// KEY [VARIABLE_INIT_PTR]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"VARIABLE_INIT_PTR", values});
-							values->push_back("this->${name} = nullptr;");
-							// END KEY [VARIABLE_INIT_PTR]
-
 						}
 
 					public:
@@ -600,6 +610,8 @@ namespace parsers {
 REACTFS_NS_CORE_END
 #define CPPT_TOKEN_FILE_DEF "FILE_DEF"
 #define CPPT_TOKEN_NAMESPACE "NAMESPACE"
+#define CPPT_TOKEN_FUNC_CONSTRUCTOR_READABLE "FUNC_CONSTRUCTOR_READABLE"
+#define CPPT_TOKEN_FUNC_CONSTRUCTOR_WRITABLE "FUNC_CONSTRUCTOR_WRITABLE"
 #define CPPT_TOKEN_FUNC_TYPE_MAP_DESERIALIZER "FUNC_TYPE_MAP_DESERIALIZER"
 #define CPPT_TOKEN_FUNC_TYPE_MAP_SERIALIZER "FUNC_TYPE_MAP_SERIALIZER"
 #define CPPT_TOKEN_FUNC_TYPE_LIST_DESERIALIZER "FUNC_TYPE_LIST_DESERIALIZER"
@@ -611,13 +623,13 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_CALL_NATIVE_SETTER_TO_MAP "CALL_NATIVE_SETTER_TO_MAP"
 #define CPPT_TOKEN_CALL_SETTER_TO_MAP "CALL_SETTER_TO_MAP"
 #define CPPT_TOKEN_FUNC_SETTER_TO_MAP "FUNC_SETTER_TO_MAP"
-#define CPPT_TOKEN_CALL_TYPE_SETTER_FROM_MAP "CALL_TYPE_SETTER_FROM_MAP"
 #define CPPT_TOKEN_CALL_TYPE_LIST_SETTER_FROM_MAP "CALL_TYPE_LIST_SETTER_FROM_MAP"
 #define CPPT_TOKEN_FUNC_SETTER_FROM_MAP "FUNC_SETTER_FROM_MAP"
 #define CPPT_TOKEN_FUNC_SETTER_PTR_DEF "FUNC_SETTER_PTR_DEF"
 #define CPPT_TOKEN_CALL_DESERIALIZE_VALUE "CALL_DESERIALIZE_VALUE"
 #define CPPT_TOKEN_VARIABLE_NATIVE_DEF "VARIABLE_NATIVE_DEF"
 #define CPPT_TOKEN_FUNC_MAP_STRING_ADD_DEF "FUNC_MAP_STRING_ADD_DEF"
+#define CPPT_TOKEN_CALL_TYPE_SETTER_FROM_MAP "CALL_TYPE_SETTER_FROM_MAP"
 #define CPPT_TOKEN_CLASS_DEF "CLASS_DEF"
 #define CPPT_TOKEN_FUNC_MAP_NATIVE_ADD_DEF "FUNC_MAP_NATIVE_ADD_DEF"
 #define CPPT_TOKEN_CALL_TYPE_LIST_SETTER_TO_MAP "CALL_TYPE_LIST_SETTER_TO_MAP"
@@ -631,18 +643,16 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_INCLUDE_BASE "INCLUDE_BASE"
 #define CPPT_TOKEN_FUNC_TYPE_DESERIALIZER "FUNC_TYPE_DESERIALIZER"
 #define CPPT_TOKEN_FUNC_GETTER_DEF "FUNC_GETTER_DEF"
-#define CPPT_TOKEN_FUNC_CONSTRUCTOR "FUNC_CONSTRUCTOR"
 #define CPPT_TOKEN_CALL_TYPE_MAP_SETTER_TO_MAP "CALL_TYPE_MAP_SETTER_TO_MAP"
 #define CPPT_TOKEN_CALL_TYPE_MAP_SETTER_FROM_MAP "CALL_TYPE_MAP_SETTER_FROM_MAP"
 #define CPPT_TOKEN_FUNC_DESTRUCTOR "FUNC_DESTRUCTOR"
 #define CPPT_TOKEN_VARIABLE_LIST_TYPE_FREE "VARIABLE_LIST_TYPE_FREE"
+#define CPPT_TOKEN_VARIABLE_LIST_NATIVE_FREE "VARIABLE_LIST_NATIVE_FREE"
 #define CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF "FUNC_MAP_TYPE_ADD_DEF"
 #define CPPT_TOKEN_VARIABLE_NATIVE_FREE "VARIABLE_NATIVE_FREE"
 #define CPPT_TOKEN_VARIABLE_MAP_TYPE_FREE "VARIABLE_MAP_TYPE_FREE"
 #define CPPT_TOKEN_FUNC_LIST_STRING_ADD_DEF "FUNC_LIST_STRING_ADD_DEF"
 #define CPPT_TOKEN_FUNC_LIST_NATIVE_ADD_DEF "FUNC_LIST_NATIVE_ADD_DEF"
-#define CPPT_TOKEN_VARIABLE_LIST_NATIVE_FREE "VARIABLE_LIST_NATIVE_FREE"
-#define CPPT_TOKEN_VARIABLE_INIT_PTR "VARIABLE_INIT_PTR"
 #define CPPT_TOKEN_DEF_SCHEMA_NAME "${schema_name}"
 #define CPPT_TOKEN_DEF_GUARD_NAME "${guard_name}"
 #define CPPT_TOKEN_DEF_VERSION "${version}"

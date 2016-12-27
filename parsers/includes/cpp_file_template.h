@@ -29,6 +29,8 @@ REACTFS_NS_CORE
                         stringstream pu_methods_s;
                         unordered_map<string, string> headers;
                         vector<string> m_call_serde;
+                        vector<string> variables;
+                        vector<string> free_calls;
 
                         string get_file_header(const string &classname, const string &schema_name,
                                                __version_header &version) {
@@ -223,7 +225,87 @@ REACTFS_NS_CORE
                             add_public_method(fstr);
                         }
 
+                        void generate_empty_constr() {
+                            stringstream istream;
+                            for (string var : variables) {
+                                string ss = common_utils::format("this->%s = nullptr;", var.c_str());
+                                istream << ss << "\n";
+                            }
+                            string inits = string(istream.str());
+
+                            stringstream stream;
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_CONSTRUCTOR_WRITABLE);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            for (string ss : *ft) {
+                                stream << ss << "\n";
+                            }
+                            string fstr = string(stream.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
+
+                            fstr = string_utils::set_token(tk_name, classname, fstr);
+                            fstr = string_utils::set_token(tk_inits, inits, fstr);
+
+                            add_public_method(fstr);
+                        }
+
+                        void generate_serde_constr() {
+                            stringstream istream;
+                            for (string var : variables) {
+                                string ss = common_utils::format("this->%s = nullptr;", var.c_str());
+                                istream << ss << "\n";
+                            }
+                            string inits = string(istream.str());
+
+                            stringstream stream;
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_CONSTRUCTOR_READABLE);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            for (string ss : *ft) {
+                                stream << ss << "\n";
+                            }
+                            string fstr = string(stream.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
+
+                            fstr = string_utils::set_token(tk_name, classname, fstr);
+                            fstr = string_utils::set_token(tk_inits, inits, fstr);
+
+                            add_public_method(fstr);
+                        }
+
+                        void generate_destr() {
+                            stringstream istream;
+                            for (string ss : free_calls) {
+                                istream << ss << "\n";
+                            }
+                            string inits = string(istream.str());
+
+                            stringstream stream;
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_DESTRUCTOR);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            for (string ss : *ft) {
+                                stream << ss << "\n";
+                            }
+                            string fstr = string(stream.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_inits = CPPT_TOKEN_DEF_VARIABLE_FREES;
+
+                            fstr = string_utils::set_token(tk_name, classname, fstr);
+                            fstr = string_utils::set_token(tk_inits, inits, fstr);
+
+                            add_public_method(fstr);
+                        }
+
                         string get_class_def() {
+                            generate_empty_constr();
+                            generate_serde_constr();
+                            generate_destr();
                             generate_deserializer();
                             generate_serializer();
 
@@ -533,6 +615,9 @@ REACTFS_NS_CORE
 
                             TRACE("DECLARE [%s]", str.c_str());
                             add_declare(str);
+
+                            variables.push_back(tn);
+
                             return str;
                         }
 
@@ -907,6 +992,22 @@ REACTFS_NS_CORE
                             add_private_method(f_str);
 
                             m_call_serde.push_back(tn);
+                        }
+
+                        void generate_free_call(__native_type *type, string token) {
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+
+                            string tn = type->get_name();
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+
+                            free_calls.push_back(f_str);
                         }
 
                         string finish() {

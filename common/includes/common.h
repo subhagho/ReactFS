@@ -25,6 +25,9 @@
 #include <vector>
 #include <assert.h>
 #include <limits>
+#if defined(__GNUC__)
+#include <string.h>     // need both string and string.h for GCC
+#endif
 
 #define NOT_NULL(v) (nullptr != v)
 #define IS_NULL(v) (nullptr == v)
