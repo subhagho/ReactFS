@@ -60,38 +60,22 @@ CHECK_AND_FREE(this->${name});
 
 VARIABLE_LIST_NATIVE_FREE:
 if (this->__is_allocated) {
-	for(auto elem : *this->${name}) {
-    		FREE_PTR(elem);
-	}
-}
-this->${name}->clear();
-CHECK_AND_FREE(this->${name});
+	FREE_NATIVE_LIST(this->${name});
+} 
 ;;
 
 VARIABLE_LIST_TYPE_FREE:
-for(auto elem : *this->${name}) {
-	CHECK_AND_FREE(elem);
-}
-this->${name}->clear();
-CHECK_AND_FREE(this->${name});
+FREE_TYPE_LIST(this->${name});
 ;;
 
 VARIABLE_MAP_NATIVE_FREE:
 if (this->__is_allocated) {
-	for(auto kv = this->${name}->begin(); kv != this->${name}->end(); kv++) {
-    		FREE_PTR(kv->second);
-	}
-}
-this->${name}->clear();
-CHECK_AND_FREE(this->${name});
+	FREE_NATIVE_MAP(this->${name});	
+} 
 ;;
 
 VARIABLE_MAP_TYPE_FREE:
-for(auto kv = this->${name}->begin(); kv != this->${name}->end(); kv++) {
-	CHECK_AND_FREE(kv->second);
-}
-this->${name}->clear();
-CHECK_AND_FREE(this->${name});
+FREE_TYPE_MAP(this->${name});
 ;;
 
 FUNC_GETTER_DEF:

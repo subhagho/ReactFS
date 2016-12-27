@@ -372,12 +372,11 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_MAP_NATIVE_FREE", values});
 							values->push_back("if (this->__is_allocated) {");
-							values->push_back("	for(auto kv = this->${name}->begin(); kv != this->${name}->end(); kv++) {");
-							values->push_back("    		FREE_PTR(kv->second);");
-							values->push_back("	}");
+							values->push_back("	FREE_NATIVE_MAP(this->${name});	");
+							values->push_back("} else {");
+							values->push_back("	this->${name}->clear();");
+							values->push_back("	CHECK_AND_FREE(this->${name});");
 							values->push_back("}");
-							values->push_back("this->${name}->clear();");
-							values->push_back("CHECK_AND_FREE(this->${name});");
 							// END KEY [VARIABLE_MAP_NATIVE_FREE]
 
 							// KEY [FUNC_LIST_TYPE_ADD_DEF]
@@ -493,11 +492,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_LIST_TYPE_FREE", values});
-							values->push_back("for(auto elem : *this->${name}) {");
-							values->push_back("	CHECK_AND_FREE(elem);");
-							values->push_back("}");
-							values->push_back("this->${name}->clear();");
-							values->push_back("CHECK_AND_FREE(this->${name});");
+							values->push_back("FREE_TYPE_LIST(this->${name});");
 							// END KEY [VARIABLE_LIST_TYPE_FREE]
 
 							// KEY [VARIABLE_LIST_NATIVE_FREE]
@@ -505,12 +500,11 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_LIST_NATIVE_FREE", values});
 							values->push_back("if (this->__is_allocated) {");
-							values->push_back("	for(auto elem : *this->${name}) {");
-							values->push_back("    		FREE_PTR(elem);");
-							values->push_back("	}");
+							values->push_back("	FREE_NATIVE_LIST(this->${name});");
+							values->push_back("} else {");
+							values->push_back("	this->${name}->clear();");
+							values->push_back("	CHECK_AND_FREE(this->${name});");
 							values->push_back("}");
-							values->push_back("this->${name}->clear();");
-							values->push_back("CHECK_AND_FREE(this->${name});");
 							// END KEY [VARIABLE_LIST_NATIVE_FREE]
 
 							// KEY [FUNC_MAP_TYPE_ADD_DEF]
@@ -540,11 +534,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_MAP_TYPE_FREE", values});
-							values->push_back("for(auto kv = this->${name}->begin(); kv != this->${name}->end(); kv++) {");
-							values->push_back("	CHECK_AND_FREE(kv->second);");
-							values->push_back("}");
-							values->push_back("this->${name}->clear();");
-							values->push_back("CHECK_AND_FREE(this->${name});");
+							values->push_back("FREE_TYPE_MAP(this->${name});");
 							// END KEY [VARIABLE_MAP_TYPE_FREE]
 
 							// KEY [FUNC_LIST_STRING_ADD_DEF]

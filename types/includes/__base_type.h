@@ -12,6 +12,46 @@
 
 #include "type_defs.h"
 
+#define FREE_NATIVE_LIST(list) do { \
+    if (NOT_EMPTY_P(list)) { \
+        for( auto ll : *(list)) { \
+            FREE_PTR(ll); \
+        } \
+        list->clear(); \
+    } \
+    CHECK_AND_FREE(list); \
+} while(0);
+
+#define FREE_TYPE_LIST(list) do { \
+    if (NOT_EMPTY_P(list)) { \
+        for( auto ll : *(list)) { \
+            CHECK_AND_FREE(ll); \
+        } \
+        list->clear(); \
+    } \
+    CHECK_AND_FREE(list); \
+} while(0);
+
+#define FREE_NATIVE_MAP(map) do { \
+    if (NOT_EMPTY_P(map)) { \
+        for (auto iter = map->begin(); iter != map->end(); iter++) { \
+            FREE_PTR(iter->second); \
+        } \
+        map->clear(); \
+    } \
+    CHECK_AND_FREE(map); \
+} while(0);
+
+#define FREE_TYPE_MAP(map) do { \
+    if (NOT_EMPTY_P(map)) { \
+        for (auto iter = map->begin(); iter != map->end(); iter++) { \
+            CHECK_AND_FREE(iter->second); \
+        } \
+        map->clear(); \
+    } \
+    CHECK_AND_FREE(map); \
+} while(0);
+
 using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
