@@ -59,11 +59,18 @@ REACTFS_NS_CORE
                     class __base_type {
                     protected:
                         bool __is_allocated = false;
+                        __struct_datatype__ *__data = nullptr;
+
+                        void free_data_ptr() {
+                            free_data_ptr(this->__data, this->__is_allocated);
+                        }
 
                     public:
                         virtual ~__base_type() {
-
+                            this->__data = nullptr;
                         }
+
+                        virtual void free_data_ptr(__struct_datatype__ *data, bool allocated) = 0;
 
                         virtual void deserialize(__struct_datatype__ *__data) = 0;
 

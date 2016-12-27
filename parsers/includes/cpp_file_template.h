@@ -31,6 +31,7 @@ REACTFS_NS_CORE
                         vector<string> m_call_serde;
                         vector<string> variables;
                         vector<string> free_calls;
+                        vector<string> struct_free_calls;
 
                         string get_file_header(const string &classname, const string &schema_name,
                                                __version_header &version) {
@@ -277,6 +278,28 @@ REACTFS_NS_CORE
                             add_public_method(fstr);
                         }
 
+                        void generate_struct_free() {
+                            stringstream istream;
+                            for (string ss : struct_free_calls) {
+                                istream << ss << "\n";
+                            }
+                            string inits = string(istream.str());
+
+                            stringstream stream;
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_FREE_DATA_PTR);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            for (string ss : *ft) {
+                                stream << ss << "\n";
+                            }
+                            string fstr = string(stream.str());
+                            string tk_free = CPPT_TOKEN_DEF_FREE_DATA_CALLS;
+
+                            fstr = string_utils::set_token(tk_free, inits, fstr);
+
+                            add_public_method(fstr);
+                        }
+
                         void generate_destr() {
                             stringstream istream;
                             for (string ss : free_calls) {
@@ -306,6 +329,7 @@ REACTFS_NS_CORE
                             generate_empty_constr();
                             generate_serde_constr();
                             generate_destr();
+                            generate_struct_free();
                             generate_deserializer();
                             generate_serializer();
 
@@ -1011,6 +1035,97 @@ REACTFS_NS_CORE
                             f_str = string_utils::set_token(tk_name, tn, f_str);
 
                             free_calls.push_back(f_str);
+                        }
+
+                        void generate_var_free_call(__native_type *type, string token) {
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tn = type->get_name();
+
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+
+                            struct_free_calls.push_back(f_str);
+                        }
+
+                        void generate_type_free_call(__native_type *type, string token) {
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
+                            string tn = type->get_name();
+                            string tt = type->get_type_ptr();
+
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_type_ptr, tt, f_str);
+
+                            struct_free_calls.push_back(f_str);
+                        }
+
+                        void generate_list_free_call(__list_type *type, string token) {
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
+                            __native_type *it = type->get_inner_type();
+
+                            string tn = type->get_name();
+                            string dtp = it->get_type_ptr();
+
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_type_ptr, dtp, f_str);
+
+                            struct_free_calls.push_back(f_str);
+                        }
+
+                        void generate_map_free_call(__map_type *type, string token) {
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                buff << ss << "\n";
+                            }
+                            string f_str = string(buff.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
+                            string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
+
+                            __native_type *kt = type->get_key_type();
+                            __native_type *vt = type->get_value_type();
+
+                            string tn = type->get_name();
+                            string tk = kt->get_type_name();
+                            if (kt->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                tk = "std::string";
+                            }
+                            string tvp = vt->get_type_ptr();
+
+                            f_str = string_utils::set_token(tk_name, tn, f_str);
+                            f_str = string_utils::set_token(tk_k_type, tk, f_str);
+                            f_str = string_utils::set_token(tk_v_type_ptr, tvp, f_str);
+
+                            struct_free_calls.push_back(f_str);
                         }
 
                         string finish() {
