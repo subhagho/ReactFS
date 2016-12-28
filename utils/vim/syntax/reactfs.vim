@@ -9,14 +9,19 @@ endif
 
 let b:current_syntax = "reactfs"
 
-syn keyword reactfsKeywords token this if while do using namespace return std new delete
+syn keyword reactfsKeywords token this if while do else 
 syn keyword reactfsKeywords for auto sizeof void class public private
-syn keyword reactfsKeywords vector unordered_map char string short int long double float bool
+syn keyword reactfsKeywords vector unordered_map char string short int long double float bool const override true false std
+syn keyword reactfsKeywords list map byte integer boolean timestamp datetime text namespace
 
 highlight link reactfsKeywords Keyword
 
 syntax region reactfsToken start="${"  end="}"
+syn keyword reactfsTokenT set_key_fields in on default constraint regex be schema type index typeref
+syn keyword reactfsTokenT ASC DESC FULLTEXT HASH TREE
+
 highlight link reactfsToken Type
+highlight link reactfsTokenT Type
 
 syntax region reactfsString start=/\v"/ skip=/\v\\./ end=/\v"/
 highlight link reactfsString String
