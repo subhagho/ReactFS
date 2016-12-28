@@ -1,7 +1,7 @@
 " Vim syntax file
-" Language: Celestia Star Catalogs
-" Maintainer: Kevin Lauder
-" Latest Revision: 26 April 2008
+" Language: ReactFS Schema/Template definitions
+" Maintainer: Subhabrata Ghosh
+" Latest Revision: 26 Dec. 2016
 
 if exists("b:current_syntax")
   finish
@@ -17,7 +17,7 @@ syn keyword reactfsKeywords list map byte integer boolean timestamp datetime tex
 highlight link reactfsKeywords Keyword
 
 syntax region reactfsToken start="${"  end="}"
-syn keyword reactfsTokenT set_key_fields in on default constraint regex be schema type index typeref
+syn keyword reactfsTokenT set_key_fields in on default constraint regex be schema type index typeref nullable
 syn keyword reactfsTokenT ASC DESC FULLTEXT HASH TREE
 
 highlight link reactfsToken Type
