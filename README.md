@@ -17,4 +17,23 @@ install zlib xz gettext expat libiconv gperf ncurses
 install openssl
 install flex
 install bison
+install astyle (devel)
+```
+
+### Pre-requisites for building on Linux
+
+```
+install uuid (devel)
+install zlib
+install openssl (devel)
+install flex
+install bison
+install astyle (devel)
+```
+
+#### Create build environment file:
+```
+Create file ${PROJECT_ROOT}/.env
+Add:
+    export JDK_LIB_HOME=<DIR where JDK is installed>
 ```
