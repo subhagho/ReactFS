@@ -29,15 +29,23 @@ REACTFS_NS_CORE
                 namespace parsers {
                     class styler {
                     private:
-                        const char *options = "-A10tOPxnN";
+                        string options = "-A10tOPxnN";
                     public:
-                        styler() {
+                        styler(const string &options = common_consts::EMPTY_STRING) {
                             // get Artistic Style version
                             const char *version = AStyleGetVersion();
                             cout << "C++ - AStyle " << version << endl;
+
+                            if (!IS_EMPTY(options)) {
+                                this->options = string(options);
+                            }
                         }
 
-                        void style(const vector<string> &files) {
+                        void style(const vector<string> &files, const string &options = common_consts::EMPTY_STRING) {
+                            if (!IS_EMPTY(options)) {
+                                this->options = string(options);
+                            }
+
                             for (string file : files) {
                                 style(file);
                             }
@@ -50,7 +58,7 @@ REACTFS_NS_CORE
 
                             // call the Artistic Style formatting function
                             char *textOut = AStyleMain(textIn,
-                                                       options,
+                                                       options.c_str(),
                                                        ASErrorHandler,
                                                        ASMemoryAlloc);
                             // does not need to terminate on an error

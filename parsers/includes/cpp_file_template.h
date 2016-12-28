@@ -32,6 +32,7 @@ REACTFS_NS_CORE
                         vector<string> variables;
                         vector<string> free_calls;
                         vector<string> struct_free_calls;
+                        vector<string> copy_constr_calls;
 
                         string get_file_header(const string &classname, const string &schema_name,
                                                __version_header &version) {
@@ -278,6 +279,40 @@ REACTFS_NS_CORE
                             add_public_method(fstr);
                         }
 
+                        void generate_copy_constr() {
+                            stringstream istream;
+                            for (string var : variables) {
+                                string ss = common_utils::format("this->%s = nullptr;", var.c_str());
+                                istream << ss << "\n";
+                            }
+                            string inits = string(istream.str());
+
+                            stringstream cstream;
+                            for (string ss : copy_constr_calls) {
+                                cstream << ss << "\n";
+                            }
+                            string copies = string(cstream.str());
+
+                            stringstream stream;
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_FUNC_CONSTRUCTOR_COPY);
+                            CHECK_NOT_EMPTY_P(ft);
+
+                            for (string ss : *ft) {
+                                stream << ss << "\n";
+                            }
+                            string fstr = string(stream.str());
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
+                            string tk_copies = CPPT_TOKEN_DEF_VARIABLE_COPY;
+
+                            fstr = string_utils::set_token(tk_name, classname, fstr);
+                            fstr = string_utils::set_token(tk_inits, inits, fstr);
+                            fstr = string_utils::set_token(tk_copies, copies, fstr);
+
+                            add_public_method(fstr);
+                        }
+
                         void generate_struct_free() {
                             stringstream istream;
                             for (string ss : struct_free_calls) {
@@ -328,6 +363,7 @@ REACTFS_NS_CORE
                         string get_class_def() {
                             generate_empty_constr();
                             generate_serde_constr();
+                            generate_copy_constr();
                             generate_destr();
                             generate_struct_free();
                             generate_deserializer();
@@ -617,6 +653,96 @@ REACTFS_NS_CORE
                             add_public_method(str);
                         }
 
+                        void add_native_copy(__native_type *type, string token) {
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+
+                            str = string_utils::set_token(tk_name, type->get_name(), str);
+
+                            copy_constr_calls.push_back(str);
+                        }
+
+                        void add_type_copy(__native_type *type) {
+                            vector<string> *ft = template_header.find_token(CPPT_TOKEN_COPY_CALL_TYPE);
+                            CHECK_NOT_EMPTY_P(ft);
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+
+                            str = string_utils::set_token(tk_name, type->get_name(), str);
+                            str = string_utils::set_token(tk_type, type->get_type_name(), str);
+
+                            copy_constr_calls.push_back(str);
+                        }
+
+                        void add_list_copy(__list_type *type, string token) {
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+
+                            __native_type *it = type->get_inner_type();
+
+                            string dt = it->get_type_name();
+                            string dtp = it->get_type_ptr();
+
+                            str = string_utils::set_token(tk_name, type->get_name(), str);
+                            str = string_utils::set_token(tk_type, dt, str);
+                            str = string_utils::set_token(tk_type_ptr, dtp, str);
+
+                            copy_constr_calls.push_back(str);
+                        }
+
+                        void add_map_copy(__map_type *type, string token) {
+                            vector<string> *ft = template_header.find_token(token);
+                            CHECK_NOT_EMPTY_P(ft);
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
+                            string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
+                            string tk_v_type = CPPT_TOKEN_DEF_VALUE_TYPE;
+
+                            stringstream buff;
+                            for (string ss : *ft) {
+                                string str = string(ss);
+                                buff << str << "\n";
+                            }
+                            string str = string(buff.str());
+
+                            __native_type *kt = type->get_key_type();
+                            __native_type *vt = type->get_value_type();
+
+                            string kdt = kt->get_type_name();
+                            if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                kdt = "std::string";
+                            }
+
+                            str = string_utils::set_token(tk_name, type->get_name(), str);
+                            str = string_utils::set_token(tk_k_type, kdt, str);
+                            str = string_utils::set_token(tk_v_type, vt->get_type_name(), str);
+                            str = string_utils::set_token(tk_v_type_ptr, vt->get_type_ptr(), str);
+
+                            copy_constr_calls.push_back(str);
+                        }
 
                         string get_declare(__native_type *type) {
                             vector<string> *ft = template_header.find_token(CPPT_TOKEN_VARIABLE_NATIVE_DEF);

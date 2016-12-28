@@ -7,13 +7,16 @@
 
 #include "include/options_args.h"
 
+#define DEFAULT_STYLE_OPTS "-A10tOPxnN"
+
 enum optionIndex {
-    GU_UNKNOWN, GU_HELP, GU_CONFIG, GU_SCHEMA_FILE, GU_OUTDIR, GU_TYPE, GU_VERSION, GU_OVERWRITE
+    GU_UNKNOWN, GU_HELP, GU_CONFIG, GU_SCHEMA_FILE, GU_OUTDIR, GU_TYPE, GU_VERSION, GU_OVERWRITE, GU_STYLE_OPT
 };
 const option::Descriptor usage[] =
         {
                 {optionIndex::GU_UNKNOWN, 0, "",  "",          option::Arg::None,     "USAGE: test_lock_client [options]\n\nOptions:"},
                 {GU_HELP,                 0, "",  "help",      option::Arg::None,     "  --help  \tPrint usage and exit."},
+                {GU_STYLE_OPT,            0, "",  "style",     option::Arg::None,     "  --style  \tOptions to be passed to ASTYLE code formatter."},
                 {GU_OVERWRITE,            0, "o", "overwrite", option::Arg::None,     "  --overwrite, -o  \tOverwrite all generated files."},
                 {GU_CONFIG,               0, "c", "config",    ExtendedArg::Required, "  --config=<filename>, -c <filename> \tPath to configuration file."},
                 {GU_SCHEMA_FILE,          0, "s", "schema",    ExtendedArg::Required, "  --schema=<schema file>, -s <schema file> \tSchema file to generate classes for."},

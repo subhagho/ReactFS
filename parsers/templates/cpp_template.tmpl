@@ -44,6 +44,7 @@
 %token ${variable_frees}
 %token ${schema_name}
 %token ${free_data_calls}
+%token ${variable_copy}
 
 VARIABLE_NATIVE_DEF:
 ${type} ${name} = nullptr;
@@ -100,24 +101,24 @@ void set_${name}(${type} ${name}) {
 FUNC_NATIVE_SETTER_DEF:
 void set_${name}(${type} &${name}) {
     PRECONDITION(this->__is_allocated == true);
-    FREE_PTR(this->${name});
-    this->${name} = (${type_ptr})malloc(sizeof(${type}));
-    CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
-    *(this->${name}) = ${name};
+	if (IS_NULL(this->${name})) {
+    		this->${name} = (${type_ptr})malloc(sizeof(${type}));
+    		CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
+	}
+    	*(this->${name}) = ${name};
 }
 ;;
 
 FUNC_STRING_SETTER_DEF:
 void set_${name}(string &${name}) {
-    PRECONDITION(this->__is_allocated == true);
-    FREE_PTR(this->${name});
-    if (!IS_EMPTY(${name})) {
-        uint32_t __size = ${name}.length() + 1;
-        this->${name} = (char *) malloc(sizeof(char) * __size);
-        CHECK_ALLOC(this->${name}, TYPE_NAME(char *));
-        memset(this->${name}, 0, __size);
-        memcpy(this->${name}, ${name}.c_str(), (__size - 1));
-    }
+    	FREE_PTR(this->${name});
+    	if (!IS_EMPTY(${name})) {
+        	uint32_t __size = ${name}.length() + 1;
+        	this->${name} = (char *) malloc(sizeof(char) * __size);
+        	CHECK_ALLOC(this->${name}, TYPE_NAME(char *));
+        	memset(this->${name}, 0, __size);
+        	memcpy(this->${name}, ${name}.c_str(), (__size - 1));
+    	}
 }
 ;;
 
@@ -509,6 +510,96 @@ ${name}(__struct_datatype__ *__data) {
     this->__is_allocated = false;
     ${variable_inits}
     this->deserialize(__data);
+}
+;;
+
+FUNC_CONSTRUCTOR_COPY:
+${name}(const ${name} &source) {
+    	this->__is_allocated = true;
+    	${variable_inits}
+	${variable_copy}	
+}
+;;
+
+COPY_CALL_NATIVE:
+if (NOT_NULL(source.${name})) {
+	this->set_${name}(*(source.${name}));
+}
+;;
+
+COPY_CALL_STRING:
+if (NOT_NULL(source.${name})) {
+	string __${name} = string(source.${name});
+	this->set_${name}(__${name});
+}
+;;
+
+COPY_CALL_TYPE:
+if (NOT_NULL(source.${name})) {
+	this->${name} = new ${type}(*(source.${name}));
+	CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
+}
+;;
+
+COPY_CALL_NATIVE_LIST:
+if (!IS_EMPTY_P(source.${name})) {
+	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
+	CHECK_ALLOC(__list, TYPE_NAME(vector));
+	for( ${type_ptr} v : *(source.${name})) {
+		CHECK_NOT_NULL(v);
+		${type_ptr} __tv = (${type_ptr}) malloc (sizeof(${type}));
+		CHECK_ALLOC(__tv, TYPE_NAME(${type}));
+		*__tv = *v;
+		__list->push_back(__tv);
+	}
+	this->${name} = __list;
+}
+;;
+
+COPY_CALL_TYPE_LIST:
+if (NOT_NULL(source.${name})) {
+	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
+	CHECK_ALLOC(__list, TYPE_NAME(vector));
+	for( ${type_ptr} v : *(source.${name})) {
+		CHECK_NOT_NULL(v);
+		${type_ptr} __tv = new ${type}(*v);
+		CHECK_NOT_NULL(__tv);
+		__list->push_back(__tv);
+	}
+	this->${name} = __list;
+}
+;;
+
+COPY_CALL_NATIVE_MAP:
+if (NOT_NULL(source.${name})) {
+	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
+	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
+
+	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;
+	for (iter = source.${name}->begin(); iter != source.${name}->end(); iter++) {
+		CHECK_NOT_NULL(iter->second);
+		${value_type_ptr} __tv = (${value_type_ptr}) malloc(sizeof(${value_type}));
+		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
+		*__tv = *(iter->second);
+		__map->insert({iter->first, __tv});
+	}	
+	this->${name} = __map;
+}
+;;
+
+COPY_CALL_TYPE_MAP:
+if (NOT_NULL(source.${name})) {
+	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
+	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
+
+	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;
+	for (iter = source.${name}->begin(); iter != source.${name}->end(); iter++) {
+		CHECK_NOT_NULL(iter->second);
+		${value_type_ptr} __tv = new ${value_type}(*iter->second);
+		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
+		__map->insert({iter->first, __tv});
+	}	
+	this->${name} = __map;
 }
 ;;
 

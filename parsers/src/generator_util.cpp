@@ -15,17 +15,17 @@ using namespace REACTFS_NS_CORE_PREFIX::types;
 using namespace REACTFS_NS_CORE_PREFIX::parsers;
 
 void generate_cpp(__complex_type *schema, const string &name_space, string &outdir, __version_header *version,
-                  bool overwrite) {
-    code_generator_cpp generator_cpp(outdir, overwrite);
+                  bool overwrite, string &options) {
+    code_generator_cpp generator_cpp(outdir, options, overwrite);
     generator_cpp.generate_type_class(name_space, schema, schema->get_name(), *version);
 }
 
 void generate(const string &type, __complex_type *schema, const string &name_space, string &outdir,
-              __version_header *version, bool overwrite) {
+              __version_header *version, bool overwrite, string &options) {
     CHECK_NOT_EMPTY(type);
     string t = string_utils::tolower(type);
     if (t == CPPT_CODE_TYPE) {
-        generate_cpp(schema, name_space, outdir, version, overwrite);
+        generate_cpp(schema, name_space, outdir, version, overwrite, options);
         return;
     }
     throw BASE_ERROR("Un-supported code type. [type=%s]", t.c_str());
@@ -62,6 +62,7 @@ int main(int argc, const char **argv) {
         string type;
         string version_s;
         bool overwrite = false;
+        string style = DEFAULT_STYLE_OPTS;
 
         option::Option s = options[GU_SCHEMA_FILE];
         if (s && s.count() > 0) {
@@ -83,10 +84,16 @@ int main(int argc, const char **argv) {
         if (o) {
             overwrite = true;
         }
+        option::Option st = options[GU_STYLE_OPT];
+        if (st) {
+            style = string(st.arg);
+        }
+
         CHECK_NOT_EMPTY(schemafile);
         CHECK_NOT_EMPTY(outdir);
         CHECK_NOT_EMPTY(type);
         CHECK_NOT_EMPTY(version_s);
+        CHECK_NOT_EMPTY(style);
 
         __version_header *version = common_utils::parse_version(version_s);
         CHECK_NOT_NULL(version);
@@ -98,7 +105,7 @@ int main(int argc, const char **argv) {
         CHECK_NOT_NULL(schema);
         schema->print();
 
-        generate(type, schema, driver.get_namespace(), outdir, version, overwrite);
+        generate(type, schema, driver.get_namespace(), outdir, version, overwrite, style);
 
         FREE_PTR(version);
         env_utils::dispose();

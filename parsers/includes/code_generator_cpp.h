@@ -22,6 +22,7 @@ REACTFS_NS_CORE
                     class code_generator_cpp : public code_generator {
                     protected:
                         unordered_map<string, string> headers;
+                        string style_opts;
 
                         bool is_generated(const string &name) {
                             unordered_map<string, string>::iterator iter = headers.find(name);
@@ -89,8 +90,10 @@ REACTFS_NS_CORE
                                     if (t->get_datatype() == __type_def_enum::TYPE_TEXT ||
                                         t->get_datatype() == __type_def_enum::TYPE_STRING) {
                                         cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_STRING_SETTER_DEF);
+                                        cpp_template.add_native_copy(t, CPPT_TOKEN_COPY_CALL_STRING);
                                     } else {
                                         cpp_template.generate_native_setter(t);
+                                        cpp_template.add_native_copy(t, CPPT_TOKEN_COPY_CALL_NATIVE);
                                     }
                                     cpp_template.generate_native_setter_from_map(t);
                                     cpp_template.generate_native_setter_to_map(t);
@@ -121,6 +124,7 @@ REACTFS_NS_CORE
                                         cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_LIST_NATIVE_FREE);
                                         cpp_template.generate_list_free_call(list,
                                                                              CPPT_TOKEN_CALL_FREE_NATIVE_LIST_DATA_PTR);
+                                        cpp_template.add_list_copy(list, CPPT_TOKEN_COPY_CALL_NATIVE_LIST);
                                     } else if (it->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
                                         string tn = it->get_type_name();
@@ -149,6 +153,7 @@ REACTFS_NS_CORE
                                         cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_LIST_TYPE_FREE);
                                         cpp_template.generate_list_free_call(list,
                                                                              CPPT_TOKEN_CALL_FREE_TYPE_LIST_DATA_PTR);
+                                        cpp_template.add_list_copy(list, CPPT_TOKEN_COPY_CALL_TYPE_LIST);
                                     }
                                 } else if (t->get_type() == __field_type::MAP) {
                                     string str = cpp_template.get_declare(t);
@@ -175,6 +180,7 @@ REACTFS_NS_CORE
                                         cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_MAP_NATIVE_FREE);
                                         cpp_template.generate_map_free_call(map,
                                                                             CPPT_TOKEN_CALL_FREE_NATIVE_MAP_DATA_PTR);
+                                        cpp_template.add_map_copy(map, CPPT_TOKEN_COPY_CALL_NATIVE_MAP);
                                     } else if (vt->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
                                         string tn = vt->get_type_name();
@@ -202,6 +208,7 @@ REACTFS_NS_CORE
                                         cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_MAP_TYPE_FREE);
                                         cpp_template.generate_map_free_call(map,
                                                                             CPPT_TOKEN_CALL_FREE_TYPE_MAP_DATA_PTR);
+                                        cpp_template.add_map_copy(map, CPPT_TOKEN_COPY_CALL_TYPE_MAP);
                                     }
                                 } else if (t->get_type() == __field_type::COMPLEX) {
                                     string str = cpp_template.get_declare(t);
@@ -227,6 +234,7 @@ REACTFS_NS_CORE
                                     cpp_template.generate_type_setter_to_map(ct);
                                     cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_TYPE_FREE);
                                     cpp_template.generate_type_free_call(t, CPPT_TOKEN_CALL_FREE_TYPE_DATA_PTR);
+                                    cpp_template.add_type_copy(t);
                                 }
                             }
                             string str = cpp_template.finish();
@@ -237,7 +245,7 @@ REACTFS_NS_CORE
                             outfs.flush();
                             outfs.close();
 
-                            styler style;
+                            styler style(this->style_opts);
                             style.style(p.get_path());
 
                             LOG_DEBUG("Written header file for class. [class=%s][file=%s]",
@@ -246,13 +254,14 @@ REACTFS_NS_CORE
                         }
 
                     public:
-                        code_generator_cpp(string output_path, bool overwrite = true) {
+                        code_generator_cpp(string output_path, const string &style_opts, bool overwrite = true) {
                             CHECK_NOT_EMPTY(output_path);
                             this->outpath = new Path(output_path);
                             if (!this->outpath->exists()) {
                                 this->outpath->create(DEFAULT_RESOURCE_MODE);
                             }
                             this->overwrite = overwrite;
+                            this->style_opts = string(style_opts);
                         }
 
                         virtual string
