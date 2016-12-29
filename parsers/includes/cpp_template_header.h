@@ -35,6 +35,11 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CLASS_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Generated code for data record type ${name}.");
+							values->push_back(" *");
+							values->push_back(" * Note:: Should not be modified as the changes will be lost when the code is re-generated.");
+							values->push_back(" */");
 							values->push_back("class ${name} ${parent} {");
 							values->push_back("private:");
 							values->push_back("    ${declarations}");
@@ -63,6 +68,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_STRING", values});
+							values->push_back("// Set ${name} from the source value.");
 							values->push_back("if (NOT_NULL(source.${name})) {");
 							values->push_back("	string __${name} = string(source.${name});");
 							values->push_back("	this->set_${name}(__${name});");
@@ -73,6 +79,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE", values});
+							values->push_back("// Set ${name} from the source value.");
 							values->push_back("if (NOT_NULL(source.${name})) {");
 							values->push_back("	this->set_${name}(*(source.${name}));");
 							values->push_back("}");
@@ -82,6 +89,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_CONSTRUCTOR_COPY", values});
+							values->push_back("/**");
+							values->push_back(" * Copy constructor to create a copy instance of ${name}.");
+							values->push_back(" * Copy instances should be used to update existing records.");
+							values->push_back(" *");
+							values->push_back(" * @param source - Source instance of ${name} to copy from.");
+							values->push_back(" */");
 							values->push_back("${name}(const ${name} &source) {");
 							values->push_back("    	this->__is_allocated = true;");
 							values->push_back("    	${variable_inits}");
@@ -93,6 +106,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_TYPE_LIST_SETTER_FROM_MAP", values});
+							values->push_back("// Set the value of list ${name}");
 							values->push_back("std::vector<${type_ptr}> *__var = deserialize_list_${m_name}(__ptr);");
 							values->push_back("CHECK_NOT_NULL(__var);");
 							values->push_back("this->${name} = __var;");
@@ -102,6 +116,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE_LIST", values});
+							values->push_back("// Deserialize the list ${name} from the source value.");
 							values->push_back("if (NOT_NULL(source.${name})) {");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
@@ -119,6 +134,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE_LIST", values});
+							values->push_back("// Deserialize the list ${name} from the source value.");
 							values->push_back("if (!IS_EMPTY_P(source.${name})) {");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
@@ -137,6 +153,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_FREE_TYPE_MAP_DATA_PTR", values});
+							values->push_back("// Free the map pointer and the list values, if locally allocated.");
 							values->push_back("iter = __data->find(\"${name}\");");
 							values->push_back("if (iter != __data->end()) {");
 							values->push_back("	if (NOT_NULL(iter->second)) {");
@@ -156,6 +173,11 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_SETTER_FROM_MAP", values});
+							values->push_back("/**");
+							values->push_back(" * Value ${name} setter from the the serialized data map.");
+							values->push_back(" *");
+							values->push_back(" * @param __data - Serialized data map pointer.");
+							values->push_back(" */");
 							values->push_back("void set_value_${name}(__struct_datatype__ *__data) {");
 							values->push_back("    if (NOT_NULL(__data)) {");
 							values->push_back("        __struct_datatype__::const_iterator iter = __data->find(\"${name}\");");
@@ -179,6 +201,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_MAP_STRING_ADD_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Add a map record of key/value type ${key_type}/${value_type_ptr}.");
+							values->push_back(" *");
+							values->push_back(" * @param m_key - Map key of type ${key_type}");
+							values->push_back(" * @param m_value - String value of the map record value.");
+							values->push_back(" */");
 							values->push_back("void add_to_${name}(${key_type} m_key, string &m_value) {");
 							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("    if (IS_NULL(this->${name})) {");
@@ -199,6 +227,9 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_DESTRUCTOR", values});
+							values->push_back("/**");
+							values->push_back(" * Descructor for ${name}");
+							values->push_back(" */");
 							values->push_back("~${name}() {");
 							values->push_back("    	${variable_frees}");
 							values->push_back("	__base_type::free_data_ptr();");
@@ -209,6 +240,16 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_MAP_NATIVE_ADD_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Add a key/value pair to the map of key type ${key_type}");
+							values->push_back(" * and value type ${value_type}.");
+							values->push_back(" *");
+							values->push_back(" * Method should only be used when this instance is being");
+							values->push_back(" * used to create or update a new record instance.");
+							values->push_back(" *");
+							values->push_back(" * @param m_key - Map key value.");
+							values->push_back(" * @param m_value - Map value.");
+							values->push_back(" */ ");
 							values->push_back("void add_to_${name}(${key_type} m_key, ${value_type} &m_value) {");
 							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("    if (IS_NULL(this->${name})) {");
@@ -226,6 +267,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_TYPE_MAP_SETTER_TO_MAP", values});
+							values->push_back("// Serialize the map ${name} and add to the data map.");
 							values->push_back("void *__ptr = serialize_map_${m_name}(this->${name});");
 							values->push_back("CHECK_NOT_NULL(__ptr);");
 							values->push_back("__data->insert({\"${name}\", __ptr});");
@@ -235,6 +277,16 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_LIST_TYPE_ADD_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Add a type element to the list ${name}. ");
+							values->push_back(" * Elements are expected to be pre-allocated type ");
+							values->push_back(" * pointer.");
+							values->push_back(" *");
+							values->push_back(" * Method should only be used when this instance is being");
+							values->push_back(" * used to create or update a new record instance.");
+							values->push_back(" *");
+							values->push_back(" * @param ${name} - String value to add to list.");
+							values->push_back(" */");
 							values->push_back("void add_to_${name}(${type_ptr} ${name}) {");
 							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("    CHECK_NOT_NULL(${name});");
@@ -266,6 +318,16 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_LIST_NATIVE_ADD_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Add an element to the list ${name}. ");
+							values->push_back(" * Elements are expected to be pre-assigned data");
+							values->push_back(" * value.");
+							values->push_back(" *");
+							values->push_back(" * Method should only be used when this instance is being");
+							values->push_back(" * used to create or update a new record instance.");
+							values->push_back(" *");
+							values->push_back(" * @param ${name} - Data value to add to list.");
+							values->push_back(" */");
 							values->push_back("void add_to_${name}(${type} &${name}) {");
 							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("    if (IS_NULL(this->${name})) {");
@@ -292,6 +354,14 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_NATIVE_SETTER_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Set the value to ${name}.");
+							values->push_back(" * ");
+							values->push_back(" * Method should only be used when this instance is being");
+							values->push_back(" * used to create or update a new record instance.");
+							values->push_back(" *");
+							values->push_back(" * @Param ${name} - Value reference.");
+							values->push_back(" */");
 							values->push_back("void set_${name}(${type} &${name}) {");
 							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("	if (IS_NULL(this->${name})) {");
@@ -313,6 +383,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_FREE_NATIVE_DATA_PTR", values});
+							values->push_back("// Free the ${name} value if locally allocated");
 							values->push_back("iter = __data->find(\"${name}\");");
 							values->push_back("if (iter != __data->end()) {");
 							values->push_back("	if (NOT_NULL(iter->second)) {");
@@ -328,6 +399,11 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_DESERIALIZE", values});
+							values->push_back("/**");
+							values->push_back(" * Deserialize this type instance from the passed data map.");
+							values->push_back(" *");
+							values->push_back(" * @param __data - Serialized data map instance to load this type from.");
+							values->push_back(" */");
 							values->push_back("void deserialize(__struct_datatype__ *__data) override {");
 							values->push_back("    CHECK_NOT_NULL(__data);");
 							values->push_back("    ${read_map_calls}");
@@ -351,6 +427,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE_MAP", values});
+							values->push_back("// Deserialize the map ${name} from the source value.");
 							values->push_back("if (NOT_NULL(source.${name})) {");
 							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
@@ -385,6 +462,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_TYPE_MAP_SETTER_FROM_MAP", values});
+							values->push_back("// Set the value of map ${name}");
 							values->push_back("std::unordered_map<${key_type}, ${value_type_ptr}> *__var = deserialize_map_${m_name}(__ptr);");
 							values->push_back("CHECK_NOT_NULL(__var);");
 							values->push_back("this->${name} = __var;");
@@ -406,6 +484,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE_MAP", values});
+							values->push_back("// Deserialize the map ${name} from the source value.");
 							values->push_back("if (NOT_NULL(source.${name})) {");
 							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
@@ -425,6 +504,13 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_TYPE_DESERIALIZER", values});
+							values->push_back("/**");
+							values->push_back(" * Deserialize an instance of type ${name} from the ");
+							values->push_back(" * passed input data.");
+							values->push_back(" *");
+							values->push_back(" * @param __input - Void pointer to input data of type __struct_datatype__");
+							values->push_back(" * @return - Deserialized instance pointer of type ${type_ptr}");
+							values->push_back(" */");
 							values->push_back("${type_ptr} deserialize_${name}(void *__input) {");
 							values->push_back("    CHECK_NOT_NULL(__input);");
 							values->push_back("    __struct_datatype__ *__value = static_cast<__struct_datatype__ *>(__input);");
@@ -439,6 +525,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_GETTER_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Get the pointer to the property ${name} of type ${return}.");
+							values->push_back(" * Returns a const pointer.");
+							values->push_back(" * ");
+							values->push_back(" * @return ${return}");
+							values->push_back(" */");
 							values->push_back("const ${return} get_${name}(void) const {");
 							values->push_back("    return this->${name};");
 							values->push_back("}");
@@ -448,6 +540,11 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_SETTER_PTR_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Set the pointer to ${name}.");
+							values->push_back(" * ");
+							values->push_back(" * @param ${name} - Pointer of type ${type}.");
+							values->push_back(" */");
 							values->push_back("void set_${name}(${type} ${name}) {");
 							values->push_back("    this->${name} = ${name};");
 							values->push_back("}");
@@ -457,6 +554,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_SETTER_TO_MAP", values});
+							values->push_back("/**");
+							values->push_back(" * Method extracts and set the value of ${name} from");
+							values->push_back(" * the serialized data map.");
+							values->push_back(" *");
+							values->push_back(" * @param __data - Serialized data map pointer.");
+							values->push_back(" */");
 							values->push_back("void set_map_${name}(__struct_datatype__ *__data) {");
 							values->push_back("    CHECK_NOT_NULL(__data);");
 							values->push_back("    if (NOT_NULL(this->${name})) {");
@@ -482,6 +585,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_TYPE_LIST_SERIALIZER", values});
+							values->push_back("/**");
+							values->push_back(" * Serialize the list instance of value type ${type_ptr}.");
+							values->push_back(" *");
+							values->push_back(" * @param __value - Vector instance of ${type_ptr}.");
+							values->push_back(" * @return - Vector of serialized data maps.");
+							values->push_back(" */");
 							values->push_back("std::vector<__struct_datatype__ *> *serialize_list_${name}(std::vector<${type_ptr}> *__value) {");
 							values->push_back("    CHECK_NOT_EMPTY_P(__value);");
 							values->push_back("    std::vector<__struct_datatype__ *> *__list = new std::vector<__struct_datatype__ *>();");
@@ -500,6 +609,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_NATIVE_SETTER_FROM_MAP", values});
+							values->push_back("// Set the value of ${name}");
 							values->push_back("${type_ptr} __var = static_cast<${type_ptr}>(__ptr);");
 							values->push_back("CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));");
 							values->push_back("this->${name} = __var;");
@@ -509,6 +619,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_FREE_DATA_PTR", values});
+							values->push_back("/**");
+							values->push_back(" * Free an instance of the serialized data map.");
+							values->push_back(" *");
+							values->push_back(" * @param __data - Pointer to the instance of a serialized data map.");
+							values->push_back(" * @param allocated - Are the value pointers locally allocated and should be freed?");
+							values->push_back(" */");
 							values->push_back("void free_data_ptr(__struct_datatype__ *__data, bool allocated) override {");
 							values->push_back("	__struct_datatype__::iterator iter;");
 							values->push_back("	${free_data_calls}");
@@ -521,6 +637,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_TYPE_MAP_DESERIALIZER", values});
+							values->push_back("/**");
+							values->push_back(" * Deserialize a map instance of key/value type ${key_type}/${value_type_ptr} from the passed input data.");
+							values->push_back(" *");
+							values->push_back(" * @param __input - Void pointer of type unordered_map<${key_type}, __struct_datatype__ *>");
+							values->push_back(" * @return - Deserialized map of key/value type unordered_map<${key_type}, ${value_type_ptr}>");
+							values->push_back(" */");
 							values->push_back("std::unordered_map<${key_type}, ${value_type_ptr}> *deserialize_map_${name}(void *__input) {");
 							values->push_back("	CHECK_NOT_NULL(__input);");
 							values->push_back("	std::unordered_map<${key_type}, __struct_datatype__ *> *__value = static_cast<std::unordered_map<${key_type}, __struct_datatype__ *> *>( __input);");
@@ -544,10 +666,10 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_FREE_TYPE_DATA_PTR", values});
 							values->push_back("iter = __data->find(\"${name}\");");
+							values->push_back("// Free the ${name} value if locally allocated");
 							values->push_back("if (iter != __data->end()) {");
 							values->push_back("	if (NOT_NULL(iter->second)) {");
 							values->push_back("		${type_ptr} __ptr = static_cast<${type_ptr}>(iter->second);");
-							values->push_back("	");
 							values->push_back("		if (allocated) {");
 							values->push_back("			CHECK_AND_FREE(__ptr);");
 							values->push_back("		}");
@@ -559,6 +681,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE", values});
+							values->push_back("// Set ${name} from the source value.");
 							values->push_back("if (NOT_NULL(source.${name})) {");
 							values->push_back("	this->${name} = new ${type}(*(source.${name}));");
 							values->push_back("	CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));");
@@ -569,6 +692,16 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_MAP_TYPE_ADD_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Add a key/value pair to the map with a type value.");
+							values->push_back(" * The value is expected to be a pre-allocated ${type} pointer.");
+							values->push_back(" *");
+							values->push_back(" * Method should only be used when this instance is being");
+							values->push_back(" * used to create or update a new record instance.");
+							values->push_back(" *");
+							values->push_back(" * @param m_key - ${key_type} key value.");
+							values->push_back(" * @param m_value - ${value_type_ptr} value pointer.");
+							values->push_back(" */ ");
 							values->push_back("void add_to_${name}(${key_type} m_key, ${value_type_ptr} m_value) {");
 							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("    if (IS_NULL(this->${name})) {");
@@ -583,6 +716,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_FREE_NATIVE_LIST_DATA_PTR", values});
+							values->push_back("// Free the list pointer and the list values, if locally allocated.");
 							values->push_back("iter = __data->find(\"${name}\");");
 							values->push_back("if (iter != __data->end()) {");
 							values->push_back("	if (NOT_NULL(iter->second)) {");
@@ -602,6 +736,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_FREE_TYPE_LIST_DATA_PTR", values});
+							values->push_back("// Free the list pointer and the list values, if locally allocated.");
 							values->push_back("iter = __data->find(\"${name}\");");
 							values->push_back("if (iter != __data->end()) {");
 							values->push_back("	if (NOT_NULL(iter->second)) {");
@@ -621,6 +756,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_SETTER_TO_MAP", values});
+							values->push_back("// Call the method to add the value of ${name} to the serialized data map.");
 							values->push_back("this->set_map_${name}(__data);");
 							// END KEY [CALL_SETTER_TO_MAP]
 
@@ -628,6 +764,14 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_STRING_SETTER_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Set the char buffer value from the specified string.");
+							values->push_back(" *");
+							values->push_back(" * Method should only be used when this instance is being");
+							values->push_back(" * used to create or update a new record instance.");
+							values->push_back(" *");
+							values->push_back(" * @param ${name} - String value to set.");
+							values->push_back(" */");
 							values->push_back("void set_${name}(string &${name}) {");
 							values->push_back("    	FREE_PTR(this->${name});");
 							values->push_back("    	if (!IS_EMPTY(${name})) {");
@@ -644,6 +788,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_FREE_NATIVE_MAP_DATA_PTR", values});
+							values->push_back("// Free the map pointer and the list values, if locally allocated.");
 							values->push_back("iter = __data->find(\"${name}\");");
 							values->push_back("if (iter != __data->end()) {");
 							values->push_back("	if (NOT_NULL(iter->second)) {");
@@ -663,6 +808,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_NATIVE_SETTER_TO_MAP", values});
+							values->push_back("// Add the value of ${name} to the data map.");
 							values->push_back("__data->insert({\"${name}\", this->${name}});");
 							// END KEY [CALL_NATIVE_SETTER_TO_MAP]
 
@@ -670,6 +816,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_TYPE_SETTER_TO_MAP", values});
+							values->push_back("// Serialize the value of ${name} and add to the data map.");
 							values->push_back("void *__ptr = serialize_${type}(this->${name});");
 							values->push_back("CHECK_NOT_NULL(__ptr);");
 							values->push_back("__data->insert({\"${name}\", __ptr});");
@@ -679,6 +826,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_TYPE_MAP_SERIALIZER", values});
+							values->push_back("/**");
+							values->push_back(" * Serialize a map instance of key/value type ${key_type}/${value_type_ptr} from the passed input data.");
+							values->push_back(" *");
+							values->push_back(" * @param __i_map - Input map data.");
+							values->push_back(" * @return - Serialized data map of key/value type unordered_map<${key_type}, __struct_datatype__ *>");
+							values->push_back(" */");
 							values->push_back("std::unordered_map<${key_type}, __struct_datatype__ *> *serialize_map_${name}(std::unordered_map<${key_type}, ${value_type_ptr}> *__i_map) {");
 							values->push_back("    CHECK_NOT_EMPTY_P(__i_map);");
 							values->push_back("    std::unordered_map<${key_type}, __struct_datatype__ *> *__map = new std::unordered_map<${key_type}, __struct_datatype__ *>();");
@@ -701,6 +854,16 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_LIST_STRING_ADD_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Add a string element to the list ${name}. ");
+							values->push_back(" * Elements are expected to be pre-assigned data");
+							values->push_back(" * value.");
+							values->push_back(" *");
+							values->push_back(" * Method should only be used when this instance is being");
+							values->push_back(" * used to create or update a new record instance.");
+							values->push_back(" *");
+							values->push_back(" * @param ${name} - String value to add to list.");
+							values->push_back(" */");
 							values->push_back("void add_to_${name}(string &${name}) {");
 							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("    if (IS_NULL(this->${name})) {");
@@ -722,6 +885,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_TYPE_LIST_SETTER_TO_MAP", values});
+							values->push_back("// Serialize the list ${name} and add to the data map.");
 							values->push_back("void *__ptr = serialize_list_${m_name}(this->${name});");
 							values->push_back("CHECK_NOT_NULL(__ptr);");
 							values->push_back("__data->insert({\"${name}\", __ptr});");
@@ -731,6 +895,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_DESERIALIZE_VALUE", values});
+							values->push_back("    // Set the value of ${name} from the serialized data map.");
 							values->push_back("    this->set_value_${name}(__data);");
 							// END KEY [CALL_DESERIALIZE_VALUE]
 
@@ -738,6 +903,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"CALL_TYPE_SETTER_FROM_MAP", values});
+							values->push_back("// Deserialize and set the value of ${name}");
 							values->push_back("${type_ptr} __var = deserialize_${type}(__ptr);");
 							values->push_back("CHECK_NOT_NULL(__var);");
 							values->push_back("this->${name} = __var;");
@@ -747,6 +913,11 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_SERIALIZE", values});
+							values->push_back("/**");
+							values->push_back(" * Serialize this type instance into a data map instance.");
+							values->push_back(" *");
+							values->push_back(" * @return - Serialized data map instance.");
+							values->push_back(" */");
 							values->push_back("__struct_datatype__ *serialize() override {");
 							values->push_back("    __struct_datatype__ *__data = new __struct_datatype__();");
 							values->push_back("    CHECK_ALLOC(__data, TYPE_NAME(__struct_datatype__));");
@@ -759,6 +930,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_TYPE_SERIALIZER", values});
+							values->push_back("/**");
+							values->push_back(" * Serialize the type value for ${name} and add to the data map.");
+							values->push_back(" *");
+							values->push_back(" * @param __value - Pointer to the field of type ${name}.");
+							values->push_back(" * @return - Serialized data map instance.");
+							values->push_back(" */");
 							values->push_back("__struct_datatype__ *serialize_${name}(${type_ptr} __value) {");
 							values->push_back("    CHECK_NOT_NULL(__value);");
 							values->push_back("    __struct_datatype__ *__data = __value->serialize();");
@@ -771,6 +948,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_TYPE_LIST_DESERIALIZER", values});
+							values->push_back("/**");
+							values->push_back(" * Deserialize a list instance of type ${type_ptr} from the passed input data.");
+							values->push_back(" *");
+							values->push_back(" * @param __input - Void pointer to input data of type vector<__struct_datatype__ *>");
+							values->push_back(" * @return - Deserialized pointer to list of type vector<${type_ptr} *>");
+							values->push_back(" */");
 							values->push_back("std::vector<${type_ptr}> *deserialize_list_${name}(void *__input) {");
 							values->push_back("	CHECK_NOT_NULL(__input);");
 							values->push_back("	std::vector<__struct_datatype__ *> *__value = static_cast<std::vector<__struct_datatype__ *> *>( __input);");
@@ -792,6 +975,10 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_CONSTRUCTOR_WRITABLE", values});
+							values->push_back("/**");
+							values->push_back(" * Empty constructor when creating an instance of ${name} for setting data locally.");
+							values->push_back(" * Should be used to create a new record instance of type ${name}.");
+							values->push_back(" */");
 							values->push_back("${name}() {");
 							values->push_back("    this->__is_allocated = true;");
 							values->push_back("    ${variable_inits}");
@@ -802,6 +989,12 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_CONSTRUCTOR_READABLE", values});
+							values->push_back("/**");
+							values->push_back(" * Create a new read-only instance of ${name} and populate the data from the passed ");
+							values->push_back(" * serialized data map.");
+							values->push_back(" *");
+							values->push_back(" * @param __data - Serialized data map to load the object data from.");
+							values->push_back(" */");
 							values->push_back("${name}(__struct_datatype__ *__data) {");
 							values->push_back("    CHECK_NOT_NULL(__data);");
 							values->push_back("    this->__is_allocated = false;");
