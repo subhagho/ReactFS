@@ -626,10 +626,12 @@ namespace parsers {
 							values->push_back(" * @param allocated - Are the value pointers locally allocated and should be freed?");
 							values->push_back(" */");
 							values->push_back("void free_data_ptr(__struct_datatype__ *__data, bool allocated) override {");
-							values->push_back("	__struct_datatype__::iterator iter;");
-							values->push_back("	${free_data_calls}");
-							values->push_back("	__data->clear();");
-							values->push_back("	CHECK_AND_FREE(__data);");
+							values->push_back("	if (NOT_NULL(__data)) {");
+							values->push_back("		__struct_datatype__::iterator iter;");
+							values->push_back("		${free_data_calls}");
+							values->push_back("		__data->clear();");
+							values->push_back("		CHECK_AND_FREE(__data);");
+							values->push_back("	}");
 							values->push_back("}");
 							// END KEY [FUNC_FREE_DATA_PTR]
 

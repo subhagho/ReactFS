@@ -372,10 +372,12 @@ FUNC_FREE_DATA_PTR:
  * @param allocated - Are the value pointers locally allocated and should be freed?
  */
 void free_data_ptr(__struct_datatype__ *__data, bool allocated) override {
-	__struct_datatype__::iterator iter;
-	${free_data_calls}
-	__data->clear();
-	CHECK_AND_FREE(__data);
+	if (NOT_NULL(__data)) {
+		__struct_datatype__::iterator iter;
+		${free_data_calls}
+		__data->clear();
+		CHECK_AND_FREE(__data);
+	}
 }
 ;;
 

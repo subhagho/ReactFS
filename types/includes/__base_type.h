@@ -62,7 +62,8 @@ REACTFS_NS_CORE
                         __struct_datatype__ *__data = nullptr;
 
                         void free_data_ptr() {
-                            free_data_ptr(this->__data, this->__is_allocated);
+                            if (NOT_NULL(this->__data))
+                                free_data_ptr(this->__data, this->__is_allocated);
                         }
 
                     public:
