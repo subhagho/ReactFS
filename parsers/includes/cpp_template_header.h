@@ -117,7 +117,7 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE_LIST", values});
 							values->push_back("// Deserialize the list ${name} from the source value.");
-							values->push_back("if (NOT_NULL(source.${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source.${name})) {");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
 							values->push_back("	for( ${type_ptr} v : *(source.${name})) {");
@@ -135,7 +135,7 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE_LIST", values});
 							values->push_back("// Deserialize the list ${name} from the source value.");
-							values->push_back("if (!IS_EMPTY_P(source.${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source.${name})) {");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
 							values->push_back("	for( ${type_ptr} v : *(source.${name})) {");
@@ -428,7 +428,7 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE_MAP", values});
 							values->push_back("// Deserialize the map ${name} from the source value.");
-							values->push_back("if (NOT_NULL(source.${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source.${name})) {");
 							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
 							values->push_back("");
@@ -485,7 +485,7 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE_MAP", values});
 							values->push_back("// Deserialize the map ${name} from the source value.");
-							values->push_back("if (NOT_NULL(source.${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source.${name})) {");
 							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
 							values->push_back("");

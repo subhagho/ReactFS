@@ -32,7 +32,7 @@
 #define NOT_NULL(v) (nullptr != v)
 #define IS_NULL(v) (nullptr == v)
 #define IS_EMPTY(v) (v.empty())
-#define IS_EMPTY_P(v) (v->empty())
+#define IS_EMPTY_P(v) (v == nullptr || v->empty())
 #define NOT_EMPTY_P(v) (nullptr != v && !v->empty())
 
 #define CHECK_AND_FREE(p) do { \

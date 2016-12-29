@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <stdlib.h>
 
 #include "common/includes/init_utils.h"
 #include "schema_driver.h"
@@ -92,7 +93,9 @@ main(const int argc, const char **argv) {
                 test_schema *ts = source[ii];
                 __struct_datatype__ *data = ts->serialize();
                 CHECK_NOT_NULL(data);
-                test_schema *tsn = new test_schema(data);
+                ts->free_data_ptr(data, false);
+
+                test_schema *tsn = new test_schema(*ts);
                 target.push_back(tsn);
             }
 

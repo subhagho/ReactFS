@@ -724,7 +724,7 @@ if (NOT_NULL(source.${name})) {
 
 COPY_CALL_NATIVE_LIST:
 // Deserialize the list ${name} from the source value.
-if (!IS_EMPTY_P(source.${name})) {
+if (NOT_EMPTY_P(source.${name})) {
 	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
 	for( ${type_ptr} v : *(source.${name})) {
@@ -740,7 +740,7 @@ if (!IS_EMPTY_P(source.${name})) {
 
 COPY_CALL_TYPE_LIST:
 // Deserialize the list ${name} from the source value.
-if (NOT_NULL(source.${name})) {
+if (NOT_EMPTY_P(source.${name})) {
 	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
 	for( ${type_ptr} v : *(source.${name})) {
@@ -755,7 +755,7 @@ if (NOT_NULL(source.${name})) {
 
 COPY_CALL_NATIVE_MAP:
 // Deserialize the map ${name} from the source value.
-if (NOT_NULL(source.${name})) {
+if (NOT_EMPTY_P(source.${name})) {
 	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
 	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
@@ -773,7 +773,7 @@ if (NOT_NULL(source.${name})) {
 
 COPY_CALL_TYPE_MAP:
 // Deserialize the map ${name} from the source value.
-if (NOT_NULL(source.${name})) {
+if (NOT_EMPTY_P(source.${name})) {
 	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
 	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
