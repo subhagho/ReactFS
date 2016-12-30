@@ -1173,7 +1173,8 @@ REACTFS_NS_CORE
                                 case __type_def_enum::TYPE_STRING: {
                                     __default_string *dd = new __default_string();
                                     CHECK_ALLOC(dd, TYPE_NAME(__default_string));
-                                    dd->set_value(*value);
+                                    string ss = *value;
+                                    dd->set_value(ss);
 
                                     d = dd;
                                 }

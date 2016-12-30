@@ -27,6 +27,7 @@
 #include <limits>
 #if defined(__GNUC__)
 #include <string.h>     // need both string and string.h for GCC
+#include <stdlib.h>
 #endif
 
 #define NOT_NULL(v) (nullptr != v)

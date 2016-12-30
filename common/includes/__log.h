@@ -230,7 +230,7 @@ REACTFS_NS_COMMON
 
                         spd::set_pattern(format);
 
-                        console = console = spd::stdout_logger_mt("console");
+                        console = console = spd::stdout_color_mt("console");
                         if (NOT_NULL(console))
                             console->set_level(level);
                         if (!IS_EMPTY(filename)) {

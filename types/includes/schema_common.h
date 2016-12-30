@@ -453,7 +453,7 @@ REACTFS_NS_CORE
                             return r_size;
                         }
 
-                        void print() const override {
+                        virtual void print() const override {
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             string v = __type_enum_helper::get_string_value(&value, this->datatype);
                             LOG_DEBUG("\t[type=%s] value='%s'", t.c_str(), v.c_str());
@@ -482,6 +482,16 @@ REACTFS_NS_CORE
                                 CHECK_ALLOC(this->value, TYPE_NAME(char));
                                 memset(this->value, 0, size);
                                 memcpy(this->value, value.c_str(), value.length());
+                            }
+                        }
+
+                        virtual void print() const override {
+                            string t = __type_enum_helper::get_type_string(this->datatype);
+                            if (NOT_NULL(this->value) && strlen(this->value) > 0) {
+                                string v = string(value);
+                                LOG_DEBUG("\t[type=%s] value='%s'", t.c_str(), v.c_str());
+                            } else {
+                                LOG_ERROR("\t[type=%s] value=NULL", t.c_str());
                             }
                         }
                     };
