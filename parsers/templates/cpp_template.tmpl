@@ -701,10 +701,31 @@ ${name}(const ${name} &source) {
 }
 ;;
 
+FUNC_CONSTRUCTOR_COPY_PTR:
+/**
+ * Copy constructor to create a copy instance of ${name}.
+ * Copy instances should be used to update existing records.
+ *
+ * @param source - Source instance of ${name} to copy from.
+ */
+${name}(const ${name} *source) {
+    	this->__is_allocated = true;
+    	${variable_inits}
+	${variable_copy}	
+}
+;;
+
 COPY_CALL_NATIVE:
 // Set ${name} from the source value.
 if (NOT_NULL(source.${name})) {
 	this->set_${name}(*(source.${name}));
+}
+;;
+
+COPY_CALL_NATIVE_PTR:
+// Set ${name} from the source value.
+if (NOT_NULL(source->${name})) {
+	this->set_${name}(*(source->${name}));
 }
 ;;
 
@@ -716,10 +737,26 @@ if (NOT_NULL(source.${name})) {
 }
 ;;
 
+COPY_CALL_STRING_PTR:
+// Set ${name} from the source value.
+if (NOT_NULL(source->${name})) {
+	string __${name} = string(source->${name});
+	this->set_${name}(__${name});
+}
+;;
+
 COPY_CALL_TYPE:
 // Set ${name} from the source value.
 if (NOT_NULL(source.${name})) {
 	this->${name} = new ${type}(*(source.${name}));
+	CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
+}
+;;
+
+COPY_CALL_TYPE_PTR:
+// Set ${name} from the source value.
+if (NOT_NULL(source->${name})) {
+	this->${name} = new ${type}(source->${name});
 	CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
 }
 ;;
@@ -740,6 +777,22 @@ if (NOT_EMPTY_P(source.${name})) {
 }
 ;;
 
+COPY_CALL_NATIVE_LIST_PTR:
+// Deserialize the list ${name} from the source value.
+if (NOT_EMPTY_P(source->${name})) {
+	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
+	CHECK_ALLOC(__list, TYPE_NAME(vector));
+	for( ${type_ptr} v : *(source->${name})) {
+		CHECK_NOT_NULL(v);
+		${type_ptr} __tv = (${type_ptr}) malloc (sizeof(${type}));
+		CHECK_ALLOC(__tv, TYPE_NAME(${type}));
+		*__tv = *v;
+		__list->push_back(__tv);
+	}
+	this->${name} = __list;
+}
+;;
+
 COPY_CALL_TYPE_LIST:
 // Deserialize the list ${name} from the source value.
 if (NOT_EMPTY_P(source.${name})) {
@@ -747,7 +800,7 @@ if (NOT_EMPTY_P(source.${name})) {
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
 	for( ${type_ptr} v : *(source.${name})) {
 		CHECK_NOT_NULL(v);
-		${type_ptr} __tv = new ${type}(*v);
+		${type_ptr} __tv = new ${type}(v);
 		CHECK_NOT_NULL(__tv);
 		__list->push_back(__tv);
 	}
@@ -755,6 +808,20 @@ if (NOT_EMPTY_P(source.${name})) {
 }
 ;;
 
+COPY_CALL_TYPE_LIST_PTR:
+// Deserialize the list ${name} from the source value.
+if (NOT_EMPTY_P(source->${name})) {
+	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
+	CHECK_ALLOC(__list, TYPE_NAME(vector));
+	for( ${type_ptr} v : *(source->${name})) {
+		CHECK_NOT_NULL(v);
+		${type_ptr} __tv = new ${type}(v);
+		CHECK_NOT_NULL(__tv);
+		__list->push_back(__tv);
+	}
+	this->${name} = __list;
+}
+;;
 COPY_CALL_NATIVE_MAP:
 // Deserialize the map ${name} from the source value.
 if (NOT_EMPTY_P(source.${name})) {
@@ -763,6 +830,24 @@ if (NOT_EMPTY_P(source.${name})) {
 
 	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;
 	for (iter = source.${name}->begin(); iter != source.${name}->end(); iter++) {
+		CHECK_NOT_NULL(iter->second);
+		${value_type_ptr} __tv = (${value_type_ptr}) malloc(sizeof(${value_type}));
+		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
+		*__tv = *(iter->second);
+		__map->insert({iter->first, __tv});
+	}	
+	this->${name} = __map;
+}
+;;
+
+COPY_CALL_NATIVE_MAP_PTR:
+// Deserialize the map ${name} from the source value.
+if (NOT_EMPTY_P(source->${name})) {
+	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
+	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
+
+	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;
+	for (iter = source->${name}->begin(); iter != source->${name}->end(); iter++) {
 		CHECK_NOT_NULL(iter->second);
 		${value_type_ptr} __tv = (${value_type_ptr}) malloc(sizeof(${value_type}));
 		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
@@ -783,6 +868,23 @@ if (NOT_EMPTY_P(source.${name})) {
 	for (iter = source.${name}->begin(); iter != source.${name}->end(); iter++) {
 		CHECK_NOT_NULL(iter->second);
 		${value_type_ptr} __tv = new ${value_type}(*iter->second);
+		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
+		__map->insert({iter->first, __tv});
+	}	
+	this->${name} = __map;
+}
+;;
+
+COPY_CALL_TYPE_MAP_PTR:
+// Deserialize the map ${name} from the source value.
+if (NOT_EMPTY_P(source->${name})) {
+	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
+	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
+
+	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;
+	for (iter = source->${name}->begin(); iter != source->${name}->end(); iter++) {
+		CHECK_NOT_NULL(iter->second);
+		${value_type_ptr} __tv = new ${value_type}(iter->second);
 		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
 		__map->insert({iter->first, __tv});
 	}	

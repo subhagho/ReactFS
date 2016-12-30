@@ -26,7 +26,7 @@
 #include "common_structs.h"
 
 #define NODE_ENV_BASE_DIR "__node"
-#define NODE_ENV_FILE_NAME "__NODE_ENV.DATA"
+#define NODE_ENV_FILE_NAME "__RFS_NODE_ENV.DATA"
 #define NODE_ENV_CONFIG_NODE "/configuration/node/node-env"
 #define NODE_ENV_CONFIG_THREAD_POOL "/configuration/node/thread-pool"
 #define NODE_ENV_CONFIG_SHM_SIZE "data-size"

@@ -54,6 +54,7 @@ REACTFS_NS_CORE
                         vector<string> free_calls;
                         vector<string> struct_free_calls;
                         vector<string> copy_constr_calls;
+                        vector<string> copy_constr_calls_ptr;
 
                         string get_file_header(const string &classname, const string &schema_name,
                                                __version_header &version) {
@@ -267,6 +268,31 @@ REACTFS_NS_CORE
                             add_public_method(fstr);
                         }
 
+                        void generate_copy_constr_ptr() {
+                            stringstream istream;
+                            for (string var : variables) {
+                                string ss = common_utils::format("this->%s = nullptr;", var.c_str());
+                                istream << ss << "\n";
+                            }
+                            string inits = string(istream.str());
+
+                            string copies;
+                            READ_FROM_VECT(copies, copy_constr_calls_ptr);
+
+                            string fstr;
+                            READ_PARSED_ROWS(fstr, template_header, CPPT_TOKEN_FUNC_CONSTRUCTOR_COPY_PTR);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
+                            string tk_copies = CPPT_TOKEN_DEF_VARIABLE_COPY;
+
+                            REPLACE_TOKE(fstr, tk_name, classname);
+                            REPLACE_TOKE(fstr, tk_inits, inits);
+                            REPLACE_TOKE(fstr, tk_copies, copies);
+
+                            add_public_method(fstr);
+                        }
+
                         void generate_struct_free() {
                             string inits;
                             READ_FROM_VECT(inits, struct_free_calls);
@@ -300,6 +326,7 @@ REACTFS_NS_CORE
                             generate_empty_constr();
                             generate_serde_constr();
                             generate_copy_constr();
+                            generate_copy_constr_ptr();
                             generate_destr();
                             generate_struct_free();
                             generate_deserializer();
@@ -612,6 +639,74 @@ REACTFS_NS_CORE
                             REPLACE_TOKE(str, tk_v_type_ptr, vt->get_type_ptr());
 
                             copy_constr_calls.push_back(str);
+                        }
+
+                        void add_native_copy_ptr(__native_type *type, string token) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, token);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            REPLACE_TOKE(str, tk_name, type->get_name());
+
+                            copy_constr_calls_ptr.push_back(str);
+                        }
+
+                        void add_type_copy_ptr(__native_type *type) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_COPY_CALL_TYPE_PTR);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+
+                            REPLACE_TOKE(str, tk_name, type->get_name());
+                            REPLACE_TOKE(str, tk_type, type->get_type_name());
+
+                            copy_constr_calls_ptr.push_back(str);
+                        }
+
+                        void add_list_copy_ptr(__list_type *type, string token) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, token);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
+                            __native_type *it = type->get_inner_type();
+
+                            string dt = it->get_type_name();
+                            string dtp = it->get_type_ptr();
+
+                            REPLACE_TOKE(str, tk_name, type->get_name());
+                            REPLACE_TOKE(str, tk_type, dt);
+                            REPLACE_TOKE(str, tk_type_ptr, dtp);
+
+                            copy_constr_calls_ptr.push_back(str);
+                        }
+
+                        void add_map_copy_ptr(__map_type *type, string token) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, token);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
+                            string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
+                            string tk_v_type = CPPT_TOKEN_DEF_VALUE_TYPE;
+
+                            __native_type *kt = type->get_key_type();
+                            __native_type *vt = type->get_value_type();
+
+                            string kdt = kt->get_type_name();
+                            if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                kdt = "std::string";
+                            }
+
+                            REPLACE_TOKE(str, tk_name, type->get_name());
+                            REPLACE_TOKE(str, tk_k_type, kdt);
+                            REPLACE_TOKE(str, tk_v_type, vt->get_type_name());
+                            REPLACE_TOKE(str, tk_v_type_ptr, vt->get_type_ptr());
+
+                            copy_constr_calls_ptr.push_back(str);
                         }
 
                         string get_declare(__native_type *type) {

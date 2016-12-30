@@ -25,6 +25,7 @@
 
 #include "common/includes/common.h"
 #include "types/includes/schema_def.h"
+#include "types/includes/type_defs.h"
 
 #include "core.h"
 #include "base_block.h"
@@ -78,6 +79,52 @@ REACTFS_NS_CORE
                     virtual string create(uint64_t block_id, uint64_t parent_id, string filename, __block_usage usage,
                                           uint64_t block_size, uint64_t start_index, uint32_t est_record_size,
                                           bool overwrite) override;
+
+                    /*!
+                     * Read a set of records from the block starting at the specified record index. If count exceeds the
+                     * number of available record, only the set of available records will be returned.
+                     *
+                     * @param index - Start record index.
+                     * @param count - No. of records to read.
+                     * @param data - Result vector to copy the records to.
+                     * @param r_state - Type of records to read.
+                     * @return - No. of records returned.
+                     */
+                    virtual uint32_t read_struct(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
+                                          __record_state r_state = __record_state::R_READABLE);
+
+                    /*!
+                     * Write a data record to the block. Check should be done to ensure that
+                     * enough space is available in the block for the required data length, else
+                     * the call will throw an exception.
+                     *
+                     * @param source - Source buffer to copy data from.
+                     * @param length - Length of data to copy.
+                     * @param transaction_id - Transaction ID.
+                     * @return - Record index of the create record.
+                     */
+                    virtual uint64_t write(void *source, uint32_t length, string transaction_id) override;
+
+
+                    /*!
+                     * Create a new data record and save it to the backing file.
+                     *
+                     * @param source - Source address to copy the data bytes from.
+                     * @param uncompressed_size - In case of compression, the size of the record before compression.
+                     * @return - Record pointer of the added record.
+                     */
+                    __record *
+                    __write_record(__struct_datatype__ *source, string transcation_id, uint64_t uncompressed_size);
+
+                    /*!
+                     * Read a record from this block at the specified index.
+                     *
+                     * @param index - Start index of the record.
+                     * @param offset - Data file offset, read from the index.
+                     * @param size - Size of the data record, read from the index.
+                     * @return - Fetched record.
+                     */
+                    __record *__read_record(uint64_t index, uint64_t offset, uint64_t size);
 
                 };
 REACTFS_NS_CORE_END

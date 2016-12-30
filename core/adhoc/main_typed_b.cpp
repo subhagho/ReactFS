@@ -12,6 +12,7 @@
 #include "common/includes/shared_lock_utils.h"
 #include "common/includes/init_utils.h"
 #include "parsers/includes/schema_driver.h"
+#include "parsers/test/generated/test_schema.h"
 
 #define REUSE_PARENT_ID ULONG_MAX
 
@@ -29,7 +30,65 @@ using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
 using namespace com::wookler::reactfs::core::types;
 using namespace com::wookler::reactfs::core::parsers;
+using namespace com::wookler::test;
 
+test_type *generate_type(int index) {
+    test_type *tt = new test_type();
+    CHECK_ALLOC(tt, TYPE_NAME(test_type));
+
+    string uuid = common_utils::uuid();
+    uuid = common_utils::format("TEST_STRING_%s", uuid.c_str());
+    tt->set_testString(uuid);
+
+    double dv = index * 123.456f;
+    tt->set_testDouble(dv);
+
+    float fv = index * 1.005f;
+    tt->set_testFloat(fv);
+
+    for (int ii = 0; ii < index; ii++) {
+        string key = common_utils::format("TEST_STRING_%d::%d", index, ii);
+        double dk = (index * 123.456f) / ii;
+        tt->add_to_testListString(key);
+        tt->add_to_testMapString(dk, key);
+    }
+    return tt;
+}
+
+test_ref_type *generate_ref(string &key, int index) {
+    test_ref_type *tr = new test_ref_type();
+    CHECK_ALLOC(tr, TYPE_NAME(test_ref_type));
+
+    tr->set_name(key);
+    for (int ii = 0; ii < index; ii++) {
+        string key = common_utils::format("TEST_REF_TYPE_%d::%d", index, ii);
+        test_type *tt = generate_type(ii);
+        tr->add_to_testRefMap(key, tt);
+    }
+    return tr;
+}
+
+test_schema *generate_schema(int index) {
+    test_schema *ts = new test_schema();
+    CHECK_ALLOC(ts, TYPE_NAME(test_schema));
+
+    string uuid = common_utils::uuid();
+    ts->set_key(uuid);
+
+    short sv = (short) (index % 1024);
+    ts->set_shortWithDefault(sv);
+    long lv = index * 1024;
+    ts->set_testLong(lv);
+
+    test_ref_type *tr = generate_ref(uuid, index);
+    ts->set_testTypeRef(tr);
+
+    for (int ii = 0; ii < index; ii++) {
+        test_type *tt = generate_type(ii);
+        ts->add_to_testListRef(tt);
+    }
+    return ts;
+}
 
 void test_indexed(char *schemaf) {
     node_client_env *c_env = node_init_client::get_client_env();
@@ -57,12 +116,19 @@ void test_indexed(char *schemaf) {
                                                   rec_size, RECORD_START_INDEX, true);
     POSTCONDITION(!IS_EMPTY(uuid));
 
-    base_block *block = new typed_block();
+    typed_block *block = new typed_block();
     CHECK_ALLOC(block, TYPE_NAME(typed_block));
     block->open(REUSE_BLOCK_INDEX_ID, p.get_path());
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
-
+    string txid = block->start_transaction(0);
+    test_schema *ts = generate_schema(100);
+    CHECK_NOT_NULL(ts);
+    __struct_datatype__ *dt = ts->serialize();
+    block->write(dt, 0, txid);
+    block->commit(txid);
+    
     CHECK_AND_FREE(block);
+    
 }
 
 

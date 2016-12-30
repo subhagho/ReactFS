@@ -293,7 +293,7 @@ namespace com {
                      */
                     __record *write_record(void *source, uint32_t length, string transaction_id);
 
-                    void process_record_data(__record *ptr, temp_buffer *buffer,
+                    virtual void process_record_data(__record *ptr, temp_buffer *buffer,
                                              temp_buffer *writebuff,
                                              vector<shared_read_ptr> *data);
 

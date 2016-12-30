@@ -134,6 +134,7 @@ REACTFS_NS_COMMON
                      * @return
                      */
                     exclusive_lock(const string *name) {
+                        CHECK_NOT_EMPTY_P(name);
                         this->name = new string(*name);
                         CHECK_ALLOC(this->name, TYPE_NAME(string));
                         string ss = common_utils::get_name_hash(*name);
@@ -151,6 +152,7 @@ REACTFS_NS_COMMON
                      * @return
                      */
                     exclusive_lock(const string *name, mode_t mode) {
+                        CHECK_NOT_EMPTY_P(name);
                         this->name = new string(*name);
                         CHECK_ALLOC(this->name, TYPE_NAME(string));
                         string ss = common_utils::get_name_hash(*name);
@@ -252,8 +254,10 @@ REACTFS_NS_COMMON
                         if (is_locked()) {
                             return true;
                         }
+                        TRACE("Trying lock [%s][%s]...", this->name->c_str(), this->sem_name.c_str());
                         CHECK_SEMAPHORE_PTR(semaphore, name);
                         if (sem_trywait(semaphore) == 0) {
+                            TRACE("Acquired lock [%s][%s]...", this->name->c_str(), this->sem_name.c_str());
                             set_locked();
                             return true;
                         } else {
@@ -289,8 +293,10 @@ REACTFS_NS_COMMON
                         if (is_locked()) {
                             return true;
                         }
+                        TRACE("Trying lock [%s][%s]...", this->name->c_str(), this->sem_name.c_str());
                         CHECK_SEMAPHORE_PTR(semaphore, name);
                         if (sem_wait(semaphore) == 0) {
+                            TRACE("Acquired lock [%s][%s]...", this->name->c_str(), this->sem_name.c_str());
                             set_locked();
                             return true;
                         } else {
@@ -307,6 +313,7 @@ REACTFS_NS_COMMON
                         if (!is_locked()) {
                             return false;
                         }
+                        TRACE("Releasing lock [%s][%s]...", this->name->c_str(), this->sem_name.c_str());
                         CHECK_SEMAPHORE_PTR(semaphore, name);
                         if (sem_post(semaphore) == 0) {
                             reset_locked();
@@ -402,7 +409,8 @@ REACTFS_NS_COMMON
                 };
 REACTFS_NS_COMMON_END
 
-#define WAIT_LOCK_GUARD(lock, i) com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, true);
+#define WAIT_LOCK_GUARD(lock, i) \
+    com::wookler::reactfs::common::exclusive_lock_guard __guard_##i(lock, true); \
 
 #define RELEASE_LOCK_GUARD(i) __guard_##i.release();
 

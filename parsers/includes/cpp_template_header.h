@@ -64,6 +64,35 @@ namespace parsers {
 							values->push_back("");
 							// END KEY [INCLUDE_BASE]
 
+							// KEY [COPY_CALL_TYPE_LIST_PTR]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"COPY_CALL_TYPE_LIST_PTR", values});
+							values->push_back("// Deserialize the list ${name} from the source value.");
+							values->push_back("if (NOT_EMPTY_P(source->${name})) {");
+							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
+							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
+							values->push_back("	for( ${type_ptr} v : *(source->${name})) {");
+							values->push_back("		CHECK_NOT_NULL(v);");
+							values->push_back("		${type_ptr} __tv = new ${type}(v);");
+							values->push_back("		CHECK_NOT_NULL(__tv);");
+							values->push_back("		__list->push_back(__tv);");
+							values->push_back("	}");
+							values->push_back("	this->${name} = __list;");
+							values->push_back("}");
+							// END KEY [COPY_CALL_TYPE_LIST_PTR]
+
+							// KEY [COPY_CALL_STRING_PTR]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"COPY_CALL_STRING_PTR", values});
+							values->push_back("// Set ${name} from the source value.");
+							values->push_back("if (NOT_NULL(source->${name})) {");
+							values->push_back("	string __${name} = string(source->${name});");
+							values->push_back("	this->set_${name}(__${name});");
+							values->push_back("}");
+							// END KEY [COPY_CALL_STRING_PTR]
+
 							// KEY [COPY_CALL_STRING]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -75,6 +104,16 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [COPY_CALL_STRING]
 
+							// KEY [COPY_CALL_NATIVE_PTR]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"COPY_CALL_NATIVE_PTR", values});
+							values->push_back("// Set ${name} from the source value.");
+							values->push_back("if (NOT_NULL(source->${name})) {");
+							values->push_back("	this->set_${name}(*(source->${name}));");
+							values->push_back("}");
+							// END KEY [COPY_CALL_NATIVE_PTR]
+
 							// KEY [COPY_CALL_NATIVE]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -84,6 +123,23 @@ namespace parsers {
 							values->push_back("	this->set_${name}(*(source.${name}));");
 							values->push_back("}");
 							// END KEY [COPY_CALL_NATIVE]
+
+							// KEY [FUNC_CONSTRUCTOR_COPY_PTR]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_CONSTRUCTOR_COPY_PTR", values});
+							values->push_back("/**");
+							values->push_back(" * Copy constructor to create a copy instance of ${name}.");
+							values->push_back(" * Copy instances should be used to update existing records.");
+							values->push_back(" *");
+							values->push_back(" * @param source - Source instance of ${name} to copy from.");
+							values->push_back(" */");
+							values->push_back("${name}(const ${name} *source) {");
+							values->push_back("    	this->__is_allocated = true;");
+							values->push_back("    	${variable_inits}");
+							values->push_back("	${variable_copy}	");
+							values->push_back("}");
+							// END KEY [FUNC_CONSTRUCTOR_COPY_PTR]
 
 							// KEY [FUNC_CONSTRUCTOR_COPY]
 							values = new std::vector<string>();
@@ -122,7 +178,7 @@ namespace parsers {
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
 							values->push_back("	for( ${type_ptr} v : *(source.${name})) {");
 							values->push_back("		CHECK_NOT_NULL(v);");
-							values->push_back("		${type_ptr} __tv = new ${type}(*v);");
+							values->push_back("		${type_ptr} __tv = new ${type}(v);");
 							values->push_back("		CHECK_NOT_NULL(__tv);");
 							values->push_back("		__list->push_back(__tv);");
 							values->push_back("	}");
@@ -307,6 +363,25 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [NAMESPACE]
 
+							// KEY [COPY_CALL_NATIVE_LIST_PTR]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"COPY_CALL_NATIVE_LIST_PTR", values});
+							values->push_back("// Deserialize the list ${name} from the source value.");
+							values->push_back("if (NOT_EMPTY_P(source->${name})) {");
+							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
+							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
+							values->push_back("	for( ${type_ptr} v : *(source->${name})) {");
+							values->push_back("		CHECK_NOT_NULL(v);");
+							values->push_back("		${type_ptr} __tv = (${type_ptr}) malloc (sizeof(${type}));");
+							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${type}));");
+							values->push_back("		*__tv = *v;");
+							values->push_back("		__list->push_back(__tv);");
+							values->push_back("	}");
+							values->push_back("	this->${name} = __list;");
+							values->push_back("}");
+							// END KEY [COPY_CALL_NATIVE_LIST_PTR]
+
 							// KEY [VARIABLE_MAP_TYPE_FREE]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -379,6 +454,27 @@ namespace parsers {
 							values->push_back("CHECK_AND_FREE(this->${name});");
 							// END KEY [VARIABLE_TYPE_FREE]
 
+							// KEY [COPY_CALL_NATIVE_MAP_PTR]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"COPY_CALL_NATIVE_MAP_PTR", values});
+							values->push_back("// Deserialize the map ${name} from the source value.");
+							values->push_back("if (NOT_EMPTY_P(source->${name})) {");
+							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
+							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
+							values->push_back("");
+							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;");
+							values->push_back("	for (iter = source->${name}->begin(); iter != source->${name}->end(); iter++) {");
+							values->push_back("		CHECK_NOT_NULL(iter->second);");
+							values->push_back("		${value_type_ptr} __tv = (${value_type_ptr}) malloc(sizeof(${value_type}));");
+							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));");
+							values->push_back("		*__tv = *(iter->second);");
+							values->push_back("		__map->insert({iter->first, __tv});");
+							values->push_back("	}	");
+							values->push_back("	this->${name} = __map;");
+							values->push_back("}");
+							// END KEY [COPY_CALL_NATIVE_MAP_PTR]
+
 							// KEY [CALL_FREE_NATIVE_DATA_PTR]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -450,6 +546,17 @@ namespace parsers {
 							__cpp_template.insert({"VARIABLE_LIST_TYPE_FREE", values});
 							values->push_back("FREE_TYPE_LIST(this->${name});");
 							// END KEY [VARIABLE_LIST_TYPE_FREE]
+
+							// KEY [COPY_CALL_TYPE_PTR]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"COPY_CALL_TYPE_PTR", values});
+							values->push_back("// Set ${name} from the source value.");
+							values->push_back("if (NOT_NULL(source->${name})) {");
+							values->push_back("	this->${name} = new ${type}(source->${name});");
+							values->push_back("	CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));");
+							values->push_back("}");
+							// END KEY [COPY_CALL_TYPE_PTR]
 
 							// KEY [VARIABLE_NATIVE_DEF]
 							values = new std::vector<string>();
@@ -549,6 +656,26 @@ namespace parsers {
 							values->push_back("    this->${name} = ${name};");
 							values->push_back("}");
 							// END KEY [FUNC_SETTER_PTR_DEF]
+
+							// KEY [COPY_CALL_TYPE_MAP_PTR]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"COPY_CALL_TYPE_MAP_PTR", values});
+							values->push_back("// Deserialize the map ${name} from the source value.");
+							values->push_back("if (NOT_EMPTY_P(source->${name})) {");
+							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
+							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
+							values->push_back("");
+							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;");
+							values->push_back("	for (iter = source->${name}->begin(); iter != source->${name}->end(); iter++) {");
+							values->push_back("		CHECK_NOT_NULL(iter->second);");
+							values->push_back("		${value_type_ptr} __tv = new ${value_type}(iter->second);");
+							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));");
+							values->push_back("		__map->insert({iter->first, __tv});");
+							values->push_back("	}	");
+							values->push_back("	this->${name} = __map;");
+							values->push_back("}");
+							// END KEY [COPY_CALL_TYPE_MAP_PTR]
 
 							// KEY [FUNC_SETTER_TO_MAP]
 							values = new std::vector<string>();
@@ -1031,8 +1158,12 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_FILE_DEF "FILE_DEF"
 #define CPPT_TOKEN_CLASS_DEF "CLASS_DEF"
 #define CPPT_TOKEN_INCLUDE_BASE "INCLUDE_BASE"
+#define CPPT_TOKEN_COPY_CALL_TYPE_LIST_PTR "COPY_CALL_TYPE_LIST_PTR"
+#define CPPT_TOKEN_COPY_CALL_STRING_PTR "COPY_CALL_STRING_PTR"
 #define CPPT_TOKEN_COPY_CALL_STRING "COPY_CALL_STRING"
+#define CPPT_TOKEN_COPY_CALL_NATIVE_PTR "COPY_CALL_NATIVE_PTR"
 #define CPPT_TOKEN_COPY_CALL_NATIVE "COPY_CALL_NATIVE"
+#define CPPT_TOKEN_FUNC_CONSTRUCTOR_COPY_PTR "FUNC_CONSTRUCTOR_COPY_PTR"
 #define CPPT_TOKEN_FUNC_CONSTRUCTOR_COPY "FUNC_CONSTRUCTOR_COPY"
 #define CPPT_TOKEN_CALL_TYPE_LIST_SETTER_FROM_MAP "CALL_TYPE_LIST_SETTER_FROM_MAP"
 #define CPPT_TOKEN_COPY_CALL_TYPE_LIST "COPY_CALL_TYPE_LIST"
@@ -1045,16 +1176,19 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_CALL_TYPE_MAP_SETTER_TO_MAP "CALL_TYPE_MAP_SETTER_TO_MAP"
 #define CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF "FUNC_LIST_TYPE_ADD_DEF"
 #define CPPT_TOKEN_NAMESPACE "NAMESPACE"
+#define CPPT_TOKEN_COPY_CALL_NATIVE_LIST_PTR "COPY_CALL_NATIVE_LIST_PTR"
 #define CPPT_TOKEN_VARIABLE_MAP_TYPE_FREE "VARIABLE_MAP_TYPE_FREE"
 #define CPPT_TOKEN_FUNC_LIST_NATIVE_ADD_DEF "FUNC_LIST_NATIVE_ADD_DEF"
 #define CPPT_TOKEN_VARIABLE_NATIVE_FREE "VARIABLE_NATIVE_FREE"
 #define CPPT_TOKEN_FUNC_NATIVE_SETTER_DEF "FUNC_NATIVE_SETTER_DEF"
 #define CPPT_TOKEN_VARIABLE_TYPE_FREE "VARIABLE_TYPE_FREE"
+#define CPPT_TOKEN_COPY_CALL_NATIVE_MAP_PTR "COPY_CALL_NATIVE_MAP_PTR"
 #define CPPT_TOKEN_CALL_FREE_NATIVE_DATA_PTR "CALL_FREE_NATIVE_DATA_PTR"
 #define CPPT_TOKEN_FUNC_DESERIALIZE "FUNC_DESERIALIZE"
 #define CPPT_TOKEN_VARIABLE_LIST_NATIVE_FREE "VARIABLE_LIST_NATIVE_FREE"
 #define CPPT_TOKEN_COPY_CALL_NATIVE_MAP "COPY_CALL_NATIVE_MAP"
 #define CPPT_TOKEN_VARIABLE_LIST_TYPE_FREE "VARIABLE_LIST_TYPE_FREE"
+#define CPPT_TOKEN_COPY_CALL_TYPE_PTR "COPY_CALL_TYPE_PTR"
 #define CPPT_TOKEN_VARIABLE_NATIVE_DEF "VARIABLE_NATIVE_DEF"
 #define CPPT_TOKEN_CALL_TYPE_MAP_SETTER_FROM_MAP "CALL_TYPE_MAP_SETTER_FROM_MAP"
 #define CPPT_TOKEN_VARIABLE_MAP_NATIVE_FREE "VARIABLE_MAP_NATIVE_FREE"
@@ -1062,6 +1196,7 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_FUNC_TYPE_DESERIALIZER "FUNC_TYPE_DESERIALIZER"
 #define CPPT_TOKEN_FUNC_GETTER_DEF "FUNC_GETTER_DEF"
 #define CPPT_TOKEN_FUNC_SETTER_PTR_DEF "FUNC_SETTER_PTR_DEF"
+#define CPPT_TOKEN_COPY_CALL_TYPE_MAP_PTR "COPY_CALL_TYPE_MAP_PTR"
 #define CPPT_TOKEN_FUNC_SETTER_TO_MAP "FUNC_SETTER_TO_MAP"
 #define CPPT_TOKEN_FILE_COMMENT "FILE_COMMENT"
 #define CPPT_TOKEN_FUNC_TYPE_LIST_SERIALIZER "FUNC_TYPE_LIST_SERIALIZER"

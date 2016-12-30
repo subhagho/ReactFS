@@ -365,7 +365,7 @@ REACTFS_NS_CORE
                      */
                     template<typename __T, __type_def_enum __type>
                     class __typed_default : public __default {
-                    private:
+                    protected:
                         /// Datatype enum of the value.
                         __type_def_enum datatype = __type;
                         /// Typed default value
@@ -468,7 +468,23 @@ REACTFS_NS_CORE
                     typedef __typed_default<uint64_t, __type_def_enum::TYPE_TIMESTAMP> __default_timestamp;
                     typedef __typed_default<float, __type_def_enum::TYPE_FLOAT> __default_float;
                     typedef __typed_default<double, __type_def_enum::TYPE_DOUBLE> __default_double;
-                    typedef __typed_default<string, __type_def_enum::TYPE_STRING> __default_string;
+
+                    class __default_string : public __typed_default<char *, __type_def_enum::TYPE_STRING> {
+                    public:
+                        __default_string() {
+                            this->value = nullptr;
+                        }
+                        void set_value(string &value) {
+                            FREE_PTR(this->value);
+                            if (!IS_EMPTY(value)) {
+                                uint32_t size = value.length() + 1;
+                                this->value = (char *) malloc(sizeof(char) * size);
+                                CHECK_ALLOC(this->value, TYPE_NAME(char));
+                                memset(this->value, 0, size);
+                                memcpy(this->value, value.c_str(), value.length());
+                            }
+                        }
+                    };
 
                 }
 REACTFS_NS_CORE_END
