@@ -191,6 +191,7 @@ REACTFS_NS_CORE
                         unordered_map<string, __reference_type *> *types;
                         /// Map of parsed indexes defined in the schema file.
                         unordered_map<string, __index_def *> *indexes;
+                        unordered_map<string, __complex_type *> c_types;
 
                         /*!
                          * Create a default value definition for a field.
@@ -241,6 +242,12 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(type);
                             CHECK_NOT_EMPTY(name);
 
+                            string type_name = *(type->name);
+                            unordered_map<string, __complex_type *>::iterator iter = c_types.find(type_name);
+                            if (iter != c_types.end()) {
+                                return iter->second;
+                            }
+
                             __complex_type *ct = new __complex_type(parent, index, name, *(type->name));
                             CHECK_ALLOC(ct, TYPE_NAME(__complex_type));
 
@@ -256,6 +263,9 @@ REACTFS_NS_CORE
                                             UCHAR_MAX, ct->get_name().c_str());
                                 }
                             }
+
+                            c_types.insert({type_name, ct});
+
                             return ct;
                         }
 
