@@ -32,6 +32,8 @@ using namespace com::wookler::reactfs::core::types;
 using namespace com::wookler::reactfs::core::parsers;
 using namespace com::wookler::test;
 
+double D_VALUES[] = {2120, 1293, 98439, 980202};
+
 test_type *generate_type(int index) {
     test_type *tt = new test_type();
     CHECK_ALLOC(tt, TYPE_NAME(test_type));
@@ -40,13 +42,14 @@ test_type *generate_type(int index) {
     uuid = common_utils::format("TEST_STRING_%s", uuid.c_str());
     tt->set_testString(uuid);
 
-    double dv = index * 123.456f;
+    short in = index % 4;
+    double dv = D_VALUES[in];
     tt->set_testDouble(dv);
 
-    float fv = index * 1.005f;
+    float fv = 1100 + (index * 1.005f);
     tt->set_testFloat(fv);
 
-    for (int ii = 0; ii < index; ii++) {
+    for (int ii = 0; ii < index + 1; ii++) {
         string key = common_utils::format("TEST_STRING_%d::%d", index, ii);
         double dk = (index * 123.456f) / ii;
         tt->add_to_testListString(key);
@@ -60,7 +63,7 @@ test_ref_type *generate_ref(string &key, int index) {
     CHECK_ALLOC(tr, TYPE_NAME(test_ref_type));
 
     tr->set_name(key);
-    for (int ii = 0; ii < index; ii++) {
+    for (int ii = 0; ii < index + 1; ii++) {
         string key = common_utils::format("TEST_REF_TYPE_%d::%d", index, ii);
         test_type *tt = generate_type(ii);
         tr->add_to_testRefMap(key, tt);
@@ -83,7 +86,7 @@ test_schema *generate_schema(int index) {
     test_ref_type *tr = generate_ref(uuid, index);
     ts->set_testTypeRef(tr);
 
-    for (int ii = 0; ii < index; ii++) {
+    for (int ii = 0; ii < index + 1; ii++) {
         test_type *tt = generate_type(ii);
         ts->add_to_testListRef(tt);
     }
@@ -124,9 +127,16 @@ void test_indexed(char *schemaf) {
     test_schema *ts = generate_schema(100);
     CHECK_NOT_NULL(ts);
     __struct_datatype__ *dt = ts->serialize();
-    block->write(dt, 0, txid);
+    int index = block->write(dt, 0, txid);
     block->commit(txid);
-    
+
+    vector<shared_read_ptr> records;
+    int c = block->read_struct(index, 1, &records);
+    POSTCONDITION(c > 0);
+    shared_read_ptr p0 = records[0];
+    __struct_datatype__ *dt0 = static_cast<__struct_datatype__ *>(p0.get()->get_data_ptr());
+    test_schema * nts = new test_schema(dt0);
+    CHECK_NOT_NULL(nts);
     CHECK_AND_FREE(block);
     
 }

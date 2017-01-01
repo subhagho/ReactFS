@@ -47,7 +47,6 @@ REACTFS_NS_CORE
 
                     class __dt_struct : public __base_datatype_io {
                     private:
-                        __version_header *version = nullptr;
                         __complex_type *fields = nullptr;
 
                         void *get_field_value(const __struct_datatype__ *map, __native_type *type) {
@@ -64,17 +63,8 @@ REACTFS_NS_CORE
                             this->fields = fields;
                         }
 
-                        __dt_struct(__version_header version) {
-                            this->version = (__version_header *) malloc(sizeof(__version_header));
-                            CHECK_ALLOC(this->version, TYPE_NAME(__version_header));
-                            this->version->major = version.major;
-                            this->version->minor = version.minor;
-                            this->type = __type_def_enum::TYPE_STRUCT;
-                        }
-
                         ~__dt_struct() {
                             CHECK_AND_FREE(fields);
-                            FREE_PTR(this->version);
                         }
 
                         void set_fields(__complex_type *fields) {
@@ -85,16 +75,11 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
-                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
-                            __version_header *v = static_cast<__version_header *>(ptr);
-                            CHECK_NOT_NULL(v);
-
-                            POSTCONDITION(version_utils::compatible(*(this->version), *v));
                             __struct_datatype__ **T = (__struct_datatype__ **) t;
                             *T = new __struct_datatype__();
 
-                            uint64_t r_offset = offset + sizeof(__version_header);
-                            uint64_t t_size = sizeof(__version_header);
+                            uint64_t r_offset = offset;
+                            uint64_t t_size = 0;
                             uint64_t *size = nullptr;
                             t_size += buffer_utils::read<uint64_t>(buffer, &r_offset, &size);
                             CHECK_NOT_NULL(size);
@@ -127,11 +112,9 @@ REACTFS_NS_CORE
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             const __struct_datatype__ *map = (const __struct_datatype__ *) value;
                             CHECK_NOT_EMPTY_P(map);
-                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
-                            memcpy(ptr, this->version, sizeof(__version_header));
-                            uint64_t r_offset = offset + sizeof(__version_header);
-                            uint64_t t_size = sizeof(__version_header);
-                            ptr = buffer_utils::increment_data_ptr(buffer, (offset + t_size));
+                            uint64_t r_offset = offset;
+                            uint64_t t_size = 0;
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, (offset + t_size));
                             uint64_t *w_size = static_cast<uint64_t *>(ptr);
                             t_size += sizeof(uint64_t);
 

@@ -213,6 +213,15 @@ com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t c
                 break;
         }
 
+        __struct_datatype__ *st = (__struct_datatype__ *) malloc(sizeof(__struct_datatype__));
+        CHECK_ALLOC(st, TYPE_NAME(__struct_datatype__));
+        dt_struct->read(ptr->data_ptr, &st, 0, ptr->header->data_size);
+
+        shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);
+        (*s_ptr).set_data_ptr(st, ptr->header->data_size);
+
+        data->push_back(s_ptr);
+
         current_index++;
         fetched_count++;
     }

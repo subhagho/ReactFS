@@ -2,7 +2,7 @@ namespace com.wookler.test;
 
 type test_type {
     string testString default "TEST STRING" nullable,
-    double testDouble constraint (!in [2120.0, 1293.3, 98439.88, 980202.77]),
+    double testDouble constraint (in [2120, 1293, 98439, 980202]),
     float   testFloat  constraint(>=1000.00) default 8883.99,
     list<string>   testListString,
     map<double, string> testMapString
