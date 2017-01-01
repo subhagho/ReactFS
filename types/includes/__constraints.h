@@ -286,7 +286,7 @@ REACTFS_NS_CORE
                             uint8_t type = __constraint_type_utils::get_number_value(
                                     __constraint_type::CONSTRAINT_REGEX);
                             uint16_t w_size = buffer_utils::write<uint8_t>(buffer, &off, type);
-                            w_size += handler->write(buffer, &pattern, (offset + w_size), ULONG_MAX);
+                            w_size += handler->write(buffer, pattern.c_str(), (offset + w_size), ULONG_MAX);
 
                             return w_size;
                         }
@@ -307,11 +307,12 @@ REACTFS_NS_CORE
                             POSTCONDITION(*type ==
                                           __constraint_type_utils::get_number_value(
                                                   __constraint_type::CONSTRAINT_REGEX));
-                            string *value = nullptr;
+                            char *value = nullptr;
                             r_size += handler->read(buffer, &value, (offset + r_size), ULONG_MAX);
                             CHECK_NOT_NULL(value);
-                            set_pattern(*value);
-                            CHECK_AND_FREE(value);
+
+                            string v = string(value);
+                            set_pattern(v);
 
                             return r_size;
                         }
@@ -481,12 +482,39 @@ REACTFS_NS_CORE
                             string rmax = __type_enum_helper::get_string_value(&max_value, this->value_type);
 
                             LOG_DEBUG("\tconstraint : %s range[%s, %s] datatype=%s", n.c_str(), rmin.c_str(),
-                                     rmax.c_str(), t.c_str());
+                                      rmax.c_str(), t.c_str());
                         }
                     };
 
                     class string_range_constraint : public __range_constraint<string, __type_def_enum::TYPE_STRING> {
                     public:
+                        /*!
+                         * Write (serialize) this constraint instance.
+                         *
+                         * @param buffer - Output buffer to write the constraint to.
+                         * @param offset - Offset in the buffer to start writing.
+                         * @return - Number of byte written.
+                         */
+                        virtual uint32_t write(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(handler);
+
+                            uint64_t off = offset;
+                            uint8_t type = __constraint_type_utils::get_number_value(
+                                    __constraint_type::CONSTRAINT_RANGE);
+                            uint64_t w_size = buffer_utils::write<uint8_t>(buffer, &off, type);
+
+                            // Write the min value first.
+                            off = (offset + w_size);
+                            w_size += handler->write(buffer, min_value.c_str(), off,
+                                                     ULONG_MAX); // Note: Don't need to worry about buffer size here.
+                            // Write the max value next.
+                            off = (offset + w_size);
+                            w_size += handler->write(buffer, max_value.c_str(), off,
+                                                     ULONG_MAX); // Note: Don't need to worry about buffer size here.
+                            return w_size;
+                        }
+
                         /*!
                         * Read (de-serialize) the constraint instance.
                         *
@@ -507,19 +535,17 @@ REACTFS_NS_CORE
 
                             // Read the min value first.
                             off = offset + r_size;
-                            string *t = nullptr;
+                            char *t = nullptr;
                             r_size += handler->read(buffer, &t, off, ULONG_MAX);
                             CHECK_NOT_NULL(t);
-                            min_value = string(*t);
-                            CHECK_AND_FREE(t);
+                            min_value = string(t);
 
                             // Read the max value next.
                             t = nullptr;
                             off = offset + r_size;
                             r_size += handler->read(buffer, &t, off, ULONG_MAX);
                             CHECK_NOT_NULL(t);
-                            max_value = string(*t);
-                            CHECK_AND_FREE(t);
+                            max_value = string(t);
 
                             return r_size;
                         }
@@ -647,7 +673,7 @@ REACTFS_NS_CORE
                             string v = __type_enum_helper::get_string_value(&(this->value), this->value_type);
                             string o = get_oper_string(this->oper);
                             LOG_DEBUG("\tconstraint : %s compare(%s %s) datatype=%s", n.c_str(), o.c_str(), v.c_str(),
-                                     t.c_str());
+                                      t.c_str());
                         }
                     };
 
@@ -655,6 +681,21 @@ REACTFS_NS_CORE
                     class string_oper_constraint
                             : public __oper_constraint<string, __type_def_enum::TYPE_STRING, __operator> {
                     public:
+                        virtual uint32_t write(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(this->handler);
+
+                            uint64_t off = offset;
+                            uint8_t type = __constraint_type_utils::get_number_value(this->get_constraint_type());
+                            uint64_t w_size = buffer_utils::write<uint8_t>(buffer, &off, type);
+
+                            off = (offset + w_size);
+                            w_size += this->handler->write(buffer, this->value.c_str(), off,
+                                                     ULONG_MAX); // Note: Don't need to worry about buffer size here.
+
+                            return w_size;
+                        }
+
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(this->handler);
@@ -667,11 +708,10 @@ REACTFS_NS_CORE
                                     *type == __constraint_type_utils::get_number_value(this->get_constraint_type()));
 
                             off = offset + r_size;
-                            string *t = nullptr;
+                            char *t = nullptr;
                             r_size += this->handler->read(buffer, &t, off, ULONG_MAX);
                             CHECK_NOT_NULL(t);
-                            this->value = string(*t);
-                            CHECK_AND_FREE(t);
+                            this->value = string(t);
 
                             return r_size;
                         }
@@ -843,12 +883,30 @@ REACTFS_NS_CORE
                                 v.append(tv);
                             }
                             LOG_DEBUG("\tconstraint : %s in(%s) datatype=%s", n.c_str(), v.c_str(),
-                                     t.c_str());
+                                      t.c_str());
                         }
                     };
 
                     class string_value_constraint : public __value_constraint<string, __type_def_enum::TYPE_STRING> {
                     public:
+                        virtual uint32_t write(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(handler);
+
+                            uint64_t off = offset;
+                            uint8_t type = __constraint_type_utils::get_number_value(__constraint_type::CONSTRAINT_IN);
+                            uint64_t w_size = buffer_utils::write<uint8_t>(buffer, &off, type);
+
+                            uint16_t count = values.size();
+                            w_size += buffer_utils::write<uint16_t>(buffer, &off, count);
+                            for (string t : values) {
+                                off = (offset + w_size);
+                                w_size += handler->write(buffer, t.c_str(), off,
+                                                         ULONG_MAX); // Note: Don't need to worry about buffer size here.
+                            }
+                            return w_size;
+                        }
+
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
                             CHECK_NOT_NULL(buffer);
                             CHECK_NOT_NULL(handler);
@@ -865,12 +923,11 @@ REACTFS_NS_CORE
                             if (*count > 0) {
                                 for (uint16_t ii = 0; ii < *count; ii++) {
                                     off = offset + r_size;
-                                    string *t = nullptr;
+                                    char *t = nullptr;
                                     r_size += handler->read(buffer, &t, off, ULONG_MAX);
                                     CHECK_NOT_NULL(t);
 
-                                    values.push_back(string(*t));
-                                    CHECK_AND_FREE(t);
+                                    values.push_back(string(t));
                                 }
                             }
                             return r_size;

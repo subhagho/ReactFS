@@ -474,6 +474,7 @@ REACTFS_NS_CORE
                         __default_string() {
                             this->value = nullptr;
                         }
+
                         void set_value(string &value) {
                             FREE_PTR(this->value);
                             if (!IS_EMPTY(value)) {
@@ -485,11 +486,44 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        /*!
+                         * Write (serialize) this default value instance.
+                         *
+                         * @param buffer - Output buffer to write the constraint to.
+                         * @param offset - Offset in the buffer to start writing.
+                         * @return - Number of byte written.
+                         */
+                        uint32_t write(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(handler);
+
+                            return handler->write(buffer, value, offset, ULONG_MAX);
+                        }
+
+                        /*!
+                         * Read (de-serialize) the default value instance.
+                         *
+                         * @param buffer - Input buffer to read data from.
+                         * @param offset - Offset in the input buffer to read from.
+                         * @return - Number of bytes consumed.
+                         */
+                        uint32_t read(void *buffer, uint64_t offset) override {
+                            CHECK_NOT_NULL(buffer);
+                            CHECK_NOT_NULL(handler);
+
+                            char *t = nullptr;
+                            uint64_t r_size = handler->read(buffer, &t, offset, ULONG_MAX);
+                            CHECK_NOT_NULL(t);
+
+                            this->value = t;
+
+                            return r_size;
+                        }
+
                         virtual void print() const override {
                             string t = __type_enum_helper::get_type_string(this->datatype);
                             if (NOT_NULL(this->value) && strlen(this->value) > 0) {
-                                string v = string(value);
-                                LOG_DEBUG("\t[type=%s] value='%s'", t.c_str(), v.c_str());
+                                LOG_DEBUG("\t[type=%s] value='%s'", t.c_str(), this->value);
                             } else {
                                 LOG_ERROR("\t[type=%s] value=NULL", t.c_str());
                             }
