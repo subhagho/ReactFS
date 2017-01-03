@@ -43,13 +43,13 @@ using namespace REACTFS_NS_COMMON_PREFIX;
 REACTFS_NS_CORE
                 namespace types {
 
-                    typedef unordered_map<string, void *> __struct_datatype__;
+                    typedef unordered_map<string, const void *> __struct_datatype__;
 
                     class __dt_struct : public __base_datatype_io {
                     private:
                         __complex_type *fields = nullptr;
 
-                        void *get_field_value(const __struct_datatype__ *map, __native_type *type) {
+                        const void *get_field_value(const __struct_datatype__ *map, __native_type *type) {
                             CHECK_NOT_NULL(type);
                             __struct_datatype__::const_iterator iter = map->find(type->get_name());
                             if (iter == map->end())
@@ -126,7 +126,8 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(type);
                                 __base_datatype_io *handler = type->get_type_handler();
                                 CHECK_NOT_NULL(handler);
-                                void *d = get_field_value(map, type);
+                                const void *d = get_field_value(map, type);
+                                void *d_value = nullptr;
                                 if (!type->is_valid_value(d)) {
                                     throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
                                                            type->get_name().c_str());
@@ -138,7 +139,8 @@ REACTFS_NS_CORE
                                     }
                                     if (NOT_NULL(type->get_default_value())) {
                                         const __default *df = type->get_default_value();
-                                        df->set_default(d);
+                                        d_value = df->get_default();
+                                        CHECK_NOT_NULL(d_value);
                                     }
                                 }
                                 if (NOT_NULL(d)) {
@@ -157,6 +159,17 @@ REACTFS_NS_CORE
                                     r_offset += r;
                                     t_size += r;
                                     *w_size += r;
+                                } else if (NOT_NULL(d_value)) {
+                                    uint8_t ci = type->get_index();
+                                    uint64_t r = buffer_utils::write<uint8_t>(buffer, &r_offset, ci);
+                                    t_size += r;
+                                    *w_size += r;
+                                    r = handler->write(buffer, d_value, r_offset, max_length);
+                                    r_offset += r;
+                                    t_size += r;
+                                    *w_size += r;
+
+                                    FREE_PTR(d_value);
                                 }
                             }
                             return t_size;
@@ -177,7 +190,7 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(type);
                                 __base_datatype_io *handler = type->get_type_handler();
                                 CHECK_NOT_NULL(handler);
-                                void *d = get_field_value(map, type);
+                                const void *d = get_field_value(map, type);
                                 if (!type->is_valid_value(d)) {
                                     throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
                                                            type->get_name().c_str());

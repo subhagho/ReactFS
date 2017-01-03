@@ -238,7 +238,7 @@ namespace parsers {
 							values->push_back("    if (NOT_NULL(__data)) {");
 							values->push_back("        __struct_datatype__::const_iterator iter = __data->find(\"${name}\");");
 							values->push_back("        if (iter != __data->end()) {");
-							values->push_back("            void *__ptr = iter->second;");
+							values->push_back("            const void *__ptr = iter->second;");
 							values->push_back("            if (NOT_NULL(__ptr)) {");
 							values->push_back("		${read_map_calls}");
 							values->push_back("            } else {");

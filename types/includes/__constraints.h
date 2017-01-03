@@ -171,7 +171,7 @@ REACTFS_NS_CORE
                          * @param value - Data value to validate
                          * @return - Constraint passed?
                          */
-                        virtual bool validate(void *value) const override {
+                        virtual bool validate(const void *value) const override {
                             if (is_not)
                                 return IS_NULL(value);
                             return NOT_NULL(value);
@@ -264,7 +264,7 @@ REACTFS_NS_CORE
                          * @param value - Input string to validate.
                          * @return - Constraint passed?
                          */
-                        virtual bool validate(void *value) const override {
+                        virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 const string *ss = static_cast<const string *>(value);
                                 CHECK_NOT_NULL(ss);
@@ -401,7 +401,7 @@ REACTFS_NS_CORE
                          * @param value - Input data value to validate.
                          * @return - Constraint passed?
                          */
-                        virtual bool validate(void *value) const override {
+                        virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 __T *t = (__T *) value;
                                 CHECK_NOT_NULL(t);
@@ -619,7 +619,7 @@ REACTFS_NS_CORE
                             return this->value_type;
                         }
 
-                        virtual bool validate(void *value) const override {
+                        virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 CHECK_NOT_NULL(handler);
 
@@ -812,7 +812,7 @@ REACTFS_NS_CORE
                             return this->value_type;
                         }
 
-                        virtual bool validate(void *value) const override {
+                        virtual bool validate(const void *value) const override {
                             if (NOT_NULL(value)) {
                                 __T *t = (__T *) value;
                                 CHECK_NOT_NULL(t);

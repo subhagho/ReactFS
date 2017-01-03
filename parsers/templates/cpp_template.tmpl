@@ -306,7 +306,7 @@ void set_value_${name}(__struct_datatype__ *__data) {
     if (NOT_NULL(__data)) {
         __struct_datatype__::const_iterator iter = __data->find("${name}");
         if (iter != __data->end()) {
-            void *__ptr = iter->second;
+            const void *__ptr = iter->second;
             if (NOT_NULL(__ptr)) {
 		${read_map_calls}
             } else {

@@ -260,7 +260,7 @@ REACTFS_NS_CORE
                          * @param value - Data value to validate
                          * @return - Constraint passed?
                          */
-                        virtual bool validate(void *value) const = 0;
+                        virtual bool validate(const void *value) const = 0;
 
                         /*!
                          * Write (serialize) this constraint instance.
@@ -345,11 +345,11 @@ REACTFS_NS_CORE
                         virtual __type_def_enum get_datatype() = 0;
 
                         /*!
-                         * Set the passed pointer to the default value.
+                         * Get the  default value.
                          *
-                         * @param value - Value pointer.
+                         * @return - Value pointer.
                          */
-                        virtual void set_default(void *value) const = 0;
+                        virtual void *get_default() const = 0;
 
                         /*!
                          * Utility function to print the definition of this constraint.
@@ -399,15 +399,11 @@ REACTFS_NS_CORE
                             this->value = value;
                         }
 
-                        /*!
-                         * Set the passed pointer to the default value.
-                         *
-                         * @param value - Value pointer.
-                         */
-                        void set_default(void *value) const override {
-                            __T *t = (__T *) value;
-                            CHECK_NOT_NULL(t);
+                        virtual void *get_default() const override {
+                            __T *t = (__T *) malloc(sizeof(__T));
+                            CHECK_ALLOC(t, TYPE_NAME(__T));
                             *t = this->value;
+                            return t;
                         }
 
                         /*!
@@ -518,6 +514,16 @@ REACTFS_NS_CORE
                             this->value = t;
 
                             return r_size;
+                        }
+
+                        virtual void *get_default() const override {
+                            CHECK_NOT_NULL(this->value);
+                            int s = strlen(this->value);
+                            char *t = (char *) malloc(sizeof(char) * (s + 1));
+                            CHECK_ALLOC(t, TYPE_NAME(char));
+                            memset(t, 0, s + 1);
+                            strncpy(t, this->value, s);
+                            return t;
                         }
 
                         virtual void print() const override {

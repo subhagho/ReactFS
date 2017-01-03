@@ -266,7 +266,7 @@ REACTFS_NS_CORE
                          * @param value - Field data value.
                          * @return - Is valid?
                          */
-                        bool is_valid_value(void *value) {
+                        bool is_valid_value(const void *value) {
                             if (!nullable && IS_NULL(value)) {
                                 return false;
                             }

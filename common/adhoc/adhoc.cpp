@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <malloc.h>
 
 #include "common/includes/common_utils.h"
 #include "common/includes/__threads.h"
@@ -11,56 +12,39 @@
 using namespace std;
 using namespace com::wookler::reactfs::common;
 
-string set_token(const string &token, string &value, string &input) {
-    uint32_t offset = 0;
-    stringstream ss;
-    while (offset < input.length()) {
-        size_t index = input.find(token, offset);
-        if (index == string::npos) {
-            string str = input.substr(offset, input.length());
-            ss << str;
-            break;
-        }
-        string::size_type len = (index - offset);
-        string str = input.substr(offset, len);
-        ss << str;
-        ss << value;
-        offset += (index + token.length());
-    }
-    return string(ss.str());
-}
+typedef struct __field_value__ {
+    int type;
+    void *data = nullptr;
+} __field_value;
 
-string get_next_token(string &input, uint32_t *offset) {
-    string ts("${");
-    string te("}");
-
-    size_t index = input.find(ts, *offset);
-    if (index != string::npos) {
-        size_t endi = input.find(te, index);
-        if (endi == string::npos) {
-            throw BASE_ERROR("Invalid token definition. Token terminator missing.");
-        }
-        string::size_type len = (endi - index + 1);
-        string token = input.substr(index, len);
-        CHECK_NOT_EMPTY(token);
-        *offset = endi + 1;
-        return token;
-    }
-    return common_consts::EMPTY_STRING;
-}
-
-void extract_tokens(string &input) {
-    uint32_t offset = 0;
-    while (offset < input.length()) {
-        string token = get_next_token(input, &offset);
-        if (IS_EMPTY(token)) {
-            break;
-        }
-        cout << "Found token [" << token << "\n";
-    }
-}
 
 int main(int argc, char *argv[]) {
-    string str = "        } else if (this->is_list(\"${type}\") || this->is_map(\"${type}\")) {}";
-    extract_tokens(str);
+    int max = 10;
+    int s = sizeof(__field_value);
+    __field_value **r = (__field_value **) malloc(sizeof(__field_value *) * max);
+    CHECK_ALLOC(r, TYPE_NAME(__field_value));
+    __field_value **ptr = r;
+    for(int ii=0; ii < max; ii++) {
+        if (ii % 2 == 0) {
+            __field_value *nptr = (__field_value *) malloc (sizeof(__field_value));
+            CHECK_ALLOC(nptr, TYPE_NAME(__field_value));
+            *ptr = nptr;
+            (*ptr)->type = ii;
+            (*ptr)->data = (int *) malloc(sizeof(int));
+            memcpy((*ptr)->data, &ii, sizeof(int));
+        } else {
+            *ptr = nullptr;
+        }
+        ptr++;
+    }
+    for(int ii=0; ii < max; ii++) {
+        ptr = r + ii;
+        if (NOT_NULL(ptr)) {
+            int *v = static_cast<int *>((*ptr)->data);
+            cout << (*ptr)->type << ":" << *v << "\n";
+            FREE_PTR((*ptr)->data);
+            FREE_PTR(*ptr);
+        }
+    }
+
 }

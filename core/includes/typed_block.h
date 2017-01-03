@@ -34,6 +34,7 @@
 using namespace REACTFS_NS_CORE_PREFIX::types;
 
 REACTFS_NS_CORE
+
                 class typed_block : public base_indexed_block {
                 protected:
                     __complex_type *datetype = nullptr;
