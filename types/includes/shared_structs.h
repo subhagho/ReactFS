@@ -17,53 +17,56 @@ REACTFS_NS_CORE
 
                     typedef struct __field_value__ {
                         __type_def_enum type;
-                        void *data = nullptr;
+                        const void *data = nullptr;
                     } __field_value;
 
 
+                    template<uint8_t __SIZE>
                     class record_struct {
-                    private:
-                        uint8_t field_count = 0;
-                        __field_value *data_ptr = nullptr;
+                    protected:
+                        uint8_t field_count = __SIZE;
+                        __field_value *data_ptr[__SIZE] = nullptr;
+
+                        void free_value_ptr(uint8_t index) {
+                            __field_value *ptr = data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                if (NOT_NULL(ptr->data)) {
+                                    if (!__type_enum_helper::is_native(ptr->type)) {
+                                        CHECK_AND_FREE(ptr->data);
+                                    } else if (ptr->type == __type_def_enum::TYPE_STRING ||
+                                               ptr->type == __type_def_enum::TYPE_TEXT) {
+                                        FREE_PTR(ptr->data);
+                                    }
+                                }
+                                FREE_PTR(ptr);
+                                data_ptr[index] = nullptr;
+                            }
+                        }
 
                     public:
-                        record_struct(const uint8_t field_count) {
-                            PRECONDITION(field_count > 0);
-                            this->field_count = field_count;
-                            __field_value = (__field_value *) malloc(field_count * sizeof(__field_value));
-                            CHECK_ALLOC(data_ptr, TYPE_NAME(__field_value));
-                            void **ptr = data_ptr;
+                        record_struct() {
                             for (uint8_t ii = 0; ii < field_count; ii++) {
-                                *ptr = nullptr;
-                                ptr++;
+                                data_ptr[ii] = nullptr;
                             }
                         }
 
                         virtual ~record_struct() {
-                            __field_value *ptr = this->data_ptr;
-                            for(uint8_t ii=0; ii < field_count; ii++) {
-                                if (NOT_NULL(ptr)) {
-                                    
-                                    FREE_PTR(ptr);
-                                }
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                free_value_ptr(ii);
                             }
-                            FREE_PTR(data_ptr);
                         }
 
-                        void add_field(uint8_t index, __type_def_enum type, void *data) {
+                        void add_field(uint8_t index, __type_def_enum type, const void *data) {
                             PRECONDITION(index < this->field_count);
                             CHECK_NOT_NULL(data);
+                            PRECONDITION(data_ptr[index] == nullptr);
 
-                            __field_value *ptr = this->data_ptr + index;
-                            if (NOT_NULL(ptr)) {
-                                free_field_data(ptr);
-                                ptr->data = nullptr;
-                            } else {
-                                ptr = (__field_value *) malloc(sizeof(__field_value));
-                                CHECK_ALLOC(ptr, TYPE_NAME(__field_value));
-                            }
+                            __field_value *ptr = (__field_value *) malloc(sizeof(__field_value));
+                            CHECK_ALLOC(ptr, TYPE_NAME(__field_value));
                             ptr->type = type;
                             ptr->data = data;
+
+                            data_ptr[index] = ptr;
                         }
 
                         uint8_t get_field_count() {
@@ -72,7 +75,7 @@ REACTFS_NS_CORE
 
                         virtual const void *get_field(uint8_t index) {
                             PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr + index;
+                            __field_value *ptr = this->data_ptr[index];
                             if (NOT_NULL(ptr)) {
                                 return ptr->data;
                             }
@@ -81,7 +84,7 @@ REACTFS_NS_CORE
 
                         __type_def_enum get_field_type(uint8_t index) {
                             PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr + index;
+                            __field_value *ptr = this->data_ptr[index];
                             if (NOT_NULL(ptr)) {
                                 return ptr->type;
                             }
@@ -90,7 +93,7 @@ REACTFS_NS_CORE
 
                         bool is_field_null(uint8_t index) {
                             PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr + index;
+                            __field_value *ptr = this->data_ptr[index];
 
                             if (NOT_NULL(ptr)) {
                                 return IS_NULL(ptr->data);

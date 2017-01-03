@@ -17,6 +17,7 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <malloc.h>
 #include <algorithm>
 #include <functional>
 #include <cctype>
@@ -53,10 +54,6 @@
 #define BOOL_TRUE "true"
 #define BOOL_FALSE "false"
 
-#define __EMPTY_STRING__ ""
-
-#define RETURN_SUCESS 0
-#define RETURN_ERROR_UNKNOWN -1
 
 #define __DEFAULT_DATETIME_FORMAT__ "%Y-%m-%d %H:%M"
 #define __DEFAULT_TIMESTAMP_FORMAT__ "%Y-%m-%d %X"

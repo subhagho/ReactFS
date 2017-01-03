@@ -7,7 +7,6 @@
 
 #include "common/includes/common_utils.h"
 #include "common/includes/__threads.h"
-#include "common/includes/base_error.h"
 
 using namespace std;
 using namespace com::wookler::reactfs::common;
@@ -17,34 +16,37 @@ typedef struct __field_value__ {
     void *data = nullptr;
 } __field_value;
 
+template <uint8_t __size>
+struct __field_list {
+    uint8_t count = __size;
+    __field_value *values[__size];
+};
 
 int main(int argc, char *argv[]) {
-    int max = 10;
-    int s = sizeof(__field_value);
-    __field_value **r = (__field_value **) malloc(sizeof(__field_value *) * max);
-    CHECK_ALLOC(r, TYPE_NAME(__field_value));
-    __field_value **ptr = r;
+    const uint8_t max = 10;
+    struct __field_list<max> *fields = (__field_list<max> *) malloc(sizeof(__field_list<max>));
+    CHECK_ALLOC(fields, TYPE_NAME(__field_list__));
+
     for(int ii=0; ii < max; ii++) {
         if (ii % 2 == 0) {
             __field_value *nptr = (__field_value *) malloc (sizeof(__field_value));
             CHECK_ALLOC(nptr, TYPE_NAME(__field_value));
-            *ptr = nptr;
-            (*ptr)->type = ii;
-            (*ptr)->data = (int *) malloc(sizeof(int));
-            memcpy((*ptr)->data, &ii, sizeof(int));
+            fields->values[ii] = nptr;
+            nptr->type = ii;
+            nptr->data = (int *) malloc(sizeof(int));
+            memcpy(nptr->data, &ii, sizeof(int));
         } else {
-            *ptr = nullptr;
+            fields->values[ii] = nullptr;
         }
-        ptr++;
     }
     for(int ii=0; ii < max; ii++) {
-        ptr = r + ii;
+        __field_value *ptr = fields->values[ii];
         if (NOT_NULL(ptr)) {
-            int *v = static_cast<int *>((*ptr)->data);
-            cout << (*ptr)->type << ":" << *v << "\n";
-            FREE_PTR((*ptr)->data);
-            FREE_PTR(*ptr);
+            int *v = static_cast<int *>(ptr->data);
+            cout << ptr->type << ":" << *v << "\n";
+            FREE_PTR(ptr->data);
+            FREE_PTR(fields->values[ii]);
         }
     }
-
+    FREE_PTR(fields);
 }
