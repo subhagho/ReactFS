@@ -827,6 +827,934 @@ REACTFS_NS_CORE
                     };
 
                     class complex_type_loader_impl : public __complex_type_helper {
+                    private:
+                        void free_native_list(__list_type *lt, void *value) {
+                            __native_type *it = lt->get_inner_type();
+                            CHECK_NOT_NULL(it);
+                            switch (it->get_datatype()) {
+                                case __type_def_enum::TYPE_CHAR: {
+                                    vector<char *> *v = static_cast<vector<char *> *>(value);
+                                    CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                    CHECK_AND_FREE(v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_BYTE: {
+                                    vector<uint8_t *> *v = static_cast<vector<uint8_t *> *>(value);
+                                    CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                    CHECK_AND_FREE(v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    vector<short *> *v = static_cast<vector<short *> *>(value);
+                                    CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                    CHECK_AND_FREE(v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    vector<int *> *v = static_cast<vector<int *> *>(value);
+                                    CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                    CHECK_AND_FREE(v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    vector<long *> *v = static_cast<vector<long *> *>(value);
+                                    CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                    CHECK_AND_FREE(v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    vector<float *> *v = static_cast<vector<float *> *>(value);
+                                    CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                    CHECK_AND_FREE(v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    vector<double *> *v = static_cast<vector<double *> *>(value);
+                                    CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                    CHECK_AND_FREE(v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    vector<uint64_t *> *v = static_cast<vector<uint64_t *> *>(value);
+                                    CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                    CHECK_AND_FREE(v);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    vector<char *> *v = static_cast<vector<char *> *>(value);
+                                    CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                    CHECK_AND_FREE(v);
+                                }
+                                    break;
+                            }
+                        }
+
+                        void free_type_list(__list_type *lt, void *value, __record_mode mode) {
+                            __native_type *it = lt->get_inner_type();
+                            CHECK_NOT_NULL(it);
+                            POSTCONDITION(it->get_datatype() == __type_def_enum::TYPE_STRUCT);
+                            if (mode == __record_mode::RM_READ) {
+                                vector<record_struct *> *v = static_cast<vector<record_struct *> *>(value);
+                                CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                for (record_struct *r : *v) {
+                                    free_type_node(r->get_record_type(), r, mode);
+                                }
+                                CHECK_AND_FREE(v);
+                            } else if (mode == __record_mode::RM_READ) {
+                                vector<mutable_record_struct *> *v = static_cast<vector<mutable_record_struct *> *>(value);
+                                CHECK_CAST(v, TYPE_NAME(void * ), TYPE_NAME(vector));
+                                for (mutable_record_struct *r : *v) {
+                                    free_type_node(r->get_record_type(), r, mode);
+                                }
+                                CHECK_AND_FREE(v);
+                            }
+                        }
+
+                        void free_type_map(__map_type *mt, void *value, __record_mode mode) {
+                            __native_type *kt = mt->get_key_type();
+                            CHECK_NOT_NULL(kt);
+                            switch (kt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    if (mode == __record_mode::RM_READ) {
+                                        unordered_map<uint8_t, record_struct *> *map = static_cast<unordered_map<uint8_t, record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        unordered_map<uint8_t, mutable_record_struct *> *map = static_cast<unordered_map<uint8_t, mutable_record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    }
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    if (mode == __record_mode::RM_READ) {
+                                        unordered_map<char, record_struct *> *map = static_cast<unordered_map<char, record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        unordered_map<char, mutable_record_struct *> *map = static_cast<unordered_map<char, mutable_record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    }
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    if (mode == __record_mode::RM_READ) {
+                                        unordered_map<short, record_struct *> *map = static_cast<unordered_map<short, record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        unordered_map<short, mutable_record_struct *> *map = static_cast<unordered_map<short, mutable_record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    }
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    if (mode == __record_mode::RM_READ) {
+                                        unordered_map<int, record_struct *> *map = static_cast<unordered_map<int, record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        unordered_map<int, mutable_record_struct *> *map = static_cast<unordered_map<int, mutable_record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    }
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    if (mode == __record_mode::RM_READ) {
+                                        unordered_map<long, record_struct *> *map = static_cast<unordered_map<long, record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        unordered_map<long, mutable_record_struct *> *map = static_cast<unordered_map<long, mutable_record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    }
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    if (mode == __record_mode::RM_READ) {
+                                        unordered_map<float, record_struct *> *map = static_cast<unordered_map<float, record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        unordered_map<float, mutable_record_struct *> *map = static_cast<unordered_map<float, mutable_record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    }
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    if (mode == __record_mode::RM_READ) {
+                                        unordered_map<double, record_struct *> *map = static_cast<unordered_map<double, record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        unordered_map<double, mutable_record_struct *> *map = static_cast<unordered_map<double, mutable_record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    }
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    if (mode == __record_mode::RM_READ) {
+                                        unordered_map<uint64_t, record_struct *> *map = static_cast<unordered_map<uint64_t, record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        unordered_map<uint64_t, mutable_record_struct *> *map = static_cast<unordered_map<uint64_t, mutable_record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    }
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    if (mode == __record_mode::RM_READ) {
+                                        unordered_map<string, record_struct *> *map = static_cast<unordered_map<string, record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        unordered_map<string, mutable_record_struct *> *map = static_cast<unordered_map<string, mutable_record_struct *> *>(value);
+                                        CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                        for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                            if (NOT_NULL(iter->second)) {
+                                                free_type_node(iter->second->get_record_type(), iter->second, mode);
+                                            }
+                                        }
+                                        CHECK_AND_FREE(map);
+                                    }
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(kt->get_datatype()));
+                            }
+                        }
+
+                        void free_char_map(__map_type *mt, void *value) {
+                            __native_type *vt = mt->get_value_type();
+                            CHECK_NOT_NULL(vt);
+                            switch (vt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    unordered_map<char, uint8_t *> *map = static_cast<unordered_map<char, uint8_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    unordered_map<char, char *> *map = static_cast<unordered_map<char, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    unordered_map<char, short *> *map = static_cast<unordered_map<char, short *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    unordered_map<char, int *> *map = static_cast<unordered_map<char, int *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    unordered_map<char, long *> *map = static_cast<unordered_map<char, long *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    unordered_map<char, float *> *map = static_cast<unordered_map<char, float *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    unordered_map<char, double *> *map = static_cast<unordered_map<char, double *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    unordered_map<char, uint64_t *> *map = static_cast<unordered_map<char, uint64_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    unordered_map<char, char *> *map = static_cast<unordered_map<char, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                            }
+                        }
+
+                        void free_byte_map(__map_type *mt, void *value) {
+                            __native_type *vt = mt->get_value_type();
+                            CHECK_NOT_NULL(vt);
+                            switch (vt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    unordered_map<uint8_t, uint8_t *> *map = static_cast<unordered_map<uint8_t, uint8_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    unordered_map<uint8_t, char *> *map = static_cast<unordered_map<uint8_t, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    unordered_map<uint8_t, short *> *map = static_cast<unordered_map<uint8_t, short *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    unordered_map<uint8_t, int *> *map = static_cast<unordered_map<uint8_t, int *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    unordered_map<uint8_t, long *> *map = static_cast<unordered_map<uint8_t, long *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    unordered_map<uint8_t, float *> *map = static_cast<unordered_map<uint8_t, float *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    unordered_map<uint8_t, double *> *map = static_cast<unordered_map<uint8_t, double *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    unordered_map<uint8_t, uint64_t *> *map = static_cast<unordered_map<uint8_t, uint64_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    unordered_map<uint8_t, char *> *map = static_cast<unordered_map<uint8_t, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                            }
+                        }
+
+                        void free_short_map(__map_type *mt, void *value) {
+                            __native_type *vt = mt->get_value_type();
+                            CHECK_NOT_NULL(vt);
+                            switch (vt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    unordered_map<short, uint8_t *> *map = static_cast<unordered_map<short, uint8_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    unordered_map<short, char *> *map = static_cast<unordered_map<short, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    unordered_map<short, short *> *map = static_cast<unordered_map<short, short *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    unordered_map<short, int *> *map = static_cast<unordered_map<short, int *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    unordered_map<short, long *> *map = static_cast<unordered_map<short, long *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    unordered_map<short, float *> *map = static_cast<unordered_map<short, float *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    unordered_map<short, double *> *map = static_cast<unordered_map<short, double *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    unordered_map<short, uint64_t *> *map = static_cast<unordered_map<short, uint64_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    unordered_map<short, char *> *map = static_cast<unordered_map<short, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                            }
+                        }
+
+                        void free_int_map(__map_type *mt, void *value) {
+                            __native_type *vt = mt->get_value_type();
+                            CHECK_NOT_NULL(vt);
+                            switch (vt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    unordered_map<int, uint8_t *> *map = static_cast<unordered_map<int, uint8_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    unordered_map<int, char *> *map = static_cast<unordered_map<int, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    unordered_map<int, short *> *map = static_cast<unordered_map<int, short *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    unordered_map<int, int *> *map = static_cast<unordered_map<int, int *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    unordered_map<int, long *> *map = static_cast<unordered_map<int, long *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    unordered_map<int, float *> *map = static_cast<unordered_map<int, float *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    unordered_map<int, double *> *map = static_cast<unordered_map<int, double *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    unordered_map<int, uint64_t *> *map = static_cast<unordered_map<int, uint64_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    unordered_map<int, char *> *map = static_cast<unordered_map<int, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                            }
+                        }
+
+                        void free_long_map(__map_type *mt, void *value) {
+                            __native_type *vt = mt->get_value_type();
+                            CHECK_NOT_NULL(vt);
+                            switch (vt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    unordered_map<long, uint8_t *> *map = static_cast<unordered_map<long, uint8_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    unordered_map<long, char *> *map = static_cast<unordered_map<long, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    unordered_map<long, short *> *map = static_cast<unordered_map<long, short *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    unordered_map<long, int *> *map = static_cast<unordered_map<long, int *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    unordered_map<long, long *> *map = static_cast<unordered_map<long, long *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    unordered_map<long, float *> *map = static_cast<unordered_map<long, float *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    unordered_map<long, double *> *map = static_cast<unordered_map<long, double *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    unordered_map<long, uint64_t *> *map = static_cast<unordered_map<long, uint64_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    unordered_map<long, char *> *map = static_cast<unordered_map<long, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                            }
+                        }
+
+                        void free_float_map(__map_type *mt, void *value) {
+                            __native_type *vt = mt->get_value_type();
+                            CHECK_NOT_NULL(vt);
+                            switch (vt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    unordered_map<float, uint8_t *> *map = static_cast<unordered_map<float, uint8_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    unordered_map<float, char *> *map = static_cast<unordered_map<float, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    unordered_map<float, short *> *map = static_cast<unordered_map<float, short *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    unordered_map<float, int *> *map = static_cast<unordered_map<float, int *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    unordered_map<float, long *> *map = static_cast<unordered_map<float, long *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    unordered_map<float, float *> *map = static_cast<unordered_map<float, float *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    unordered_map<float, double *> *map = static_cast<unordered_map<float, double *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    unordered_map<float, uint64_t *> *map = static_cast<unordered_map<float, uint64_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    unordered_map<float, char *> *map = static_cast<unordered_map<float, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                            }
+                        }
+
+                        void free_double_map(__map_type *mt, void *value) {
+                            __native_type *vt = mt->get_value_type();
+                            CHECK_NOT_NULL(vt);
+                            switch (vt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    unordered_map<double, uint8_t *> *map = static_cast<unordered_map<double, uint8_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    unordered_map<double, char *> *map = static_cast<unordered_map<double, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    unordered_map<double, short *> *map = static_cast<unordered_map<double, short *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    unordered_map<double, int *> *map = static_cast<unordered_map<double, int *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    unordered_map<double, long *> *map = static_cast<unordered_map<double, long *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    unordered_map<double, float *> *map = static_cast<unordered_map<double, float *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    unordered_map<double, double *> *map = static_cast<unordered_map<double, double *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    unordered_map<double, uint64_t *> *map = static_cast<unordered_map<double, uint64_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    unordered_map<double, char *> *map = static_cast<unordered_map<double, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                            }
+                        }
+
+                        void free_timestamp_map(__map_type *mt, void *value) {
+                            __native_type *vt = mt->get_value_type();
+                            CHECK_NOT_NULL(vt);
+                            switch (vt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    unordered_map<uint64_t, uint8_t *> *map = static_cast<unordered_map<uint64_t, uint8_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    unordered_map<uint64_t, char *> *map = static_cast<unordered_map<uint64_t, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    unordered_map<uint64_t, short *> *map = static_cast<unordered_map<uint64_t, short *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    unordered_map<uint64_t, int *> *map = static_cast<unordered_map<uint64_t, int *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    unordered_map<uint64_t, long *> *map = static_cast<unordered_map<uint64_t, long *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    unordered_map<uint64_t, float *> *map = static_cast<unordered_map<uint64_t, float *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    unordered_map<uint64_t, double *> *map = static_cast<unordered_map<uint64_t, double *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    unordered_map<uint64_t, uint64_t *> *map = static_cast<unordered_map<uint64_t, uint64_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    unordered_map<uint64_t, char *> *map = static_cast<unordered_map<uint64_t, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                            }
+                        }
+
+                        void free_string_map(__map_type *mt, void *value) {
+                            __native_type *vt = mt->get_value_type();
+                            CHECK_NOT_NULL(vt);
+                            switch (vt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE: {
+                                    unordered_map<string, uint8_t *> *map = static_cast<unordered_map<string, uint8_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_CHAR: {
+                                    unordered_map<string, char *> *map = static_cast<unordered_map<string, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_SHORT: {
+                                    unordered_map<string, short *> *map = static_cast<unordered_map<string, short *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER: {
+                                    unordered_map<string, int *> *map = static_cast<unordered_map<string, int *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_LONG: {
+                                    unordered_map<string, long *> *map = static_cast<unordered_map<string, long *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT: {
+                                    unordered_map<string, float *> *map = static_cast<unordered_map<string, float *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE: {
+                                    unordered_map<string, double *> *map = static_cast<unordered_map<string, double *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP: {
+                                    unordered_map<string, uint64_t *> *map = static_cast<unordered_map<string, uint64_t *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING: {
+                                    unordered_map<string, char *> *map = static_cast<unordered_map<string, char *> *>(value);
+                                    CHECK_CAST(map, TYPE_NAME(void * ), TYPE_NAME(unordered_map));
+                                    CHECK_AND_FREE(map);
+                                }
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                            }
+                        }
+
+                        void free_native_map(__map_type *mt, void *value) {
+                            __native_type *kt = mt->get_key_type();
+                            CHECK_NOT_NULL(kt);
+                            switch (kt->get_datatype()) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    free_byte_map(mt, value);
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    free_char_map(mt, value);
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    free_short_map(mt, value);
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    free_int_map(mt, value);
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    free_long_map(mt, value);
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    free_float_map(mt, value);
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    free_double_map(mt, value);
+                                    break;
+                                case __type_def_enum::TYPE_DATETIME:
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                    free_timestamp_map(mt, value);
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                case __type_def_enum::TYPE_STRING:
+                                    free_string_map(mt, value);
+                                    break;
+                                default:
+                                    throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
+                                                         __type_enum_helper::get_datatype(kt->get_datatype()));
+                            }
+                        }
+
                     public:
                         void read(__native_type *parent, void *buffer, uint64_t offset, uint8_t count,
                                   vector<__native_type *> *fields,
@@ -839,7 +1767,8 @@ REACTFS_NS_CORE
                                 __field_type type = __field_type_helper::get_type(*ft);
                                 if (type == __field_type::NATIVE) {
                                     __native_type *ptr = __type_init_utils::read_inner_type(parent, buffer,
-                                                                                            (offset + r_size), &r_size);
+                                                                                            (offset + r_size),
+                                                                                            &r_size);
                                     CHECK_NOT_NULL(ptr);
                                     fields->push_back(ptr);
                                 } else if (type == __field_type::LIST) {
@@ -872,111 +1801,95 @@ REACTFS_NS_CORE
                         }
 
                         virtual __base_datatype_io *
-                        get_array_type_handler(__field_type field_type, __type_def_enum inner_type,
-                                               __native_type *type, __record_mode mode) override {
-                            if (field_type == __field_type::LIST) {
-                                string key = __type_defs_utils::create_list_key(__type_def_enum::TYPE_LIST,
-                                                                                inner_type);
-                                __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
-                                if (IS_NULL(handler)) {
-                                    if (inner_type != __type_def_enum::TYPE_STRUCT) {
-                                        __base_datatype_io *ah = __list_init_utils::create_handler(inner_type, nullptr,
-                                                                                                   mode);
-                                        CHECK_NOT_NULL(ah);
-                                        if (!__type_defs_utils::add_external_handler(key, ah)) {
-                                            CHECK_AND_FREE(ah);
-                                        }
-                                        handler = __type_defs_utils::get_type_handler(key);
-                                    } else {
-                                        CHECK_NOT_NULL(type);
-                                        __base_datatype_io *ah = __list_init_utils::create_handler(inner_type, type,
-                                                                                                   mode);
-                                        CHECK_NOT_NULL(ah);
-                                        handler = ah;
-                                    }
-                                }
-                                return handler;
-                            }
-                            return nullptr;
-                        }
-
-                        virtual __base_datatype_io *
-                        get_map_type_handler(__type_def_enum key_type, __type_def_enum value_type,
-                                             __native_type *type, __record_mode mode) override {
-
-                            string key = __type_defs_utils::create_map_key(__type_def_enum::TYPE_MAP,
-                                                                           key_type, value_type);
+                        get_array_type_handler(__type_def_enum inner_type_enum,
+                                               __native_type *inner_type, __record_mode
+                                               mode) override {
+                            string key = __type_defs_utils::create_list_key(__type_def_enum::TYPE_LIST,
+                                                                            inner_type_enum);
                             __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
                             if (IS_NULL(handler)) {
-                                if (value_type != __type_def_enum::TYPE_STRUCT) {
-                                    __base_datatype_io *ah = __map_init_utils::create_handler(key_type, value_type,
-                                                                                              type, mode);
+                                if (inner_type_enum != __type_def_enum::TYPE_STRUCT) {
+                                    __base_datatype_io *ah = __list_init_utils::create_handler(inner_type_enum,
+                                                                                               nullptr,
+                                                                                               mode);
                                     CHECK_NOT_NULL(ah);
                                     if (!__type_defs_utils::add_external_handler(key, ah)) {
                                         CHECK_AND_FREE(ah);
                                     }
                                     handler = __type_defs_utils::get_type_handler(key);
                                 } else {
-                                    CHECK_NOT_NULL(type);
-                                    __base_datatype_io *ah = __map_init_utils::create_handler(key_type, value_type,
-                                                                                              type, mode);
+                                    CHECK_NOT_NULL(inner_type);
+                                    __base_datatype_io *ah = __list_init_utils::create_handler(inner_type_enum,
+                                                                                               inner_type,
+                                                                                               mode);
                                     CHECK_NOT_NULL(ah);
                                     handler = ah;
                                 }
                             }
                             return handler;
                         }
-                    };
 
-                    class type_field_helper {
-                    public:
-                        static __native_type *
-                        create_field(__native_type *parent, __type_def_enum type, const string &name,
-                                     const uint8_t index, ...) {
-                            if (__type_enum_helper::is_native(type)) {
-                                __native_type *ptr = new __native_type(parent, index, name, type);
-                                CHECK_ALLOC(ptr, TYPE_NAME(__native_type));
-                                return ptr;
-                            } else if (type == __type_def_enum::TYPE_LIST) {
-                                va_list vl;
-                                va_start(vl, index);
-                                int i_type = va_arg(vl, int);
-                                __type_def_enum inner_type = __type_enum_helper::parse_type(i_type);
-                                __native_type *nt = va_arg(vl, __native_type *);
-                                CHECK_NOT_NULL(nt);
-                                va_end(vl);
+                        virtual __base_datatype_io *
+                        get_map_type_handler(__type_def_enum key_type_enum, __type_def_enum value_type_enum,
+                                             __native_type *value_type, __record_mode
+                                             mode) override {
 
-                                __list_type *ptr = new __list_type(parent, index, name, inner_type, nt);
-                                CHECK_ALLOC(ptr, TYPE_NAME(__list_type));
-                                return ptr;
-                            } else if (type == __type_def_enum::TYPE_MAP) {
-                                va_list vl;
-                                va_start(vl, index);
-                                int k_type = va_arg(vl, int);
-                                __type_def_enum key_type = __type_enum_helper::parse_type(k_type);
-                                int v_type = va_arg(vl, int);
-                                __type_def_enum value_type = __type_enum_helper::parse_type(v_type);
-                                __native_type *nt = va_arg(vl, __native_type *);
-                                CHECK_NOT_NULL(nt);
-                                va_end(vl);
-
-                                __map_type *ptr = new __map_type(parent, index, name, key_type, value_type, nt);
-                                CHECK_ALLOC(ptr, TYPE_NAME(__map_type));
-
-                                return ptr;
-                            } else if (type == __type_def_enum::TYPE_STRUCT) {
-                                va_list vl;
-                                va_start(vl, index);
-                                const char *i_type = va_arg(vl, const char *);
-                                CHECK_NOT_NULL(i_type);
-                                string tname = string(i_type);
-                                __complex_type *ptr = new __complex_type(parent, index, name, tname);
-                                CHECK_ALLOC(ptr, TYPE_NAME(__complex_type));
-                                va_end(vl);
-
-                                return ptr;
+                            string key = __type_defs_utils::create_map_key(__type_def_enum::TYPE_MAP,
+                                                                           key_type_enum, value_type_enum);
+                            __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
+                            if (IS_NULL(handler)) {
+                                if (value_type_enum != __type_def_enum::TYPE_STRUCT) {
+                                    __base_datatype_io *ah = __map_init_utils::create_handler(key_type_enum,
+                                                                                              value_type_enum,
+                                                                                              value_type, mode);
+                                    CHECK_NOT_NULL(ah);
+                                    if (!__type_defs_utils::add_external_handler(key, ah)) {
+                                        CHECK_AND_FREE(ah);
+                                    }
+                                    handler = __type_defs_utils::get_type_handler(key);
+                                } else {
+                                    CHECK_NOT_NULL(value_type);
+                                    __base_datatype_io *ah = __map_init_utils::create_handler(key_type_enum,
+                                                                                              value_type_enum,
+                                                                                              value_type, mode);
+                                    CHECK_NOT_NULL(ah);
+                                    handler = ah;
+                                }
                             }
-                            return nullptr;
+                            return handler;
+                        }
+
+                        void free_type_node(__native_type *type, void *node, __record_mode mode) {
+                            if (IS_NULL(node)) {
+                                return;
+                            }
+                            if (type->get_datatype() == __type_def_enum::TYPE_STRUCT) {
+                                if (mode == __record_mode::RM_WRITE) {
+                                    mutable_record_struct *st = static_cast<mutable_record_struct *>(node);
+                                    CHECK_CAST(st, TYPE_NAME(void * ), TYPE_NAME(mutable_record_struct));
+                                    CHECK_AND_FREE(st);
+                                } else if (mode == __record_mode::RM_READ) {
+                                    record_struct *st = static_cast<record_struct *>(node);
+                                    CHECK_CAST(st, TYPE_NAME(void * ), TYPE_NAME(record_struct));
+                                    CHECK_AND_FREE(st);
+                                }
+                            } else if (type->get_type() == __field_type::LIST) {
+                                __list_type *lt = dynamic_cast<__list_type *>(type);
+                                CHECK_CAST(lt, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
+                                if (lt->get_inner_type()->get_datatype() == __type_def_enum::TYPE_STRUCT) {
+                                    free_type_list(lt, node, mode);
+                                } else {
+                                    free_native_list(lt, node);
+                                }
+                            } else if (type->get_type() == __field_type::MAP) {
+                                __map_type *mt = dynamic_cast<__map_type *>(type);
+                                CHECK_CAST(mt, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
+                                if (mt->get_value_type()->get_datatype() == __type_def_enum::TYPE_STRUCT) {
+                                    free_type_map(mt, node, mode);
+                                } else {
+                                    free_native_map(mt, node);
+                                }
+                            }
                         }
                     };
                 }

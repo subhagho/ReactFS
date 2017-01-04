@@ -58,12 +58,11 @@ REACTFS_NS_CORE
                 namespace types {
                     class __base_type {
                     protected:
-                        bool __is_allocated = false;
-                        __struct_datatype__ *__data = nullptr;
+                        record_struct *__data = nullptr;
 
                         void free_data_ptr() {
                             if (NOT_NULL(this->__data))
-                                free_data_ptr(this->__data, this->__is_allocated);
+                                free_data_ptr(this->__data);
                         }
 
                     public:
@@ -71,11 +70,13 @@ REACTFS_NS_CORE
                             this->__data = nullptr;
                         }
 
-                        virtual void free_data_ptr(__struct_datatype__ *data, bool allocated) = 0;
+                        virtual void free_data_ptr(record_struct *data) = 0;
 
-                        virtual void deserialize(__struct_datatype__ *__data) = 0;
+                        virtual void free_data_ptr(mutable_record_struct *data) = 0;
 
-                        virtual __struct_datatype__ *serialize() = 0;
+                        virtual void deserialize(const record_struct *__data) = 0;
+
+                        virtual mutable_record_struct *serialize() = 0;
                     };
                 }
 REACTFS_NS_CORE_END

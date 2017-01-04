@@ -34,7 +34,6 @@
 
 #include "type_errors.h"
 #include "types_common.h"
-#include "shared_structs.h"
 #include "schema_def.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
@@ -86,13 +85,13 @@ REACTFS_NS_CORE
                                 POSTCONDITION(iter != types.end());
                                 __native_type *type = iter->second;
                                 CHECK_NOT_NULL(type);
-                                __base_datatype_io *handler = type->get_type_handler();
+                                __base_datatype_io *handler = type->get_type_handler(__record_mode::RM_READ);
                                 CHECK_NOT_NULL(handler);
                                 uint64_t r = 0;
                                 void *value = nullptr;
                                 r = handler->read(buffer, &value, r_offset, max_length);
                                 CHECK_NOT_NULL(value);
-                                (*T)->add_field(type->get_index(), type->get_datatype(), value);
+                                (*T)->add_field(type->get_index(), type, value);
                                 t_size += r;
                                 r_offset += r;
                                 *size -= r;
@@ -118,7 +117,7 @@ REACTFS_NS_CORE
                             for (iter = types.begin(); iter != types.end(); iter++) {
                                 __native_type *type = iter->second;
                                 CHECK_NOT_NULL(type);
-                                __base_datatype_io *handler = type->get_type_handler();
+                                __base_datatype_io *handler = type->get_type_handler(__record_mode::RM_WRITE);
                                 CHECK_NOT_NULL(handler);
                                 const void *d =rec->get_field(type->get_index());
                                 if (!type->is_valid_value(d)) {
@@ -172,7 +171,7 @@ REACTFS_NS_CORE
                             for (iter = types.begin(); iter != types.end(); iter++) {
                                 __native_type *type = iter->second;
                                 CHECK_NOT_NULL(type);
-                                __base_datatype_io *handler = type->get_type_handler();
+                                __base_datatype_io *handler = type->get_type_handler(__record_mode::RM_WRITE);
                                 CHECK_NOT_NULL(handler);
                                 const void *d = rec->get_field(type->get_index());
                                 if (!type->is_valid_value(d)) {

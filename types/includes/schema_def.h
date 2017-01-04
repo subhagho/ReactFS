@@ -33,7 +33,6 @@
 #include "schema_common.h"
 #include "__constraints.h"
 #include "schema_helpers.h"
-#include "shared_structs.h"
 
 #define MAP_TYPE_KEY_NAME "key"
 #define MAP_TYPE_VALUE_NAME "value"
@@ -58,6 +57,10 @@ REACTFS_NS_CORE
                         /// Field type is a map
                                 MAP = 6
                     } __field_type;
+
+                    typedef enum __record_mode__ {
+                        RM_READ = 0, RM_WRITE = 1
+                    } __record_mode;
 
                     /*!
                      * Helper class for field type definitions.
@@ -121,11 +124,12 @@ REACTFS_NS_CORE
                         bool nullable = false;
                         /// Parent type of which this field is a part.
                         __native_type *parent = nullptr;
-
                     public:
                         /*!
                          * Default empty constructor, to be instantiated
                          * when reading the definition from buffer.
+                         *
+                         * @param parent - Parent type node.
                          */
                         __native_type(__native_type *parent) {
                             this->parent = parent;
@@ -135,9 +139,11 @@ REACTFS_NS_CORE
                         /*!
                          * Constructor for creating a new field definition.
                          *
+                         * @param parent - Parent type node.
                          * @param index - Index of this field in the complex type.
                          * @param name - Name of this field.
                          * @param datatype - Data type of this field.
+                         * @param mode - Type of this node (Read/Write)
                          */
                         __native_type(__native_type *parent, const uint8_t index, const string &name,
                                       const __type_def_enum datatype) {
@@ -255,9 +261,10 @@ REACTFS_NS_CORE
                         /*!
                          * Get the type IO handler.
                          *
+                         * @param mode - Handler for read or write?
                          * @return - Type IO handler.
                          */
-                        __base_datatype_io *get_type_handler() {
+                        virtual __base_datatype_io *get_type_handler(__record_mode mode) {
                             return this->type_handler;
                         }
 
@@ -507,11 +514,18 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    typedef struct __field_value__ {
+                        const __native_type *type = nullptr;
+                        void *data = nullptr;
+                    } __field_value;
+
+
                     /*!
                      * Interface to define the datatype loaders for a complex type.
                      */
                     class __complex_type_helper {
                     protected:
+                        /// Static singleton instance of the type helper.
                         static __complex_type_helper *type_loader;
 
                     public:
@@ -533,16 +547,44 @@ REACTFS_NS_CORE
                                           vector<__native_type *> *fields,
                                           uint32_t *size) = 0;
 
+                        /*!
+                         * Get the IO type handler for a complex datatype.
+                         *
+                         * @param type - Type definition.
+                         * @return - IO Handler.
+                         */
                         virtual __base_datatype_io *get_complex_type_handler(__native_type *type) = 0;
 
+                        /*!
+                         * Get the IO type handler for a list/array datatype.
+                         *
+                         * @param inner_type_enum - Type inner of the list element.
+                         * @param inner_type - Type definition of the list element.
+                         * @param mode - Hanlder in read or write mode?
+                         * @return - List IO type handler.
+                         */
                         virtual __base_datatype_io *
-                        get_array_type_handler(__field_type field_type, __type_def_enum inner_type,
-                                               __native_type *type, __record_mode mode) = 0;
+                        get_array_type_handler(__type_def_enum inner_type_enum,
+                                               __native_type *inner_type, __record_mode mode) = 0;
 
+                        /*!
+                         * Get the IO type handler for a map datatype.
+                         *
+                         * @param key_type_enum - Type of the map key.
+                         * @param value_type_enum - Type of the map value.
+                         * @param value_type - Value type.
+                         * @param mode - Hanlder in read or write mode?
+                         * @return - Map IO type handler.
+                         */
                         virtual __base_datatype_io *
-                        get_map_type_handler(__type_def_enum key_type, __type_def_enum value_type,
-                                             __native_type *type, __record_mode mode) = 0;
+                        get_map_type_handler(__type_def_enum key_type_enum, __type_def_enum value_type_enum,
+                                             __native_type *value_type, __record_mode mode) = 0;
 
+                        /*!
+                         * Get the singleton instance of the type helper.
+                         *
+                         * @return - Type helper instance.
+                         */
                         static __complex_type_helper *get_type_loader() {
                             CHECK_NOT_NULL(type_loader);
                             return type_loader;
@@ -553,6 +595,171 @@ REACTFS_NS_CORE
                          */
                         static void dispose() {
                             CHECK_AND_FREE(type_loader);
+                        }
+                    };
+
+                    class record_struct {
+                    private:
+                        const __complex_type *type = nullptr;
+                        __field_value *buffer = nullptr;
+                        uint8_t field_count = 0;
+                        __field_value **data_ptr = nullptr;
+
+
+                    public:
+                        record_struct(const __complex_type *type, uint8_t field_count) {
+                            CHECK_NOT_NULL(type);
+                            this->field_count = field_count;
+                            data_ptr = new __field_value *[this->field_count];
+                            CHECK_ALLOC(data_ptr, TYPE_NAME(__field_value * ));
+
+                            uint32_t size = sizeof(__field_value) * field_count;
+                            buffer = (__field_value *) malloc(size);
+                            CHECK_ALLOC(buffer, TYPE_NAME(__field_value__));
+
+                            memset(buffer, 0, size);
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                data_ptr[ii] = nullptr;
+                            }
+                            this->type = type;
+                        }
+
+                        ~record_struct() {
+                            FREE_PTR(buffer);
+                            FREE_PTR(data_ptr);
+                        }
+
+                        void add_field(const uint8_t index, void *data) {
+                            PRECONDITION(index < this->field_count);
+                            CHECK_NOT_NULL(data);
+                            PRECONDITION(IS_NULL(data_ptr[index]));
+                            __field_value *ptr = (buffer + index);
+                            CHECK_NOT_NULL(ptr);
+
+                            const __native_type *ft = type->get_field(index);
+                            CHECK_NOT_NULL(ft);
+
+                            ptr->type = ft;
+                            ptr->data = data;
+
+                            data_ptr[index] = ptr;
+                        }
+
+                        uint8_t get_field_count() const {
+                            return this->field_count;
+                        }
+
+                        const __complex_type *get_record_type() const {
+                            return type;
+                        }
+
+                        const void *get_field(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->data;
+                            }
+                            return nullptr;
+                        }
+
+                        __type_def_enum get_field_type(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->type->get_datatype();
+                            }
+                            return __type_def_enum::TYPE_UNKNOWN;
+                        }
+
+                        bool is_field_null(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+
+                            if (NOT_NULL(ptr)) {
+                                return IS_NULL(ptr->data);
+                            }
+                            return true;
+                        }
+                    };
+
+                    class mutable_record_struct {
+                    private:
+                        const __complex_type *type = nullptr;
+                        __field_value *buffer = nullptr;
+                        uint8_t field_count = 0;
+                        __field_value **data_ptr = nullptr;
+
+                    public:
+                        mutable_record_struct(const __complex_type *type, uint8_t field_count) {
+                            CHECK_NOT_NULL(type);
+                            this->field_count = field_count;
+                            data_ptr = new __field_value *[this->field_count];
+                            CHECK_ALLOC(data_ptr, TYPE_NAME(__field_value * ));
+
+                            uint32_t size = sizeof(__field_value) * field_count;
+                            buffer = (__field_value *) malloc(size);
+                            CHECK_ALLOC(buffer, TYPE_NAME(__field_value__));
+
+                            memset(buffer, 0, size);
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                data_ptr[ii] = nullptr;
+                            }
+                            this->type = type;
+                        }
+
+                        ~mutable_record_struct() {
+                            FREE_PTR(buffer);
+                            FREE_PTR(data_ptr);
+                        }
+
+                        uint8_t get_field_count() const {
+                            return this->field_count;
+                        }
+
+                        const __complex_type *get_record_type() const {
+                            return type;
+                        }
+
+                        void add_field(const uint8_t index, void *data) {
+                            PRECONDITION(index < this->field_count);
+                            CHECK_NOT_NULL(data);
+
+                            if (IS_NULL(data_ptr[index])) {
+                                data_ptr[index] = (buffer + index);
+                            }
+                            const __native_type *ft = type->get_field(index);
+                            CHECK_NOT_NULL(ft);
+
+                            data_ptr[index]->type = ft;
+                            data_ptr[index]->data = data;
+                        }
+
+                        void *get_field(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->data;
+                            }
+                            return nullptr;
+                        }
+
+                        __type_def_enum get_field_type(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->type->get_datatype();
+                            }
+                            return __type_def_enum::TYPE_UNKNOWN;
+                        }
+
+                        bool is_field_null(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+
+                            if (NOT_NULL(ptr)) {
+                                return IS_NULL(ptr->data);
+                            }
+                            return true;
                         }
                     };
 
@@ -610,6 +817,7 @@ REACTFS_NS_CORE
                          *
                          * @param parent - Parent type of this instance.
                          * @param name - Schema name
+                         * @param type_name - Name of the referenced type.
                          */
                         __complex_type(__native_type *parent, const string &name, const string &type_name)
                                 : __native_type(parent) {
@@ -666,11 +874,11 @@ REACTFS_NS_CORE
                          * @param name - Field name.
                          * @return - Field instance.
                          */
-                        __native_type *get_field(const string &name) {
+                        const __native_type *get_field(const string &name) {
                             unordered_map<string, uint8_t>::const_iterator iter = field_index.find(name);
                             if (iter != field_index.end()) {
                                 const uint8_t index = iter->second;
-                                unordered_map<uint8_t, __native_type *>::iterator fiter = fields.find(index);
+                                unordered_map<uint8_t, __native_type *>::const_iterator fiter = fields.find(index);
                                 if (fiter != fields.end()) {
                                     return fiter->second;
                                 }
@@ -684,8 +892,8 @@ REACTFS_NS_CORE
                          * @param index - Column index of the field.
                          * @return - Field instance.
                          */
-                        __native_type *get_field(const uint8_t index) {
-                            unordered_map<uint8_t, __native_type *>::iterator fiter = fields.find(index);
+                        const __native_type *get_field(const uint8_t index) const {
+                            unordered_map<uint8_t, __native_type *>::const_iterator fiter = fields.find(index);
                             if (fiter != fields.end()) {
                                 return fiter->second;
                             }
@@ -809,7 +1017,7 @@ REACTFS_NS_CORE
 
                         record_struct *get_read_record() const {
                             const uint8_t size = get_field_count();
-                            record_struct *rec = new record_struct(size);
+                            record_struct *rec = new record_struct(this, size);
                             CHECK_ALLOC(rec, TYPE_NAME(record_struct));
 
                             return rec;
@@ -817,7 +1025,7 @@ REACTFS_NS_CORE
 
                         mutable_record_struct *get_write_record() const {
                             const uint8_t size = get_field_count();
-                            mutable_record_struct *rec = new mutable_record_struct(size);
+                            mutable_record_struct *rec = new mutable_record_struct(this, size);
                             CHECK_ALLOC(rec, TYPE_NAME(mutable_record_struct));
 
                             return rec;
@@ -895,30 +1103,29 @@ REACTFS_NS_CORE
                     private:
                         __type_def_enum inner_type;
                         __native_type *inner = nullptr;
+                        __base_datatype_io *write_handler = nullptr;
+
                     public:
                         __list_type(__native_type *parent) : __native_type(parent) {
                             this->type = __field_type::LIST;
                         }
 
                         __list_type(__native_type *parent, const uint8_t index, const string &name,
-                                    const __type_def_enum inner_type, __native_type *type) : __native_type(parent,
-                                                                                                           index, name,
-                                                                                                           __type_def_enum::TYPE_LIST) {
+                                    const __type_def_enum inner_type, __native_type *type)
+                                : __native_type(parent,
+                                                index, name,
+                                                __type_def_enum::TYPE_LIST) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
 
                             this->inner_type = inner_type;
                             this->type = __field_type::LIST;
                             this->inner = type;
 
-                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
-                            CHECK_NOT_NULL(loader);
-                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type,
-                                                                                this->inner);
-                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         ~__list_type() {
                             CHECK_AND_FREE(inner);
+                            CHECK_AND_FREE(write_handler);
                         }
 
                         void set_inner_type(__native_type *type) {
@@ -980,15 +1187,19 @@ REACTFS_NS_CORE
                          * @return - Number of bytes read.
                          */
                         virtual uint32_t read(void *buffer, uint64_t offset) override {
+
                             uint32_t r_size = __native_type::read(buffer, offset);
                             this->inner = __type_init_utils::read_inner_type(this, buffer, (offset + r_size), &r_size);
                             this->inner_type = this->inner->get_datatype();
 
                             __complex_type_helper *loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
-                            this->type_handler = loader->get_array_type_handler(this->type, this->inner_type,
-                                                                                this->inner);
+                            this->type_handler = loader->get_array_type_handler(this->inner_type,
+                                                                                this->inner, __record_mode::RM_READ);
                             CHECK_NOT_NULL(this->type_handler);
+                            this->write_handler = loader->get_array_type_handler(this->inner_type,
+                                                                                 this->inner, __record_mode::RM_WRITE);
+                            CHECK_NOT_NULL(this->write_handler);
                             return r_size;
                         }
 
@@ -1018,6 +1229,14 @@ REACTFS_NS_CORE
                             string it = inner->get_type_ptr();
                             return common_utils::format("vector<%s>", it.c_str());
                         }
+
+                        __base_datatype_io *get_type_handler(__record_mode mode) override {
+                            if (mode == __record_mode::RM_WRITE) {
+                                return this->write_handler;
+                            } else {
+                                return this->type_handler;
+                            }
+                        }
                     };
 
                     class __map_type : public __native_type {
@@ -1026,6 +1245,8 @@ REACTFS_NS_CORE
                         __native_type *key = nullptr;
                         __type_def_enum value_type;
                         __native_type *value = nullptr;
+                        __base_datatype_io *write_handler = nullptr;
+
                     public:
                         __map_type(__native_type *parent) : __native_type(parent) {
                             this->type = __field_type::MAP;
@@ -1033,7 +1254,8 @@ REACTFS_NS_CORE
 
                         __map_type(__native_type *parent, const uint8_t index, const string &name,
                                    const __type_def_enum key_type,
-                                   const __type_def_enum value_type, __native_type *value) : __native_type(
+                                   const __type_def_enum value_type, __native_type *value)
+                                : __native_type(
                                 parent, index, name,
                                 __type_def_enum::TYPE_MAP) {
                             PRECONDITION(__type_enum_helper::is_native(key_type));
@@ -1049,16 +1271,12 @@ REACTFS_NS_CORE
 
                             this->value = value;
 
-                            __complex_type_helper *loader = __complex_type_helper::get_type_loader();
-                            CHECK_NOT_NULL(loader);
-                            this->type_handler = loader->get_map_type_handler(this->key_type,
-                                                                              this->value_type, this->value);
-                            CHECK_NOT_NULL(this->type_handler);
                         }
 
                         ~__map_type() {
                             CHECK_AND_FREE(key);
                             CHECK_AND_FREE(value);
+                            CHECK_AND_FREE(write_handler);
                         }
 
                         void set_key_type(__native_type *type) {
@@ -1128,8 +1346,13 @@ REACTFS_NS_CORE
                             __complex_type_helper *loader = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(loader);
                             this->type_handler = loader->get_map_type_handler(this->key_type,
-                                                                              this->value_type, this->value);
+                                                                              this->value_type, this->value,
+                                                                              __record_mode::RM_READ);
                             CHECK_NOT_NULL(this->type_handler);
+                            this->write_handler = loader->get_map_type_handler(this->key_type,
+                                                                               this->value_type, this->value,
+                                                                               __record_mode::RM_WRITE);
+                            CHECK_NOT_NULL(this->write_handler);
                             return r_size;
                         }
 
@@ -1167,6 +1390,14 @@ REACTFS_NS_CORE
                             string vt = this->value->get_type_ptr();
 
                             return common_utils::format("unordered_map<%s, %s>", kt.c_str(), vt.c_str());
+                        }
+
+                        __base_datatype_io *get_type_handler(__record_mode mode) override {
+                            if (mode == __record_mode::RM_WRITE) {
+                                return this->write_handler;
+                            } else {
+                                return this->type_handler;
+                            }
                         }
                     };
 

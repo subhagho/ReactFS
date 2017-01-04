@@ -27,7 +27,6 @@
 #include "core/includes/core.h"
 
 #include "schema_common.h"
-#include "shared_structs.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 

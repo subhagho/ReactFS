@@ -193,34 +193,34 @@ main(const int argc, const char **argv) {
             uint32_t offset = 0;
             for (int ii = 0; ii < r_size; ii++) {
                 test_types *tt = (*values)[ii];
-                offset += nt_c->get_type_handler()->write(dataptr, tt->get_c(), offset, DATASET_SIZE);
-                offset += nt_i->get_type_handler()->write(dataptr, tt->get_i(), offset, DATASET_SIZE);
-                offset += nt_s->get_type_handler()->write(dataptr, tt->get_s(), offset, DATASET_SIZE);
-                offset += lt->get_type_handler()->write(dataptr, tt->get_vs(), offset, DATASET_SIZE);
-                offset += mt->get_type_handler()->write(dataptr, tt->get_map(), offset, DATASET_SIZE);
+                offset += nt_c->get_type_handler(__record_mode::RM_WRITE)->write(dataptr, tt->get_c(), offset, DATASET_SIZE);
+                offset += nt_i->get_type_handler(__record_mode::RM_WRITE)->write(dataptr, tt->get_i(), offset, DATASET_SIZE);
+                offset += nt_s->get_type_handler(__record_mode::RM_WRITE)->write(dataptr, tt->get_s(), offset, DATASET_SIZE);
+                offset += lt->get_type_handler(__record_mode::RM_WRITE)->write(dataptr, tt->get_vs(), offset, DATASET_SIZE);
+                offset += mt->get_type_handler(__record_mode::RM_WRITE)->write(dataptr, tt->get_map(), offset, DATASET_SIZE);
             }
 
             offset = 0;
             for (int ii = 0; ii < r_size; ii++) {
                 test_types *tt = new test_types(false);
                 char *c = nullptr;
-                offset += nt_c->get_type_handler()->read(dataptr, &c, offset, DATASET_SIZE);
+                offset += nt_c->get_type_handler(__record_mode::RM_READ)->read(dataptr, &c, offset, DATASET_SIZE);
                 CHECK_NOT_NULL(c);
                 tt->set_c(c);
                 int *i = nullptr;
-                offset += nt_i->get_type_handler()->read(dataptr, &i, offset, DATASET_SIZE);
+                offset += nt_i->get_type_handler(__record_mode::RM_READ)->read(dataptr, &i, offset, DATASET_SIZE);
                 CHECK_NOT_NULL(i);
                 tt->set_i(i);
                 CHARBUFF s = nullptr;
-                offset += nt_s->get_type_handler()->read(dataptr, &s, offset, DATASET_SIZE);
+                offset += nt_s->get_type_handler(__record_mode::RM_READ)->read(dataptr, &s, offset, DATASET_SIZE);
                 CHECK_NOT_NULL(s);
                 tt->set_s(s);
                 vector<CHARBUFF> *vs = nullptr;
-                offset += lt->get_type_handler()->read(dataptr, &vs, offset, DATASET_SIZE);
+                offset += lt->get_type_handler(__record_mode::RM_READ)->read(dataptr, &vs, offset, DATASET_SIZE);
                 CHECK_NOT_NULL(vs);
                 tt->set_vs(vs);
                 unordered_map<string, double *> *map = nullptr;
-                offset += mt->get_type_handler()->read(dataptr, &map, offset, DATASET_SIZE);
+                offset += mt->get_type_handler(__record_mode::RM_READ)->read(dataptr, &map, offset, DATASET_SIZE);
                 CHECK_NOT_NULL(map);
                 tt->set_map(map);
                 LOG_DEBUG("Read[%d] = [%d, %d, %s, %d, %d]", ii, *(tt->get_c()), *(tt->get_i()), tt->get_s(),

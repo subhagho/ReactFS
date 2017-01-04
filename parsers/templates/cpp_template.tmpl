@@ -45,6 +45,7 @@
 %token ${schema_name}
 %token ${free_data_calls}
 %token ${variable_copy}
+%token ${field_index}
 
 VARIABLE_NATIVE_DEF:
 ${type} ${name} = nullptr;
@@ -302,17 +303,12 @@ FUNC_SETTER_FROM_MAP:
  *
  * @param __data - Serialized data map pointer.
  */
-void set_value_${name}(__struct_datatype__ *__data) {
+void set_value_${name}(record_struct *__data) {
     if (NOT_NULL(__data)) {
-        __struct_datatype__::const_iterator iter = __data->find("${name}");
-        if (iter != __data->end()) {
-            const void *__ptr = iter->second;
-            if (NOT_NULL(__ptr)) {
-		${read_map_calls}
-            } else {
-                this->${name} = nullptr;
-            }
-        } else {
+        const void *__ptr = __data->get_field(${field_index});
+        if (NOT_NULL(ptr)) {
+	    ${read_map_calls}
+	} else {
             this->${name} = nullptr;
         }
     } else {
@@ -356,7 +352,7 @@ FUNC_SETTER_TO_MAP:
  *
  * @param __data - Serialized data map pointer.
  */
-void set_map_${name}(__struct_datatype__ *__data) {
+void set_map_${name}(record_struct *__data) {
     CHECK_NOT_NULL(__data);
     if (NOT_NULL(this->${name})) {
 	${set_map_calls}	
@@ -364,22 +360,34 @@ void set_map_${name}(__struct_datatype__ *__data) {
 }
 ;;
 
-FUNC_FREE_DATA_PTR:
+FUNC_FREE_READ_DATA_PTR:
 /**
- * Free an instance of the serialized data map.
+ * Free an instance of the serialized read data.
  *
  * @param __data - Pointer to the instance of a serialized data map.
- * @param allocated - Are the value pointers locally allocated and should be freed?
  */
-void free_data_ptr(__struct_datatype__ *__data, bool allocated) override {
+void free_data_ptr(record_struct *__data) override {
 	if (NOT_NULL(__data)) {
-		__struct_datatype__::iterator iter;
 		${free_data_calls}
-		__data->clear();
 		CHECK_AND_FREE(__data);
 	}
 }
 ;;
+
+FUNC_FREE_WRITE_DATA_PTR:
+/**
+ * Free an instance of the serialized write data.
+ *
+ * @param __data - Pointer to the instance of a serialized data map.
+ */
+void free_data_ptr(mutable_record_struct *__data) override {
+	if (NOT_NULL(__data)) {
+		${free_data_calls}
+		CHECK_AND_FREE(__data);
+	}
+}
+;;
+
 
 CALL_FREE_NATIVE_DATA_PTR:
 // Free the ${name} value if locally allocated
