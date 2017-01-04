@@ -828,7 +828,7 @@ REACTFS_NS_CORE
 
                     class complex_type_loader_impl : public __complex_type_helper {
                     private:
-                        void free_native_list(__list_type *lt, void *value) {
+                        void free_native_list(const __list_type *lt, void *value) {
                             __native_type *it = lt->get_inner_type();
                             CHECK_NOT_NULL(it);
                             switch (it->get_datatype()) {
@@ -891,7 +891,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_type_list(__list_type *lt, void *value, __record_mode mode) {
+                        void free_type_list(const __list_type *lt, void *value, __record_mode mode) {
                             __native_type *it = lt->get_inner_type();
                             CHECK_NOT_NULL(it);
                             POSTCONDITION(it->get_datatype() == __type_def_enum::TYPE_STRUCT);
@@ -912,7 +912,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_type_map(__map_type *mt, void *value, __record_mode mode) {
+                        void free_type_map(const __map_type *mt, void *value, __record_mode mode) {
                             __native_type *kt = mt->get_key_type();
                             CHECK_NOT_NULL(kt);
                             switch (kt->get_datatype()) {
@@ -1122,7 +1122,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_char_map(__map_type *mt, void *value) {
+                        void free_char_map(const __map_type *mt, void *value) {
                             __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
@@ -1188,7 +1188,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_byte_map(__map_type *mt, void *value) {
+                        void free_byte_map(const __map_type *mt, void *value) {
                             __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
@@ -1254,7 +1254,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_short_map(__map_type *mt, void *value) {
+                        void free_short_map(const __map_type *mt, void *value) {
                             __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
@@ -1320,7 +1320,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_int_map(__map_type *mt, void *value) {
+                        void free_int_map(const __map_type *mt, void *value) {
                             __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
@@ -1386,7 +1386,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_long_map(__map_type *mt, void *value) {
+                        void free_long_map(const __map_type *mt, void *value) {
                             __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
@@ -1452,7 +1452,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_float_map(__map_type *mt, void *value) {
+                        void free_float_map(const __map_type *mt, void *value) {
                             __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
@@ -1518,7 +1518,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_double_map(__map_type *mt, void *value) {
+                        void free_double_map(const __map_type *mt, void *value) {
                             __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
@@ -1584,7 +1584,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_timestamp_map(__map_type *mt, void *value) {
+                        void free_timestamp_map(const __map_type *mt, void *value) {
                             __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
@@ -1650,7 +1650,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_string_map(__map_type *mt, void *value) {
+                        void free_string_map(const __map_type *mt, void *value) {
                             __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
@@ -1716,7 +1716,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        void free_native_map(__map_type *mt, void *value) {
+                        void free_native_map(const __map_type *mt, void *value) {
                             __native_type *kt = mt->get_key_type();
                             CHECK_NOT_NULL(kt);
                             switch (kt->get_datatype()) {
@@ -1859,7 +1859,7 @@ REACTFS_NS_CORE
                             return handler;
                         }
 
-                        void free_type_node(__native_type *type, void *node, __record_mode mode) {
+                        virtual void free_type_node(const __native_type *type, void *node, __record_mode mode) override {
                             if (IS_NULL(node)) {
                                 return;
                             }

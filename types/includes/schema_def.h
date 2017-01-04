@@ -581,6 +581,15 @@ REACTFS_NS_CORE
                                              __native_type *value_type, __record_mode mode) = 0;
 
                         /*!
+                         * Free an instance of a record struct.
+                         *
+                         * @param type - Struct type definition. (__complex_type)
+                         * @param node - Struct value pointer.
+                         * @param mode - Struct create mode (Read/Write)
+                         */
+                        virtual void free_type_node(const __native_type *type, void *node, __record_mode mode) = 0;
+
+                        /*!
                          * Get the singleton instance of the type helper.
                          *
                          * @return - Type helper instance.
@@ -600,14 +609,14 @@ REACTFS_NS_CORE
 
                     class record_struct {
                     private:
-                        const __complex_type *type = nullptr;
+                        const __native_type *type = nullptr;
                         __field_value *buffer = nullptr;
                         uint8_t field_count = 0;
                         __field_value **data_ptr = nullptr;
 
 
                     public:
-                        record_struct(const __complex_type *type, uint8_t field_count) {
+                        record_struct(const __native_type *type, uint8_t field_count) {
                             CHECK_NOT_NULL(type);
                             this->field_count = field_count;
                             data_ptr = new __field_value *[this->field_count];
@@ -625,6 +634,17 @@ REACTFS_NS_CORE
                         }
 
                         ~record_struct() {
+                            __complex_type_helper *helper = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(helper);
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                if (IS_NULL(data_ptr[ii]))
+                                    continue;
+                                __type_def_enum t = data_ptr[ii]->type->get_datatype();
+                                if (__type_enum_helper::is_native(t)) {
+                                    continue;
+                                }
+                                helper->free_type_node(type, data_ptr[ii], __record_mode::RM_READ);
+                            }
                             FREE_PTR(buffer);
                             FREE_PTR(data_ptr);
                         }
@@ -649,7 +669,7 @@ REACTFS_NS_CORE
                             return this->field_count;
                         }
 
-                        const __complex_type *get_record_type() const {
+                        const __native_type *get_record_type() const {
                             return type;
                         }
 
@@ -671,6 +691,15 @@ REACTFS_NS_CORE
                             return __type_def_enum::TYPE_UNKNOWN;
                         }
 
+                        const __native_type *get_field_def(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->type;
+                            }
+                            return nullptr;
+                        }
+
                         bool is_field_null(uint8_t index) const {
                             PRECONDITION(index < this->field_count);
                             __field_value *ptr = this->data_ptr[index];
@@ -684,13 +713,13 @@ REACTFS_NS_CORE
 
                     class mutable_record_struct {
                     private:
-                        const __complex_type *type = nullptr;
+                        const __native_type *type = nullptr;
                         __field_value *buffer = nullptr;
                         uint8_t field_count = 0;
                         __field_value **data_ptr = nullptr;
 
                     public:
-                        mutable_record_struct(const __complex_type *type, uint8_t field_count) {
+                        mutable_record_struct(const __native_type *type, uint8_t field_count) {
                             CHECK_NOT_NULL(type);
                             this->field_count = field_count;
                             data_ptr = new __field_value *[this->field_count];
@@ -708,6 +737,17 @@ REACTFS_NS_CORE
                         }
 
                         ~mutable_record_struct() {
+                            __complex_type_helper *helper = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(helper);
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                if (IS_NULL(data_ptr[ii]))
+                                    continue;
+                                __type_def_enum t = data_ptr[ii]->type->get_datatype();
+                                if (__type_enum_helper::is_native(t)) {
+                                    continue;
+                                }
+                                helper->free_type_node(type, data_ptr[ii], __record_mode::RM_READ);
+                            }
                             FREE_PTR(buffer);
                             FREE_PTR(data_ptr);
                         }
@@ -716,7 +756,7 @@ REACTFS_NS_CORE
                             return this->field_count;
                         }
 
-                        const __complex_type *get_record_type() const {
+                        const __native_type *get_record_type() const {
                             return type;
                         }
 
@@ -750,6 +790,15 @@ REACTFS_NS_CORE
                                 return ptr->type->get_datatype();
                             }
                             return __type_def_enum::TYPE_UNKNOWN;
+                        }
+
+                        const __native_type *get_field_def(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->type;
+                            }
+                            return nullptr;
                         }
 
                         bool is_field_null(uint8_t index) const {
