@@ -750,7 +750,7 @@ REACTFS_NS_CORE
                          *
                          * @return - Map of fields.
                          */
-                        const unordered_map<uint8_t, __native_type *> get_fields() {
+                        const unordered_map<uint8_t, __native_type *> get_fields() const {
                             return this->fields;
                         };
 

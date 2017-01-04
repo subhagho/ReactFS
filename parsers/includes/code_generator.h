@@ -30,7 +30,7 @@ REACTFS_NS_CORE
                         }
 
                         virtual string
-                        generate_type_class(const string &name_space, __complex_type *type, const string &schema_name,
+                        generate_type_class(const string &name_space, const __complex_type *type, const string &schema_name,
                                             __version_header version) = 0;
                     };
                 }

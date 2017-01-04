@@ -427,8 +427,8 @@ REACTFS_NS_CORE
                             add_private_method(str);
                         }
 
-                        void generate_list_add(__native_type *type, string token) {
-                            __list_type *lt = dynamic_cast<__list_type *>(type);
+                        void generate_list_add(const __native_type *type, string token) {
+                            const __list_type *lt = dynamic_cast<const __list_type *>(type);
                             CHECK_CAST(lt, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
 
                             string str;
@@ -482,8 +482,8 @@ REACTFS_NS_CORE
                             add_private_method(str);
                         }
 
-                        void generate_map_add(__native_type *type, string token) {
-                            __map_type *mt = dynamic_cast<__map_type *>(type);
+                        void generate_map_add(const __native_type *type, string token) {
+                            const __map_type *mt = dynamic_cast<const __map_type *>(type);
                             CHECK_CAST(mt, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
 
                             string str;
@@ -511,7 +511,7 @@ REACTFS_NS_CORE
                             add_public_method(str);
                         }
 
-                        void generate_setter(__native_type *type, string token) {
+                        void generate_setter(const __native_type *type, string token) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, token);
 
@@ -531,7 +531,7 @@ REACTFS_NS_CORE
                             add_public_method(str);
                         }
 
-                        void generate_native_setter(__native_type *type) {
+                        void generate_native_setter(const __native_type *type) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_FUNC_NATIVE_SETTER_DEF);
 
@@ -554,7 +554,7 @@ REACTFS_NS_CORE
                             add_public_method(str);
                         }
 
-                        void generate_getter(__native_type *type, string token) {
+                        void generate_getter(const __native_type *type, string token) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, token);
 
@@ -573,7 +573,7 @@ REACTFS_NS_CORE
                             add_public_method(str);
                         }
 
-                        void add_native_copy(__native_type *type, string token) {
+                        void add_native_copy(const __native_type *type, string token) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, token);
 
@@ -583,7 +583,7 @@ REACTFS_NS_CORE
                             copy_constr_calls.push_back(str);
                         }
 
-                        void add_type_copy(__native_type *type) {
+                        void add_type_copy(const __native_type *type) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_COPY_CALL_TYPE);
 
@@ -604,7 +604,7 @@ REACTFS_NS_CORE
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
 
-                            __native_type *it = type->get_inner_type();
+                            const __native_type *it = type->get_inner_type();
 
                             string dt = it->get_type_name();
                             string dtp = it->get_type_ptr();
@@ -625,8 +625,8 @@ REACTFS_NS_CORE
                             string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
                             string tk_v_type = CPPT_TOKEN_DEF_VALUE_TYPE;
 
-                            __native_type *kt = type->get_key_type();
-                            __native_type *vt = type->get_value_type();
+                            const __native_type *kt = type->get_key_type();
+                            const __native_type *vt = type->get_value_type();
 
                             string kdt = kt->get_type_name();
                             if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
@@ -641,7 +641,7 @@ REACTFS_NS_CORE
                             copy_constr_calls.push_back(str);
                         }
 
-                        void add_native_copy_ptr(__native_type *type, string token) {
+                        void add_native_copy_ptr(const __native_type *type, string token) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, token);
 
@@ -651,7 +651,7 @@ REACTFS_NS_CORE
                             copy_constr_calls_ptr.push_back(str);
                         }
 
-                        void add_type_copy_ptr(__native_type *type) {
+                        void add_type_copy_ptr(const __native_type *type) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_COPY_CALL_TYPE_PTR);
 
@@ -672,7 +672,7 @@ REACTFS_NS_CORE
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
 
-                            __native_type *it = type->get_inner_type();
+                            const __native_type *it = type->get_inner_type();
 
                             string dt = it->get_type_name();
                             string dtp = it->get_type_ptr();
@@ -693,8 +693,8 @@ REACTFS_NS_CORE
                             string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
                             string tk_v_type = CPPT_TOKEN_DEF_VALUE_TYPE;
 
-                            __native_type *kt = type->get_key_type();
-                            __native_type *vt = type->get_value_type();
+                            const __native_type *kt = type->get_key_type();
+                            const __native_type *vt = type->get_value_type();
 
                             string kdt = kt->get_type_name();
                             if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
@@ -709,7 +709,7 @@ REACTFS_NS_CORE
                             copy_constr_calls_ptr.push_back(str);
                         }
 
-                        string get_declare(__native_type *type) {
+                        string get_declare(const __native_type *type) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_VARIABLE_NATIVE_DEF);
 
@@ -733,8 +733,8 @@ REACTFS_NS_CORE
                         }
 
 
-                        void generate_type_serializer(__native_type *type) {
-                            __complex_type *ct = dynamic_cast<__complex_type *>(type);
+                        void generate_type_serializer(const __native_type *type) {
+                            const __complex_type *ct = dynamic_cast<const __complex_type *>(type);
                             CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
 
                             string str;
@@ -757,8 +757,8 @@ REACTFS_NS_CORE
                             add_private_method(str);
                         }
 
-                        void generate_type_deserializer(__native_type *type) {
-                            __complex_type *ct = dynamic_cast<__complex_type *>(type);
+                        void generate_type_deserializer(const __native_type *type) {
+                            const __complex_type *ct = dynamic_cast<const __complex_type *>(type);
                             CHECK_CAST(ct, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
 
                             string str;
@@ -782,7 +782,7 @@ REACTFS_NS_CORE
                             add_private_method(str);
                         }
 
-                        void generate_native_setter_to_map(__native_type *type) {
+                        void generate_native_setter_to_map(const __native_type *type) {
                             string f_str;
                             READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_TO_MAP);
 
@@ -803,7 +803,7 @@ REACTFS_NS_CORE
                             add_private_method(f_str);
                         }
 
-                        void generate_native_setter_from_map(__native_type *type) {
+                        void generate_native_setter_from_map(const __native_type *type) {
                             string f_str;
                             READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
 
@@ -925,7 +925,7 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
 
-                            __native_type *it = type->get_inner_type();
+                            const __native_type *it = type->get_inner_type();
                             string tn = type->get_name();
 
                             string dt = it->get_type_name();
@@ -987,8 +987,8 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
 
-                            __native_type *kt = type->get_key_type();
-                            __native_type *vt = type->get_value_type();
+                            const __native_type *kt = type->get_key_type();
+                            const __native_type *vt = type->get_value_type();
 
                             string mn = type->get_type_name();
                             mn = common_utils::get_normalized_name(mn);
@@ -1015,7 +1015,7 @@ REACTFS_NS_CORE
                             m_call_serde.push_back(tn);
                         }
 
-                        void generate_free_call(__native_type *type, string token) {
+                        void generate_free_call(const __native_type *type, string token) {
                             string f_str;
                             READ_PARSED_ROWS(f_str, template_header, token);
 
@@ -1026,7 +1026,7 @@ REACTFS_NS_CORE
                             free_calls.push_back(f_str);
                         }
 
-                        void generate_var_free_call(__native_type *type, string token) {
+                        void generate_var_free_call(const __native_type *type, string token) {
                             string f_str;
                             READ_PARSED_ROWS(f_str, template_header, token);
 
@@ -1037,7 +1037,7 @@ REACTFS_NS_CORE
                             struct_free_calls.push_back(f_str);
                         }
 
-                        void generate_type_free_call(__native_type *type, string token) {
+                        void generate_type_free_call(const __native_type *type, string token) {
                             string f_str;
                             READ_PARSED_ROWS(f_str, template_header, token);
 
@@ -1060,7 +1060,7 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
 
-                            __native_type *it = type->get_inner_type();
+                            const __native_type *it = type->get_inner_type();
 
                             string tn = type->get_name();
                             string dtp = it->get_type_ptr();
@@ -1079,8 +1079,8 @@ REACTFS_NS_CORE
                             string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
                             string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
 
-                            __native_type *kt = type->get_key_type();
-                            __native_type *vt = type->get_value_type();
+                            const __native_type *kt = type->get_key_type();
+                            const __native_type *vt = type->get_value_type();
 
                             string tn = type->get_name();
                             string tk = kt->get_type_name();
