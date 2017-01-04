@@ -829,7 +829,7 @@ REACTFS_NS_CORE
                     class complex_type_loader_impl : public __complex_type_helper {
                     private:
                         void free_native_list(const __list_type *lt, void *value) {
-                            __native_type *it = lt->get_inner_type();
+                            const __native_type *it = lt->get_inner_type();
                             CHECK_NOT_NULL(it);
                             switch (it->get_datatype()) {
                                 case __type_def_enum::TYPE_CHAR: {
@@ -888,11 +888,14 @@ REACTFS_NS_CORE
                                     CHECK_AND_FREE(v);
                                 }
                                     break;
+                                default:
+                                    throw BASE_ERROR("Unsupported list value type. [type=%s]",
+                                                     __type_enum_helper::get_datatype(it->get_datatype()).c_str());
                             }
                         }
 
                         void free_type_list(const __list_type *lt, void *value, __record_mode mode) {
-                            __native_type *it = lt->get_inner_type();
+                            const __native_type *it = lt->get_inner_type();
                             CHECK_NOT_NULL(it);
                             POSTCONDITION(it->get_datatype() == __type_def_enum::TYPE_STRUCT);
                             if (mode == __record_mode::RM_READ) {
@@ -913,7 +916,7 @@ REACTFS_NS_CORE
                         }
 
                         void free_type_map(const __map_type *mt, void *value, __record_mode mode) {
-                            __native_type *kt = mt->get_key_type();
+                            const __native_type *kt = mt->get_key_type();
                             CHECK_NOT_NULL(kt);
                             switch (kt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1118,12 +1121,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(kt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(kt->get_datatype()).c_str());
                             }
                         }
 
                         void free_char_map(const __map_type *mt, void *value) {
-                            __native_type *vt = mt->get_value_type();
+                            const __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1184,12 +1187,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()).c_str());
                             }
                         }
 
                         void free_byte_map(const __map_type *mt, void *value) {
-                            __native_type *vt = mt->get_value_type();
+                            const __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1250,12 +1253,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()).c_str());
                             }
                         }
 
                         void free_short_map(const __map_type *mt, void *value) {
-                            __native_type *vt = mt->get_value_type();
+                            const __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1316,12 +1319,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()).c_str());
                             }
                         }
 
                         void free_int_map(const __map_type *mt, void *value) {
-                            __native_type *vt = mt->get_value_type();
+                            const __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1382,12 +1385,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()).c_str());
                             }
                         }
 
                         void free_long_map(const __map_type *mt, void *value) {
-                            __native_type *vt = mt->get_value_type();
+                            const __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1448,12 +1451,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()).c_str());
                             }
                         }
 
                         void free_float_map(const __map_type *mt, void *value) {
-                            __native_type *vt = mt->get_value_type();
+                            const __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1514,12 +1517,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()).c_str());
                             }
                         }
 
                         void free_double_map(const __map_type *mt, void *value) {
-                            __native_type *vt = mt->get_value_type();
+                            const __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1580,12 +1583,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()).c_str());
                             }
                         }
 
                         void free_timestamp_map(const __map_type *mt, void *value) {
-                            __native_type *vt = mt->get_value_type();
+                            const __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1646,12 +1649,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()).c_str());
                             }
                         }
 
                         void free_string_map(const __map_type *mt, void *value) {
-                            __native_type *vt = mt->get_value_type();
+                            const __native_type *vt = mt->get_value_type();
                             CHECK_NOT_NULL(vt);
                             switch (vt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE: {
@@ -1712,12 +1715,12 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(vt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(vt->get_datatype()).c_str());
                             }
                         }
 
                         void free_native_map(const __map_type *mt, void *value) {
-                            __native_type *kt = mt->get_key_type();
+                            const __native_type *kt = mt->get_key_type();
                             CHECK_NOT_NULL(kt);
                             switch (kt->get_datatype()) {
                                 case __type_def_enum::TYPE_BYTE:
@@ -1751,7 +1754,7 @@ REACTFS_NS_CORE
                                     break;
                                 default:
                                     throw new BASE_ERROR("Unsupported Map key type. [type=%s]",
-                                                         __type_enum_helper::get_datatype(kt->get_datatype()));
+                                                         __type_enum_helper::get_datatype(kt->get_datatype()).c_str());
                             }
                         }
 
@@ -1859,7 +1862,8 @@ REACTFS_NS_CORE
                             return handler;
                         }
 
-                        virtual void free_type_node(const __native_type *type, void *node, __record_mode mode) override {
+                        virtual void
+                        free_type_node(const __native_type *type, void *node, __record_mode mode) override {
                             if (IS_NULL(node)) {
                                 return;
                             }
@@ -1874,7 +1878,7 @@ REACTFS_NS_CORE
                                     CHECK_AND_FREE(st);
                                 }
                             } else if (type->get_type() == __field_type::LIST) {
-                                __list_type *lt = dynamic_cast<__list_type *>(type);
+                                const __list_type *lt = dynamic_cast<const __list_type *>(type);
                                 CHECK_CAST(lt, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
                                 if (lt->get_inner_type()->get_datatype() == __type_def_enum::TYPE_STRUCT) {
                                     free_type_list(lt, node, mode);
@@ -1882,7 +1886,7 @@ REACTFS_NS_CORE
                                     free_native_list(lt, node);
                                 }
                             } else if (type->get_type() == __field_type::MAP) {
-                                __map_type *mt = dynamic_cast<__map_type *>(type);
+                                const __map_type *mt = dynamic_cast<const __map_type *>(type);
                                 CHECK_CAST(mt, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
                                 if (mt->get_value_type()->get_datatype() == __type_def_enum::TYPE_STRUCT) {
                                     free_type_map(mt, node, mode);

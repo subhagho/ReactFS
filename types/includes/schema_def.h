@@ -200,7 +200,7 @@ REACTFS_NS_CORE
                          *
                          * @return - Field datatype.
                          */
-                        __type_def_enum get_datatype() const {
+                        const __type_def_enum get_datatype() const {
                             return this->datatype;
                         }
 
@@ -607,210 +607,6 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class record_struct {
-                    private:
-                        const __native_type *type = nullptr;
-                        __field_value *buffer = nullptr;
-                        uint8_t field_count = 0;
-                        __field_value **data_ptr = nullptr;
-
-
-                    public:
-                        record_struct(const __native_type *type, uint8_t field_count) {
-                            CHECK_NOT_NULL(type);
-                            this->field_count = field_count;
-                            data_ptr = new __field_value *[this->field_count];
-                            CHECK_ALLOC(data_ptr, TYPE_NAME(__field_value * ));
-
-                            uint32_t size = sizeof(__field_value) * field_count;
-                            buffer = (__field_value *) malloc(size);
-                            CHECK_ALLOC(buffer, TYPE_NAME(__field_value__));
-
-                            memset(buffer, 0, size);
-                            for (uint8_t ii = 0; ii < field_count; ii++) {
-                                data_ptr[ii] = nullptr;
-                            }
-                            this->type = type;
-                        }
-
-                        ~record_struct() {
-                            __complex_type_helper *helper = __complex_type_helper::get_type_loader();
-                            CHECK_NOT_NULL(helper);
-                            for (uint8_t ii = 0; ii < field_count; ii++) {
-                                if (IS_NULL(data_ptr[ii]))
-                                    continue;
-                                __type_def_enum t = data_ptr[ii]->type->get_datatype();
-                                if (__type_enum_helper::is_native(t)) {
-                                    continue;
-                                }
-                                helper->free_type_node(type, data_ptr[ii], __record_mode::RM_READ);
-                            }
-                            FREE_PTR(buffer);
-                            FREE_PTR(data_ptr);
-                        }
-
-                        void add_field(const uint8_t index, void *data) {
-                            PRECONDITION(index < this->field_count);
-                            CHECK_NOT_NULL(data);
-                            PRECONDITION(IS_NULL(data_ptr[index]));
-                            __field_value *ptr = (buffer + index);
-                            CHECK_NOT_NULL(ptr);
-
-                            const __native_type *ft = type->get_field(index);
-                            CHECK_NOT_NULL(ft);
-
-                            ptr->type = ft;
-                            ptr->data = data;
-
-                            data_ptr[index] = ptr;
-                        }
-
-                        uint8_t get_field_count() const {
-                            return this->field_count;
-                        }
-
-                        const __native_type *get_record_type() const {
-                            return type;
-                        }
-
-                        const void *get_field(uint8_t index) const {
-                            PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr[index];
-                            if (NOT_NULL(ptr)) {
-                                return ptr->data;
-                            }
-                            return nullptr;
-                        }
-
-                        __type_def_enum get_field_type(uint8_t index) const {
-                            PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr[index];
-                            if (NOT_NULL(ptr)) {
-                                return ptr->type->get_datatype();
-                            }
-                            return __type_def_enum::TYPE_UNKNOWN;
-                        }
-
-                        const __native_type *get_field_def(uint8_t index) const {
-                            PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr[index];
-                            if (NOT_NULL(ptr)) {
-                                return ptr->type;
-                            }
-                            return nullptr;
-                        }
-
-                        bool is_field_null(uint8_t index) const {
-                            PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr[index];
-
-                            if (NOT_NULL(ptr)) {
-                                return IS_NULL(ptr->data);
-                            }
-                            return true;
-                        }
-                    };
-
-                    class mutable_record_struct {
-                    private:
-                        const __native_type *type = nullptr;
-                        __field_value *buffer = nullptr;
-                        uint8_t field_count = 0;
-                        __field_value **data_ptr = nullptr;
-
-                    public:
-                        mutable_record_struct(const __native_type *type, uint8_t field_count) {
-                            CHECK_NOT_NULL(type);
-                            this->field_count = field_count;
-                            data_ptr = new __field_value *[this->field_count];
-                            CHECK_ALLOC(data_ptr, TYPE_NAME(__field_value * ));
-
-                            uint32_t size = sizeof(__field_value) * field_count;
-                            buffer = (__field_value *) malloc(size);
-                            CHECK_ALLOC(buffer, TYPE_NAME(__field_value__));
-
-                            memset(buffer, 0, size);
-                            for (uint8_t ii = 0; ii < field_count; ii++) {
-                                data_ptr[ii] = nullptr;
-                            }
-                            this->type = type;
-                        }
-
-                        ~mutable_record_struct() {
-                            __complex_type_helper *helper = __complex_type_helper::get_type_loader();
-                            CHECK_NOT_NULL(helper);
-                            for (uint8_t ii = 0; ii < field_count; ii++) {
-                                if (IS_NULL(data_ptr[ii]))
-                                    continue;
-                                __type_def_enum t = data_ptr[ii]->type->get_datatype();
-                                if (__type_enum_helper::is_native(t)) {
-                                    continue;
-                                }
-                                helper->free_type_node(type, data_ptr[ii], __record_mode::RM_READ);
-                            }
-                            FREE_PTR(buffer);
-                            FREE_PTR(data_ptr);
-                        }
-
-                        uint8_t get_field_count() const {
-                            return this->field_count;
-                        }
-
-                        const __native_type *get_record_type() const {
-                            return type;
-                        }
-
-                        void add_field(const uint8_t index, void *data) {
-                            PRECONDITION(index < this->field_count);
-                            CHECK_NOT_NULL(data);
-
-                            if (IS_NULL(data_ptr[index])) {
-                                data_ptr[index] = (buffer + index);
-                            }
-                            const __native_type *ft = type->get_field(index);
-                            CHECK_NOT_NULL(ft);
-
-                            data_ptr[index]->type = ft;
-                            data_ptr[index]->data = data;
-                        }
-
-                        void *get_field(uint8_t index) const {
-                            PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr[index];
-                            if (NOT_NULL(ptr)) {
-                                return ptr->data;
-                            }
-                            return nullptr;
-                        }
-
-                        __type_def_enum get_field_type(uint8_t index) const {
-                            PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr[index];
-                            if (NOT_NULL(ptr)) {
-                                return ptr->type->get_datatype();
-                            }
-                            return __type_def_enum::TYPE_UNKNOWN;
-                        }
-
-                        const __native_type *get_field_def(uint8_t index) const {
-                            PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr[index];
-                            if (NOT_NULL(ptr)) {
-                                return ptr->type;
-                            }
-                            return nullptr;
-                        }
-
-                        bool is_field_null(uint8_t index) const {
-                            PRECONDITION(index < this->field_count);
-                            __field_value *ptr = this->data_ptr[index];
-
-                            if (NOT_NULL(ptr)) {
-                                return IS_NULL(ptr->data);
-                            }
-                            return true;
-                        }
-                    };
 
                     /*!
                      * A complex (composite) type instance.
@@ -1063,24 +859,212 @@ REACTFS_NS_CORE
                         const uint8_t get_field_count() const {
                             return fields.size();
                         }
+                    };
 
-                        record_struct *get_read_record() const {
-                            const uint8_t size = get_field_count();
-                            record_struct *rec = new record_struct(this, size);
-                            CHECK_ALLOC(rec, TYPE_NAME(record_struct));
+                    class record_struct {
+                    private:
+                        const __complex_type *type = nullptr;
+                        __field_value *buffer = nullptr;
+                        uint8_t field_count = 0;
+                        __field_value **data_ptr = nullptr;
 
-                            return rec;
+
+                    public:
+                        record_struct(const __complex_type *type, uint8_t field_count) {
+                            CHECK_NOT_NULL(type);
+                            this->field_count = field_count;
+                            data_ptr = new __field_value *[this->field_count];
+                            CHECK_ALLOC(data_ptr, TYPE_NAME(__field_value * ));
+
+                            uint32_t size = sizeof(__field_value) * field_count;
+                            buffer = (__field_value *) malloc(size);
+                            CHECK_ALLOC(buffer, TYPE_NAME(__field_value__));
+
+                            memset(buffer, 0, size);
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                data_ptr[ii] = nullptr;
+                            }
+                            this->type = type;
                         }
 
-                        mutable_record_struct *get_write_record() const {
-                            const uint8_t size = get_field_count();
-                            mutable_record_struct *rec = new mutable_record_struct(this, size);
-                            CHECK_ALLOC(rec, TYPE_NAME(mutable_record_struct));
+                        ~record_struct() {
+                            __complex_type_helper *helper = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(helper);
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                if (IS_NULL(data_ptr[ii]))
+                                    continue;
+                                __type_def_enum t = data_ptr[ii]->type->get_datatype();
+                                if (__type_enum_helper::is_native(t)) {
+                                    continue;
+                                }
+                                helper->free_type_node(type, data_ptr[ii], __record_mode::RM_READ);
+                            }
+                            FREE_PTR(buffer);
+                            FREE_PTR(data_ptr);
+                        }
 
-                            return rec;
+                        void add_field(const uint8_t index, void *data) {
+                            PRECONDITION(index < this->field_count);
+                            CHECK_NOT_NULL(data);
+                            PRECONDITION(IS_NULL(data_ptr[index]));
+                            __field_value *ptr = (buffer + index);
+                            CHECK_NOT_NULL(ptr);
+
+                            const __native_type *ft = type->get_field(index);
+                            CHECK_NOT_NULL(ft);
+
+                            ptr->type = ft;
+                            ptr->data = data;
+
+                            data_ptr[index] = ptr;
+                        }
+
+                        uint8_t get_field_count() const {
+                            return this->field_count;
+                        }
+
+                        const __complex_type *get_record_type() const {
+                            return type;
+                        }
+
+                        const void *get_field(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->data;
+                            }
+                            return nullptr;
+                        }
+
+                        __type_def_enum get_field_type(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->type->get_datatype();
+                            }
+                            return __type_def_enum::TYPE_UNKNOWN;
+                        }
+
+                        const __native_type *get_field_def(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->type;
+                            }
+                            return nullptr;
+                        }
+
+                        bool is_field_null(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+
+                            if (NOT_NULL(ptr)) {
+                                return IS_NULL(ptr->data);
+                            }
+                            return true;
                         }
                     };
 
+                    class mutable_record_struct {
+                    private:
+                        const __complex_type *type = nullptr;
+                        __field_value *buffer = nullptr;
+                        uint8_t field_count = 0;
+                        __field_value **data_ptr = nullptr;
+
+                    public:
+                        mutable_record_struct(const __complex_type *type, uint8_t field_count) {
+                            CHECK_NOT_NULL(type);
+                            this->field_count = field_count;
+                            data_ptr = new __field_value *[this->field_count];
+                            CHECK_ALLOC(data_ptr, TYPE_NAME(__field_value * ));
+
+                            uint32_t size = sizeof(__field_value) * field_count;
+                            buffer = (__field_value *) malloc(size);
+                            CHECK_ALLOC(buffer, TYPE_NAME(__field_value__));
+
+                            memset(buffer, 0, size);
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                data_ptr[ii] = nullptr;
+                            }
+                            this->type = type;
+                        }
+
+                        ~mutable_record_struct() {
+                            __complex_type_helper *helper = __complex_type_helper::get_type_loader();
+                            CHECK_NOT_NULL(helper);
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                if (IS_NULL(data_ptr[ii]))
+                                    continue;
+                                __type_def_enum t = data_ptr[ii]->type->get_datatype();
+                                if (__type_enum_helper::is_native(t)) {
+                                    continue;
+                                }
+                                helper->free_type_node(type, data_ptr[ii], __record_mode::RM_READ);
+                            }
+                            FREE_PTR(buffer);
+                            FREE_PTR(data_ptr);
+                        }
+
+                        uint8_t get_field_count() const {
+                            return this->field_count;
+                        }
+
+                        const __complex_type *get_record_type() const {
+                            return type;
+                        }
+
+                        void add_field(const uint8_t index, void *data) {
+                            PRECONDITION(index < this->field_count);
+                            CHECK_NOT_NULL(data);
+
+                            if (IS_NULL(data_ptr[index])) {
+                                data_ptr[index] = (buffer + index);
+                            }
+                            const __native_type *ft = type->get_field(index);
+                            CHECK_NOT_NULL(ft);
+
+                            data_ptr[index]->type = ft;
+                            data_ptr[index]->data = data;
+                        }
+
+                        void *get_field(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->data;
+                            }
+                            return nullptr;
+                        }
+
+                        __type_def_enum get_field_type(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->type->get_datatype();
+                            }
+                            return __type_def_enum::TYPE_UNKNOWN;
+                        }
+
+                        const __native_type *get_field_def(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+                            if (NOT_NULL(ptr)) {
+                                return ptr->type;
+                            }
+                            return nullptr;
+                        }
+
+                        bool is_field_null(uint8_t index) const {
+                            PRECONDITION(index < this->field_count);
+                            __field_value *ptr = this->data_ptr[index];
+
+                            if (NOT_NULL(ptr)) {
+                                return IS_NULL(ptr->data);
+                            }
+                            return true;
+                        }
+                    };
                     /*!
                      * Utility class defining helper methods for type creation/instantiation.
                      */
@@ -1182,7 +1166,7 @@ REACTFS_NS_CORE
                             this->inner = type;
                         }
 
-                        __native_type *get_inner_type() {
+                        const __native_type *get_inner_type() const {
                             return this->inner;
                         }
 
@@ -1191,7 +1175,7 @@ REACTFS_NS_CORE
                          *
                          * @return - Inner datatype.
                          */
-                        __type_def_enum get_inner_datatype() {
+                        const __type_def_enum get_inner_datatype() const {
                             return this->inner_type;
                         }
 
@@ -1338,11 +1322,11 @@ REACTFS_NS_CORE
                             this->value = type;
                         }
 
-                        __native_type *get_key_type() {
+                        const __native_type *get_key_type() const {
                             return this->key;
                         }
 
-                        __native_type *get_value_type() {
+                        const __native_type *get_value_type() const {
                             return this->value;
                         }
 
@@ -1351,7 +1335,7 @@ REACTFS_NS_CORE
                          *
                          * @return - Key datatype
                          */
-                        __type_def_enum get_key_datatype() {
+                        const __type_def_enum get_key_datatype() const {
                             return this->key_type;
                         }
 
@@ -1360,7 +1344,7 @@ REACTFS_NS_CORE
                          *
                          * @return - Value type.
                          */
-                        __type_def_enum get_value_datatype() {
+                        const __type_def_enum get_value_datatype() const {
                             return this->value_type;
                         }
 

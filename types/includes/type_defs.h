@@ -47,8 +47,15 @@ REACTFS_NS_CORE
                     private:
                         __complex_type *fields = nullptr;
 
+                        record_struct *get_read_record() {
+                            record_struct *ptr = new record_struct(fields, fields->get_field_count());
+                            CHECK_ALLOC(ptr, TYPE_NAME(record_struct));
+                            return ptr;
+                        }
+
                     public:
                         __dt_struct(__complex_type *fields) {
+                            CHECK_NOT_NULL(fields);
                             this->type = __type_def_enum::TYPE_STRUCT;
                             this->fields = fields;
                         }
@@ -66,7 +73,7 @@ REACTFS_NS_CORE
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
                             record_struct **T = (record_struct **) t;
-                            *T = fields->get_read_record();
+                            *T = get_read_record();
                             CHECK_NOT_NULL(*T);
 
                             uint64_t r_offset = offset;
@@ -91,7 +98,7 @@ REACTFS_NS_CORE
                                 void *value = nullptr;
                                 r = handler->read(buffer, &value, r_offset, max_length);
                                 CHECK_NOT_NULL(value);
-                                (*T)->add_field(type->get_index(), type, value);
+                                (*T)->add_field(type->get_index(), value);
                                 t_size += r;
                                 r_offset += r;
                                 *size -= r;
@@ -119,7 +126,7 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(type);
                                 __base_datatype_io *handler = type->get_type_handler(__record_mode::RM_WRITE);
                                 CHECK_NOT_NULL(handler);
-                                const void *d =rec->get_field(type->get_index());
+                                const void *d = rec->get_field(type->get_index());
                                 if (!type->is_valid_value(d)) {
                                     throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
                                                            type->get_name().c_str());
@@ -713,7 +720,7 @@ REACTFS_NS_CORE
                     class ___write_struct_list : public __dt_list<mutable_record_struct, __type_def_enum::TYPE_STRUCT> {
                     public:
                         ___write_struct_list(__native_type *type)
-                        : __dt_list<mutable_record_struct, __type_def_enum::TYPE_STRUCT>(type) {
+                                : __dt_list<mutable_record_struct, __type_def_enum::TYPE_STRUCT>(type) {
 
                         }
                     };
