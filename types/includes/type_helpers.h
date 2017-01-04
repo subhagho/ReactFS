@@ -36,7 +36,8 @@ REACTFS_NS_CORE
                     class __list_init_utils {
                     public:
 
-                        static __base_datatype_io *create_handler(__type_def_enum inner_type, __native_type *type) {
+                        static __base_datatype_io *
+                        create_handler(__type_def_enum inner_type, __native_type *type, __record_mode mode) {
                             __base_datatype_io *handler = nullptr;
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(inner_type));
                             switch (inner_type) {
@@ -82,8 +83,15 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__text_list));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __struct_list(type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__struct_list));
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new ___read_struct_list(type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(___read_struct_list));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new ___write_struct_list(type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(___write_struct_list));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
                                     break;
                                 default:
                                     throw BASE_ERROR("Specified type not supported. [type=%d]", inner_type);
@@ -100,7 +108,8 @@ REACTFS_NS_CORE
                             return common_utils::format("%s::%s", key_n.c_str(), value_n.c_str());
                         }
 
-                        static __base_datatype_io *create_char_map(__type_def_enum value_type, __native_type *type) {
+                        static __base_datatype_io *
+                        create_char_map(__type_def_enum value_type, __native_type *type, __record_mode mode) {
                             __base_datatype_io *handler = nullptr;
                             switch (value_type) {
                                 case __type_def_enum::TYPE_BYTE:
@@ -155,399 +164,17 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>(
-                                            type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                default:
-                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
-                            }
-                            return handler;
-                        }
-
-                        static __base_datatype_io *create_byte_map(__type_def_enum value_type, __native_type *type) {
-                            __base_datatype_io *handler = nullptr;
-                            switch (value_type) {
-                                case __type_def_enum::TYPE_BYTE:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, uint8_t, __type_def_enum::TYPE_BYTE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_CHAR:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_CHAR>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_SHORT:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, short, __type_def_enum::TYPE_SHORT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_INTEGER:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, int, __type_def_enum::TYPE_INTEGER>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_LONG:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, long, __type_def_enum::TYPE_LONG>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_FLOAT:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, float, __type_def_enum::TYPE_FLOAT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, double, __type_def_enum::TYPE_DOUBLE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                case __type_def_enum::TYPE_DATETIME:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>(
-                                            type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                default:
-                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
-                            }
-                            return handler;
-                        }
-
-                        static __base_datatype_io *create_short_map(__type_def_enum value_type, __native_type *type) {
-                            __base_datatype_io *handler = nullptr;
-                            switch (value_type) {
-                                case __type_def_enum::TYPE_BYTE:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, uint8_t, __type_def_enum::TYPE_BYTE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_CHAR:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_CHAR>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_SHORT:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, short, __type_def_enum::TYPE_SHORT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_INTEGER:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, int, __type_def_enum::TYPE_INTEGER>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_LONG:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, long, __type_def_enum::TYPE_LONG>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_FLOAT:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, float, __type_def_enum::TYPE_FLOAT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, double, __type_def_enum::TYPE_DOUBLE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                case __type_def_enum::TYPE_DATETIME:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<short, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>(
-                                            type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                default:
-                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
-                            }
-                            return handler;
-                        }
-
-                        static __base_datatype_io *create_int_map(__type_def_enum value_type, __native_type *type) {
-                            __base_datatype_io *handler = nullptr;
-                            switch (value_type) {
-                                case __type_def_enum::TYPE_BYTE:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, uint8_t, __type_def_enum::TYPE_BYTE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_CHAR:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_CHAR>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_SHORT:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, short, __type_def_enum::TYPE_SHORT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_INTEGER:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, int, __type_def_enum::TYPE_INTEGER>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_LONG:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, long, __type_def_enum::TYPE_LONG>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_FLOAT:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, float, __type_def_enum::TYPE_FLOAT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, double, __type_def_enum::TYPE_DOUBLE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                case __type_def_enum::TYPE_DATETIME:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<int, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>(
-                                            type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                default:
-                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
-                            }
-                            return handler;
-                        }
-
-                        static __base_datatype_io *create_long_map(__type_def_enum value_type, __native_type *type) {
-                            __base_datatype_io *handler = nullptr;
-                            switch (value_type) {
-                                case __type_def_enum::TYPE_BYTE:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, uint8_t, __type_def_enum::TYPE_BYTE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_CHAR:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_CHAR>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_SHORT:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, short, __type_def_enum::TYPE_SHORT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_INTEGER:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, int, __type_def_enum::TYPE_INTEGER>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_LONG:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, long, __type_def_enum::TYPE_LONG>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_FLOAT:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, float, __type_def_enum::TYPE_FLOAT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, double, __type_def_enum::TYPE_DOUBLE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                case __type_def_enum::TYPE_DATETIME:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<long, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>(
-                                            type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                default:
-                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
-                            }
-                            return handler;
-                        }
-
-                        static __base_datatype_io *create_float_map(__type_def_enum value_type, __native_type *type) {
-                            __base_datatype_io *handler = nullptr;
-                            switch (value_type) {
-                                case __type_def_enum::TYPE_BYTE:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, uint8_t, __type_def_enum::TYPE_BYTE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_CHAR:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_CHAR>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_SHORT:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, short, __type_def_enum::TYPE_SHORT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_INTEGER:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, int, __type_def_enum::TYPE_INTEGER>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_LONG:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, long, __type_def_enum::TYPE_LONG>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_FLOAT:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, float, __type_def_enum::TYPE_FLOAT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, double, __type_def_enum::TYPE_DOUBLE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                case __type_def_enum::TYPE_DATETIME:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<float, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>(
-                                            type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                default:
-                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
-                            }
-                            return handler;
-                        }
-
-                        static __base_datatype_io *create_double_map(__type_def_enum value_type, __native_type *type) {
-                            __base_datatype_io *handler = nullptr;
-                            switch (value_type) {
-                                case __type_def_enum::TYPE_BYTE:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, uint8_t, __type_def_enum::TYPE_BYTE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_CHAR:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_CHAR>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_SHORT:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, short, __type_def_enum::TYPE_SHORT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_INTEGER:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, int, __type_def_enum::TYPE_INTEGER>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_LONG:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, long, __type_def_enum::TYPE_LONG>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_FLOAT:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, float, __type_def_enum::TYPE_FLOAT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_DOUBLE:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, double, __type_def_enum::TYPE_DOUBLE>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TIMESTAMP:
-                                case __type_def_enum::TYPE_DATETIME:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
-                                            nullptr);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
-                                    break;
-                                case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<double, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>(
-                                            type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new __dt_map<char, __type_def_enum::TYPE_CHAR, mutable_record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
                                     break;
                                 default:
                                     throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
@@ -556,64 +183,145 @@ REACTFS_NS_CORE
                         }
 
                         static __base_datatype_io *
-                        create_timestamp_map(__type_def_enum value_type, __native_type *type) {
+                        create_byte_map(__type_def_enum value_type, __native_type *type, __record_mode mode) {
                             __base_datatype_io *handler = nullptr;
                             switch (value_type) {
                                 case __type_def_enum::TYPE_BYTE:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, uint8_t, __type_def_enum::TYPE_BYTE>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, uint8_t, __type_def_enum::TYPE_BYTE>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_CHAR:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_CHAR>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, char, __type_def_enum::TYPE_CHAR>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_SHORT:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, short, __type_def_enum::TYPE_SHORT>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, short, __type_def_enum::TYPE_SHORT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_INTEGER:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, int, __type_def_enum::TYPE_INTEGER>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, int, __type_def_enum::TYPE_INTEGER>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_LONG:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, long, __type_def_enum::TYPE_LONG>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, long, __type_def_enum::TYPE_LONG>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_FLOAT:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, float, __type_def_enum::TYPE_FLOAT>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, float, __type_def_enum::TYPE_FLOAT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_DOUBLE:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, double, __type_def_enum::TYPE_DOUBLE>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, double, __type_def_enum::TYPE_DOUBLE>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TIMESTAMP:
                                 case __type_def_enum::TYPE_DATETIME:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_STRING>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, char, __type_def_enum::TYPE_STRING>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_TEXT:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, char, __type_def_enum::TYPE_TEXT>(
+                                    handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, char, __type_def_enum::TYPE_TEXT>(
                                             nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_CHAR, __struct_datatype__, __type_def_enum::TYPE_STRUCT>(
-                                            type);
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new __dt_map<uint8_t, __type_def_enum::TYPE_BYTE, mutable_record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
+                                default:
+                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
+                            }
+                            return handler;
+                        }
+
+                        static __base_datatype_io *
+                        create_short_map(__type_def_enum value_type, __native_type *type, __record_mode mode) {
+                            __base_datatype_io *handler = nullptr;
+                            switch (value_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, uint8_t, __type_def_enum::TYPE_BYTE>(
+                                            nullptr);
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, char, __type_def_enum::TYPE_CHAR>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, short, __type_def_enum::TYPE_SHORT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, int, __type_def_enum::TYPE_INTEGER>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, long, __type_def_enum::TYPE_LONG>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, float, __type_def_enum::TYPE_FLOAT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, double, __type_def_enum::TYPE_DOUBLE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, char, __type_def_enum::TYPE_STRING>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, char, __type_def_enum::TYPE_TEXT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new __dt_map<short, __type_def_enum::TYPE_SHORT, mutable_record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
                                     break;
                                 default:
                                     throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
@@ -621,7 +329,378 @@ REACTFS_NS_CORE
                             return handler;
                         }
 
-                        static __base_datatype_io *create_string_map(__type_def_enum value_type, __native_type *type) {
+                        static __base_datatype_io *
+                        create_int_map(__type_def_enum value_type, __native_type *type, __record_mode mode) {
+                            __base_datatype_io *handler = nullptr;
+                            switch (value_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, uint8_t, __type_def_enum::TYPE_BYTE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, char, __type_def_enum::TYPE_CHAR>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, short, __type_def_enum::TYPE_SHORT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, int, __type_def_enum::TYPE_INTEGER>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, long, __type_def_enum::TYPE_LONG>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, float, __type_def_enum::TYPE_FLOAT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, double, __type_def_enum::TYPE_DOUBLE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, char, __type_def_enum::TYPE_STRING>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, char, __type_def_enum::TYPE_TEXT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new __dt_map<int, __type_def_enum::TYPE_INTEGER, mutable_record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
+                            }
+                            return handler;
+                        }
+
+                        static __base_datatype_io *
+                        create_long_map(__type_def_enum value_type, __native_type *type, __record_mode mode) {
+                            __base_datatype_io *handler = nullptr;
+                            switch (value_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, uint8_t, __type_def_enum::TYPE_BYTE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, char, __type_def_enum::TYPE_CHAR>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, short, __type_def_enum::TYPE_SHORT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, int, __type_def_enum::TYPE_INTEGER>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, long, __type_def_enum::TYPE_LONG>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, float, __type_def_enum::TYPE_FLOAT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, double, __type_def_enum::TYPE_DOUBLE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, char, __type_def_enum::TYPE_STRING>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __dt_map<long, __type_def_enum::TYPE_LONG, char, __type_def_enum::TYPE_TEXT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new __dt_map<long, __type_def_enum::TYPE_LONG, record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new __dt_map<long, __type_def_enum::TYPE_LONG, mutable_record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
+                            }
+                            return handler;
+                        }
+
+                        static __base_datatype_io *
+                        create_float_map(__type_def_enum value_type, __native_type *type, __record_mode mode) {
+                            __base_datatype_io *handler = nullptr;
+                            switch (value_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, uint8_t, __type_def_enum::TYPE_BYTE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, char, __type_def_enum::TYPE_CHAR>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, short, __type_def_enum::TYPE_SHORT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, int, __type_def_enum::TYPE_INTEGER>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, long, __type_def_enum::TYPE_LONG>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, float, __type_def_enum::TYPE_FLOAT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, double, __type_def_enum::TYPE_DOUBLE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, char, __type_def_enum::TYPE_STRING>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, char, __type_def_enum::TYPE_TEXT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new __dt_map<float, __type_def_enum::TYPE_FLOAT, mutable_record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
+                            }
+                            return handler;
+                        }
+
+                        static __base_datatype_io *
+                        create_double_map(__type_def_enum value_type, __native_type *type, __record_mode mode) {
+                            __base_datatype_io *handler = nullptr;
+                            switch (value_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, uint8_t, __type_def_enum::TYPE_BYTE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, char, __type_def_enum::TYPE_CHAR>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, short, __type_def_enum::TYPE_SHORT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, int, __type_def_enum::TYPE_INTEGER>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, long, __type_def_enum::TYPE_LONG>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, float, __type_def_enum::TYPE_FLOAT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, double, __type_def_enum::TYPE_DOUBLE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, char, __type_def_enum::TYPE_STRING>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, char, __type_def_enum::TYPE_TEXT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new __dt_map<double, __type_def_enum::TYPE_DOUBLE, mutable_record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
+                            }
+                            return handler;
+                        }
+
+                        static __base_datatype_io *
+                        create_timestamp_map(__type_def_enum value_type, __native_type *type, __record_mode mode) {
+                            __base_datatype_io *handler = nullptr;
+                            switch (value_type) {
+                                case __type_def_enum::TYPE_BYTE:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, uint8_t, __type_def_enum::TYPE_BYTE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_CHAR:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, char, __type_def_enum::TYPE_CHAR>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_SHORT:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, short, __type_def_enum::TYPE_SHORT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_INTEGER:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, int, __type_def_enum::TYPE_INTEGER>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_LONG:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, long, __type_def_enum::TYPE_LONG>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_FLOAT:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, float, __type_def_enum::TYPE_FLOAT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_DOUBLE:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, double, __type_def_enum::TYPE_DOUBLE>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TIMESTAMP:
+                                case __type_def_enum::TYPE_DATETIME:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, uint64_t, __type_def_enum::TYPE_TIMESTAMP>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRING:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, char, __type_def_enum::TYPE_STRING>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_TEXT:
+                                    handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, char, __type_def_enum::TYPE_TEXT>(
+                                            nullptr);
+                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    break;
+                                case __type_def_enum::TYPE_STRUCT:
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new __dt_map<uint64_t, __type_def_enum::TYPE_TIMESTAMP, mutable_record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
+                                    break;
+                                default:
+                                    throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
+                            }
+                            return handler;
+                        }
+
+                        static __base_datatype_io *
+                        create_string_map(__type_def_enum value_type, __native_type *type, __record_mode mode) {
                             __base_datatype_io *handler = nullptr;
                             switch (value_type) {
                                 case __type_def_enum::TYPE_BYTE:
@@ -676,9 +755,17 @@ REACTFS_NS_CORE
                                     CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
                                     break;
                                 case __type_def_enum::TYPE_STRUCT:
-                                    handler = new string_key_map<__struct_datatype__, __type_def_enum::TYPE_STRUCT>(
-                                            type);
-                                    CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    if (mode == __record_mode::RM_READ) {
+                                        handler = new string_key_map<record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else if (mode == __record_mode::RM_WRITE) {
+                                        handler = new string_key_map<mutable_record_struct, __type_def_enum::TYPE_STRUCT>(
+                                                type);
+                                        CHECK_ALLOC(handler, TYPE_NAME(__dt_map));
+                                    } else {
+                                        throw BASE_ERROR("Unknown record mode specified. [mode=%d]", mode);
+                                    }
                                     break;
                                 default:
                                     throw BASE_ERROR("Specified type not supported. [type=%d]", value_type);
@@ -689,46 +776,47 @@ REACTFS_NS_CORE
                     public:
 
                         static __base_datatype_io *
-                        create_handler(__type_def_enum key_type, __type_def_enum value_type, __native_type *type) {
+                        create_handler(__type_def_enum key_type, __type_def_enum value_type, __native_type *type,
+                                       __record_mode mode) {
                             __base_datatype_io *handler = nullptr;
                             PRECONDITION(__type_enum_helper::is_native(key_type));
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(value_type));
                             switch (key_type) {
                                 case __type_def_enum::TYPE_BYTE:
-                                    handler = create_byte_map(value_type, type);
+                                    handler = create_byte_map(value_type, type, mode);
                                     CHECK_NOT_NULL(handler);
                                     break;
                                 case __type_def_enum::TYPE_CHAR:
-                                    handler = create_char_map(value_type, type);
+                                    handler = create_char_map(value_type, type, mode);
                                     CHECK_NOT_NULL(handler);
                                     break;
                                 case __type_def_enum::TYPE_SHORT:
-                                    handler = create_short_map(value_type, type);
+                                    handler = create_short_map(value_type, type, mode);
                                     CHECK_NOT_NULL(handler);
                                     break;
                                 case __type_def_enum::TYPE_INTEGER:
-                                    handler = create_int_map(value_type, type);
+                                    handler = create_int_map(value_type, type, mode);
                                     CHECK_NOT_NULL(handler);
                                     break;
                                 case __type_def_enum::TYPE_LONG:
-                                    handler = create_long_map(value_type, type);
+                                    handler = create_long_map(value_type, type, mode);
                                     CHECK_NOT_NULL(handler);
                                     break;
                                 case __type_def_enum::TYPE_FLOAT:
-                                    handler = create_float_map(value_type, type);
+                                    handler = create_float_map(value_type, type, mode);
                                     CHECK_NOT_NULL(handler);
                                     break;
                                 case __type_def_enum::TYPE_DOUBLE:
-                                    handler = create_double_map(value_type, type);
+                                    handler = create_double_map(value_type, type, mode);
                                     CHECK_NOT_NULL(handler);
                                     break;
                                 case __type_def_enum::TYPE_TIMESTAMP:
                                 case __type_def_enum::TYPE_DATETIME:
-                                    handler = create_timestamp_map(value_type, type);
+                                    handler = create_timestamp_map(value_type, type, mode);
                                     CHECK_NOT_NULL(handler);
                                     break;
                                 case __type_def_enum::TYPE_STRING:
-                                    handler = create_string_map(value_type, type);
+                                    handler = create_string_map(value_type, type, mode);
                                     CHECK_NOT_NULL(handler);
                                     break;
                                 default:
@@ -785,14 +873,15 @@ REACTFS_NS_CORE
 
                         virtual __base_datatype_io *
                         get_array_type_handler(__field_type field_type, __type_def_enum inner_type,
-                                               __native_type *type) override {
+                                               __native_type *type, __record_mode mode) override {
                             if (field_type == __field_type::LIST) {
                                 string key = __type_defs_utils::create_list_key(__type_def_enum::TYPE_LIST,
                                                                                 inner_type);
                                 __base_datatype_io *handler = __type_defs_utils::get_type_handler(key);
                                 if (IS_NULL(handler)) {
                                     if (inner_type != __type_def_enum::TYPE_STRUCT) {
-                                        __base_datatype_io *ah = __list_init_utils::create_handler(inner_type, nullptr);
+                                        __base_datatype_io *ah = __list_init_utils::create_handler(inner_type, nullptr,
+                                                                                                   mode);
                                         CHECK_NOT_NULL(ah);
                                         if (!__type_defs_utils::add_external_handler(key, ah)) {
                                             CHECK_AND_FREE(ah);
@@ -800,7 +889,8 @@ REACTFS_NS_CORE
                                         handler = __type_defs_utils::get_type_handler(key);
                                     } else {
                                         CHECK_NOT_NULL(type);
-                                        __base_datatype_io *ah = __list_init_utils::create_handler(inner_type, type);
+                                        __base_datatype_io *ah = __list_init_utils::create_handler(inner_type, type,
+                                                                                                   mode);
                                         CHECK_NOT_NULL(ah);
                                         handler = ah;
                                     }
@@ -812,7 +902,7 @@ REACTFS_NS_CORE
 
                         virtual __base_datatype_io *
                         get_map_type_handler(__type_def_enum key_type, __type_def_enum value_type,
-                                             __native_type *type) override {
+                                             __native_type *type, __record_mode mode) override {
 
                             string key = __type_defs_utils::create_map_key(__type_def_enum::TYPE_MAP,
                                                                            key_type, value_type);
@@ -820,7 +910,7 @@ REACTFS_NS_CORE
                             if (IS_NULL(handler)) {
                                 if (value_type != __type_def_enum::TYPE_STRUCT) {
                                     __base_datatype_io *ah = __map_init_utils::create_handler(key_type, value_type,
-                                                                                              type);
+                                                                                              type, mode);
                                     CHECK_NOT_NULL(ah);
                                     if (!__type_defs_utils::add_external_handler(key, ah)) {
                                         CHECK_AND_FREE(ah);
@@ -829,7 +919,7 @@ REACTFS_NS_CORE
                                 } else {
                                     CHECK_NOT_NULL(type);
                                     __base_datatype_io *ah = __map_init_utils::create_handler(key_type, value_type,
-                                                                                              type);
+                                                                                              type, mode);
                                     CHECK_NOT_NULL(ah);
                                     handler = ah;
                                 }

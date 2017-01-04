@@ -349,7 +349,7 @@ REACTFS_NS_CORE
                          *
                          * @return - Value pointer.
                          */
-                        virtual void *get_default() const = 0;
+                        virtual const void *get_default() const = 0;
 
                         /*!
                          * Utility function to print the definition of this constraint.
@@ -399,11 +399,8 @@ REACTFS_NS_CORE
                             this->value = value;
                         }
 
-                        virtual void *get_default() const override {
-                            __T *t = (__T *) malloc(sizeof(__T));
-                            CHECK_ALLOC(t, TYPE_NAME(__T));
-                            *t = this->value;
-                            return t;
+                        virtual const void *get_default() const override {
+                            return &this->value;
                         }
 
                         /*!
@@ -516,14 +513,9 @@ REACTFS_NS_CORE
                             return r_size;
                         }
 
-                        virtual void *get_default() const override {
+                        virtual const void *get_default() const override {
                             CHECK_NOT_NULL(this->value);
-                            int s = strlen(this->value);
-                            char *t = (char *) malloc(sizeof(char) * (s + 1));
-                            CHECK_ALLOC(t, TYPE_NAME(char));
-                            memset(t, 0, s + 1);
-                            strncpy(t, this->value, s);
-                            return t;
+                            return this->value;
                         }
 
                         virtual void print() const override {

@@ -17,7 +17,10 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#if defined(__unix)
 #include <malloc.h>
+#endif
+
 #include <algorithm>
 #include <functional>
 #include <cctype>

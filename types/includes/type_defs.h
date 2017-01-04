@@ -34,6 +34,7 @@
 
 #include "type_errors.h"
 #include "types_common.h"
+#include "shared_structs.h"
 #include "schema_def.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
@@ -43,19 +44,9 @@ using namespace REACTFS_NS_COMMON_PREFIX;
 REACTFS_NS_CORE
                 namespace types {
 
-                    typedef unordered_map<string, const void *> __struct_datatype__;
-
                     class __dt_struct : public __base_datatype_io {
                     private:
                         __complex_type *fields = nullptr;
-
-                        const void *get_field_value(const __struct_datatype__ *map, __native_type *type) {
-                            CHECK_NOT_NULL(type);
-                            __struct_datatype__::const_iterator iter = map->find(type->get_name());
-                            if (iter == map->end())
-                                return nullptr;
-                            return iter->second;
-                        }
 
                     public:
                         __dt_struct(__complex_type *fields) {
@@ -75,8 +66,9 @@ REACTFS_NS_CORE
                         virtual uint64_t
                         read(void *buffer, void *t, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(t);
-                            __struct_datatype__ **T = (__struct_datatype__ **) t;
-                            *T = new __struct_datatype__();
+                            record_struct **T = (record_struct **) t;
+                            *T = fields->get_read_record();
+                            CHECK_NOT_NULL(*T);
 
                             uint64_t r_offset = offset;
                             uint64_t t_size = 0;
@@ -100,7 +92,7 @@ REACTFS_NS_CORE
                                 void *value = nullptr;
                                 r = handler->read(buffer, &value, r_offset, max_length);
                                 CHECK_NOT_NULL(value);
-                                (*T)->insert({type->get_name(), value});
+                                (*T)->add_field(type->get_index(), type->get_datatype(), value);
                                 t_size += r;
                                 r_offset += r;
                                 *size -= r;
@@ -110,8 +102,10 @@ REACTFS_NS_CORE
 
                         virtual uint64_t
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
-                            const __struct_datatype__ *map = (const __struct_datatype__ *) value;
-                            CHECK_NOT_EMPTY_P(map);
+                            const mutable_record_struct *rec = (const mutable_record_struct *) value;
+                            CHECK_NOT_NULL(rec);
+                            POSTCONDITION(rec->get_field_count() == fields->get_field_count());
+
                             uint64_t r_offset = offset;
                             uint64_t t_size = 0;
                             void *ptr = buffer_utils::increment_data_ptr(buffer, (offset + t_size));
@@ -126,8 +120,7 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(type);
                                 __base_datatype_io *handler = type->get_type_handler();
                                 CHECK_NOT_NULL(handler);
-                                const void *d = get_field_value(map, type);
-                                void *d_value = nullptr;
+                                const void *d =rec->get_field(type->get_index());
                                 if (!type->is_valid_value(d)) {
                                     throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
                                                            type->get_name().c_str());
@@ -139,8 +132,8 @@ REACTFS_NS_CORE
                                     }
                                     if (NOT_NULL(type->get_default_value())) {
                                         const __default *df = type->get_default_value();
-                                        d_value = df->get_default();
-                                        CHECK_NOT_NULL(d_value);
+                                        d = df->get_default();
+                                        CHECK_NOT_NULL(d);
                                     }
                                 }
                                 if (NOT_NULL(d)) {
@@ -159,17 +152,6 @@ REACTFS_NS_CORE
                                     r_offset += r;
                                     t_size += r;
                                     *w_size += r;
-                                } else if (NOT_NULL(d_value)) {
-                                    uint8_t ci = type->get_index();
-                                    uint64_t r = buffer_utils::write<uint8_t>(buffer, &r_offset, ci);
-                                    t_size += r;
-                                    *w_size += r;
-                                    r = handler->write(buffer, d_value, r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                    *w_size += r;
-
-                                    FREE_PTR(d_value);
                                 }
                             }
                             return t_size;
@@ -179,8 +161,10 @@ REACTFS_NS_CORE
                             if (IS_NULL(data)) {
                                 return 0;
                             }
-                            const __struct_datatype__ *map = (const __struct_datatype__ *) data;
-                            CHECK_NOT_EMPTY_P(map);
+                            const mutable_record_struct *rec = (const mutable_record_struct *) data;
+                            CHECK_NOT_NULL(rec);
+                            POSTCONDITION(rec->get_field_count() == fields->get_field_count());
+
                             uint64_t t_size = sizeof(__version_header) + sizeof(uint64_t);
                             unordered_map<uint8_t, __native_type *> types = fields->get_fields();
                             CHECK_NOT_EMPTY(types);
@@ -190,7 +174,7 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(type);
                                 __base_datatype_io *handler = type->get_type_handler();
                                 CHECK_NOT_NULL(handler);
-                                const void *d = get_field_value(map, type);
+                                const void *d = rec->get_field(type->get_index());
                                 if (!type->is_valid_value(d)) {
                                     throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
                                                            type->get_name().c_str());
@@ -719,13 +703,22 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    class __struct_list : public __dt_list<__struct_datatype__, __type_def_enum::TYPE_STRUCT> {
+                    class ___read_struct_list : public __dt_list<record_struct, __type_def_enum::TYPE_STRUCT> {
                     public:
-                        __struct_list(__native_type *type)
-                                : __dt_list<__struct_datatype__, __type_def_enum::TYPE_STRUCT>(type) {
+                        ___read_struct_list(__native_type *type)
+                                : __dt_list<record_struct, __type_def_enum::TYPE_STRUCT>(type) {
 
                         }
                     };
+
+                    class ___write_struct_list : public __dt_list<mutable_record_struct, __type_def_enum::TYPE_STRUCT> {
+                    public:
+                        ___write_struct_list(__native_type *type)
+                        : __dt_list<mutable_record_struct, __type_def_enum::TYPE_STRUCT>(type) {
+
+                        }
+                    };
+
                 }
 
 REACTFS_NS_CORE_END

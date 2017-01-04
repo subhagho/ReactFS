@@ -27,6 +27,7 @@
 #include "core/includes/core.h"
 
 #include "schema_common.h"
+#include "shared_structs.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
 
@@ -1186,6 +1187,7 @@ REACTFS_NS_CORE
                             return d;
                         }
                     };
+
                 }
 REACTFS_NS_CORE_END
 #endif //REACTFS_SCHEMA_HELPERS_H

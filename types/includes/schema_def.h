@@ -33,6 +33,7 @@
 #include "schema_common.h"
 #include "__constraints.h"
 #include "schema_helpers.h"
+#include "shared_structs.h"
 
 #define MAP_TYPE_KEY_NAME "key"
 #define MAP_TYPE_VALUE_NAME "value"
@@ -536,11 +537,11 @@ REACTFS_NS_CORE
 
                         virtual __base_datatype_io *
                         get_array_type_handler(__field_type field_type, __type_def_enum inner_type,
-                                               __native_type *type) = 0;
+                                               __native_type *type, __record_mode mode) = 0;
 
                         virtual __base_datatype_io *
                         get_map_type_handler(__type_def_enum key_type, __type_def_enum value_type,
-                                             __native_type *type) = 0;
+                                             __native_type *type, __record_mode mode) = 0;
 
                         static __complex_type_helper *get_type_loader() {
                             CHECK_NOT_NULL(type_loader);
@@ -800,6 +801,26 @@ REACTFS_NS_CORE
                                 size += nt->estimate_size();
                             }
                             return size;
+                        }
+
+                        const uint8_t get_field_count() const {
+                            return fields.size();
+                        }
+
+                        record_struct *get_read_record() const {
+                            const uint8_t size = get_field_count();
+                            record_struct *rec = new record_struct(size);
+                            CHECK_ALLOC(rec, TYPE_NAME(record_struct));
+
+                            return rec;
+                        }
+
+                        mutable_record_struct *get_write_record() const {
+                            const uint8_t size = get_field_count();
+                            mutable_record_struct *rec = new mutable_record_struct(size);
+                            CHECK_ALLOC(rec, TYPE_NAME(mutable_record_struct));
+
+                            return rec;
                         }
                     };
 
