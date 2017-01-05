@@ -719,7 +719,7 @@ REACTFS_NS_CORE
                          * @param name - Field name.
                          * @return - Field instance.
                          */
-                        const __native_type *get_field(const string &name) {
+                        const __native_type *get_field(const string &name) const {
                             unordered_map<string, uint8_t>::const_iterator iter = field_index.find(name);
                             if (iter != field_index.end()) {
                                 const uint8_t index = iter->second;

@@ -56,26 +56,54 @@ using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
                 namespace types {
+                    /*!
+                     * Base class for defining auto-generated datatypes derived from
+                     * schema definitions.
+                     */
                     class __base_type {
                     protected:
+                        /// Are the fields locally allocated?
+                        bool __is_allocated = false;
+                        /// Parsed schema definition for this type.
+                        const __complex_type *record_type = nullptr;
+                        /// Source record, if type has been deserialized.
                         record_struct *__data = nullptr;
 
-                        void free_data_ptr() {
-                            if (NOT_NULL(this->__data))
-                                free_data_ptr(this->__data);
+                        const __native_type *get_field_type(const string &name) {
+                            CHECK_NOT_NULL(record_type);
+                            return record_type->get_field(name);
                         }
 
                     public:
+                        /*!
+                         * Base destructor.
+                         */
                         virtual ~__base_type() {
-                            this->__data = nullptr;
+                            CHECK_AND_FREE(__data);
                         }
 
-                        virtual void free_data_ptr(record_struct *data) = 0;
+                        /*!
+                         * Get the parsed schema definition for this type.
+                         *
+                         * @return - Parsed schema definition.
+                         */
+                        const __complex_type *get_record_type() const {
+                            return this->record_type;
+                        }
 
-                        virtual void free_data_ptr(mutable_record_struct *data) = 0;
-
+                        /*!
+                         * Base virtual method for deserialising this type instance
+                         * from a record.
+                         *
+                         * @param __data - Serialized data record.
+                         */
                         virtual void deserialize(const record_struct *__data) = 0;
 
+                        /*!
+                         * Serialize this class instance.
+                         *
+                         * @return - Serialized data record.
+                         */
                         virtual mutable_record_struct *serialize() = 0;
                     };
                 }

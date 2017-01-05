@@ -23,7 +23,7 @@ do { \
     var = string(stream.str()); \
 } while(0);
 
-#define REPLACE_TOKE(var, t, v) var = string_utils::set_token(t, v, var)
+#define REPLACE_TOKEN(var, t, v) var = string_utils::set_token(t, v, var)
 
 #define READ_FROM_VECT(var, v) do {\
     stringstream stream; \
@@ -75,10 +75,10 @@ REACTFS_NS_CORE
                             string version_s = version_utils::get_version_string(version);
                             CHECK_NOT_EMPTY(version_s)
 
-                            REPLACE_TOKE(ss, tk_schema, schema_name);
-                            REPLACE_TOKE(ss, tk_version, version_s);
-                            REPLACE_TOKE(ss, tk_username, uname);
-                            REPLACE_TOKE(ss, tk_date, date_s);
+                            REPLACE_TOKEN(ss, tk_schema, schema_name);
+                            REPLACE_TOKEN(ss, tk_version, version_s);
+                            REPLACE_TOKEN(ss, tk_username, uname);
+                            REPLACE_TOKEN(ss, tk_date, date_s);
 
                             return ss;
                         }
@@ -102,8 +102,8 @@ REACTFS_NS_CORE
                             string tk_header = CPPT_TOKEN_DEF_HEADER;
                             CHECK_NOT_EMPTY(tk_header);
 
-                            REPLACE_TOKE(vs, tk_guard, guard_name);
-                            REPLACE_TOKE(vs, tk_header, header);
+                            REPLACE_TOKEN(vs, tk_guard, guard_name);
+                            REPLACE_TOKEN(vs, tk_header, header);
 
                             this->file_str = string(vs);
                             this->classname = string(classname);
@@ -116,8 +116,8 @@ REACTFS_NS_CORE
                             string tk_class = CPPT_TOKEN_DEF_NAME;
                             string tk_parent = CPPT_TOKEN_DEF_PARENT;
 
-                            REPLACE_TOKE(vs, tk_class, this->classname);
-                            REPLACE_TOKE(vs, tk_parent, CPPT_CLASS_PARENT_TYPE);
+                            REPLACE_TOKEN(vs, tk_class, this->classname);
+                            REPLACE_TOKEN(vs, tk_parent, CPPT_CLASS_PARENT_TYPE);
 
                             this->class_str = string(vs);
                         }
@@ -127,7 +127,7 @@ REACTFS_NS_CORE
                             READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_NAMESPACE);
 
                             string tk = CPPT_TOKEN_DEF_NAME;
-                            REPLACE_TOKE(str, tk, ns);
+                            REPLACE_TOKEN(str, tk, ns);
 
                             return str;
                         }
@@ -146,7 +146,7 @@ REACTFS_NS_CORE
                                 string n_str = get_namespace(ns);
                                 CHECK_NOT_EMPTY(n_str);
                                 if (!IS_EMPTY(prev)) {
-                                    REPLACE_TOKE(n_str, tk, prev);
+                                    REPLACE_TOKEN(n_str, tk, prev);
                                     prev = n_str;
                                 } else {
                                     prev = n_str;
@@ -166,13 +166,13 @@ REACTFS_NS_CORE
                             stringstream body;
                             for (string ss : m_call_serde) {
                                 string c = string(callstr);
-                                REPLACE_TOKE(c, tk_name, ss);
+                                REPLACE_TOKEN(c, tk_name, ss);
                                 body << c << "\n";
                             }
                             string bstr(body.str());
 
                             string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
-                            REPLACE_TOKE(fstr, tk_read, bstr);
+                            REPLACE_TOKEN(fstr, tk_read, bstr);
 
                             TRACE("DESERIALIZER [%s]", fstr.c_str());
 
@@ -184,19 +184,19 @@ REACTFS_NS_CORE
                             READ_PARSED_ROWS(fstr, template_header, CPPT_TOKEN_FUNC_SERIALIZE);
 
                             string callstr;
-                            READ_PARSED_ROWS(callstr, template_header, CPPT_TOKEN_CALL_SETTER_TO_MAP);
+                            READ_PARSED_ROWS(callstr, template_header, CPPT_TOKEN_CALL_SETTER_TO_RECORD);
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             stringstream body;
                             for (string ss : m_call_serde) {
                                 string c = string(callstr);
-                                REPLACE_TOKE(c, tk_name, ss);
+                                REPLACE_TOKEN(c, tk_name, ss);
                                 body << c << "\n";
                             }
                             string bstr(body.str());
 
                             string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
-                            REPLACE_TOKE(fstr, tk_read, bstr);
+                            REPLACE_TOKEN(fstr, tk_read, bstr);
 
                             TRACE("DESERIALIZER [%s]", fstr.c_str());
 
@@ -217,8 +217,8 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
 
-                            REPLACE_TOKE(fstr, tk_name, classname);
-                            REPLACE_TOKE(fstr, tk_inits, inits);
+                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_inits, inits);
 
                             add_public_method(fstr);
                         }
@@ -237,8 +237,8 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
 
-                            REPLACE_TOKE(fstr, tk_name, classname);
-                            REPLACE_TOKE(fstr, tk_inits, inits);
+                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_inits, inits);
 
                             add_public_method(fstr);
                         }
@@ -261,9 +261,9 @@ REACTFS_NS_CORE
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
                             string tk_copies = CPPT_TOKEN_DEF_VARIABLE_COPY;
 
-                            REPLACE_TOKE(fstr, tk_name, classname);
-                            REPLACE_TOKE(fstr, tk_inits, inits);
-                            REPLACE_TOKE(fstr, tk_copies, copies);
+                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_inits, inits);
+                            REPLACE_TOKEN(fstr, tk_copies, copies);
 
                             add_public_method(fstr);
                         }
@@ -286,22 +286,9 @@ REACTFS_NS_CORE
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
                             string tk_copies = CPPT_TOKEN_DEF_VARIABLE_COPY;
 
-                            REPLACE_TOKE(fstr, tk_name, classname);
-                            REPLACE_TOKE(fstr, tk_inits, inits);
-                            REPLACE_TOKE(fstr, tk_copies, copies);
-
-                            add_public_method(fstr);
-                        }
-
-                        void generate_struct_free() {
-                            string inits;
-                            READ_FROM_VECT(inits, struct_free_calls);
-
-                            string fstr;
-                            READ_PARSED_ROWS(fstr, template_header, CPPT_TOKEN_FUNC_FREE_DATA_PTR);
-
-                            string tk_free = CPPT_TOKEN_DEF_FREE_DATA_CALLS;
-                            REPLACE_TOKE(fstr, tk_free, inits);
+                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_inits, inits);
+                            REPLACE_TOKEN(fstr, tk_copies, copies);
 
                             add_public_method(fstr);
                         }
@@ -316,8 +303,8 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_FREES;
 
-                            REPLACE_TOKE(fstr, tk_name, classname);
-                            REPLACE_TOKE(fstr, tk_inits, inits);
+                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_inits, inits);
 
                             add_public_method(fstr);
                         }
@@ -328,7 +315,6 @@ REACTFS_NS_CORE
                             generate_copy_constr();
                             generate_copy_constr_ptr();
                             generate_destr();
-                            generate_struct_free();
                             generate_deserializer();
                             generate_serializer();
 
@@ -418,9 +404,9 @@ REACTFS_NS_CORE
                             string dtp = type->get_inner_type()->get_type_ptr();
                             CHECK_NOT_EMPTY(dtp);
 
-                            REPLACE_TOKE(str, tk_name, tn);
-                            REPLACE_TOKE(str, tk_type, dt);
-                            REPLACE_TOKE(str, tk_type_ptr, dtp);
+                            REPLACE_TOKEN(str, tk_name, tn);
+                            REPLACE_TOKEN(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_type_ptr, dtp);
 
                             TRACE("LIST SERIALIZER [%s]", str.c_str());
 
@@ -445,9 +431,9 @@ REACTFS_NS_CORE
                             string dtp = lt->get_inner_type()->get_type_ptr();
                             CHECK_NOT_EMPTY(dtp);
 
-                            REPLACE_TOKE(str, tk_name, tn);
-                            REPLACE_TOKE(str, tk_type, dt);
-                            REPLACE_TOKE(str, tk_type_ptr, dtp);
+                            REPLACE_TOKEN(str, tk_name, tn);
+                            REPLACE_TOKEN(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_type_ptr, dtp);
 
                             TRACE("SETTER [%s]", str.c_str());
 
@@ -472,10 +458,10 @@ REACTFS_NS_CORE
                             string tk_value = CPPT_TOKEN_DEF_VALUE_TYPE;
                             string tk_value_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
 
-                            REPLACE_TOKE(str, tk_name, tn);
-                            REPLACE_TOKE(str, tk_key, k_type);
-                            REPLACE_TOKE(str, tk_value, v_type);
-                            REPLACE_TOKE(str, tk_value_ptr, v_type_ptr);
+                            REPLACE_TOKEN(str, tk_name, tn);
+                            REPLACE_TOKEN(str, tk_key, k_type);
+                            REPLACE_TOKEN(str, tk_value, v_type);
+                            REPLACE_TOKEN(str, tk_value_ptr, v_type_ptr);
 
                             TRACE("SETTER [%s]", str.c_str());
 
@@ -501,10 +487,10 @@ REACTFS_NS_CORE
                             string tk_value = CPPT_TOKEN_DEF_VALUE_TYPE;
                             string tk_value_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
 
-                            REPLACE_TOKE(str, tk_name, mt->get_name());
-                            REPLACE_TOKE(str, tk_key, k_type);
-                            REPLACE_TOKE(str, tk_value, v_type);
-                            REPLACE_TOKE(str, tk_value_ptr, v_type_ptr);
+                            REPLACE_TOKEN(str, tk_name, mt->get_name());
+                            REPLACE_TOKEN(str, tk_key, k_type);
+                            REPLACE_TOKEN(str, tk_value, v_type);
+                            REPLACE_TOKEN(str, tk_value_ptr, v_type_ptr);
 
                             TRACE("SETTER [%s]", str.c_str());
 
@@ -523,8 +509,8 @@ REACTFS_NS_CORE
                             string tn = type->get_name();
                             CHECK_NOT_EMPTY(tn);
 
-                            REPLACE_TOKE(str, tk_name, tn);
-                            REPLACE_TOKE(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_name, tn);
+                            REPLACE_TOKEN(str, tk_type, dt);
 
                             TRACE("SETTER [%s]", str.c_str());
 
@@ -545,9 +531,9 @@ REACTFS_NS_CORE
                             CHECK_NOT_EMPTY(tn);
                             string dtp = type->get_type_ptr();
 
-                            REPLACE_TOKE(str, tk_type, dt);
-                            REPLACE_TOKE(str, tk_name, tn);
-                            REPLACE_TOKE(str, tk_type_ptr, dtp);
+                            REPLACE_TOKEN(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_name, tn);
+                            REPLACE_TOKEN(str, tk_type_ptr, dtp);
 
                             TRACE("SETTER [%s]", str.c_str());
 
@@ -566,8 +552,8 @@ REACTFS_NS_CORE
                             string tn = type->get_name();
                             CHECK_NOT_EMPTY(tn);
 
-                            REPLACE_TOKE(str, tk_name, tn);
-                            REPLACE_TOKE(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_name, tn);
+                            REPLACE_TOKEN(str, tk_type, dt);
 
                             TRACE("GETTER [%s]", str.c_str());
                             add_public_method(str);
@@ -578,7 +564,7 @@ REACTFS_NS_CORE
                             READ_PARSED_ROWS(str, template_header, token);
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
-                            REPLACE_TOKE(str, tk_name, type->get_name());
+                            REPLACE_TOKEN(str, tk_name, type->get_name());
 
                             copy_constr_calls.push_back(str);
                         }
@@ -590,8 +576,8 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
 
-                            REPLACE_TOKE(str, tk_name, type->get_name());
-                            REPLACE_TOKE(str, tk_type, type->get_type_name());
+                            REPLACE_TOKEN(str, tk_name, type->get_name());
+                            REPLACE_TOKEN(str, tk_type, type->get_type_name());
 
                             copy_constr_calls.push_back(str);
                         }
@@ -609,9 +595,9 @@ REACTFS_NS_CORE
                             string dt = it->get_type_name();
                             string dtp = it->get_type_ptr();
 
-                            REPLACE_TOKE(str, tk_name, type->get_name());
-                            REPLACE_TOKE(str, tk_type, dt);
-                            REPLACE_TOKE(str, tk_type_ptr, dtp);
+                            REPLACE_TOKEN(str, tk_name, type->get_name());
+                            REPLACE_TOKEN(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_type_ptr, dtp);
 
                             copy_constr_calls.push_back(str);
                         }
@@ -633,10 +619,10 @@ REACTFS_NS_CORE
                                 kdt = "std::string";
                             }
 
-                            REPLACE_TOKE(str, tk_name, type->get_name());
-                            REPLACE_TOKE(str, tk_k_type, kdt);
-                            REPLACE_TOKE(str, tk_v_type, vt->get_type_name());
-                            REPLACE_TOKE(str, tk_v_type_ptr, vt->get_type_ptr());
+                            REPLACE_TOKEN(str, tk_name, type->get_name());
+                            REPLACE_TOKEN(str, tk_k_type, kdt);
+                            REPLACE_TOKEN(str, tk_v_type, vt->get_type_name());
+                            REPLACE_TOKEN(str, tk_v_type_ptr, vt->get_type_ptr());
 
                             copy_constr_calls.push_back(str);
                         }
@@ -646,7 +632,7 @@ REACTFS_NS_CORE
                             READ_PARSED_ROWS(str, template_header, token);
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
-                            REPLACE_TOKE(str, tk_name, type->get_name());
+                            REPLACE_TOKEN(str, tk_name, type->get_name());
 
                             copy_constr_calls_ptr.push_back(str);
                         }
@@ -658,8 +644,8 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
 
-                            REPLACE_TOKE(str, tk_name, type->get_name());
-                            REPLACE_TOKE(str, tk_type, type->get_type_name());
+                            REPLACE_TOKEN(str, tk_name, type->get_name());
+                            REPLACE_TOKEN(str, tk_type, type->get_type_name());
 
                             copy_constr_calls_ptr.push_back(str);
                         }
@@ -677,9 +663,9 @@ REACTFS_NS_CORE
                             string dt = it->get_type_name();
                             string dtp = it->get_type_ptr();
 
-                            REPLACE_TOKE(str, tk_name, type->get_name());
-                            REPLACE_TOKE(str, tk_type, dt);
-                            REPLACE_TOKE(str, tk_type_ptr, dtp);
+                            REPLACE_TOKEN(str, tk_name, type->get_name());
+                            REPLACE_TOKEN(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_type_ptr, dtp);
 
                             copy_constr_calls_ptr.push_back(str);
                         }
@@ -701,10 +687,10 @@ REACTFS_NS_CORE
                                 kdt = "std::string";
                             }
 
-                            REPLACE_TOKE(str, tk_name, type->get_name());
-                            REPLACE_TOKE(str, tk_k_type, kdt);
-                            REPLACE_TOKE(str, tk_v_type, vt->get_type_name());
-                            REPLACE_TOKE(str, tk_v_type_ptr, vt->get_type_ptr());
+                            REPLACE_TOKEN(str, tk_name, type->get_name());
+                            REPLACE_TOKEN(str, tk_k_type, kdt);
+                            REPLACE_TOKEN(str, tk_v_type, vt->get_type_name());
+                            REPLACE_TOKEN(str, tk_v_type_ptr, vt->get_type_ptr());
 
                             copy_constr_calls_ptr.push_back(str);
                         }
@@ -721,8 +707,8 @@ REACTFS_NS_CORE
                             string tn = type->get_name();
                             CHECK_NOT_EMPTY(tn);
 
-                            REPLACE_TOKE(str, tk_name, tn);
-                            REPLACE_TOKE(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_name, tn);
+                            REPLACE_TOKEN(str, tk_type, dt);
 
                             TRACE("DECLARE [%s]", str.c_str());
                             add_declare(str);
@@ -749,9 +735,9 @@ REACTFS_NS_CORE
                             CHECK_NOT_EMPTY(dt);
                             string tn = common_utils::get_normalized_name(dt);
 
-                            REPLACE_TOKE(str, tk_name, tn);
-                            REPLACE_TOKE(str, tk_type, dt);
-                            REPLACE_TOKE(str, tk_type_ptr, dtp);
+                            REPLACE_TOKEN(str, tk_name, tn);
+                            REPLACE_TOKEN(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_type_ptr, dtp);
 
                             TRACE("SERIALIZER [%s]", str.c_str());
                             add_private_method(str);
@@ -774,9 +760,9 @@ REACTFS_NS_CORE
                             string tn = common_utils::get_normalized_name(dt);
                             CHECK_NOT_EMPTY(tn);
 
-                            REPLACE_TOKE(str, tk_name, tn);
-                            REPLACE_TOKE(str, tk_type, dt);
-                            REPLACE_TOKE(str, tk_type_ptr, dtp);
+                            REPLACE_TOKEN(str, tk_name, tn);
+                            REPLACE_TOKEN(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_type_ptr, dtp);
 
                             TRACE("DESERIALIZER [%s]", str.c_str());
                             add_private_method(str);
@@ -784,20 +770,20 @@ REACTFS_NS_CORE
 
                         void generate_native_setter_to_map(const __native_type *type) {
                             string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_TO_MAP);
+                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_TO_RECORD);
 
                             string c_str;
-                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_NATIVE_SETTER_TO_MAP);
+                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_NATIVE_SETTER_TO_RECORD);
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tn = type->get_name();
 
-                            REPLACE_TOKE(c_str, tk_name, tn);
+                            REPLACE_TOKEN(c_str, tk_name, tn);
 
                             string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
 
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_read, c_str);
+                            REPLACE_TOKEN(f_str, tk_name, tn);
+                            REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("WRITE FROM MAP [%s]", f_str.c_str());
                             add_private_method(f_str);
@@ -805,26 +791,29 @@ REACTFS_NS_CORE
 
                         void generate_native_setter_from_map(const __native_type *type) {
                             string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
+                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_FROM_RECORD);
 
                             string c_str;
-                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_NATIVE_SETTER_FROM_MAP);
+                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_NATIVE_READ_FROM_RECORD);
 
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_index = CPPT_TOKEN_DEF_FIELD_INDEX;
 
                             string tn = type->get_name();
                             string dt = __type_enum_helper::get_datatype(type->get_datatype());
                             string tp = type->get_type_ptr();
+                            string fi = to_string(type->get_index());
 
-                            REPLACE_TOKE(c_str, tk_name, tn);
-                            REPLACE_TOKE(c_str, tk_type, dt);
-                            REPLACE_TOKE(c_str, tk_type_ptr, tp);
+                            REPLACE_TOKEN(c_str, tk_name, tn);
+                            REPLACE_TOKEN(c_str, tk_type, dt);
+                            REPLACE_TOKEN(c_str, tk_type_ptr, tp);
 
-                            string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_read, c_str);
+                            string tk_read = CPPT_TOKEN_DEF_READ_SERDE_CALLS;
+                            REPLACE_TOKEN(f_str, tk_name, tn);
+                            REPLACE_TOKEN(f_str, tk_read, c_str);
+                            REPLACE_TOKEN(f_str, tk_index, fi);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
                             add_private_method(f_str);
@@ -834,10 +823,10 @@ REACTFS_NS_CORE
 
                         void generate_type_setter_to_map(__complex_type *type) {
                             string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_TO_MAP);
+                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_TO_RECORD);
 
                             string c_str;
-                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_SETTER_TO_MAP);
+                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_SETTER_TO_RECORD);
 
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
@@ -845,12 +834,12 @@ REACTFS_NS_CORE
                             string tn = type->get_name();
                             string dt = type->get_type_name();
 
-                            REPLACE_TOKE(c_str, tk_name, tn);
-                            REPLACE_TOKE(c_str, tk_type, dt);
+                            REPLACE_TOKEN(c_str, tk_name, tn);
+                            REPLACE_TOKEN(c_str, tk_type, dt);
 
                             string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_read, c_str);
+                            REPLACE_TOKEN(f_str, tk_name, tn);
+                            REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("WRITE FROM MAP [%s]", f_str.c_str());
                             add_private_method(f_str);
@@ -859,10 +848,10 @@ REACTFS_NS_CORE
 
                         void generate_type_setter_from_map(__complex_type *type) {
                             string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
+                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_FROM_RECORD);
 
                             string c_str;
-                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_SETTER_FROM_MAP);
+                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_READ_FROM_RECORD);
 
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
@@ -872,13 +861,13 @@ REACTFS_NS_CORE
                             string dt = type->get_type_name();
                             string tp = type->get_type_ptr();
 
-                            REPLACE_TOKE(c_str, tk_name, tn);
-                            REPLACE_TOKE(c_str, tk_type, dt);
-                            REPLACE_TOKE(c_str, tk_type_ptr, tp);
+                            REPLACE_TOKEN(c_str, tk_name, tn);
+                            REPLACE_TOKEN(c_str, tk_type, dt);
+                            REPLACE_TOKEN(c_str, tk_type_ptr, tp);
 
-                            string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_read, c_str);
+                            string tk_read = CPPT_TOKEN_DEF_READ_SERDE_CALLS;
+                            REPLACE_TOKEN(f_str, tk_name, tn);
+                            REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
                             add_private_method(f_str);
@@ -888,10 +877,10 @@ REACTFS_NS_CORE
 
                         void generate_type_list_setter_to_map(__list_type *type) {
                             string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_TO_MAP);
+                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_TO_RECORD);
 
                             string c_str;
-                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_LIST_SETTER_TO_MAP);
+                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_LIST_SETTER_TO_RECORD);
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
@@ -901,12 +890,12 @@ REACTFS_NS_CORE
                             string mn = type->get_type_name();
                             mn = common_utils::get_normalized_name(mn);
 
-                            REPLACE_TOKE(c_str, tk_name, tn);
-                            REPLACE_TOKE(c_str, tk_m_name, mn);
+                            REPLACE_TOKEN(c_str, tk_name, tn);
+                            REPLACE_TOKEN(c_str, tk_m_name, mn);
 
                             string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_read, c_str);
+                            REPLACE_TOKEN(f_str, tk_name, tn);
+                            REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("WRITE FROM MAP [%s]", f_str.c_str());
                             add_private_method(f_str);
@@ -915,10 +904,10 @@ REACTFS_NS_CORE
 
                         void generate_type_list_setter_from_map(__list_type *type) {
                             string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
+                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_FROM_RECORD);
 
                             string c_str;
-                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_LIST_SETTER_FROM_MAP);
+                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_LIST_READ_FROM_RECORD);
 
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
@@ -933,14 +922,14 @@ REACTFS_NS_CORE
                             string mn = type->get_type_name();
                             mn = common_utils::get_normalized_name(mn);
 
-                            REPLACE_TOKE(c_str, tk_name, tn);
-                            REPLACE_TOKE(c_str, tk_type, dt);
-                            REPLACE_TOKE(c_str, tk_type_ptr, tp);
-                            REPLACE_TOKE(c_str, tk_m_name, mn);
+                            REPLACE_TOKEN(c_str, tk_name, tn);
+                            REPLACE_TOKEN(c_str, tk_type, dt);
+                            REPLACE_TOKEN(c_str, tk_type_ptr, tp);
+                            REPLACE_TOKEN(c_str, tk_m_name, mn);
 
-                            string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_read, c_str);
+                            string tk_read = CPPT_TOKEN_DEF_READ_SERDE_CALLS;
+                            REPLACE_TOKEN(f_str, tk_name, tn);
+                            REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
                             add_private_method(f_str);
@@ -950,10 +939,10 @@ REACTFS_NS_CORE
 
                         void generate_type_map_setter_to_map(__map_type *type) {
                             string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_TO_MAP);
+                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_TO_RECORD);
 
                             string c_str;
-                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_MAP_SETTER_TO_MAP);
+                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_MAP_SETTER_TO_RECORD);
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
@@ -963,12 +952,12 @@ REACTFS_NS_CORE
 
                             string tn = type->get_name();
 
-                            REPLACE_TOKE(c_str, tk_name, tn);
-                            REPLACE_TOKE(c_str, tk_m_name, mn);
+                            REPLACE_TOKEN(c_str, tk_name, tn);
+                            REPLACE_TOKEN(c_str, tk_m_name, mn);
 
                             string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_read, c_str);
+                            REPLACE_TOKEN(f_str, tk_name, tn);
+                            REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
                             add_private_method(f_str);
@@ -977,10 +966,10 @@ REACTFS_NS_CORE
 
                         void generate_type_map_setter_from_map(__map_type *type) {
                             string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_FROM_MAP);
+                            READ_PARSED_ROWS(f_str, template_header, CPPT_TOKEN_FUNC_SETTER_FROM_RECORD);
 
                             string c_str;
-                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_MAP_SETTER_FROM_MAP);
+                            READ_PARSED_ROWS(c_str, template_header, CPPT_TOKEN_CALL_TYPE_MAP_READ_FROM_RECORD);
 
                             string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
                             string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
@@ -1000,14 +989,14 @@ REACTFS_NS_CORE
                             }
                             string vdtp = vt->get_type_ptr();
 
-                            REPLACE_TOKE(c_str, tk_name, tn);
-                            REPLACE_TOKE(c_str, tk_k_type, kdt);
-                            REPLACE_TOKE(c_str, tk_v_type_ptr, vdtp);
-                            REPLACE_TOKE(c_str, tk_m_name, mn);
+                            REPLACE_TOKEN(c_str, tk_name, tn);
+                            REPLACE_TOKEN(c_str, tk_k_type, kdt);
+                            REPLACE_TOKEN(c_str, tk_v_type_ptr, vdtp);
+                            REPLACE_TOKEN(c_str, tk_m_name, mn);
 
-                            string tk_read = CPPT_TOKEN_DEF_READ_MAP_CALLS;
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_read, c_str);
+                            string tk_read = CPPT_TOKEN_DEF_READ_SERDE_CALLS;
+                            REPLACE_TOKEN(f_str, tk_name, tn);
+                            REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
                             add_private_method(f_str);
@@ -1021,79 +1010,9 @@ REACTFS_NS_CORE
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tn = type->get_name();
-                            REPLACE_TOKE(f_str, tk_name, tn);
+                            REPLACE_TOKEN(f_str, tk_name, tn);
 
                             free_calls.push_back(f_str);
-                        }
-
-                        void generate_var_free_call(const __native_type *type, string token) {
-                            string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, token);
-
-                            string tk_name = CPPT_TOKEN_DEF_NAME;
-                            string tn = type->get_name();
-                            REPLACE_TOKE(f_str, tk_name, tn);
-
-                            struct_free_calls.push_back(f_str);
-                        }
-
-                        void generate_type_free_call(const __native_type *type, string token) {
-                            string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, token);
-
-                            string tk_name = CPPT_TOKEN_DEF_NAME;
-                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
-
-                            string tn = type->get_name();
-                            string tt = type->get_type_ptr();
-
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_type_ptr, tt);
-
-                            struct_free_calls.push_back(f_str);
-                        }
-
-                        void generate_list_free_call(__list_type *type, string token) {
-                            string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, token);
-
-                            string tk_name = CPPT_TOKEN_DEF_NAME;
-                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
-
-                            const __native_type *it = type->get_inner_type();
-
-                            string tn = type->get_name();
-                            string dtp = it->get_type_ptr();
-
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_type_ptr, dtp);
-
-                            struct_free_calls.push_back(f_str);
-                        }
-
-                        void generate_map_free_call(__map_type *type, string token) {
-                            string f_str;
-                            READ_PARSED_ROWS(f_str, template_header, token);
-
-                            string tk_name = CPPT_TOKEN_DEF_NAME;
-                            string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
-                            string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
-
-                            const __native_type *kt = type->get_key_type();
-                            const __native_type *vt = type->get_value_type();
-
-                            string tn = type->get_name();
-                            string tk = kt->get_type_name();
-                            if (kt->get_datatype() == __type_def_enum::TYPE_STRING) {
-                                tk = "std::string";
-                            }
-                            string tvp = vt->get_type_ptr();
-
-                            REPLACE_TOKE(f_str, tk_name, tn);
-                            REPLACE_TOKE(f_str, tk_k_type, tk);
-                            REPLACE_TOKE(f_str, tk_v_type_ptr, tvp);
-
-                            struct_free_calls.push_back(f_str);
                         }
 
                         string finish() {
@@ -1113,7 +1032,7 @@ REACTFS_NS_CORE
                             string tk_includes = CPPT_TOKEN_DEF_INCLUDES;
                             CHECK_NOT_EMPTY(tk_includes);
 
-                            REPLACE_TOKE(header, tk_includes, includes);
+                            REPLACE_TOKEN(header, tk_includes, includes);
 
                             this->file_str = string_utils::set_token(tk_includes, header, this->file_str);
 
