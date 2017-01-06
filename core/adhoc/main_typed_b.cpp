@@ -153,13 +153,12 @@ void test_indexed(char *schemaf) {
     int index = block->write(dt, 0, txid);
     block->commit(txid);
 
-    vector<shared_read_ptr> records;
+    vector<record_struct *> records;
     int c = block->read_struct(index, 1, &records);
     POSTCONDITION(c > 0);
-    shared_read_ptr p0 = records[0];
-    record_struct *dt0 = static_cast<record_struct *>(p0.get()->get_data_ptr());
+    record_struct *p0 = records[0];
     test_schema * nts = new test_schema();
-    nts->deserialize(dt0);
+    nts->deserialize(p0);
     CHECK_NOT_NULL(nts);
     CHECK_AND_FREE(block);
     

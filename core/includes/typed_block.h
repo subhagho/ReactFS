@@ -91,8 +91,8 @@ REACTFS_NS_CORE
                      * @param r_state - Type of records to read.
                      * @return - No. of records returned.
                      */
-                    virtual uint32_t read_struct(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
-                                          __record_state r_state = __record_state::R_READABLE);
+                    virtual uint32_t read_struct(uint64_t index, uint32_t count, vector<record_struct *> *data,
+                                                 __record_state r_state = __record_state::R_READABLE);
 
                     /*!
                      * Write a data record to the block. Check should be done to ensure that
@@ -128,6 +128,7 @@ REACTFS_NS_CORE
                     __record *__read_record(uint64_t index, uint64_t offset, uint64_t size);
 
                 };
+
 REACTFS_NS_CORE_END
 
 #endif //REACTFS_TYPED_BLOCK_H

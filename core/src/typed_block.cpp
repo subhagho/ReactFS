@@ -164,7 +164,7 @@ com::wookler::reactfs::core::typed_block::__read_record(uint64_t index, uint64_t
 }
 
 uint32_t
-com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t count, vector<shared_read_ptr> *data,
+com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t count, vector<record_struct *> *data,
                                                       __record_state r_state) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(r_state != __record_state::R_FREE);
@@ -213,14 +213,10 @@ com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t c
                 break;
         }
 
-        record_struct *st = new record_struct(this->datetype);
-        CHECK_ALLOC(st, TYPE_NAME(record_struct));
+        record_struct *st = nullptr;
         dt_struct->read(ptr->data_ptr, &st, 0, ptr->header->data_size);
-
-        shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);
-        (*s_ptr).set_data_ptr(st, ptr->header->data_size);
-
-        data->push_back(s_ptr);
+        CHECK_NOT_NULL(st);
+        data->push_back(st);
 
         current_index++;
         fetched_count++;
