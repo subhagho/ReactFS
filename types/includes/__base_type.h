@@ -62,12 +62,10 @@ REACTFS_NS_CORE
                      */
                     class __base_type {
                     protected:
-                        /// Are the fields locally allocated?
-                        bool __is_allocated = false;
                         /// Parsed schema definition for this type.
                         const __complex_type *record_type = nullptr;
                         /// Source record, if type has been deserialized.
-                        record_struct *__data = nullptr;
+                        const record_struct *__data = nullptr;
 
                         const __native_type *get_field_type(const string &name) {
                             CHECK_NOT_NULL(record_type);
@@ -79,7 +77,6 @@ REACTFS_NS_CORE
                          * Base destructor.
                          */
                         virtual ~__base_type() {
-                            CHECK_AND_FREE(__data);
                         }
 
                         /*!
@@ -98,6 +95,33 @@ REACTFS_NS_CORE
                          * @param __data - Serialized data record.
                          */
                         virtual void deserialize(const record_struct *__data) = 0;
+                    };
+
+                    class __mutable_base_type {
+                    protected:
+                        /// Parsed schema definition for this type.
+                        const __complex_type *record_type = nullptr;
+
+                        const __native_type *get_field_type(const string &name) {
+                            CHECK_NOT_NULL(record_type);
+                            return record_type->get_field(name);
+                        }
+
+                    public:
+                        /*!
+                         * Base destructor.
+                         */
+                        virtual ~__mutable_base_type() {
+                        }
+
+                        /*!
+                         * Get the parsed schema definition for this type.
+                         *
+                         * @return - Parsed schema definition.
+                         */
+                        const __complex_type *get_record_type() const {
+                            return this->record_type;
+                        }
 
                         /*!
                          * Serialize this class instance.

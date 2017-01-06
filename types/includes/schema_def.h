@@ -477,12 +477,12 @@ REACTFS_NS_CORE
                             return this->name;
                         }
 
-                        virtual string get_type_name() const {
+                        virtual string get_type_name(const string &prefix) const {
                             return __type_enum_helper::get_datatype(this->datatype);
                         }
 
-                        virtual string get_type_ptr() const {
-                            string ptr = get_type_name();
+                        virtual string get_type_ptr(const string &prefix) const {
+                            string ptr = get_type_name(prefix);
                             ptr = common_utils::format("%s *", ptr.c_str());
                             return ptr;
                         }
@@ -835,7 +835,10 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        virtual string get_type_name() const override {
+                        virtual string get_type_name(const string &prefix) const override {
+                            if (!IS_EMPTY(prefix)) {
+                                return common_utils::format("%s%s", prefix.c_str(), this->type_name.c_str());
+                            }
                             return this->type_name;
                         }
 
@@ -973,9 +976,9 @@ REACTFS_NS_CORE
                         __field_value **data_ptr = nullptr;
 
                     public:
-                        mutable_record_struct(const __complex_type *type, uint8_t field_count) {
+                        mutable_record_struct(const __complex_type *type) {
                             CHECK_NOT_NULL(type);
-                            this->field_count = field_count;
+                            this->field_count = type->get_field_count();
                             data_ptr = new __field_value *[this->field_count];
                             CHECK_ALLOC(data_ptr, TYPE_NAME(__field_value * ));
 
@@ -1257,10 +1260,10 @@ REACTFS_NS_CORE
                             this->inner->get_field_index(map);
                         }
 
-                        virtual string get_type_name() const override {
+                        virtual string get_type_name(const string &prefix) const override {
                             CHECK_NOT_NULL(inner);
-                            string it = inner->get_type_ptr();
-                            return common_utils::format("vector<%s>", it.c_str());
+                            string it = inner->get_type_ptr(prefix);
+                            return common_utils::format("std::vector<%s>", it.c_str());
                         }
 
                         __base_datatype_io *get_type_handler(__record_mode mode) override {
@@ -1413,16 +1416,16 @@ REACTFS_NS_CORE
                             this->value->get_field_index(map);
                         }
 
-                        virtual string get_type_name() const override {
+                        virtual string get_type_name(const string &prefix) const override {
                             CHECK_NOT_NULL(this->key);
                             CHECK_NOT_NULL(this->value);
-                            string kt = this->key->get_type_name();
+                            string kt = this->key->get_type_name(prefix);
                             if (this->key->get_datatype() == __type_def_enum::TYPE_STRING) {
                                 kt = "std::string";
                             }
-                            string vt = this->value->get_type_ptr();
+                            string vt = this->value->get_type_ptr(prefix);
 
-                            return common_utils::format("unordered_map<%s, %s>", kt.c_str(), vt.c_str());
+                            return common_utils::format("std::unordered_map<%s, %s>", kt.c_str(), vt.c_str());
                         }
 
                         __base_datatype_io *get_type_handler(__record_mode mode) override {

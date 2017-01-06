@@ -67,7 +67,6 @@ namespace parsers {
 							values->push_back(" */");
 							values->push_back("~${name}() {");
 							values->push_back("    	${variable_frees}");
-							values->push_back("	__base_type::free_data_ptr();");
 							values->push_back("}");
 							// END KEY [FUNC_DESTRUCTOR]
 
@@ -76,12 +75,13 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE_MAP_PTR", values});
 							values->push_back("// Deserialize the map ${name} from the source value.");
-							values->push_back("if (NOT_EMPTY_P(source->${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source->get_${name}())) {");
 							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
 							values->push_back("");
-							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;");
-							values->push_back("	for (iter = source->${name}->begin(); iter != source->${name}->end(); iter++) {");
+							values->push_back("	const std::unordered_map<${key_type}, ${src_value_type_ptr} > *__s_map =  source->get_${name}();");
+							values->push_back("	std::unordered_map<${key_type}, ${src_value_type_ptr} >::const_iterator iter;");
+							values->push_back("	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {");
 							values->push_back("		CHECK_NOT_NULL(iter->second);");
 							values->push_back("		${value_type_ptr} __tv = new ${value_type}(iter->second);");
 							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));");
@@ -96,12 +96,13 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE_MAP", values});
 							values->push_back("// Deserialize the map ${name} from the source value.");
-							values->push_back("if (NOT_EMPTY_P(source.${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source.get_${name}())) {");
 							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
 							values->push_back("");
-							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;");
-							values->push_back("	for (iter = source.${name}->begin(); iter != source.${name}->end(); iter++) {");
+							values->push_back("	const std::unordered_map<${key_type}, ${value_type_ptr}> *__s_map = source.get_${name}();");
+							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr} >::const_iterator iter;");
+							values->push_back("	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {");
 							values->push_back("		CHECK_NOT_NULL(iter->second);");
 							values->push_back("		${value_type_ptr} __tv = (${value_type_ptr}) malloc(sizeof(${value_type}));");
 							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));");
@@ -117,12 +118,13 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE_MAP_PTR", values});
 							values->push_back("// Deserialize the map ${name} from the source value.");
-							values->push_back("if (NOT_EMPTY_P(source->${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source->get_${name}())) {");
 							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
 							values->push_back("");
-							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;");
-							values->push_back("	for (iter = source->${name}->begin(); iter != source->${name}->end(); iter++) {");
+							values->push_back("	const std::unordered_map<${key_type}, ${value_type_ptr} > *__s_map = source->get_${name}();");
+							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr} >::const_iterator iter;");
+							values->push_back("	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {");
 							values->push_back("		CHECK_NOT_NULL(iter->second);");
 							values->push_back("		${value_type_ptr} __tv = (${value_type_ptr}) malloc(sizeof(${value_type}));");
 							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));");
@@ -138,10 +140,10 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE_LIST_PTR", values});
 							values->push_back("// Deserialize the list ${name} from the source value.");
-							values->push_back("if (NOT_EMPTY_P(source->${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source->get_${name}())) {");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
-							values->push_back("	for( ${type_ptr} v : *(source->${name})) {");
+							values->push_back("	for( const ${src_type_ptr} v : *(source->get_${name}())) {");
 							values->push_back("		CHECK_NOT_NULL(v);");
 							values->push_back("		${type_ptr} __tv = new ${type}(v);");
 							values->push_back("		CHECK_NOT_NULL(__tv);");
@@ -156,10 +158,10 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE_LIST_PTR", values});
 							values->push_back("// Deserialize the list ${name} from the source value.");
-							values->push_back("if (NOT_EMPTY_P(source->${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source->get_${name}())) {");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
-							values->push_back("	for( ${type_ptr} v : *(source->${name})) {");
+							values->push_back("	for( const ${type_ptr} v : *(source->get_${name}())) {");
 							values->push_back("		CHECK_NOT_NULL(v);");
 							values->push_back("		${type_ptr} __tv = (${type_ptr}) malloc (sizeof(${type}));");
 							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${type}));");
@@ -175,8 +177,8 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE_PTR", values});
 							values->push_back("// Set ${name} from the source value.");
-							values->push_back("if (NOT_NULL(source->${name})) {");
-							values->push_back("	this->${name} = new ${type}(source->${name});");
+							values->push_back("if (NOT_NULL(source->get_${name}())) {");
+							values->push_back("	this->${name} = new ${type}(source->get_${name}());");
 							values->push_back("	CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));");
 							values->push_back("}");
 							// END KEY [COPY_CALL_TYPE_PTR]
@@ -186,8 +188,8 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE_PTR", values});
 							values->push_back("// Set ${name} from the source value.");
-							values->push_back("if (NOT_NULL(source->${name})) {");
-							values->push_back("	this->set_${name}(*(source->${name}));");
+							values->push_back("if (NOT_NULL(source->get_${name}())) {");
+							values->push_back("	this->set_${name}(*(source->get_${name}()));");
 							values->push_back("}");
 							// END KEY [COPY_CALL_NATIVE_PTR]
 
@@ -196,8 +198,8 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE", values});
 							values->push_back("// Set ${name} from the source value.");
-							values->push_back("if (NOT_NULL(source.${name})) {");
-							values->push_back("	this->set_${name}(*(source.${name}));");
+							values->push_back("if (NOT_NULL(source.get_${name}())) {");
+							values->push_back("	this->set_${name}(*(source.get_${name}()));");
 							values->push_back("}");
 							// END KEY [COPY_CALL_NATIVE]
 
@@ -221,8 +223,7 @@ namespace parsers {
 							values->push_back(" *");
 							values->push_back(" * @param source - Source instance of ${name} to copy from.");
 							values->push_back(" */");
-							values->push_back("${name}(const ${name} &source) {");
-							values->push_back("    	this->__is_allocated = true;");
+							values->push_back("${name}(const ${name_read} &source) {");
 							values->push_back("	this->record_type = source.get_record_type();");
 							values->push_back("	CHECK_NOT_NULL(this->record_type);");
 							values->push_back("");
@@ -243,8 +244,7 @@ namespace parsers {
 							values->push_back(" *");
 							values->push_back(" * @Param ${name} - Value reference.");
 							values->push_back(" */");
-							values->push_back("void set_${name}(${type} &${name}) {");
-							values->push_back("    PRECONDITION(this->__is_allocated == true);");
+							values->push_back("void set_${name}(const ${type} &${name}) {");
 							values->push_back("	if (IS_NULL(this->${name})) {");
 							values->push_back("    		this->${name} = (${type_ptr})malloc(sizeof(${type}));");
 							values->push_back("    		CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));");
@@ -267,7 +267,6 @@ namespace parsers {
 							values->push_back("");
 							values->push_back("    this->record_type = __data->get_record_type();");
 							values->push_back("    CHECK_NOT_NULL(this->record_type);");
-							values->push_back("    this->__is_allocated = false;");
 							values->push_back("");
 							values->push_back("    ${read_map_calls}");
 							values->push_back("");
@@ -288,7 +287,7 @@ namespace parsers {
 							values->push_back("${name}(const __complex_type *record_type) {");
 							values->push_back("    CHECK_NOT_NULL(record_type);");
 							values->push_back("    this->record_type = record_type;");
-							values->push_back("    this->__is_allocated = true;");
+							values->push_back("");
 							values->push_back("    ${variable_inits}");
 							values->push_back("}");
 							// END KEY [FUNC_CONSTRUCTOR_WRITABLE]
@@ -300,7 +299,7 @@ namespace parsers {
 							values->push_back("/**");
 							values->push_back(" * Deserialize a map instance of key/value type ${key_type}/${value_type_ptr} from the passed input data.");
 							values->push_back(" *");
-							values->push_back(" * @param __input - Void pointer of type unordered_map<${key_type}, __struct_datatype__ *>");
+							values->push_back(" * @param __input - Void pointer of type unordered_map<${key_type}, record_struct *>");
 							values->push_back(" * @return - Deserialized map of key/value type unordered_map<${key_type}, ${value_type_ptr}>");
 							values->push_back(" */");
 							values->push_back("std::unordered_map<${key_type}, ${value_type_ptr}> *deserialize_map_${name}(const void *__input) {");
@@ -311,7 +310,7 @@ namespace parsers {
 							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
 							values->push_back("");
-							values->push_back("	std::unordered_map<${key_type}, record_struct *>::iterator iter;");
+							values->push_back("	std::unordered_map<${key_type}, record_struct *>::const_iterator iter;");
 							values->push_back("	for (iter = __value->begin(); iter != __value->end(); iter++) {");
 							values->push_back("		${value_type_ptr} __tv = deserialize_${value_type}(iter->second);");
 							values->push_back("		CHECK_NOT_NULL(__tv);");
@@ -329,7 +328,7 @@ namespace parsers {
 							values->push_back(" * Serialize a map instance of key/value type ${key_type}/${value_type_ptr} from the passed input data.");
 							values->push_back(" *");
 							values->push_back(" * @param __i_map - Input map data.");
-							values->push_back(" * @return - Serialized data map of key/value type unordered_map<${key_type}, __struct_datatype__ *>");
+							values->push_back(" * @return - Serialized data map of key/value type unordered_map<${key_type}, mutable_record_struct *>");
 							values->push_back(" */");
 							values->push_back("std::unordered_map<${key_type}, mutable_record_struct *> *serialize_map_${name}(std::unordered_map<${key_type}, ${value_type_ptr}> *__i_map) {");
 							values->push_back("    CHECK_NOT_EMPTY_P(__i_map);");
@@ -395,8 +394,8 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE", values});
 							values->push_back("// Set ${name} from the source value.");
-							values->push_back("if (NOT_NULL(source.${name})) {");
-							values->push_back("	this->${name} = new ${type}(*(source.${name}));");
+							values->push_back("if (NOT_NULL(source.get_${name}())) {");
+							values->push_back("	this->${name} = new ${type}(source.get_${name}());");
 							values->push_back("	CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));");
 							values->push_back("}");
 							// END KEY [COPY_CALL_TYPE]
@@ -411,7 +410,7 @@ namespace parsers {
 							values->push_back(" * @param __value - Pointer to the field of type ${name}.");
 							values->push_back(" * @return - Serialized data map instance.");
 							values->push_back(" */");
-							values->push_back("mutable_record_struct *serialize_${name}(${type_ptr} __value) {");
+							values->push_back("mutable_record_struct *serialize_${m_name}(${type_ptr} __value) {");
 							values->push_back("    CHECK_NOT_NULL(__value);");
 							values->push_back("    mutable_record_struct *__data = __value->serialize();");
 							values->push_back("    CHECK_NOT_NULL(__data);");
@@ -431,7 +430,7 @@ namespace parsers {
 							values->push_back("	const __native_type *ft = get_field_type(\"${name}\");");
 							values->push_back("	CHECK_NOT_NULL(ft);");
 							values->push_back("");
-							values->push_back("	__data->add_field(ft->get_index(), ptr);");
+							values->push_back("	__data->add_field(ft->get_index(), __ptr);");
 							values->push_back("}");
 							// END KEY [CALL_TYPE_MAP_SETTER_TO_RECORD]
 
@@ -447,7 +446,7 @@ namespace parsers {
 							values->push_back("	const __native_type *ft = get_field_type(\"${name}\");");
 							values->push_back("	CHECK_NOT_NULL(ft);");
 							values->push_back("");
-							values->push_back("	__data->add_field(ft->get_index(), ptr);");
+							values->push_back("	__data->add_field(ft->get_index(), __ptr);");
 							values->push_back("}");
 							// END KEY [CALL_TYPE_LIST_SETTER_TO_RECORD]
 
@@ -456,10 +455,10 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE_LIST", values});
 							values->push_back("// Deserialize the list ${name} from the source value.");
-							values->push_back("if (NOT_EMPTY_P(source.${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source.get_${name}())) {");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
-							values->push_back("	for( ${type_ptr} v : *(source.${name})) {");
+							values->push_back("	for( const ${src_type_ptr} v : *(source.get_${name}())) {");
 							values->push_back("		CHECK_NOT_NULL(v);");
 							values->push_back("		${type_ptr} __tv = new ${type}(v);");
 							values->push_back("		CHECK_NOT_NULL(__tv);");
@@ -497,7 +496,6 @@ namespace parsers {
 							values->push_back(" * @param ${name} - String value to add to list.");
 							values->push_back(" */");
 							values->push_back("void add_to_${name}(${type_ptr} ${name}) {");
-							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("    CHECK_NOT_NULL(${name});");
 							values->push_back("    if (IS_NULL(this->${name})) {");
 							values->push_back("        this->${name} = new std::vector<${type_ptr}>();");
@@ -534,8 +532,8 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_STRING", values});
 							values->push_back("// Set ${name} from the source value.");
-							values->push_back("if (NOT_NULL(source.${name})) {");
-							values->push_back("	string __${name} = string(source.${name});");
+							values->push_back("if (NOT_NULL(source.get_${name}())) {");
+							values->push_back("	string __${name} = string(source.get_${name}());");
 							values->push_back("	this->set_${name}(__${name});");
 							values->push_back("}");
 							// END KEY [COPY_CALL_STRING]
@@ -554,8 +552,7 @@ namespace parsers {
 							values->push_back(" * @param m_key - Map key value.");
 							values->push_back(" * @param m_value - Map value.");
 							values->push_back(" */ ");
-							values->push_back("void add_to_${name}(${key_type} m_key, ${value_type} &m_value) {");
-							values->push_back("    PRECONDITION(this->__is_allocated == true);");
+							values->push_back("void add_to_${name}(const ${key_type} m_key, const ${value_type} &m_value) {");
 							values->push_back("    if (IS_NULL(this->${name})) {");
 							values->push_back("        this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("        CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));");
@@ -594,7 +591,7 @@ namespace parsers {
 							values->push_back(" *");
 							values->push_back(" * @param __data - Serialized data map pointer.");
 							values->push_back(" */");
-							values->push_back("void read_value_${name}(record_struct *__data) {");
+							values->push_back("void read_value_${name}(const record_struct *__data) {");
 							values->push_back("    if (NOT_NULL(__data)) {");
 							values->push_back("        const void *__ptr = __data->get_field(${field_index});");
 							values->push_back("        if (NOT_NULL(__ptr)) {");
@@ -623,7 +620,7 @@ namespace parsers {
 							values->push_back("/**");
 							values->push_back(" * Deserialize a list instance of type ${type_ptr} from the passed input data.");
 							values->push_back(" *");
-							values->push_back(" * @param __input - Void pointer to input data of type vector<__struct_datatype__ *>");
+							values->push_back(" * @param __input - Void pointer to input data of type vector<record_struct *>");
 							values->push_back(" * @return - Deserialized pointer to list of type vector<${type_ptr} *>");
 							values->push_back(" */");
 							values->push_back("std::vector<${type_ptr}> *deserialize_list_${name}(const void *__input) {");
@@ -633,7 +630,7 @@ namespace parsers {
 							values->push_back("");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
-							values->push_back("	for( record_struct *v : *__value) {");
+							values->push_back("	for(const record_struct *v : *__value) {");
 							values->push_back("		CHECK_NOT_NULL(v);");
 							values->push_back("		${type_ptr} __tv = deserialize_${type}(v);");
 							values->push_back("		CHECK_NOT_NULL(__tv);");
@@ -670,8 +667,7 @@ namespace parsers {
 							values->push_back(" * @param m_key - Map key of type ${key_type}");
 							values->push_back(" * @param m_value - String value of the map record value.");
 							values->push_back(" */");
-							values->push_back("void add_to_${name}(${key_type} m_key, string &m_value) {");
-							values->push_back("    PRECONDITION(this->__is_allocated == true);");
+							values->push_back("void add_to_${name}(const ${key_type} m_key, const string &m_value) {");
 							values->push_back("    if (IS_NULL(this->${name})) {");
 							values->push_back("        this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("        CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));");
@@ -697,12 +693,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_MAP_NATIVE_FREE", values});
-							values->push_back("if (this->__is_allocated) {");
 							values->push_back("	FREE_NATIVE_MAP(this->${name});	");
-							values->push_back("} else {");
-							values->push_back("	this->${name}->clear();");
-							values->push_back("	CHECK_AND_FREE(this->${name});");
-							values->push_back("}");
 							// END KEY [VARIABLE_MAP_NATIVE_FREE]
 
 							// KEY [FUNC_CONSTRUCTOR_READABLE]
@@ -710,15 +701,12 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"FUNC_CONSTRUCTOR_READABLE", values});
 							values->push_back("/**");
-							values->push_back(" * Create a new read-only instance of ${name} and populate the data from the passed ");
-							values->push_back(" * serialized data map.");
-							values->push_back(" *");
-							values->push_back(" * @param __data - Serialized data map to load the object data from.");
+							values->push_back(" * Create a new read-only instance of ${name}. ");
+							values->push_back(" * ");
+							values->push_back(" * Type to be used when instance is being de-serialized from record data.");
 							values->push_back(" */");
-							values->push_back("${name}(record_struct *__data) {");
-							values->push_back("    CHECK_NOT_NULL(__data);");
+							values->push_back("${name}() {");
 							values->push_back("    ${variable_inits}");
-							values->push_back("    this->deserialize(__data);");
 							values->push_back("}");
 							// END KEY [FUNC_CONSTRUCTOR_READABLE]
 
@@ -737,8 +725,8 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_STRING_PTR", values});
 							values->push_back("// Set ${name} from the source value.");
-							values->push_back("if (NOT_NULL(source->${name})) {");
-							values->push_back("	string __${name} = string(source->${name});");
+							values->push_back("if (NOT_NULL(source->get_${name}())) {");
+							values->push_back("	string __${name} = string(source->get_${name}());");
 							values->push_back("	this->set_${name}(__${name});");
 							values->push_back("}");
 							// END KEY [COPY_CALL_STRING_PTR]
@@ -766,9 +754,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_NATIVE_FREE", values});
-							values->push_back("if (this->__is_allocated) {");
-							values->push_back("	FREE_PTR(this->${name});");
-							values->push_back("}");
+							values->push_back("FREE_PTR(this->${name});");
 							// END KEY [VARIABLE_NATIVE_FREE]
 
 							// KEY [FUNC_CONSTRUCTOR_COPY_PTR]
@@ -781,8 +767,7 @@ namespace parsers {
 							values->push_back(" *");
 							values->push_back(" * @param source - Source instance of ${name} to copy from.");
 							values->push_back(" */");
-							values->push_back("${name}(const ${name} *source) {");
-							values->push_back("    	this->__is_allocated = true;");
+							values->push_back("${name}(const ${name_read} *source) {");
 							values->push_back("	this->record_type = source->get_record_type();");
 							values->push_back("	CHECK_NOT_NULL(this->record_type);");
 							values->push_back("");
@@ -803,7 +788,7 @@ namespace parsers {
 							values->push_back(" *");
 							values->push_back(" * @param ${name} - String value to set.");
 							values->push_back(" */");
-							values->push_back("void set_${name}(string &${name}) {");
+							values->push_back("void set_${name}(const string &${name}) {");
 							values->push_back("    	FREE_PTR(this->${name});");
 							values->push_back("    	if (!IS_EMPTY(${name})) {");
 							values->push_back("        	uint32_t __size = ${name}.length() + 1;");
@@ -820,12 +805,13 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_TYPE_MAP", values});
 							values->push_back("// Deserialize the map ${name} from the source value.");
-							values->push_back("if (NOT_EMPTY_P(source.${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source.get_${name}())) {");
 							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
 							values->push_back("");
-							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;");
-							values->push_back("	for (iter = source.${name}->begin(); iter != source.${name}->end(); iter++) {");
+							values->push_back("	const std::unordered_map<${key_type}, ${src_value_type_ptr} > *__s_map =  source.get_${name}();");
+							values->push_back("	std::unordered_map<${key_type}, ${src_value_type_ptr} >::const_iterator iter;");
+							values->push_back("	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {");
 							values->push_back("		CHECK_NOT_NULL(iter->second);");
 							values->push_back("		${value_type_ptr} __tv = new ${value_type}(*iter->second);");
 							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));");
@@ -849,8 +835,7 @@ namespace parsers {
 							values->push_back(" *");
 							values->push_back(" * @param ${name} - String value to add to list.");
 							values->push_back(" */");
-							values->push_back("void add_to_${name}(string &${name}) {");
-							values->push_back("    PRECONDITION(this->__is_allocated == true);");
+							values->push_back("void add_to_${name}(const string &${name}) {");
 							values->push_back("    if (IS_NULL(this->${name})) {");
 							values->push_back("        this->${name} = new std::vector<${type_ptr}>();");
 							values->push_back("        CHECK_ALLOC(this->${name}, TYPE_NAME(vector));");
@@ -874,14 +859,15 @@ namespace parsers {
 							values->push_back(" * Deserialize an instance of type ${name} from the ");
 							values->push_back(" * passed input data.");
 							values->push_back(" *");
-							values->push_back(" * @param __input - Void pointer to input data of type __struct_datatype__");
+							values->push_back(" * @param __input - Void pointer to input data of type record_struct");
 							values->push_back(" * @return - Deserialized instance pointer of type ${type_ptr}");
 							values->push_back(" */");
 							values->push_back("${type_ptr} deserialize_${name}(const void *__input) {");
 							values->push_back("    CHECK_NOT_NULL(__input);");
 							values->push_back("    const record_struct *__value = static_cast<const record_struct *>(__input);");
 							values->push_back("    CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(record_struct));");
-							values->push_back("    ${type_ptr} __data = new ${type}(__value);");
+							values->push_back("    ${type_ptr} __data = new ${type}();");
+							values->push_back("    __data->deserialize(__value);");
 							values->push_back("    CHECK_ALLOC(__data, TYPE_NAME(${type}));");
 							values->push_back("    return __data;");
 							values->push_back("}");
@@ -930,7 +916,7 @@ namespace parsers {
 							values->push_back("	const __native_type *ft = get_field_type(\"${name}\");");
 							values->push_back("	CHECK_NOT_NULL(ft);");
 							values->push_back("");
-							values->push_back("	__data->add_field(ft->get_index(), ptr);");
+							values->push_back("	__data->add_field(ft->get_index(), __ptr);");
 							values->push_back("}");
 							// END KEY [CALL_TYPE_SETTER_TO_RECORD]
 
@@ -938,12 +924,7 @@ namespace parsers {
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"VARIABLE_LIST_NATIVE_FREE", values});
-							values->push_back("if (this->__is_allocated) {");
 							values->push_back("	FREE_NATIVE_LIST(this->${name});");
-							values->push_back("} else {");
-							values->push_back("	this->${name}->clear();");
-							values->push_back("	CHECK_AND_FREE(this->${name});");
-							values->push_back("}");
 							// END KEY [VARIABLE_LIST_NATIVE_FREE]
 
 							// KEY [CALL_TYPE_READ_FROM_RECORD]
@@ -971,7 +952,6 @@ namespace parsers {
 							values->push_back(" * @param m_value - ${value_type_ptr} value pointer.");
 							values->push_back(" */ ");
 							values->push_back("void add_to_${name}(${key_type} m_key, ${value_type_ptr} m_value) {");
-							values->push_back("    PRECONDITION(this->__is_allocated == true);");
 							values->push_back("    if (IS_NULL(this->${name})) {");
 							values->push_back("        this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
 							values->push_back("        CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));");
@@ -992,10 +972,10 @@ namespace parsers {
 							CHECK_ALLOC(values, TYPE_NAME(vector));
 							__cpp_template.insert({"COPY_CALL_NATIVE_LIST", values});
 							values->push_back("// Deserialize the list ${name} from the source value.");
-							values->push_back("if (NOT_EMPTY_P(source.${name})) {");
+							values->push_back("if (NOT_EMPTY_P(source.get_${name}())) {");
 							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
 							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
-							values->push_back("	for( ${type_ptr} v : *(source.${name})) {");
+							values->push_back("	for( const ${type_ptr} v : *(source.get_${name}())) {");
 							values->push_back("		CHECK_NOT_NULL(v);");
 							values->push_back("		${type_ptr} __tv = (${type_ptr}) malloc (sizeof(${type}));");
 							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${type}));");
@@ -1020,8 +1000,7 @@ namespace parsers {
 							values->push_back(" *");
 							values->push_back(" * @param ${name} - Data value to add to list.");
 							values->push_back(" */");
-							values->push_back("void add_to_${name}(${type} &${name}) {");
-							values->push_back("    PRECONDITION(this->__is_allocated == true);");
+							values->push_back("void add_to_${name}(const ${type} &${name}) {");
 							values->push_back("    if (IS_NULL(this->${name})) {");
 							values->push_back("        this->${name} = new std::vector<${type_ptr}>();");
 							values->push_back("        CHECK_ALLOC(this->${name}, TYPE_NAME(vector));");
@@ -1123,6 +1102,9 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_DEF_FREE_DATA_CALLS "${free_data_calls}"
 #define CPPT_TOKEN_DEF_SCHEMA_NAME "${schema_name}"
 #define CPPT_TOKEN_DEF_GUARD_NAME "${guard_name}"
+#define CPPT_TOKEN_DEF_DATE "${date}"
+#define CPPT_TOKEN_DEF_VARIABLE_FREES "${variable_frees}"
+#define CPPT_TOKEN_DEF_USERNAME "${username}"
 #define CPPT_TOKEN_DEF_VERSION "${version}"
 #define CPPT_TOKEN_DEF_PUBLIC_FUNCTIONS "${public_functions}"
 #define CPPT_TOKEN_DEF_READ_MAP_CALLS "${read_map_calls}"
@@ -1131,6 +1113,7 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_DEF_CONSTRUCTOR "${constructor}"
 #define CPPT_TOKEN_DEF_NESTED "${nested}"
 #define CPPT_TOKEN_DEF_VARIABLE_INITS "${variable_inits}"
+#define CPPT_TOKEN_DEF_NAME_READ "${name_read}"
 #define CPPT_TOKEN_DEF_PARENT "${parent}"
 #define CPPT_TOKEN_DEF_NAME "${name}"
 #define CPPT_TOKEN_DEF_INCLUDES "${includes}"
@@ -1138,15 +1121,14 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_DEF_KEY_TYPE "${key_type}"
 #define CPPT_TOKEN_DEF_RETURN "${return}"
 #define CPPT_TOKEN_DEF_VALUE_TYPE "${value_type}"
+#define CPPT_TOKEN_DEF_DATA_VAR "${data_var}"
+#define CPPT_TOKEN_DEF_SRC_VALUE_TYPE_PTR "${src_value_type_ptr}"
+#define CPPT_TOKEN_DEF_M_NAME "${m_name}"
+#define CPPT_TOKEN_DEF_SRC_TYPE_PTR "${src_type_ptr}"
+#define CPPT_TOKEN_DEF_VALUE_TYPE_PTR "${value_type_ptr}"
 #define CPPT_TOKEN_DEF_DESTRUCTOR "${destructor}"
 #define CPPT_TOKEN_DEF_PRIVATE_FUNCTIONS "${private_functions}"
 #define CPPT_TOKEN_DEF_TYPE_PTR "${type_ptr}"
-#define CPPT_TOKEN_DEF_M_NAME "${m_name}"
 #define CPPT_TOKEN_DEF_HEADER "${header}"
-#define CPPT_TOKEN_DEF_VARIABLE_FREES "${variable_frees}"
-#define CPPT_TOKEN_DEF_USERNAME "${username}"
-#define CPPT_TOKEN_DEF_VALUE_TYPE_PTR "${value_type_ptr}"
-#define CPPT_TOKEN_DEF_DATE "${date}"
-#define CPPT_TOKEN_DEF_DATA_VAR "${data_var}"
 #define CPPT_TOKEN_DEF_TYPE "${type}"
 #endif // REACTFS_CPP_TEMPLATE_HEADER_H

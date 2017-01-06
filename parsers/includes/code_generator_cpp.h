@@ -55,11 +55,12 @@ REACTFS_NS_CORE
                         }
 
                         string
-                        create_type_file(const string &name_space, const __complex_type *type, const string &schema_name,
+                        create_type_file(const string &name_space, const __complex_type *type,
+                                         const string &schema_name,
                                          __version_header version) {
                             CHECK_NOT_NULL(outpath);
                             CHECK_NOT_NULL(type);
-                            string type_name = type->get_type_name();
+                            string type_name = type->get_type_name(common_consts::EMPTY_STRING);
                             string filename = get_type_filename(type_name);
                             Path p = Path(this->outpath->get_path());
                             p.append(filename);
@@ -73,7 +74,8 @@ REACTFS_NS_CORE
                                 }
                             }
 
-                            cpp_file_template cpp_template(type->get_type_name(), schema_name, name_space, version);
+                            cpp_file_template cpp_template(type->get_type_name(common_consts::EMPTY_STRING),
+                                                           schema_name, name_space, version);
                             unordered_map<string, bool> processed;
                             unordered_map<uint8_t, __native_type *> fields = type->get_fields();
                             unordered_map<uint8_t, __native_type *>::iterator iter;
@@ -81,10 +83,10 @@ REACTFS_NS_CORE
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
                                 __native_type *t = iter->second;
                                 CHECK_NOT_NULL(t);
-                                TRACE("Type --> [name=%s][type=%s]", t->get_name().c_str(), t->get_type_name().c_str());
+                                TRACE("Type --> [name=%s][type=%s]", t->get_name().c_str(),
+                                      t->get_type_name(common_consts::EMPTY_STRING).c_str());
                                 if (t->get_type() == __field_type::NATIVE) {
-                                    string str = cpp_template.get_declare(t);
-                                    CHECK_NOT_EMPTY(str);
+                                    cpp_template.get_declare(t);
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
                                     cpp_template.generate_getter(t, CPPT_TOKEN_FUNC_GETTER_DEF);
                                     if (t->get_datatype() == __type_def_enum::TYPE_TEXT ||
@@ -99,10 +101,9 @@ REACTFS_NS_CORE
                                     }
                                     cpp_template.generate_native_setter_from_map(t);
                                     cpp_template.generate_native_setter_to_map(t);
-                                    cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_NATIVE_FREE);
+                                    cpp_template.generate_free_call_local(t, CPPT_TOKEN_VARIABLE_NATIVE_FREE);
                                 } else if (t->get_type() == __field_type::LIST) {
-                                    string str = cpp_template.get_declare(t);
-                                    CHECK_NOT_EMPTY(str);
+                                    cpp_template.get_declare(t);
 
                                     __list_type *list = dynamic_cast<__list_type *>(t);
                                     CHECK_CAST(list, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
@@ -127,7 +128,7 @@ REACTFS_NS_CORE
                                         cpp_template.add_list_copy(list, CPPT_TOKEN_COPY_CALL_NATIVE_LIST);
                                     } else if (it->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
-                                        string tn = it->get_type_name();
+                                        string tn = it->get_type_name(common_consts::EMPTY_STRING);
                                         CHECK_NOT_EMPTY(tn);
                                         unordered_map<string, bool>::iterator iter = processed.find(tn);
                                         if (iter == processed.end()) {
@@ -139,13 +140,15 @@ REACTFS_NS_CORE
                                         CHECK_NOT_EMPTY(header);
                                         cpp_template.add_header(header);
 
-                                        tn = t->get_type_name();
+                                        tn = t->get_type_name(common_consts::EMPTY_STRING);
                                         iter = processed.find(tn);
                                         if (iter == processed.end()) {
                                             cpp_template.generate_list_serde(list,
-                                                                             CPPT_TOKEN_FUNC_TYPE_LIST_SERIALIZER);
+                                                                             CPPT_TOKEN_FUNC_TYPE_LIST_SERIALIZER,
+                                                                             true);
                                             cpp_template.generate_list_serde(list,
-                                                                             CPPT_TOKEN_FUNC_TYPE_LIST_DESERIALIZER);
+                                                                             CPPT_TOKEN_FUNC_TYPE_LIST_DESERIALIZER,
+                                                                             false);
                                             processed.insert({tn, true});
                                         }
                                         cpp_template.generate_type_list_setter_from_map(list);
@@ -155,8 +158,7 @@ REACTFS_NS_CORE
                                         cpp_template.add_list_copy(list, CPPT_TOKEN_COPY_CALL_TYPE_LIST);
                                     }
                                 } else if (t->get_type() == __field_type::MAP) {
-                                    string str = cpp_template.get_declare(t);
-                                    CHECK_NOT_EMPTY(str);
+                                    cpp_template.get_declare(t);
 
                                     __map_type *map = dynamic_cast<__map_type *>(t);
                                     CHECK_CAST(map, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
@@ -181,7 +183,7 @@ REACTFS_NS_CORE
                                         cpp_template.add_map_copy(map, CPPT_TOKEN_COPY_CALL_NATIVE_MAP);
                                     } else if (vt->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
-                                        string tn = vt->get_type_name();
+                                        string tn = vt->get_type_name(common_consts::EMPTY_STRING);
                                         CHECK_NOT_EMPTY(tn);
                                         unordered_map<string, bool>::iterator iter = processed.find(tn);
                                         if (iter == processed.end()) {
@@ -192,13 +194,14 @@ REACTFS_NS_CORE
                                         string header = get_generated_header(vt->get_name());
                                         CHECK_NOT_EMPTY(header);
                                         cpp_template.add_header(header);
-                                        tn = t->get_type_name();
+                                        tn = t->get_type_name(common_consts::EMPTY_STRING);
                                         iter = processed.find(tn);
                                         if (iter == processed.end()) {
                                             cpp_template.generate_map_serde(map,
-                                                                            CPPT_TOKEN_FUNC_TYPE_MAP_SERIALIZER);
+                                                                            CPPT_TOKEN_FUNC_TYPE_MAP_SERIALIZER, true);
                                             cpp_template.generate_map_serde(map,
-                                                                            CPPT_TOKEN_FUNC_TYPE_MAP_DESERIALIZER);
+                                                                            CPPT_TOKEN_FUNC_TYPE_MAP_DESERIALIZER,
+                                                                            false);
                                             processed.insert({tn, true});
                                         }
                                         cpp_template.generate_type_map_setter_from_map(map);
@@ -208,12 +211,11 @@ REACTFS_NS_CORE
                                         cpp_template.add_map_copy(map, CPPT_TOKEN_COPY_CALL_TYPE_MAP);
                                     }
                                 } else if (t->get_type() == __field_type::COMPLEX) {
-                                    string str = cpp_template.get_declare(t);
-                                    CHECK_NOT_EMPTY(str);
+                                    cpp_template.get_declare(t);
 
                                     cpp_template.generate_getter(t, CPPT_TOKEN_FUNC_GETTER_DEF);
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
-                                    string tn = t->get_type_name();
+                                    string tn = t->get_type_name(common_consts::EMPTY_STRING);
                                     CHECK_NOT_EMPTY(tn);
                                     unordered_map<string, bool>::iterator iter = processed.find(tn);
                                     if (iter == processed.end()) {
@@ -262,7 +264,8 @@ REACTFS_NS_CORE
                         }
 
                         virtual string
-                        generate_type_class(const string &name_space, const __complex_type *type, const string &schema_name,
+                        generate_type_class(const string &name_space, const __complex_type *type,
+                                            const string &schema_name,
                                             __version_header version) override {
                             CHECK_NOT_NULL(type);
                             unordered_map<uint8_t, __native_type *> fields = type->get_fields();

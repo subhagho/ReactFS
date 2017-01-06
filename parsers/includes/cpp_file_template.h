@@ -11,6 +11,8 @@
 #include "cpp_template_defs.h"
 
 #define CPPT_CLASS_PARENT_TYPE " : public com::wookler::reactfs::core::types::__base_type"
+#define CPPT_CLASS_PARENT_TYPE_M " : public com::wookler::reactfs::core::types::__mutable_base_type"
+#define CPPT_MUTABLE_CLASS_PREFIX "mutable_"
 
 #define READ_PARSED_ROWS(var, templ, token) \
 do { \
@@ -37,22 +39,26 @@ using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
                 namespace parsers {
+                    typedef struct __cpp_class_template__ {
+                        string classname;
+                        string class_str;
+                        stringstream declare;
+                        stringstream pr_methods;
+                        stringstream pu_methods;
+                        vector<string> free_calls;
+                    } __cpp_class_template;
+
                     class cpp_file_template {
                     private:
                         cpp_template_header template_header;
+                        __cpp_class_template ro_class;
+                        __cpp_class_template m_class;
 
-                        string classname;
                         string name_space;
                         string file_str;
-                        string class_str;
-                        stringstream declare_s;
-                        stringstream pr_methods_s;
-                        stringstream pu_methods_s;
                         unordered_map<string, string> headers;
                         vector<string> m_call_serde;
                         vector<string> variables;
-                        vector<string> free_calls;
-                        vector<string> struct_free_calls;
                         vector<string> copy_constr_calls;
                         vector<string> copy_constr_calls_ptr;
 
@@ -106,20 +112,35 @@ REACTFS_NS_CORE
                             REPLACE_TOKEN(vs, tk_header, header);
 
                             this->file_str = string(vs);
-                            this->classname = string(classname);
+                            this->ro_class.classname = string(classname);
+                            this->m_class.classname = common_utils::format("%s%s", CPPT_MUTABLE_CLASS_PREFIX,
+                                                                           classname.c_str());
                         }
 
-                        void init_class_template() {
+                        void init_ro_class_template() {
                             string vs;
                             READ_PARSED_ROWS(vs, template_header, CPPT_TOKEN_CLASS_DEF);
 
                             string tk_class = CPPT_TOKEN_DEF_NAME;
                             string tk_parent = CPPT_TOKEN_DEF_PARENT;
 
-                            REPLACE_TOKEN(vs, tk_class, this->classname);
+                            REPLACE_TOKEN(vs, tk_class, this->ro_class.classname);
                             REPLACE_TOKEN(vs, tk_parent, CPPT_CLASS_PARENT_TYPE);
 
-                            this->class_str = string(vs);
+                            this->ro_class.class_str = string(vs);
+                        }
+
+                        void init_m_class_template() {
+                            string vs;
+                            READ_PARSED_ROWS(vs, template_header, CPPT_TOKEN_CLASS_DEF);
+
+                            string tk_class = CPPT_TOKEN_DEF_NAME;
+                            string tk_parent = CPPT_TOKEN_DEF_PARENT;
+
+                            REPLACE_TOKEN(vs, tk_class, this->m_class.classname);
+                            REPLACE_TOKEN(vs, tk_parent, CPPT_CLASS_PARENT_TYPE_M);
+
+                            this->m_class.class_str = string(vs);
                         }
 
                         string get_namespace(string &ns) {
@@ -176,7 +197,7 @@ REACTFS_NS_CORE
 
                             TRACE("DESERIALIZER [%s]", fstr.c_str());
 
-                            add_public_method(fstr);
+                            add_public_method(ro_class, fstr);
                         }
 
                         void generate_serializer() {
@@ -198,9 +219,9 @@ REACTFS_NS_CORE
                             string tk_read = CPPT_TOKEN_DEF_SET_MAP_CALLS;
                             REPLACE_TOKEN(fstr, tk_read, bstr);
 
-                            TRACE("DESERIALIZER [%s]", fstr.c_str());
+                            TRACE("SERIALIZER [%s]", fstr.c_str());
 
-                            add_public_method(fstr);
+                            add_public_method(m_class, fstr);
                         }
 
                         void generate_empty_constr() {
@@ -217,10 +238,10 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
 
-                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_name, m_class.classname);
                             REPLACE_TOKEN(fstr, tk_inits, inits);
 
-                            add_public_method(fstr);
+                            add_public_method(m_class, fstr);
                         }
 
                         void generate_serde_constr() {
@@ -237,10 +258,10 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
 
-                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_name, ro_class.classname);
                             REPLACE_TOKEN(fstr, tk_inits, inits);
 
-                            add_public_method(fstr);
+                            add_public_method(ro_class, fstr);
                         }
 
                         void generate_copy_constr() {
@@ -260,12 +281,14 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
                             string tk_copies = CPPT_TOKEN_DEF_VARIABLE_COPY;
+                            string tk_s_name = CPPT_TOKEN_DEF_NAME_READ;
 
-                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_name, m_class.classname);
+                            REPLACE_TOKEN(fstr, tk_s_name, ro_class.classname);
                             REPLACE_TOKEN(fstr, tk_inits, inits);
                             REPLACE_TOKEN(fstr, tk_copies, copies);
 
-                            add_public_method(fstr);
+                            add_public_method(m_class, fstr);
                         }
 
                         void generate_copy_constr_ptr() {
@@ -285,17 +308,19 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_INITS;
                             string tk_copies = CPPT_TOKEN_DEF_VARIABLE_COPY;
+                            string tk_s_name = CPPT_TOKEN_DEF_NAME_READ;
 
-                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_name, m_class.classname);
+                            REPLACE_TOKEN(fstr, tk_s_name, ro_class.classname);
                             REPLACE_TOKEN(fstr, tk_inits, inits);
                             REPLACE_TOKEN(fstr, tk_copies, copies);
 
-                            add_public_method(fstr);
+                            add_public_method(m_class, fstr);
                         }
 
-                        void generate_destr() {
+                        void generate_destr(__cpp_class_template &templ) {
                             string inits;
-                            READ_FROM_VECT(inits, free_calls);
+                            READ_FROM_VECT(inits, templ.free_calls);
 
                             string fstr;
                             READ_PARSED_ROWS(fstr, template_header, CPPT_TOKEN_FUNC_DESTRUCTOR);
@@ -303,106 +328,144 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_inits = CPPT_TOKEN_DEF_VARIABLE_FREES;
 
-                            REPLACE_TOKEN(fstr, tk_name, classname);
+                            REPLACE_TOKEN(fstr, tk_name, templ.classname);
                             REPLACE_TOKEN(fstr, tk_inits, inits);
 
-                            add_public_method(fstr);
+                            add_public_method(templ, fstr);
                         }
 
-                        string get_class_def() {
-                            generate_empty_constr();
+                        string get_ro_class_def() {
                             generate_serde_constr();
-                            generate_copy_constr();
-                            generate_copy_constr_ptr();
-                            generate_destr();
+                            generate_destr(ro_class);
                             generate_deserializer();
-                            generate_serializer();
 
-                            string declares = declare_s.str();
-                            string pr_methods = pr_methods_s.str();
-                            string pu_methods = pu_methods_s.str();
+                            string declares = ro_class.declare.str();
+                            string pr_methods = ro_class.pr_methods.str();
+                            string pu_methods = ro_class.pu_methods.str();
 
                             if (!IS_EMPTY(declares)) {
                                 string tk_declare = CPPT_TOKEN_DEF_DECLARATIONS;
                                 CHECK_NOT_EMPTY(tk_declare);
 
-                                this->class_str = string_utils::set_token(tk_declare, declares, this->class_str);
+                                ro_class.class_str = string_utils::set_token(tk_declare, declares, ro_class.class_str);
                             }
 
                             string tk_prm = CPPT_TOKEN_DEF_PRIVATE_FUNCTIONS;
                             CHECK_NOT_EMPTY(tk_prm);
 
                             if (!IS_EMPTY(pr_methods)) {
-                                this->class_str = string_utils::set_token(tk_prm, pr_methods, this->class_str);
+                                ro_class.class_str = string_utils::set_token(tk_prm, pr_methods, ro_class.class_str);
                             } else {
-                                this->class_str = string_utils::set_token(tk_prm, "", this->class_str);
+                                ro_class.class_str = string_utils::set_token(tk_prm, "", ro_class.class_str);
                             }
 
                             if (!IS_EMPTY(pu_methods)) {
                                 string tk_pum = CPPT_TOKEN_DEF_PUBLIC_FUNCTIONS;
                                 CHECK_NOT_EMPTY(tk_pum);
 
-                                this->class_str = string_utils::set_token(tk_pum, pu_methods, this->class_str);
+                                ro_class.class_str = string_utils::set_token(tk_pum, pu_methods, ro_class.class_str);
+                            }
+                            return ro_class.class_str;
+                        }
+
+                        string get_m_class_def() {
+                            generate_empty_constr();
+                            generate_copy_constr();
+                            generate_copy_constr_ptr();
+                            generate_destr(m_class);
+                            generate_serializer();
+
+                            string declares = m_class.declare.str();
+                            string pr_methods = m_class.pr_methods.str();
+                            string pu_methods = m_class.pu_methods.str();
+
+                            if (!IS_EMPTY(declares)) {
+                                string tk_declare = CPPT_TOKEN_DEF_DECLARATIONS;
+                                CHECK_NOT_EMPTY(tk_declare);
+
+                                m_class.class_str = string_utils::set_token(tk_declare, declares, m_class.class_str);
                             }
 
+                            string tk_prm = CPPT_TOKEN_DEF_PRIVATE_FUNCTIONS;
+                            CHECK_NOT_EMPTY(tk_prm);
+
+                            if (!IS_EMPTY(pr_methods)) {
+                                m_class.class_str = string_utils::set_token(tk_prm, pr_methods, m_class.class_str);
+                            } else {
+                                m_class.class_str = string_utils::set_token(tk_prm, "", m_class.class_str);
+                            }
+
+                            if (!IS_EMPTY(pu_methods)) {
+                                string tk_pum = CPPT_TOKEN_DEF_PUBLIC_FUNCTIONS;
+                                CHECK_NOT_EMPTY(tk_pum);
+
+                                m_class.class_str = string_utils::set_token(tk_pum, pu_methods, m_class.class_str);
+                            }
+                            return m_class.class_str;
+                        }
+
+                        string get_class_def() {
+                            string ro_str = get_ro_class_def();
+                            string m_str = get_m_class_def();
+
+                            string class_def = common_utils::format("%s\n\n%s", ro_str.c_str(), m_str.c_str());
                             if (!IS_EMPTY(this->name_space)) {
                                 string nstr = get_namespace();
                                 CHECK_NOT_EMPTY(nstr);
 
                                 string tk = CPPT_TOKEN_DEF_NESTED;
                                 CHECK_NOT_EMPTY(tk);
-                                nstr = string_utils::set_token(tk, this->class_str, nstr);
+                                nstr = string_utils::set_token(tk, class_def, nstr);
                                 return nstr;
                             }
-                            return this->class_str;
+                            return class_def;
                         }
 
                     public:
                         cpp_file_template(const string &classname, const string &schema_name, const string &name_space,
                                           __version_header &version) {
                             this->init_file_template(classname, schema_name, version);
-                            this->init_class_template();
+                            this->init_ro_class_template();
+                            this->init_m_class_template();
                             this->name_space = string(name_space);
                         }
 
                         string get_class_name() {
-                            return this->classname;
+                            return this->ro_class.classname;
                         }
 
-                        void add_declare(const string &declare) {
+                        void add_declare(const string &declare, __cpp_class_template &templ) {
                             CHECK_NOT_EMPTY(declare);
-                            declare_s << declare << "\n";
+                            templ.declare << declare << "\n";
                         }
 
-                        void add_private_method(const string &method) {
+                        void add_private_method(__cpp_class_template &templ, const string &method) {
                             CHECK_NOT_EMPTY(method);
-                            pr_methods_s << method << "\n";
+                            templ.pr_methods << method << "\n";
                         }
 
-                        void add_public_method(const string &method) {
+                        void add_public_method(__cpp_class_template &templ, const string &method) {
                             CHECK_NOT_EMPTY(method);
-                            pu_methods_s << method << "\n";
+                            templ.pu_methods << method << "\n";
                         }
 
                         void add_header(const string &header) {
                             this->headers.insert({header, header});
                         }
 
-                        void generate_list_serde(__list_type *type, string token) {
+                        void generate_list_serde(__list_type *type, string token, bool mutate) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, token);
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string prefix = (mutate ? CPPT_MUTABLE_CLASS_PREFIX : common_consts::EMPTY_STRING);
 
-                            string tn = type->get_type_name();
+                            string tn = type->get_type_name(prefix);
                             tn = common_utils::get_normalized_name(tn);
-                            CHECK_NOT_EMPTY(tn);
-                            string dt = type->get_inner_type()->get_type_name();
-                            CHECK_NOT_EMPTY(dt);
-                            string dtp = type->get_inner_type()->get_type_ptr();
-                            CHECK_NOT_EMPTY(dtp);
+                            string dt = type->get_inner_type()->get_type_name(prefix);
+                            string dtp = type->get_inner_type()->get_type_ptr(prefix);
 
                             REPLACE_TOKEN(str, tk_name, tn);
                             REPLACE_TOKEN(str, tk_type, dt);
@@ -410,7 +473,10 @@ REACTFS_NS_CORE
 
                             TRACE("LIST SERIALIZER [%s]", str.c_str());
 
-                            add_private_method(str);
+                            if (mutate)
+                                add_private_method(m_class, str);
+                            else
+                                add_private_method(ro_class, str);
                         }
 
                         void generate_list_add(const __native_type *type, string token) {
@@ -426,9 +492,9 @@ REACTFS_NS_CORE
 
                             string tn = lt->get_name();
                             CHECK_NOT_EMPTY(tn);
-                            string dt = lt->get_inner_type()->get_type_name();
+                            string dt = lt->get_inner_type()->get_type_name(CPPT_MUTABLE_CLASS_PREFIX);
                             CHECK_NOT_EMPTY(dt);
-                            string dtp = lt->get_inner_type()->get_type_ptr();
+                            string dtp = lt->get_inner_type()->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX);
                             CHECK_NOT_EMPTY(dtp);
 
                             REPLACE_TOKEN(str, tk_name, tn);
@@ -437,20 +503,21 @@ REACTFS_NS_CORE
 
                             TRACE("SETTER [%s]", str.c_str());
 
-                            add_public_method(str);
+                            add_public_method(m_class, str);
                         }
 
-                        void generate_map_serde(__map_type *type, string token) {
+                        void generate_map_serde(__map_type *type, string token, bool mutate) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, token);
+                            string prefix = (mutate ? CPPT_MUTABLE_CLASS_PREFIX : common_consts::EMPTY_STRING);
 
-                            string k_type = type->get_key_type()->get_type_name();
+                            string k_type = type->get_key_type()->get_type_name(prefix);
                             if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
                                 k_type = "std::string";
                             }
-                            string v_type = type->get_value_type()->get_type_name();
-                            string v_type_ptr = type->get_value_type()->get_type_ptr();
-                            string tn = type->get_type_name();
+                            string v_type = type->get_value_type()->get_type_name(prefix);
+                            string v_type_ptr = type->get_value_type()->get_type_ptr(prefix);
+                            string tn = type->get_type_name(prefix);
                             tn = common_utils::get_normalized_name(tn);
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
@@ -465,7 +532,10 @@ REACTFS_NS_CORE
 
                             TRACE("SETTER [%s]", str.c_str());
 
-                            add_private_method(str);
+                            if (mutate)
+                                add_private_method(m_class, str);
+                            else
+                                add_private_method(ro_class, str);
                         }
 
                         void generate_map_add(const __native_type *type, string token) {
@@ -475,12 +545,12 @@ REACTFS_NS_CORE
                             string str;
                             READ_PARSED_ROWS(str, template_header, token);
 
-                            string k_type = mt->get_key_type()->get_type_name();
+                            string k_type = mt->get_key_type()->get_type_name(CPPT_MUTABLE_CLASS_PREFIX);
                             if (mt->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
                                 k_type = "std::string";
                             }
-                            string v_type = mt->get_value_type()->get_type_name();
-                            string v_type_ptr = mt->get_value_type()->get_type_ptr();
+                            string v_type = mt->get_value_type()->get_type_name(CPPT_MUTABLE_CLASS_PREFIX);
+                            string v_type_ptr = mt->get_value_type()->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX);
 
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_key = CPPT_TOKEN_DEF_KEY_TYPE;
@@ -494,7 +564,7 @@ REACTFS_NS_CORE
 
                             TRACE("SETTER [%s]", str.c_str());
 
-                            add_public_method(str);
+                            add_public_method(m_class, str);
                         }
 
                         void generate_setter(const __native_type *type, string token) {
@@ -504,7 +574,7 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
 
-                            string dt = type->get_type_ptr();
+                            string dt = type->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX);
                             CHECK_NOT_EMPTY(dt);
                             string tn = type->get_name();
                             CHECK_NOT_EMPTY(tn);
@@ -514,7 +584,7 @@ REACTFS_NS_CORE
 
                             TRACE("SETTER [%s]", str.c_str());
 
-                            add_public_method(str);
+                            add_public_method(m_class, str);
                         }
 
                         void generate_native_setter(const __native_type *type) {
@@ -525,11 +595,11 @@ REACTFS_NS_CORE
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
 
-                            string dt = type->get_type_name();
+                            string dt = type->get_type_name(CPPT_MUTABLE_CLASS_PREFIX);
                             CHECK_NOT_EMPTY(dt);
                             string tn = type->get_name();
                             CHECK_NOT_EMPTY(tn);
-                            string dtp = type->get_type_ptr();
+                            string dtp = type->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX);
 
                             REPLACE_TOKEN(str, tk_type, dt);
                             REPLACE_TOKEN(str, tk_name, tn);
@@ -537,26 +607,44 @@ REACTFS_NS_CORE
 
                             TRACE("SETTER [%s]", str.c_str());
 
-                            add_public_method(str);
+                            add_public_method(m_class, str);
                         }
 
                         void generate_getter(const __native_type *type, string token) {
-                            string str;
-                            READ_PARSED_ROWS(str, template_header, token);
 
                             string tk_type = CPPT_TOKEN_DEF_RETURN;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
 
-                            string dt = type->get_type_ptr();
-                            CHECK_NOT_EMPTY(dt);
-                            string tn = type->get_name();
-                            CHECK_NOT_EMPTY(tn);
+                            {
+                                string str;
+                                READ_PARSED_ROWS(str, template_header, token);
 
-                            REPLACE_TOKEN(str, tk_name, tn);
-                            REPLACE_TOKEN(str, tk_type, dt);
+                                string dt = type->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX);
+                                CHECK_NOT_EMPTY(dt);
+                                string tn = type->get_name();
+                                CHECK_NOT_EMPTY(tn);
 
-                            TRACE("GETTER [%s]", str.c_str());
-                            add_public_method(str);
+                                REPLACE_TOKEN(str, tk_name, tn);
+                                REPLACE_TOKEN(str, tk_type, dt);
+
+                                TRACE("GETTER [%s]", str.c_str());
+                                add_public_method(m_class, str);
+                            }
+                            {
+                                string str;
+                                READ_PARSED_ROWS(str, template_header, token);
+
+                                string dt = type->get_type_ptr(common_consts::EMPTY_STRING);
+                                CHECK_NOT_EMPTY(dt);
+                                string tn = type->get_name();
+                                CHECK_NOT_EMPTY(tn);
+
+                                REPLACE_TOKEN(str, tk_name, tn);
+                                REPLACE_TOKEN(str, tk_type, dt);
+
+                                TRACE("GETTER [%s]", str.c_str());
+                                add_public_method(ro_class, str);
+                            }
                         }
 
                         void add_native_copy(const __native_type *type, string token) {
@@ -577,7 +665,7 @@ REACTFS_NS_CORE
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
 
                             REPLACE_TOKEN(str, tk_name, type->get_name());
-                            REPLACE_TOKEN(str, tk_type, type->get_type_name());
+                            REPLACE_TOKEN(str, tk_type, type->get_type_name(CPPT_MUTABLE_CLASS_PREFIX));
 
                             copy_constr_calls.push_back(str);
                         }
@@ -589,15 +677,18 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_s_type_ptr = CPPT_TOKEN_DEF_SRC_TYPE_PTR;
 
                             const __native_type *it = type->get_inner_type();
 
-                            string dt = it->get_type_name();
-                            string dtp = it->get_type_ptr();
+                            string dt = it->get_type_name(CPPT_MUTABLE_CLASS_PREFIX);
+                            string dtp = it->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX);
+                            string sdtp = it->get_type_ptr(common_consts::EMPTY_STRING);
 
                             REPLACE_TOKEN(str, tk_name, type->get_name());
                             REPLACE_TOKEN(str, tk_type, dt);
                             REPLACE_TOKEN(str, tk_type_ptr, dtp);
+                            REPLACE_TOKEN(str, tk_s_type_ptr, sdtp);
 
                             copy_constr_calls.push_back(str);
                         }
@@ -610,19 +701,21 @@ REACTFS_NS_CORE
                             string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
                             string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
                             string tk_v_type = CPPT_TOKEN_DEF_VALUE_TYPE;
+                            string tk_sv_type_ptr = CPPT_TOKEN_DEF_SRC_VALUE_TYPE_PTR;
 
                             const __native_type *kt = type->get_key_type();
                             const __native_type *vt = type->get_value_type();
 
-                            string kdt = kt->get_type_name();
+                            string kdt = kt->get_type_name(CPPT_MUTABLE_CLASS_PREFIX);
                             if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
                                 kdt = "std::string";
                             }
 
                             REPLACE_TOKEN(str, tk_name, type->get_name());
                             REPLACE_TOKEN(str, tk_k_type, kdt);
-                            REPLACE_TOKEN(str, tk_v_type, vt->get_type_name());
-                            REPLACE_TOKEN(str, tk_v_type_ptr, vt->get_type_ptr());
+                            REPLACE_TOKEN(str, tk_v_type, vt->get_type_name(CPPT_MUTABLE_CLASS_PREFIX));
+                            REPLACE_TOKEN(str, tk_v_type_ptr, vt->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX));
+                            REPLACE_TOKEN(str, tk_sv_type_ptr, vt->get_type_ptr(common_consts::EMPTY_STRING));
 
                             copy_constr_calls.push_back(str);
                         }
@@ -645,7 +738,7 @@ REACTFS_NS_CORE
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
 
                             REPLACE_TOKEN(str, tk_name, type->get_name());
-                            REPLACE_TOKEN(str, tk_type, type->get_type_name());
+                            REPLACE_TOKEN(str, tk_type, type->get_type_name(CPPT_MUTABLE_CLASS_PREFIX));
 
                             copy_constr_calls_ptr.push_back(str);
                         }
@@ -657,15 +750,18 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_s_type_ptr = CPPT_TOKEN_DEF_SRC_TYPE_PTR;
 
                             const __native_type *it = type->get_inner_type();
 
-                            string dt = it->get_type_name();
-                            string dtp = it->get_type_ptr();
+                            string dt = it->get_type_name(CPPT_MUTABLE_CLASS_PREFIX);
+                            string dtp = it->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX);
+                            string sdtp = it->get_type_ptr(common_consts::EMPTY_STRING);
 
                             REPLACE_TOKEN(str, tk_name, type->get_name());
                             REPLACE_TOKEN(str, tk_type, dt);
                             REPLACE_TOKEN(str, tk_type_ptr, dtp);
+                            REPLACE_TOKEN(str, tk_s_type_ptr, sdtp);
 
                             copy_constr_calls_ptr.push_back(str);
                         }
@@ -678,44 +774,55 @@ REACTFS_NS_CORE
                             string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
                             string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
                             string tk_v_type = CPPT_TOKEN_DEF_VALUE_TYPE;
+                            string tk_sv_type_ptr = CPPT_TOKEN_DEF_SRC_VALUE_TYPE_PTR;
 
                             const __native_type *kt = type->get_key_type();
                             const __native_type *vt = type->get_value_type();
 
-                            string kdt = kt->get_type_name();
+                            string kdt = kt->get_type_name(CPPT_MUTABLE_CLASS_PREFIX);
                             if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
                                 kdt = "std::string";
                             }
 
                             REPLACE_TOKEN(str, tk_name, type->get_name());
                             REPLACE_TOKEN(str, tk_k_type, kdt);
-                            REPLACE_TOKEN(str, tk_v_type, vt->get_type_name());
-                            REPLACE_TOKEN(str, tk_v_type_ptr, vt->get_type_ptr());
+                            REPLACE_TOKEN(str, tk_v_type, vt->get_type_name(CPPT_MUTABLE_CLASS_PREFIX));
+                            REPLACE_TOKEN(str, tk_v_type_ptr, vt->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX));
+                            REPLACE_TOKEN(str, tk_sv_type_ptr, vt->get_type_ptr(common_consts::EMPTY_STRING));
 
                             copy_constr_calls_ptr.push_back(str);
                         }
 
-                        string get_declare(const __native_type *type) {
-                            string str;
-                            READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_VARIABLE_NATIVE_DEF);
+                        void get_declare(const __native_type *type) {
 
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
-
-                            string dt = type->get_type_ptr();
-                            CHECK_NOT_EMPTY(dt);
                             string tn = type->get_name();
-                            CHECK_NOT_EMPTY(tn);
+                            {
+                                string str;
+                                READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_VARIABLE_NATIVE_DEF);
+                                string dt = type->get_type_ptr(common_consts::EMPTY_STRING);
 
-                            REPLACE_TOKEN(str, tk_name, tn);
-                            REPLACE_TOKEN(str, tk_type, dt);
+                                REPLACE_TOKEN(str, tk_name, tn);
+                                REPLACE_TOKEN(str, tk_type, dt);
 
-                            TRACE("DECLARE [%s]", str.c_str());
-                            add_declare(str);
+                                TRACE("DECLARE [%s]", str.c_str());
+                                string c_str = common_utils::format("const %s", str.c_str());
+                                add_declare(c_str, ro_class);
+                            }
+                            {
+                                string str;
+                                READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_VARIABLE_NATIVE_DEF);
+                                string dt = type->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX);
+
+                                REPLACE_TOKEN(str, tk_name, tn);
+                                REPLACE_TOKEN(str, tk_type, dt);
+
+                                TRACE("DECLARE [%s]", str.c_str());
+                                add_declare(str, m_class);
+                            }
 
                             variables.push_back(tn);
-
-                            return str;
                         }
 
 
@@ -726,21 +833,22 @@ REACTFS_NS_CORE
                             string str;
                             READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_FUNC_TYPE_SERIALIZER);
 
-                            string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
 
-                            string dt = type->get_type_name();
-                            string dtp = type->get_type_ptr();
+                            string dt = (type->get_type_name(CPPT_MUTABLE_CLASS_PREFIX));
+                            string dtp = (type->get_type_ptr(CPPT_MUTABLE_CLASS_PREFIX));
+
                             CHECK_NOT_EMPTY(dt);
                             string tn = common_utils::get_normalized_name(dt);
 
                             REPLACE_TOKEN(str, tk_name, tn);
-                            REPLACE_TOKEN(str, tk_type, dt);
+                            REPLACE_TOKEN(str, tk_m_name, dt);
                             REPLACE_TOKEN(str, tk_type_ptr, dtp);
 
                             TRACE("SERIALIZER [%s]", str.c_str());
-                            add_private_method(str);
+                            add_private_method(m_class, str);
                         }
 
                         void generate_type_deserializer(const __native_type *type) {
@@ -754,8 +862,8 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
 
-                            string dt = type->get_type_name();
-                            string dtp = type->get_type_ptr();
+                            string dt = type->get_type_name(common_consts::EMPTY_STRING);
+                            string dtp = type->get_type_ptr(common_consts::EMPTY_STRING);
                             CHECK_NOT_EMPTY(dt);
                             string tn = common_utils::get_normalized_name(dt);
                             CHECK_NOT_EMPTY(tn);
@@ -765,7 +873,7 @@ REACTFS_NS_CORE
                             REPLACE_TOKEN(str, tk_type_ptr, dtp);
 
                             TRACE("DESERIALIZER [%s]", str.c_str());
-                            add_private_method(str);
+                            add_private_method(ro_class, str);
                         }
 
                         void generate_native_setter_to_map(const __native_type *type) {
@@ -786,7 +894,7 @@ REACTFS_NS_CORE
                             REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("WRITE FROM MAP [%s]", f_str.c_str());
-                            add_private_method(f_str);
+                            add_private_method(m_class, f_str);
                         }
 
                         void generate_native_setter_from_map(const __native_type *type) {
@@ -803,7 +911,7 @@ REACTFS_NS_CORE
 
                             string tn = type->get_name();
                             string dt = __type_enum_helper::get_datatype(type->get_datatype());
-                            string tp = type->get_type_ptr();
+                            string tp = type->get_type_ptr(common_consts::EMPTY_STRING);
                             string fi = to_string(type->get_index());
 
                             REPLACE_TOKEN(c_str, tk_name, tn);
@@ -816,7 +924,7 @@ REACTFS_NS_CORE
                             REPLACE_TOKEN(f_str, tk_index, fi);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
-                            add_private_method(f_str);
+                            add_private_method(ro_class, f_str);
 
                             m_call_serde.push_back(tn);
                         }
@@ -832,7 +940,7 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
 
                             string tn = type->get_name();
-                            string dt = type->get_type_name();
+                            string dt = (type->get_type_name(CPPT_MUTABLE_CLASS_PREFIX));
 
                             REPLACE_TOKEN(c_str, tk_name, tn);
                             REPLACE_TOKEN(c_str, tk_type, dt);
@@ -842,7 +950,7 @@ REACTFS_NS_CORE
                             REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("WRITE FROM MAP [%s]", f_str.c_str());
-                            add_private_method(f_str);
+                            add_private_method(m_class, f_str);
 
                         }
 
@@ -856,10 +964,12 @@ REACTFS_NS_CORE
                             string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_index = CPPT_TOKEN_DEF_FIELD_INDEX;
 
                             string tn = type->get_name();
-                            string dt = type->get_type_name();
-                            string tp = type->get_type_ptr();
+                            string dt = type->get_type_name(common_consts::EMPTY_STRING);
+                            string tp = type->get_type_ptr(common_consts::EMPTY_STRING);
+                            string fi = to_string(type->get_index());
 
                             REPLACE_TOKEN(c_str, tk_name, tn);
                             REPLACE_TOKEN(c_str, tk_type, dt);
@@ -868,9 +978,10 @@ REACTFS_NS_CORE
                             string tk_read = CPPT_TOKEN_DEF_READ_SERDE_CALLS;
                             REPLACE_TOKEN(f_str, tk_name, tn);
                             REPLACE_TOKEN(f_str, tk_read, c_str);
+                            REPLACE_TOKEN(f_str, tk_index, fi);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
-                            add_private_method(f_str);
+                            add_private_method(ro_class, f_str);
 
                             m_call_serde.push_back(tn);
                         }
@@ -887,7 +998,7 @@ REACTFS_NS_CORE
 
                             string tn = type->get_name();
 
-                            string mn = type->get_type_name();
+                            string mn = (type->get_type_name(CPPT_MUTABLE_CLASS_PREFIX));
                             mn = common_utils::get_normalized_name(mn);
 
                             REPLACE_TOKEN(c_str, tk_name, tn);
@@ -898,7 +1009,7 @@ REACTFS_NS_CORE
                             REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("WRITE FROM MAP [%s]", f_str.c_str());
-                            add_private_method(f_str);
+                            add_private_method(m_class, f_str);
 
                         }
 
@@ -913,14 +1024,16 @@ REACTFS_NS_CORE
                             string tk_type = CPPT_TOKEN_DEF_TYPE;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
+                            string tk_index = CPPT_TOKEN_DEF_FIELD_INDEX;
 
                             const __native_type *it = type->get_inner_type();
                             string tn = type->get_name();
 
-                            string dt = it->get_type_name();
-                            string tp = it->get_type_ptr();
-                            string mn = type->get_type_name();
+                            string dt = it->get_type_name(common_consts::EMPTY_STRING);
+                            string tp = it->get_type_ptr(common_consts::EMPTY_STRING);
+                            string mn = type->get_type_name(common_consts::EMPTY_STRING);
                             mn = common_utils::get_normalized_name(mn);
+                            string fi = to_string(type->get_index());
 
                             REPLACE_TOKEN(c_str, tk_name, tn);
                             REPLACE_TOKEN(c_str, tk_type, dt);
@@ -930,9 +1043,10 @@ REACTFS_NS_CORE
                             string tk_read = CPPT_TOKEN_DEF_READ_SERDE_CALLS;
                             REPLACE_TOKEN(f_str, tk_name, tn);
                             REPLACE_TOKEN(f_str, tk_read, c_str);
+                            REPLACE_TOKEN(f_str, tk_index, fi);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
-                            add_private_method(f_str);
+                            add_private_method(ro_class, f_str);
 
                             m_call_serde.push_back(tn);
                         }
@@ -947,7 +1061,7 @@ REACTFS_NS_CORE
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
 
-                            string mn = type->get_type_name();
+                            string mn = (type->get_type_name(CPPT_MUTABLE_CLASS_PREFIX));
                             mn = common_utils::get_normalized_name(mn);
 
                             string tn = type->get_name();
@@ -960,7 +1074,7 @@ REACTFS_NS_CORE
                             REPLACE_TOKEN(f_str, tk_read, c_str);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
-                            add_private_method(f_str);
+                            add_private_method(m_class, f_str);
 
                         }
 
@@ -975,19 +1089,21 @@ REACTFS_NS_CORE
                             string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
                             string tk_name = CPPT_TOKEN_DEF_NAME;
                             string tk_m_name = CPPT_TOKEN_DEF_M_NAME;
+                            string tk_index = CPPT_TOKEN_DEF_FIELD_INDEX;
 
                             const __native_type *kt = type->get_key_type();
                             const __native_type *vt = type->get_value_type();
 
-                            string mn = type->get_type_name();
+                            string mn = type->get_type_name(common_consts::EMPTY_STRING);
                             mn = common_utils::get_normalized_name(mn);
+                            string fi = to_string(type->get_index());
 
                             string tn = type->get_name();
-                            string kdt = kt->get_type_name();
+                            string kdt = kt->get_type_name(common_consts::EMPTY_STRING);
                             if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
                                 kdt = "std::string";
                             }
-                            string vdtp = vt->get_type_ptr();
+                            string vdtp = vt->get_type_ptr(common_consts::EMPTY_STRING);
 
                             REPLACE_TOKEN(c_str, tk_name, tn);
                             REPLACE_TOKEN(c_str, tk_k_type, kdt);
@@ -997,9 +1113,10 @@ REACTFS_NS_CORE
                             string tk_read = CPPT_TOKEN_DEF_READ_SERDE_CALLS;
                             REPLACE_TOKEN(f_str, tk_name, tn);
                             REPLACE_TOKEN(f_str, tk_read, c_str);
+                            REPLACE_TOKEN(f_str, tk_index, fi);
 
                             TRACE("READ FROM MAP [%s]", f_str.c_str());
-                            add_private_method(f_str);
+                            add_private_method(ro_class, f_str);
 
                             m_call_serde.push_back(tn);
                         }
@@ -1012,7 +1129,18 @@ REACTFS_NS_CORE
                             string tn = type->get_name();
                             REPLACE_TOKEN(f_str, tk_name, tn);
 
-                            free_calls.push_back(f_str);
+                            m_class.free_calls.push_back(f_str);
+                        }
+
+                        void generate_free_call_local(const __native_type *type, string token) {
+                            string f_str;
+                            READ_PARSED_ROWS(f_str, template_header, token);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tn = type->get_name();
+                            REPLACE_TOKEN(f_str, tk_name, tn);
+
+                            m_class.free_calls.push_back(f_str);
                         }
 
                         string finish() {

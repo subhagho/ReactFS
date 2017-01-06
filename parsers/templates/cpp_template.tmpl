@@ -17,11 +17,14 @@
  */
 %token ${type}
 %token ${type_ptr}
+%token ${src_type_ptr}
 %token ${name}
 %token ${m_name}
+%token ${name_read}
 %token ${key_type}
 %token ${value_type}
 %token ${value_type_ptr}
+%token ${src_value_type_ptr}
 %token ${return}
 %token ${data_var}
 %token ${set_map_calls}
@@ -53,9 +56,7 @@ ${type} ${name} = nullptr;
 ;;
 
 VARIABLE_NATIVE_FREE:
-if (this->__is_allocated) {
-	FREE_PTR(this->${name});
-}
+FREE_PTR(this->${name});
 ;;
 
 VARIABLE_TYPE_FREE:
@@ -63,12 +64,7 @@ CHECK_AND_FREE(this->${name});
 ;;
 
 VARIABLE_LIST_NATIVE_FREE:
-if (this->__is_allocated) {
 	FREE_NATIVE_LIST(this->${name});
-} else {
-	this->${name}->clear();
-	CHECK_AND_FREE(this->${name});
-}
 ;;
 
 VARIABLE_LIST_TYPE_FREE:
@@ -76,12 +72,7 @@ FREE_TYPE_LIST(this->${name});
 ;;
 
 VARIABLE_MAP_NATIVE_FREE:
-if (this->__is_allocated) {
 	FREE_NATIVE_MAP(this->${name});	
-} else {
-	this->${name}->clear();
-	CHECK_AND_FREE(this->${name});
-}
 ;;
 
 VARIABLE_MAP_TYPE_FREE:
@@ -120,8 +111,7 @@ FUNC_NATIVE_SETTER_DEF:
  *
  * @Param ${name} - Value reference.
  */
-void set_${name}(${type} &${name}) {
-    PRECONDITION(this->__is_allocated == true);
+void set_${name}(const ${type} &${name}) {
 	if (IS_NULL(this->${name})) {
     		this->${name} = (${type_ptr})malloc(sizeof(${type}));
     		CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
@@ -139,7 +129,7 @@ FUNC_STRING_SETTER_DEF:
  *
  * @param ${name} - String value to set.
  */
-void set_${name}(string &${name}) {
+void set_${name}(const string &${name}) {
     	FREE_PTR(this->${name});
     	if (!IS_EMPTY(${name})) {
         	uint32_t __size = ${name}.length() + 1;
@@ -162,8 +152,7 @@ FUNC_LIST_NATIVE_ADD_DEF:
  *
  * @param ${name} - Data value to add to list.
  */
-void add_to_${name}(${type} &${name}) {
-    PRECONDITION(this->__is_allocated == true);
+void add_to_${name}(const ${type} &${name}) {
     if (IS_NULL(this->${name})) {
         this->${name} = new std::vector<${type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
@@ -186,8 +175,7 @@ FUNC_LIST_STRING_ADD_DEF:
  *
  * @param ${name} - String value to add to list.
  */
-void add_to_${name}(string &${name}) {
-    PRECONDITION(this->__is_allocated == true);
+void add_to_${name}(const string &${name}) {
     if (IS_NULL(this->${name})) {
         this->${name} = new std::vector<${type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(vector));
@@ -215,7 +203,6 @@ FUNC_LIST_TYPE_ADD_DEF:
  * @param ${name} - String value to add to list.
  */
 void add_to_${name}(${type_ptr} ${name}) {
-    PRECONDITION(this->__is_allocated == true);
     CHECK_NOT_NULL(${name});
     if (IS_NULL(this->${name})) {
         this->${name} = new std::vector<${type_ptr}>();
@@ -236,8 +223,7 @@ FUNC_MAP_NATIVE_ADD_DEF:
  * @param m_key - Map key value.
  * @param m_value - Map value.
  */ 
-void add_to_${name}(${key_type} m_key, ${value_type} &m_value) {
-    PRECONDITION(this->__is_allocated == true);
+void add_to_${name}(const ${key_type} m_key, const ${value_type} &m_value) {
     if (IS_NULL(this->${name})) {
         this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
@@ -261,7 +247,6 @@ FUNC_MAP_TYPE_ADD_DEF:
  * @param m_value - ${value_type_ptr} value pointer.
  */ 
 void add_to_${name}(${key_type} m_key, ${value_type_ptr} m_value) {
-    PRECONDITION(this->__is_allocated == true);
     if (IS_NULL(this->${name})) {
         this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
@@ -277,8 +262,7 @@ FUNC_MAP_STRING_ADD_DEF:
  * @param m_key - Map key of type ${key_type}
  * @param m_value - String value of the map record value.
  */
-void add_to_${name}(${key_type} m_key, string &m_value) {
-    PRECONDITION(this->__is_allocated == true);
+void add_to_${name}(const ${key_type} m_key, const string &m_value) {
     if (IS_NULL(this->${name})) {
         this->${name} = new std::unordered_map<${key_type}, ${value_type_ptr}>();
         CHECK_ALLOC(this->${name}, TYPE_NAME(unordered_map));
@@ -304,7 +288,7 @@ FUNC_SETTER_FROM_RECORD:
  *
  * @param __data - Serialized data map pointer.
  */
-void read_value_${name}(record_struct *__data) {
+void read_value_${name}(const record_struct *__data) {
     if (NOT_NULL(__data)) {
         const void *__ptr = __data->get_field(${field_index});
         if (NOT_NULL(__ptr)) {
@@ -385,7 +369,7 @@ CALL_TYPE_SETTER_TO_RECORD:
 	const __native_type *ft = get_field_type("${name}");
 	CHECK_NOT_NULL(ft);
 
-	__data->add_field(ft->get_index(), ptr);
+	__data->add_field(ft->get_index(), __ptr);
 }
 ;;
 
@@ -398,7 +382,7 @@ CALL_TYPE_LIST_SETTER_TO_RECORD:
 	const __native_type *ft = get_field_type("${name}");
 	CHECK_NOT_NULL(ft);
 
-	__data->add_field(ft->get_index(), ptr);
+	__data->add_field(ft->get_index(), __ptr);
 }
 ;;
 
@@ -411,7 +395,7 @@ CALL_TYPE_MAP_SETTER_TO_RECORD:
 	const __native_type *ft = get_field_type("${name}");
 	CHECK_NOT_NULL(ft);
 
-	__data->add_field(ft->get_index(), ptr);
+	__data->add_field(ft->get_index(), __ptr);
 }
 ;;
 
@@ -437,7 +421,7 @@ FUNC_TYPE_SERIALIZER:
  * @param __value - Pointer to the field of type ${name}.
  * @return - Serialized data map instance.
  */
-mutable_record_struct *serialize_${name}(${type_ptr} __value) {
+mutable_record_struct *serialize_${m_name}(${type_ptr} __value) {
     CHECK_NOT_NULL(__value);
     mutable_record_struct *__data = __value->serialize();
     CHECK_NOT_NULL(__data);
@@ -450,14 +434,15 @@ FUNC_TYPE_DESERIALIZER:
  * Deserialize an instance of type ${name} from the 
  * passed input data.
  *
- * @param __input - Void pointer to input data of type __struct_datatype__
+ * @param __input - Void pointer to input data of type record_struct
  * @return - Deserialized instance pointer of type ${type_ptr}
  */
 ${type_ptr} deserialize_${name}(const void *__input) {
     CHECK_NOT_NULL(__input);
     const record_struct *__value = static_cast<const record_struct *>(__input);
     CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(record_struct));
-    ${type_ptr} __data = new ${type}(__value);
+    ${type_ptr} __data = new ${type}();
+    __data->deserialize(__value);
     CHECK_ALLOC(__data, TYPE_NAME(${type}));
     return __data;
 }
@@ -488,7 +473,7 @@ FUNC_TYPE_LIST_DESERIALIZER:
 /**
  * Deserialize a list instance of type ${type_ptr} from the passed input data.
  *
- * @param __input - Void pointer to input data of type vector<__struct_datatype__ *>
+ * @param __input - Void pointer to input data of type vector<record_struct *>
  * @return - Deserialized pointer to list of type vector<${type_ptr} *>
  */
 std::vector<${type_ptr}> *deserialize_list_${name}(const void *__input) {
@@ -498,7 +483,7 @@ std::vector<${type_ptr}> *deserialize_list_${name}(const void *__input) {
 
 	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
-	for( record_struct *v : *__value) {
+	for(const record_struct *v : *__value) {
 		CHECK_NOT_NULL(v);
 		${type_ptr} __tv = deserialize_${type}(v);
 		CHECK_NOT_NULL(__tv);
@@ -513,7 +498,7 @@ FUNC_TYPE_MAP_SERIALIZER:
  * Serialize a map instance of key/value type ${key_type}/${value_type_ptr} from the passed input data.
  *
  * @param __i_map - Input map data.
- * @return - Serialized data map of key/value type unordered_map<${key_type}, __struct_datatype__ *>
+ * @return - Serialized data map of key/value type unordered_map<${key_type}, mutable_record_struct *>
  */
 std::unordered_map<${key_type}, mutable_record_struct *> *serialize_map_${name}(std::unordered_map<${key_type}, ${value_type_ptr}> *__i_map) {
     CHECK_NOT_EMPTY_P(__i_map);
@@ -537,7 +522,7 @@ FUNC_TYPE_MAP_DESERIALIZER:
 /**
  * Deserialize a map instance of key/value type ${key_type}/${value_type_ptr} from the passed input data.
  *
- * @param __input - Void pointer of type unordered_map<${key_type}, __struct_datatype__ *>
+ * @param __input - Void pointer of type unordered_map<${key_type}, record_struct *>
  * @return - Deserialized map of key/value type unordered_map<${key_type}, ${value_type_ptr}>
  */
 std::unordered_map<${key_type}, ${value_type_ptr}> *deserialize_map_${name}(const void *__input) {
@@ -548,7 +533,7 @@ std::unordered_map<${key_type}, ${value_type_ptr}> *deserialize_map_${name}(cons
 	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
 	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
-	std::unordered_map<${key_type}, record_struct *>::iterator iter;
+	std::unordered_map<${key_type}, record_struct *>::const_iterator iter;
 	for (iter = __value->begin(); iter != __value->end(); iter++) {
 		${value_type_ptr} __tv = deserialize_${value_type}(iter->second);
 		CHECK_NOT_NULL(__tv);
@@ -569,7 +554,6 @@ void deserialize(const record_struct *__data) override {
 
     this->record_type = __data->get_record_type();
     CHECK_NOT_NULL(this->record_type);
-    this->__is_allocated = false;
 
     ${read_map_calls}
 
@@ -587,22 +571,19 @@ FUNC_CONSTRUCTOR_WRITABLE:
 ${name}(const __complex_type *record_type) {
     CHECK_NOT_NULL(record_type);
     this->record_type = record_type;
-    this->__is_allocated = true;
+
     ${variable_inits}
 }
 ;;
 
 FUNC_CONSTRUCTOR_READABLE:
 /**
- * Create a new read-only instance of ${name} and populate the data from the passed 
- * serialized data map.
- *
- * @param __data - Serialized data map to load the object data from.
+ * Create a new read-only instance of ${name}. 
+ * 
+ * Type to be used when instance is being de-serialized from record data.
  */
-${name}(record_struct *__data) {
-    CHECK_NOT_NULL(__data);
+${name}() {
     ${variable_inits}
-    this->deserialize(__data);
 }
 ;;
 
@@ -613,8 +594,7 @@ FUNC_CONSTRUCTOR_COPY:
  *
  * @param source - Source instance of ${name} to copy from.
  */
-${name}(const ${name} &source) {
-    	this->__is_allocated = true;
+${name}(const ${name_read} &source) {
 	this->record_type = source.get_record_type();
 	CHECK_NOT_NULL(this->record_type);
 
@@ -630,8 +610,7 @@ FUNC_CONSTRUCTOR_COPY_PTR:
  *
  * @param source - Source instance of ${name} to copy from.
  */
-${name}(const ${name} *source) {
-    	this->__is_allocated = true;
+${name}(const ${name_read} *source) {
 	this->record_type = source->get_record_type();
 	CHECK_NOT_NULL(this->record_type);
 
@@ -642,56 +621,56 @@ ${name}(const ${name} *source) {
 
 COPY_CALL_NATIVE:
 // Set ${name} from the source value.
-if (NOT_NULL(source.${name})) {
-	this->set_${name}(*(source.${name}));
+if (NOT_NULL(source.get_${name}())) {
+	this->set_${name}(*(source.get_${name}()));
 }
 ;;
 
 COPY_CALL_NATIVE_PTR:
 // Set ${name} from the source value.
-if (NOT_NULL(source->${name})) {
-	this->set_${name}(*(source->${name}));
+if (NOT_NULL(source->get_${name}())) {
+	this->set_${name}(*(source->get_${name}()));
 }
 ;;
 
 COPY_CALL_STRING:
 // Set ${name} from the source value.
-if (NOT_NULL(source.${name})) {
-	string __${name} = string(source.${name});
+if (NOT_NULL(source.get_${name}())) {
+	string __${name} = string(source.get_${name}());
 	this->set_${name}(__${name});
 }
 ;;
 
 COPY_CALL_STRING_PTR:
 // Set ${name} from the source value.
-if (NOT_NULL(source->${name})) {
-	string __${name} = string(source->${name});
+if (NOT_NULL(source->get_${name}())) {
+	string __${name} = string(source->get_${name}());
 	this->set_${name}(__${name});
 }
 ;;
 
 COPY_CALL_TYPE:
 // Set ${name} from the source value.
-if (NOT_NULL(source.${name})) {
-	this->${name} = new ${type}(*(source.${name}));
+if (NOT_NULL(source.get_${name}())) {
+	this->${name} = new ${type}(source.get_${name}());
 	CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
 }
 ;;
 
 COPY_CALL_TYPE_PTR:
 // Set ${name} from the source value.
-if (NOT_NULL(source->${name})) {
-	this->${name} = new ${type}(source->${name});
+if (NOT_NULL(source->get_${name}())) {
+	this->${name} = new ${type}(source->get_${name}());
 	CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));
 }
 ;;
 
 COPY_CALL_NATIVE_LIST:
 // Deserialize the list ${name} from the source value.
-if (NOT_EMPTY_P(source.${name})) {
+if (NOT_EMPTY_P(source.get_${name}())) {
 	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
-	for( ${type_ptr} v : *(source.${name})) {
+	for( const ${type_ptr} v : *(source.get_${name}())) {
 		CHECK_NOT_NULL(v);
 		${type_ptr} __tv = (${type_ptr}) malloc (sizeof(${type}));
 		CHECK_ALLOC(__tv, TYPE_NAME(${type}));
@@ -704,10 +683,10 @@ if (NOT_EMPTY_P(source.${name})) {
 
 COPY_CALL_NATIVE_LIST_PTR:
 // Deserialize the list ${name} from the source value.
-if (NOT_EMPTY_P(source->${name})) {
+if (NOT_EMPTY_P(source->get_${name}())) {
 	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
-	for( ${type_ptr} v : *(source->${name})) {
+	for( const ${type_ptr} v : *(source->get_${name}())) {
 		CHECK_NOT_NULL(v);
 		${type_ptr} __tv = (${type_ptr}) malloc (sizeof(${type}));
 		CHECK_ALLOC(__tv, TYPE_NAME(${type}));
@@ -720,10 +699,10 @@ if (NOT_EMPTY_P(source->${name})) {
 
 COPY_CALL_TYPE_LIST:
 // Deserialize the list ${name} from the source value.
-if (NOT_EMPTY_P(source.${name})) {
+if (NOT_EMPTY_P(source.get_${name}())) {
 	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
-	for( ${type_ptr} v : *(source.${name})) {
+	for( const ${src_type_ptr} v : *(source.get_${name}())) {
 		CHECK_NOT_NULL(v);
 		${type_ptr} __tv = new ${type}(v);
 		CHECK_NOT_NULL(__tv);
@@ -735,10 +714,10 @@ if (NOT_EMPTY_P(source.${name})) {
 
 COPY_CALL_TYPE_LIST_PTR:
 // Deserialize the list ${name} from the source value.
-if (NOT_EMPTY_P(source->${name})) {
+if (NOT_EMPTY_P(source->get_${name}())) {
 	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();
 	CHECK_ALLOC(__list, TYPE_NAME(vector));
-	for( ${type_ptr} v : *(source->${name})) {
+	for( const ${src_type_ptr} v : *(source->get_${name}())) {
 		CHECK_NOT_NULL(v);
 		${type_ptr} __tv = new ${type}(v);
 		CHECK_NOT_NULL(__tv);
@@ -749,12 +728,13 @@ if (NOT_EMPTY_P(source->${name})) {
 ;;
 COPY_CALL_NATIVE_MAP:
 // Deserialize the map ${name} from the source value.
-if (NOT_EMPTY_P(source.${name})) {
+if (NOT_EMPTY_P(source.get_${name}())) {
 	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
 	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
-	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;
-	for (iter = source.${name}->begin(); iter != source.${name}->end(); iter++) {
+	const std::unordered_map<${key_type}, ${value_type_ptr}> *__s_map = source.get_${name}();
+	std::unordered_map<${key_type}, ${value_type_ptr} >::const_iterator iter;
+	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {
 		CHECK_NOT_NULL(iter->second);
 		${value_type_ptr} __tv = (${value_type_ptr}) malloc(sizeof(${value_type}));
 		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
@@ -767,12 +747,13 @@ if (NOT_EMPTY_P(source.${name})) {
 
 COPY_CALL_NATIVE_MAP_PTR:
 // Deserialize the map ${name} from the source value.
-if (NOT_EMPTY_P(source->${name})) {
+if (NOT_EMPTY_P(source->get_${name}())) {
 	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
 	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
-	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;
-	for (iter = source->${name}->begin(); iter != source->${name}->end(); iter++) {
+	const std::unordered_map<${key_type}, ${value_type_ptr} > *__s_map = source->get_${name}();
+	std::unordered_map<${key_type}, ${value_type_ptr} >::const_iterator iter;
+	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {
 		CHECK_NOT_NULL(iter->second);
 		${value_type_ptr} __tv = (${value_type_ptr}) malloc(sizeof(${value_type}));
 		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
@@ -785,12 +766,13 @@ if (NOT_EMPTY_P(source->${name})) {
 
 COPY_CALL_TYPE_MAP:
 // Deserialize the map ${name} from the source value.
-if (NOT_EMPTY_P(source.${name})) {
+if (NOT_EMPTY_P(source.get_${name}())) {
 	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
 	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
-	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;
-	for (iter = source.${name}->begin(); iter != source.${name}->end(); iter++) {
+	const std::unordered_map<${key_type}, ${src_value_type_ptr} > *__s_map =  source.get_${name}();
+	std::unordered_map<${key_type}, ${src_value_type_ptr} >::const_iterator iter;
+	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {
 		CHECK_NOT_NULL(iter->second);
 		${value_type_ptr} __tv = new ${value_type}(*iter->second);
 		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
@@ -802,12 +784,13 @@ if (NOT_EMPTY_P(source.${name})) {
 
 COPY_CALL_TYPE_MAP_PTR:
 // Deserialize the map ${name} from the source value.
-if (NOT_EMPTY_P(source->${name})) {
+if (NOT_EMPTY_P(source->get_${name}())) {
 	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();
 	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));
 
-	std::unordered_map<${key_type}, ${value_type_ptr} >::iterator iter;
-	for (iter = source->${name}->begin(); iter != source->${name}->end(); iter++) {
+	const std::unordered_map<${key_type}, ${src_value_type_ptr} > *__s_map =  source->get_${name}();
+	std::unordered_map<${key_type}, ${src_value_type_ptr} >::const_iterator iter;
+	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {
 		CHECK_NOT_NULL(iter->second);
 		${value_type_ptr} __tv = new ${value_type}(iter->second);
 		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));
@@ -823,7 +806,6 @@ FUNC_DESTRUCTOR:
  */
 ~${name}() {
     	${variable_frees}
-	__base_type::free_data_ptr();
 }
 ;;
 
