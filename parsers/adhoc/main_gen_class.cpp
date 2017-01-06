@@ -26,9 +26,9 @@ mutable_test_type *generate_type(const __complex_type *type, int index) {
     float fv = index * 1.005f;
     tt->set_testFloat(fv);
 
-    for (int ii = 0; ii < index + 1; ii++) {
+    for (int ii = 1; ii < index + 1; ii++) {
         string key = common_utils::format("TEST_STRING_%d::%d", index, ii);
-        double dk = (index * 123.456f) / (ii + 1);
+        double dk = (index * 123.456f) / ii;
         tt->add_to_testListString(key);
         tt->add_to_testMapString(dk, key);
     }
@@ -49,7 +49,7 @@ mutable_test_ref_type *generate_ref(const __complex_type *type, string &key, int
     const __complex_type *vt = dynamic_cast<const __complex_type *>(nt);
     CHECK_CAST(vt, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
 
-    for (int ii = 0; ii < index; ii++) {
+    for (int ii = 1; ii < index; ii++) {
         string key = common_utils::format("TEST_REF_TYPE_%d::%d", index, ii);
         mutable_test_type *tt = generate_type(vt, ii + 1);
         tr->add_to_testRefMap(key, tt);
@@ -86,7 +86,7 @@ mutable_test_schema *generate_schema(const __complex_type *schema, int index) {
     const __complex_type *lreft = dynamic_cast<const __complex_type *>(type);
     CHECK_CAST(lreft, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
 
-    for (int ii = 0; ii < index; ii++) {
+    for (int ii = 1; ii < index; ii++) {
         mutable_test_type *tt = generate_type(lreft, ii + 1);
         ts->add_to_testListRef(tt);
     }
