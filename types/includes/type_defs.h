@@ -48,7 +48,7 @@ REACTFS_NS_CORE
                         __complex_type *fields = nullptr;
 
                         record_struct *get_read_record() {
-                            record_struct *ptr = new record_struct(fields, fields->get_field_count());
+                            record_struct *ptr = new record_struct(fields);
                             CHECK_ALLOC(ptr, TYPE_NAME(record_struct));
                             return ptr;
                         }
@@ -205,6 +205,19 @@ REACTFS_NS_CORE
                             return fields->estimate_size();
                         }
 
+                        void print(const void *value) const override {
+                            const mutable_record_struct *st = static_cast<const mutable_record_struct *>(value);
+                            for (uint8_t ii = 0; ii < st->get_field_count(); ii++) {
+                                const __native_type *type = this->fields->get_field(ii);
+                                void *fv = st->get_field(ii);
+                                if (NOT_NULL(fv)) {
+                                    TRACE("Field [%s]:", type->get_canonical_name().c_str());
+                                    type->get_type_handler(__record_mode::RM_WRITE)->print(fv);
+                                } else {
+                                    TRACE("Field [%s] is NULL.", type->get_canonical_name().c_str());
+                                }
+                            }
+                        }
                     };
 
                     /*!
@@ -364,6 +377,25 @@ REACTFS_NS_CORE
                         virtual uint32_t estimate_size() override {
                             uint32_t r_size = this->type_handler->estimate_size();
                             return (r_size * COLLECTION_SIZE_FACTOR);
+                        }
+
+                        void print(const void *value) const override {
+
+                            cout << "************************" << " VECTOR " << "************************\n";
+                            if (inner_type == __type_def_enum::TYPE_STRUCT) {
+                                const vector<mutable_record_struct *> *vv = static_cast<const vector<mutable_record_struct *> *>(value);
+                                CHECK_CAST(vv, TYPE_NAME(void * ), TYPE_NAME(vector));
+
+                                for (mutable_record_struct *v : *vv) {
+                                    type_handler->print(v);
+                                }
+                            } else {
+                                const vector<__T *> *data = static_cast< const vector<__T *> *>(value);
+                                for (__T *t : *data) {
+                                    type_handler->print(t);
+                                }
+                            }
+                            cout << "************************" << " VECTOR " << "************************\n";
                         }
                     };
 
@@ -609,6 +641,30 @@ REACTFS_NS_CORE
                             uint32_t v_size = vt_handler->estimate_size();
                             return ((k_size * COLLECTION_SIZE_FACTOR) + (v_size * COLLECTION_SIZE_FACTOR));
                         }
+
+
+                        void print(const void *value) const override {
+                            cout << "************************" << " MAP " << "************************\n";
+                            if (value_type == __type_def_enum::TYPE_STRUCT) {
+                                const unordered_map<__K, mutable_record_struct *> *data = static_cast<const unordered_map<__K, mutable_record_struct *> *>(value);
+                                for (auto iter = data->begin(); iter != data->end(); iter++) {
+                                    const __K key = iter->first;
+                                    const mutable_record_struct * value = iter->second;
+                                    kt_handler->print(&key);
+                                    vt_handler->print(value);
+                                }
+                            } else {
+                                const unordered_map<__K, __V *> *data = static_cast<const unordered_map<__K, __V *> *>(value);
+                                for (auto iter = data->begin(); iter != data->end(); iter++) {
+                                    const __K key = iter->first;
+                                    const __V *value = iter->second;
+
+                                    kt_handler->print(&key);
+                                    vt_handler->print(value);
+                                }
+                            }
+                            cout << "************************" << " MAP " << "************************\n";
+                        }
                     };
 
                     template<typename __V, __type_def_enum __value_type>
@@ -707,6 +763,7 @@ REACTFS_NS_CORE
                             }
                             return sizeof(uint64_t);
                         }
+
                     };
 
                     class ___read_struct_list : public __dt_list<record_struct, __type_def_enum::TYPE_STRUCT> {

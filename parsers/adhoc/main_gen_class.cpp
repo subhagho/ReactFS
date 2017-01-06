@@ -124,6 +124,7 @@ main(const int argc, const char **argv) {
                 mutable_test_schema *ts = source[ii];
                 mutable_record_struct *data = ts->serialize();
                 CHECK_NOT_NULL(data);
+                data->print();
                 CHECK_AND_FREE(data);
             }
 

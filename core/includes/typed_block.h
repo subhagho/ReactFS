@@ -115,7 +115,7 @@ REACTFS_NS_CORE
                      * @return - Record pointer of the added record.
                      */
                     __record *
-                    __write_record(__struct_datatype__ *source, string transcation_id, uint64_t uncompressed_size);
+                    __write_record(mutable_record_struct *source, string transcation_id, uint64_t uncompressed_size);
 
                     /*!
                      * Read a record from this block at the specified index.

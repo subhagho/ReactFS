@@ -31,6 +31,7 @@
 #include "common/includes/time_utils.h"
 #include "common/includes/base_error.h"
 #include "common/includes/buffer_utils.h"
+#include "common/includes/log_utils.h"
 #include "core/includes/core.h"
 
 #define SIZE_MAX_TYPE_STRING 256
@@ -446,6 +447,8 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool compare(const void *target, void *source, __constraint_operator oper) = 0;
+
+                        virtual void print(const void *value) const = 0;
                     };
 
                     /*!
@@ -628,6 +631,12 @@ REACTFS_NS_CORE
                                     return false;
                             }
                         }
+
+                        void print(const void *value) const override {
+                            const uint8_t *s = static_cast<const uint8_t *>(value);
+                            string ss = to_string(*s);
+                            TRACE("[byte] %s", ss.c_str());
+                        }
                     };
 
                     /*!
@@ -720,6 +729,12 @@ REACTFS_NS_CORE
                                     return false;
                             }
                         }
+
+                        void print(const void *value) const override {
+                            const char *s = static_cast<const char *>(value);
+                            string ss = to_string(*s);
+                            TRACE("[char] %s", ss.c_str());
+                        }
                     };
 
                     /*!
@@ -801,6 +816,12 @@ REACTFS_NS_CORE
                             if (oper == __constraint_operator::EQ)
                                 return (*s == *t);
                             return false;
+                        }
+
+                        void print(const void *value) const override {
+                            const bool *s = static_cast<const bool *>(value);
+                            string ss = to_string(*s);
+                            TRACE("[bool] %s", ss.c_str());
                         }
                     };
 
@@ -894,6 +915,12 @@ REACTFS_NS_CORE
                                     return false;
                             }
                         }
+
+                        void print(const void *value) const override {
+                            const short *s = static_cast<const short *>(value);
+                            string ss = to_string(*s);
+                            TRACE("[short] %s", ss.c_str());
+                        }
                     };
 
                     /*!
@@ -985,6 +1012,12 @@ REACTFS_NS_CORE
                                 default:
                                     return false;
                             }
+                        }
+
+                        void print(const void *value) const override {
+                            const int *s = static_cast<const int *>(value);
+                            string ss = to_string(*s);
+                            TRACE("[int] %s", ss.c_str());
                         }
                     };
 
@@ -1078,6 +1111,12 @@ REACTFS_NS_CORE
                                     return false;
                             }
                         }
+
+                        void print(const void *value) const override {
+                            const long *s = static_cast<const long *>(value);
+                            string ss = to_string(*s);
+                            TRACE("[long] %s", ss.c_str());
+                        }
                     };
 
                     /*!
@@ -1169,6 +1208,12 @@ REACTFS_NS_CORE
                                 default:
                                     return false;
                             }
+                        }
+
+                        void print(const void *value) const override {
+                            const uint64_t *s = static_cast<const uint64_t *>(value);
+                            string ss = to_string(*s);
+                            TRACE("[timestamp] %s", ss.c_str());
                         }
                     };
 
@@ -1328,6 +1373,12 @@ REACTFS_NS_CORE
                                     return false;
                             }
                         }
+
+                        void print(const void *value) const override {
+                            const float *s = static_cast<const float *>(value);
+                            string ss = to_string(*s);
+                            TRACE("[float] %s", ss.c_str());
+                        }
                     };
 
                     /*!
@@ -1419,6 +1470,12 @@ REACTFS_NS_CORE
                                 default:
                                     return false;
                             }
+                        }
+
+                        void print(const void *value) const override {
+                            const double *s = static_cast<const double *>(value);
+                            string ss = to_string(*s);
+                            TRACE("[double] %s", ss.c_str());
                         }
                     };
 
@@ -1526,6 +1583,12 @@ REACTFS_NS_CORE
                                 default:
                                     return false;
                             }
+                        }
+
+                        void print(const void *value) const override {
+                            const char *s = static_cast<const char *>(value);
+                            string ss(s);
+                            TRACE("[string] %s", ss.c_str());
                         }
                     };
 

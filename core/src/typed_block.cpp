@@ -61,7 +61,7 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     state.set_state(__state_enum::Available);
 }
 
-__record* com::wookler::reactfs::core::typed_block::__write_record(__struct_datatype__ *source,
+__record* com::wookler::reactfs::core::typed_block::__write_record(mutable_record_struct *source,
                                                                    string transaction_id, uint64_t uncompressed_size) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(source);
@@ -90,7 +90,7 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(__struct_data
     w_ptr = buffer_utils::increment_data_ptr(w_ptr, sizeof(__record_header));
     record->data_ptr = w_ptr;
 
-    __base_datatype_io *handler = this->datetype->get_type_handler();
+    __base_datatype_io *handler = this->datetype->get_type_handler(__record_mode::RM_WRITE);
     CHECK_NOT_NULL(handler);
     __dt_struct *dt_struct = dynamic_cast<__dt_struct *>(handler);
     CHECK_CAST(dt_struct, TYPE_NAME(__base_datatype_io), TYPE_NAME(__dt_struct));
@@ -117,7 +117,7 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(__struct_data
 
 uint64_t com::wookler::reactfs::core::typed_block::write(void *source, uint32_t length, string transaction_id) {
     CHECK_NOT_NULL(source);
-    __struct_datatype__ *data = static_cast<__struct_datatype__ *>(source);
+    mutable_record_struct *data = static_cast<mutable_record_struct *>(source);
     CHECK_CAST(data, TYPE_NAME(void), TYPE_NAME(__struct_datatype__));
     __record *r_ptr = __write_record(data, transaction_id, 0);
 
@@ -142,13 +142,13 @@ com::wookler::reactfs::core::typed_block::__read_record(uint64_t index, uint64_t
     record->header = static_cast<__record_header *>(rptr);
     rptr = buffer_utils::increment_data_ptr(rptr, sizeof(__record_header));
 
-    __base_datatype_io *handler = this->datetype->get_type_handler();
+    __base_datatype_io *handler = this->datetype->get_type_handler(__record_mode::RM_READ);
     CHECK_NOT_NULL(handler);
     __dt_struct *dt_struct = dynamic_cast<__dt_struct *>(handler);
     CHECK_CAST(dt_struct, TYPE_NAME(__base_datatype_io), TYPE_NAME(__dt_struct));
 
-    __struct_datatype__ *st_data = new __struct_datatype__();
-    CHECK_ALLOC(st_data, TYPE_NAME(__struct_datatype__));
+    record_struct *st_data = new record_struct(this->datetype);
+    CHECK_ALLOC(st_data, TYPE_NAME(record_struct));
 
     dt_struct->read(rptr, st_data, 0, size);
     record->data_ptr = st_data;
@@ -183,7 +183,7 @@ com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t c
             break;
     }
 
-    __base_datatype_io *handler = this->datetype->get_type_handler();
+    __base_datatype_io *handler = this->datetype->get_type_handler(__record_mode::RM_READ);
     CHECK_NOT_NULL(handler);
     __dt_struct *dt_struct = dynamic_cast<__dt_struct *>(handler);
     CHECK_CAST(dt_struct, TYPE_NAME(__base_datatype_io), TYPE_NAME(__dt_struct));
@@ -213,8 +213,8 @@ com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t c
                 break;
         }
 
-        __struct_datatype__ *st = (__struct_datatype__ *) malloc(sizeof(__struct_datatype__));
-        CHECK_ALLOC(st, TYPE_NAME(__struct_datatype__));
+        record_struct *st = new record_struct(this->datetype);
+        CHECK_ALLOC(st, TYPE_NAME(record_struct));
         dt_struct->read(ptr->data_ptr, &st, 0, ptr->header->data_size);
 
         shared_read_ptr s_ptr = make_shared<__read_ptr>(ptr->header->data_size);

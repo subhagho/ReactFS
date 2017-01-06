@@ -264,7 +264,7 @@ REACTFS_NS_CORE
                          * @param mode - Handler for read or write?
                          * @return - Type IO handler.
                          */
-                        virtual __base_datatype_io *get_type_handler(__record_mode mode) {
+                        virtual __base_datatype_io *get_type_handler(__record_mode mode) const {
                             return this->type_handler;
                         }
 
@@ -873,9 +873,9 @@ REACTFS_NS_CORE
 
 
                     public:
-                        record_struct(const __complex_type *type, uint8_t field_count) {
+                        record_struct(const __complex_type *type) {
                             CHECK_NOT_NULL(type);
-                            this->field_count = field_count;
+                            this->field_count = type->get_field_count();
                             data_ptr = new __field_value *[this->field_count];
                             CHECK_ALLOC(data_ptr, TYPE_NAME(__field_value * ));
 
@@ -902,9 +902,11 @@ REACTFS_NS_CORE
                                     continue;
                                 }
                                 helper->free_type_node(type, ptr, __record_mode::RM_READ);
+                                memset(ptr, 0, sizeof(__field_value));
                             }
                             FREE_PTR(buffer);
                             FREE_PTR(data_ptr);
+                            this->type = nullptr;
                         }
 
                         void add_field(const uint8_t index, void *data) {
@@ -975,6 +977,7 @@ REACTFS_NS_CORE
                         __field_value *buffer = nullptr;
                         uint8_t field_count = 0;
                         __field_value **data_ptr = nullptr;
+                        string uuid;
 
                     public:
                         mutable_record_struct(const __complex_type *type) {
@@ -992,9 +995,12 @@ REACTFS_NS_CORE
                                 data_ptr[ii] = nullptr;
                             }
                             this->type = type;
+                            this->uuid = common_utils::uuid();
                         }
 
                         ~mutable_record_struct() {
+                            TRACE("Freeing struct [%s]", uuid.c_str());
+
                             __complex_type_helper *helper = __complex_type_helper::get_type_loader();
                             CHECK_NOT_NULL(helper);
                             for (uint8_t ii = 0; ii < field_count; ii++) {
@@ -1006,7 +1012,10 @@ REACTFS_NS_CORE
                                     continue;
                                 }
                                 helper->free_type_node(type, ptr, __record_mode::RM_WRITE);
+                                memset(ptr, 0, sizeof(__field_value));
+                                data_ptr[ii] = nullptr;
                             }
+                            this->type = nullptr;
                             FREE_PTR(buffer);
                             FREE_PTR(data_ptr);
                         }
@@ -1069,7 +1078,18 @@ REACTFS_NS_CORE
                             }
                             return true;
                         }
+
+                        void print() {
+                            for (uint8_t ii = 0; ii < field_count; ii++) {
+                                if (IS_NULL(data_ptr[ii]))
+                                    continue;
+                                __field_value *ptr = data_ptr[ii];
+                                string ty = ptr->type->get_type_name(common_consts::EMPTY_STRING);
+                                TRACE("%s --> %s", ty.c_str(), ptr->type->get_canonical_name().c_str());
+                            }
+                        }
                     };
+
                     /*!
                      * Utility class defining helper methods for type creation/instantiation.
                      */
@@ -1268,7 +1288,7 @@ REACTFS_NS_CORE
                             return common_utils::format("std::vector<%s>", it.c_str());
                         }
 
-                        __base_datatype_io *get_type_handler(__record_mode mode) override {
+                        __base_datatype_io *get_type_handler(__record_mode mode) const override {
                             if (mode == __record_mode::RM_WRITE) {
                                 return this->write_handler;
                             } else {
@@ -1430,7 +1450,7 @@ REACTFS_NS_CORE
                             return common_utils::format("std::unordered_map<%s, %s>", kt.c_str(), vt.c_str());
                         }
 
-                        __base_datatype_io *get_type_handler(__record_mode mode) override {
+                        __base_datatype_io *get_type_handler(__record_mode mode) const override {
                             if (mode == __record_mode::RM_WRITE) {
                                 return this->write_handler;
                             } else {
