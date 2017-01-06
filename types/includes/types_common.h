@@ -43,11 +43,10 @@ using namespace REACTFS_NS_COMMON_PREFIX;
 
 REACTFS_NS_CORE
                 namespace types {
-                    struct cmp_str {
-                        bool operator()(char const *a, char const *b) {
-                            return std::strcmp(a, b) < 0;
-                        }
-                    };
+                    typedef struct __pos__ {
+                        uint64_t offset = 0;
+                        uint64_t size = 0;
+                    } __pos;
 
                     /*!
                      * Enum defines the supported data types.

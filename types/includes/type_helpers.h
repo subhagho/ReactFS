@@ -1761,8 +1761,8 @@ REACTFS_NS_CORE
                     public:
                         void read(__native_type *parent, void *buffer, uint64_t offset, uint8_t count,
                                   vector<__native_type *> *fields,
-                                  uint32_t *size) override {
-                            uint32_t r_size = 0;
+                                  uint64_t *size) override {
+                            uint64_t r_size = 0;
                             for (uint8_t ii = 0; ii < count; ii++) {
                                 // Read the field type.
                                 void *ptr = buffer_utils::increment_data_ptr(buffer, (offset + r_size));

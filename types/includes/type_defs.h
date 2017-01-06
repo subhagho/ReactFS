@@ -75,19 +75,20 @@ REACTFS_NS_CORE
                             record_struct **T = (record_struct **) t;
                             *T = get_read_record();
                             CHECK_NOT_NULL(*T);
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
 
-                            uint64_t r_offset = offset;
-                            uint64_t t_size = 0;
                             uint64_t *size = nullptr;
-                            t_size += buffer_utils::read<uint64_t>(buffer, &r_offset, &size);
+                            pos.size += buffer_utils::read<uint64_t>(buffer, &pos.offset, &size);
                             CHECK_NOT_NULL(size);
 
                             unordered_map<uint8_t, __native_type *> types = fields->get_fields();
                             CHECK_NOT_EMPTY(types);
                             unordered_map<uint8_t, __native_type *>::const_iterator iter;
-                            while (r_offset < max_length && *size > 0) {
+                            while (pos.offset < max_length && *size > 0) {
                                 uint8_t *ci = nullptr;
-                                t_size += buffer_utils::read<uint8_t>(buffer, &r_offset, &ci);
+                                pos.size += buffer_utils::read<uint8_t>(buffer, &pos.offset, &ci);
                                 iter = types.find(*ci);
                                 POSTCONDITION(iter != types.end());
                                 __native_type *type = iter->second;
@@ -96,14 +97,14 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(handler);
                                 uint64_t r = 0;
                                 void *value = nullptr;
-                                r = handler->read(buffer, &value, r_offset, max_length);
+                                r = handler->read(buffer, &value, pos.offset, max_length);
                                 CHECK_NOT_NULL(value);
                                 (*T)->add_field(type->get_index(), value);
-                                t_size += r;
-                                r_offset += r;
+                                pos.size += r;
+                                pos.offset += r;
                                 *size -= r;
                             }
-                            return t_size;
+                            return pos.size;
                         }
 
                         virtual uint64_t
@@ -112,11 +113,15 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(rec);
                             POSTCONDITION(rec->get_field_count() == fields->get_field_count());
 
-                            uint64_t r_offset = offset;
-                            uint64_t t_size = 0;
-                            void *ptr = buffer_utils::increment_data_ptr(buffer, (offset + t_size));
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
+
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             uint64_t *w_size = static_cast<uint64_t *>(ptr);
-                            t_size += sizeof(uint64_t);
+                            *w_size = 0;
+                            pos.size += sizeof(uint64_t);
+                            pos.offset += sizeof(uint64_t);
 
                             unordered_map<uint8_t, __native_type *> types = fields->get_fields();
                             CHECK_NOT_EMPTY(types);
@@ -151,16 +156,16 @@ REACTFS_NS_CORE
                                         }
                                     }
                                     uint8_t ci = type->get_index();
-                                    uint64_t r = buffer_utils::write<uint8_t>(buffer, &r_offset, ci);
-                                    t_size += r;
+                                    uint64_t r = buffer_utils::write<uint8_t>(buffer, &pos.offset, ci);
+                                    pos.size += r;
                                     *w_size += r;
-                                    r = handler->write(buffer, d, r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
+                                    r = handler->write(buffer, d, pos.offset, max_length);
+                                    pos.offset += r;
+                                    pos.size += r;
                                     *w_size += r;
                                 }
                             }
-                            return t_size;
+                            return pos.size;
                         }
 
                         virtual uint64_t compute_size(const void *data, int size = 0) override {
@@ -278,9 +283,12 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(t);
                             CHECK_NOT_NULL(type_handler);
 
-                            uint64_t r_offset = offset;
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
+
                             uint16_t *r_count = nullptr;
-                            uint64_t t_size = buffer_utils::read<uint16_t>(buffer, &r_offset, &r_count);
+                            pos.size = buffer_utils::read<uint16_t>(buffer, &pos.offset, &r_count);
                             CHECK_NOT_NULL(r_count);
 
                             vector<__T *> **list = (vector<__T *> **) t;
@@ -291,13 +299,13 @@ REACTFS_NS_CORE
 
                                 for (uint16_t ii = 0; ii < *r_count; ii++) {
                                     __T *t = nullptr;
-                                    uint64_t r = type_handler->read(buffer, &t, r_offset, max_length);
+                                    uint64_t r = type_handler->read(buffer, &t, pos.offset, max_length);
                                     CHECK_NOT_NULL(t);
                                     (*list)->push_back(t);
-                                    r_offset += r;
-                                    t_size += r;
+                                    pos.offset += r;
+                                    pos.size += r;
                                 }
-                                return t_size;
+                                return pos.size;
                             }
                             return sizeof(uint16_t);
                         }
@@ -316,19 +324,22 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(value);
                             CHECK_NOT_NULL(type_handler);
 
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
+
                             const vector<__T *> *list = static_cast<const vector<__T *> *>( value);
 
                             uint16_t a_size = list->size();
-                            uint64_t r_offset = offset;
-                            uint64_t t_size = buffer_utils::write<uint16_t>(buffer, &r_offset, a_size);
+                            pos.size = buffer_utils::write<uint16_t>(buffer, &pos.offset, a_size);
 
                             if (a_size > 0) {
                                 for (uint64_t ii = 0; ii < a_size; ii++) {
-                                    uint64_t r = type_handler->write(buffer, (*list)[ii], r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
+                                    uint64_t r = type_handler->write(buffer, (*list)[ii], pos.offset, max_length);
+                                    pos.offset += r;
+                                    pos.size += r;
                                 }
-                                return t_size;
+                                return pos.size;
                             }
                             return sizeof(uint16_t);
                         }
@@ -527,9 +538,12 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(kt_handler);
                             CHECK_NOT_NULL(vt_handler);
 
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
+
                             uint16_t *r_count = nullptr;
-                            uint64_t r_offset = offset;
-                            uint64_t t_size = buffer_utils::read<uint16_t>(buffer, &r_offset, &r_count);
+                            pos.size = buffer_utils::read<uint16_t>(buffer, &pos.offset, &r_count);
                             CHECK_NOT_NULL(r_count);
 
                             if (r_count > 0) {
@@ -540,19 +554,19 @@ REACTFS_NS_CORE
                                     __K *key = nullptr;
                                     __V *value = nullptr;
 
-                                    uint64_t r = kt_handler->read(buffer, &key, r_offset, max_length);
+                                    uint64_t r = kt_handler->read(buffer, &key, pos.offset, max_length);
                                     CHECK_NOT_NULL(key);
-                                    r_offset += r;
-                                    t_size += r;
-                                    r = vt_handler->read(buffer, &value, r_offset, max_length);
+                                    pos.offset += r;
+                                    pos.size += r;
+                                    r = vt_handler->read(buffer, &value, pos.offset, max_length);
                                     CHECK_NOT_NULL(value);
-                                    r_offset += r;
-                                    t_size += r;
+                                    pos.offset += r;
+                                    pos.size += r;
 
                                     (*T)->insert({*key, value});
                                 }
 
-                                return t_size;
+                                return pos.size;
                             }
                             return sizeof(uint64_t);
                         }
@@ -572,6 +586,10 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(vt_handler);
                             CHECK_NOT_NULL(value);
 
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
+
                             const unordered_map<__K, __V *> *map = (const unordered_map<__K, __V *> *) value;
                             CHECK_NOT_NULL(map);
 
@@ -579,19 +597,18 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(vt_handler);
 
                             uint16_t m_size = map->size();
-                            uint64_t r_offset = offset;
-                            uint64_t t_size = buffer_utils::write<uint16_t>(buffer, &r_offset, m_size);
+                            pos.size = buffer_utils::write<uint16_t>(buffer, &pos.offset, m_size);
 
                             if (!map->empty()) {
                                 for (auto iter = map->begin(); iter != map->end(); iter++) {
-                                    uint64_t r = kt_handler->write(buffer, &(iter->first), r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                    r = vt_handler->write(buffer, iter->second, r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
+                                    uint64_t r = kt_handler->write(buffer, &(iter->first), pos.offset, max_length);
+                                    pos.offset += r;
+                                    pos.size += r;
+                                    r = vt_handler->write(buffer, iter->second, pos.offset, max_length);
+                                    pos.offset += r;
+                                    pos.size += r;
                                 }
-                                return t_size;
+                                return pos.size;
                             }
                             return sizeof(uint16_t);
                         }
@@ -698,24 +715,27 @@ REACTFS_NS_CORE
                             const unordered_map<string, __V *> *map = (const unordered_map<string, __V *> *) value;
                             CHECK_NOT_NULL(map);
 
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
+
                             CHECK_NOT_NULL(this->kt_handler);
                             CHECK_NOT_NULL(this->vt_handler);
 
                             uint16_t m_size = map->size();
-                            uint64_t r_offset = offset;
-                            uint64_t t_size = buffer_utils::write<uint16_t>(buffer, &r_offset, m_size);
+                            pos.size = buffer_utils::write<uint16_t>(buffer, &pos.offset, m_size);
 
                             if (!map->empty()) {
                                 for (auto iter = map->begin(); iter != map->end(); iter++) {
                                     string key = (iter->first);
-                                    uint64_t r = this->kt_handler->write(buffer, key.c_str(), r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
-                                    r = this->vt_handler->write(buffer, iter->second, r_offset, max_length);
-                                    r_offset += r;
-                                    t_size += r;
+                                    uint64_t r = this->kt_handler->write(buffer, key.c_str(), pos.offset, max_length);
+                                    pos.offset += r;
+                                    pos.size += r;
+                                    r = this->vt_handler->write(buffer, iter->second, pos.offset, max_length);
+                                    pos.offset += r;
+                                    pos.size += r;
                                 }
-                                return t_size;
+                                return pos.size;
                             }
                             return sizeof(uint16_t);
                         }
@@ -735,9 +755,12 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(this->kt_handler);
                             CHECK_NOT_NULL(this->vt_handler);
 
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
+
                             uint16_t *r_count = nullptr;
-                            uint64_t r_offset = offset;
-                            uint64_t t_size = buffer_utils::read<uint16_t>(buffer, &r_offset, &r_count);
+                            pos.size = buffer_utils::read<uint16_t>(buffer, &pos.offset, &r_count);
                             CHECK_NOT_NULL(r_count);
 
                             if (r_count > 0) {
@@ -748,19 +771,19 @@ REACTFS_NS_CORE
                                     CHARBUFF key = nullptr;
                                     __V *value = nullptr;
 
-                                    uint64_t r = this->kt_handler->read(buffer, &key, r_offset, max_length);
+                                    uint64_t r = this->kt_handler->read(buffer, &key, pos.offset, max_length);
                                     CHECK_NOT_NULL(key);
-                                    r_offset += r;
-                                    t_size += r;
-                                    r = this->vt_handler->read(buffer, &value, r_offset, max_length);
+                                    pos.offset += r;
+                                    pos.size += r;
+                                    r = this->vt_handler->read(buffer, &value, pos.offset, max_length);
                                     CHECK_NOT_NULL(value);
-                                    r_offset += r;
-                                    t_size += r;
+                                    pos.offset += r;
+                                    pos.size += r;
                                     string ss = string(key);
                                     (*T)->insert({ss, value});
                                 }
 
-                                return t_size;
+                                return pos.size;
                             }
                             return sizeof(uint64_t);
                         }
