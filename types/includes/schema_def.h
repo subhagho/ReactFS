@@ -896,11 +896,12 @@ REACTFS_NS_CORE
                             for (uint8_t ii = 0; ii < field_count; ii++) {
                                 if (IS_NULL(data_ptr[ii]))
                                     continue;
-                                __type_def_enum t = data_ptr[ii]->type->get_datatype();
+                                __field_value *ptr = data_ptr[ii];
+                                __type_def_enum t = ptr->type->get_datatype();
                                 if (__type_enum_helper::is_native(t)) {
                                     continue;
                                 }
-                                helper->free_type_node(type, data_ptr[ii], __record_mode::RM_READ);
+                                helper->free_type_node(type, ptr, __record_mode::RM_READ);
                             }
                             FREE_PTR(buffer);
                             FREE_PTR(data_ptr);
@@ -999,11 +1000,12 @@ REACTFS_NS_CORE
                             for (uint8_t ii = 0; ii < field_count; ii++) {
                                 if (IS_NULL(data_ptr[ii]))
                                     continue;
-                                __type_def_enum t = data_ptr[ii]->type->get_datatype();
+                                __field_value *ptr = data_ptr[ii];
+                                __type_def_enum t = ptr->type->get_datatype();
                                 if (__type_enum_helper::is_native(t)) {
                                     continue;
                                 }
-                                helper->free_type_node(type, data_ptr[ii], __record_mode::RM_READ);
+                                helper->free_type_node(type, ptr, __record_mode::RM_WRITE);
                             }
                             FREE_PTR(buffer);
                             FREE_PTR(data_ptr);
