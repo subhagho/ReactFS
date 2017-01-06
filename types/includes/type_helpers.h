@@ -1883,7 +1883,7 @@ REACTFS_NS_CORE
                                 if (lt->get_inner_type()->get_datatype() == __type_def_enum::TYPE_STRUCT) {
                                     free_type_list(lt, node, mode);
                                 } else {
-                                    free_native_list(lt, node);
+                                    // free_native_list(lt, node);
                                 }
                             } else if (type->get_type() == __field_type::MAP) {
                                 const __map_type *mt = dynamic_cast<const __map_type *>(type);
@@ -1891,7 +1891,7 @@ REACTFS_NS_CORE
                                 if (mt->get_value_type()->get_datatype() == __type_def_enum::TYPE_STRUCT) {
                                     free_type_map(mt, node, mode);
                                 } else {
-                                    free_native_map(mt, node);
+                                    // free_native_map(mt, node);
                                 }
                             }
                         }

@@ -17,6 +17,7 @@
         for( auto ll : *(list)) { \
             FREE_PTR(ll); \
         } \
+        TRACE("Freeing native list..."); \
         list->clear(); \
     } \
     CHECK_AND_FREE(list); \
@@ -27,6 +28,7 @@
         for( auto ll : *(list)) { \
             CHECK_AND_FREE(ll); \
         } \
+        TRACE("Freeing type list..."); \
         list->clear(); \
     } \
     CHECK_AND_FREE(list); \
@@ -37,6 +39,7 @@
         for (auto iter = map->begin(); iter != map->end(); iter++) { \
             FREE_PTR(iter->second); \
         } \
+        TRACE("Freeing native map..."); \
         map->clear(); \
     } \
     CHECK_AND_FREE(map); \
@@ -47,6 +50,7 @@
         for (auto iter = map->begin(); iter != map->end(); iter++) { \
             CHECK_AND_FREE(iter->second); \
         } \
+        TRACE("Freeing type map..."); \
         map->clear(); \
     } \
     CHECK_AND_FREE(map); \

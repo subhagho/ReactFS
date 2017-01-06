@@ -512,6 +512,10 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(this->type_handler);
                             return this->type_handler->estimate_size();
                         }
+
+                        virtual bool has_complex_type() const {
+                            return false;
+                        }
                     };
 
                     typedef struct __field_value__ {
@@ -861,6 +865,10 @@ REACTFS_NS_CORE
 
                         const uint8_t get_field_count() const {
                             return fields.size();
+                        }
+
+                        virtual bool has_complex_type() const override {
+                            return true;
                         }
                     };
 
@@ -1294,6 +1302,10 @@ REACTFS_NS_CORE
                                 return this->type_handler;
                             }
                         }
+
+                        virtual bool has_complex_type() const override {
+                            return inner->has_complex_type();
+                        }
                     };
 
                     class __map_type : public __native_type {
@@ -1463,6 +1475,10 @@ REACTFS_NS_CORE
                             } else {
                                 return this->type_handler;
                             }
+                        }
+
+                        virtual bool has_complex_type() const override {
+                            return value->has_complex_type();
                         }
                     };
 

@@ -807,7 +807,10 @@ REACTFS_NS_CORE
                                 REPLACE_TOKEN(str, tk_type, dt);
 
                                 TRACE("DECLARE [%s]", str.c_str());
-                                string c_str = common_utils::format("const %s", str.c_str());
+                                string c_str(str);
+                                if (!type->has_complex_type()) {
+                                    c_str = common_utils::format("const %s", str.c_str());
+                                }
                                 add_declare(c_str, ro_class);
                             }
                             {
@@ -1121,7 +1124,7 @@ REACTFS_NS_CORE
                             m_call_serde.push_back(tn);
                         }
 
-                        void generate_free_call(const __native_type *type, string token) {
+                        void generate_free_call(const __native_type *type, string token, bool add_both) {
                             string f_str;
                             READ_PARSED_ROWS(f_str, template_header, token);
 
@@ -1130,9 +1133,12 @@ REACTFS_NS_CORE
                             REPLACE_TOKEN(f_str, tk_name, tn);
 
                             m_class.free_calls.push_back(f_str);
+                            if (add_both) {
+                                ro_class.free_calls.push_back(f_str);
+                            }
                         }
 
-                        void generate_free_call_local(const __native_type *type, string token) {
+                        void generate_free_call_local(const __native_type *type, string token, bool add_both) {
                             string f_str;
                             READ_PARSED_ROWS(f_str, template_header, token);
 
@@ -1141,6 +1147,9 @@ REACTFS_NS_CORE
                             REPLACE_TOKEN(f_str, tk_name, tn);
 
                             m_class.free_calls.push_back(f_str);
+                            if (add_both) {
+                                ro_class.free_calls.push_back(f_str);
+                            }
                         }
 
                         string finish() {
