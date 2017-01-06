@@ -34,45 +34,54 @@ using namespace com::wookler::test;
 
 double D_VALUES[] = {2120, 1293, 98439, 980202};
 
-test_type *generate_type(int index) {
-    test_type *tt = new test_type();
-    CHECK_ALLOC(tt, TYPE_NAME(test_type));
+
+mutable_test_type *generate_type(const __complex_type *type, int index) {
+    mutable_test_type *tt = new mutable_test_type(type);
+    CHECK_ALLOC(tt, TYPE_NAME(mutable_test_type));
 
     string uuid = common_utils::uuid();
     uuid = common_utils::format("TEST_STRING_%s", uuid.c_str());
     tt->set_testString(uuid);
 
-    short in = index % 4;
-    double dv = D_VALUES[in];
+    double dv = index * 123.456f;
     tt->set_testDouble(dv);
 
-    float fv = 1100 + (index * 1.005f);
+    float fv = index * 1.005f;
     tt->set_testFloat(fv);
 
     for (int ii = 0; ii < index + 1; ii++) {
         string key = common_utils::format("TEST_STRING_%d::%d", index, ii);
-        double dk = (index * 123.456f) / ii;
+        double dk = (index * 123.456f) / (ii + 1);
         tt->add_to_testListString(key);
         tt->add_to_testMapString(dk, key);
     }
     return tt;
 }
 
-test_ref_type *generate_ref(string &key, int index) {
-    test_ref_type *tr = new test_ref_type();
+mutable_test_ref_type *generate_ref(const __complex_type *type, string &key, int index) {
+    mutable_test_ref_type *tr = new mutable_test_ref_type(type);
     CHECK_ALLOC(tr, TYPE_NAME(test_ref_type));
 
     tr->set_name(key);
-    for (int ii = 0; ii < index + 1; ii++) {
+    const __native_type *nt = type->get_field("testRefMap");
+    CHECK_NOT_NULL(nt);
+    const __map_type *mt = dynamic_cast<const __map_type *>(nt);
+    CHECK_CAST(mt, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
+    nt = mt->get_value_type();
+    CHECK_NOT_NULL(nt);
+    const __complex_type *vt = dynamic_cast<const __complex_type *>(nt);
+    CHECK_CAST(vt, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
+
+    for (int ii = 0; ii < index; ii++) {
         string key = common_utils::format("TEST_REF_TYPE_%d::%d", index, ii);
-        test_type *tt = generate_type(ii);
+        mutable_test_type *tt = generate_type(vt, ii + 1);
         tr->add_to_testRefMap(key, tt);
     }
     return tr;
 }
 
-test_schema *generate_schema(int index) {
-    test_schema *ts = new test_schema();
+mutable_test_schema *generate_schema(const __complex_type *schema, int index) {
+    mutable_test_schema *ts = new mutable_test_schema(schema);
     CHECK_ALLOC(ts, TYPE_NAME(test_schema));
 
     string uuid = common_utils::uuid();
@@ -83,11 +92,25 @@ test_schema *generate_schema(int index) {
     long lv = index * 1024;
     ts->set_testLong(lv);
 
-    test_ref_type *tr = generate_ref(uuid, index);
+    const __native_type *type = schema->get_field("testTypeRef");
+    CHECK_NOT_NULL(type);
+    const __complex_type *reft = dynamic_cast<const __complex_type *>(type);
+    CHECK_CAST(reft, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
+
+    mutable_test_ref_type *tr = generate_ref(reft, uuid, index);
     ts->set_testTypeRef(tr);
 
-    for (int ii = 0; ii < index + 1; ii++) {
-        test_type *tt = generate_type(ii);
+    type = schema->get_field("testListRef");
+    CHECK_NOT_NULL(type);
+    const __list_type *listRef = dynamic_cast<const __list_type *>(type);
+    CHECK_CAST(listRef, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
+    type = listRef->get_inner_type();
+    CHECK_NOT_NULL(type);
+    const __complex_type *lreft = dynamic_cast<const __complex_type *>(type);
+    CHECK_CAST(lreft, TYPE_NAME(__native_type), TYPE_NAME(__complex_type));
+
+    for (int ii = 0; ii < index; ii++) {
+        mutable_test_type *tt = generate_type(lreft, ii + 1);
         ts->add_to_testListRef(tt);
     }
     return ts;
@@ -124,9 +147,9 @@ void test_indexed(char *schemaf) {
     block->open(REUSE_BLOCK_INDEX_ID, p.get_path());
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
     string txid = block->start_transaction(0);
-    test_schema *ts = generate_schema(100);
+    mutable_test_schema *ts = generate_schema(schema, 100);
     CHECK_NOT_NULL(ts);
-    __struct_datatype__ *dt = ts->serialize();
+    mutable_record_struct *dt = ts->serialize();
     int index = block->write(dt, 0, txid);
     block->commit(txid);
 
@@ -134,8 +157,9 @@ void test_indexed(char *schemaf) {
     int c = block->read_struct(index, 1, &records);
     POSTCONDITION(c > 0);
     shared_read_ptr p0 = records[0];
-    __struct_datatype__ *dt0 = static_cast<__struct_datatype__ *>(p0.get()->get_data_ptr());
-    test_schema * nts = new test_schema(dt0);
+    record_struct *dt0 = static_cast<record_struct *>(p0.get()->get_data_ptr());
+    test_schema * nts = new test_schema();
+    nts->deserialize(dt0);
     CHECK_NOT_NULL(nts);
     CHECK_AND_FREE(block);
     
