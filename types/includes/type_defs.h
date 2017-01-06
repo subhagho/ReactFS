@@ -212,7 +212,8 @@ REACTFS_NS_CORE
                                 void *fv = st->get_field(ii);
                                 if (NOT_NULL(fv)) {
                                     TRACE("Field [%s]:", type->get_canonical_name().c_str());
-                                    type->get_type_handler(__record_mode::RM_WRITE)->print(fv);
+                                    __base_datatype_io *handler = type->get_type_handler(__record_mode::RM_WRITE);
+                                    handler->print(fv);
                                 } else {
                                     TRACE("Field [%s] is NULL.", type->get_canonical_name().c_str());
                                 }
