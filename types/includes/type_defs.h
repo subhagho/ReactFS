@@ -79,30 +79,33 @@ REACTFS_NS_CORE
                             pos.offset = offset;
                             pos.size = 0;
 
-                            uint64_t *size = nullptr;
-                            pos.size += buffer_utils::read<uint64_t>(buffer, &pos.offset, &size);
-                            CHECK_NOT_NULL(size);
+                            uint64_t *w_size = nullptr;
+                            pos.size += buffer_utils::read<uint64_t>(buffer, &pos.offset, &w_size);
+                            CHECK_NOT_NULL(w_size);
+                            uint64_t size = *w_size;
 
                             unordered_map<uint8_t, __native_type *> types = fields->get_fields();
                             CHECK_NOT_EMPTY(types);
                             unordered_map<uint8_t, __native_type *>::const_iterator iter;
-                            while (pos.offset < max_length && *size > 0) {
+                            while (pos.offset < max_length && size > 0) {
+                                uint64_t r = 0;
                                 uint8_t *ci = nullptr;
-                                pos.size += buffer_utils::read<uint8_t>(buffer, &pos.offset, &ci);
+                                r = buffer_utils::read<uint8_t>(buffer, &pos.offset, &ci);
+                                pos.size += r;
+                                size -= r;
                                 iter = types.find(*ci);
                                 POSTCONDITION(iter != types.end());
                                 __native_type *type = iter->second;
                                 CHECK_NOT_NULL(type);
                                 __base_datatype_io *handler = type->get_type_handler(__record_mode::RM_READ);
                                 CHECK_NOT_NULL(handler);
-                                uint64_t r = 0;
                                 void *value = nullptr;
                                 r = handler->read(buffer, &value, pos.offset, max_length);
                                 CHECK_NOT_NULL(value);
                                 (*T)->add_field(type->get_index(), value);
                                 pos.size += r;
                                 pos.offset += r;
-                                *size -= r;
+                                size -= r;
                             }
                             return pos.size;
                         }

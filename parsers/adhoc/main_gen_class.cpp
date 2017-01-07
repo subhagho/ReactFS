@@ -32,7 +32,7 @@ main(const int argc, const char **argv) {
 
             vector<mutable_test_schema *> source;
 
-            uint32_t rec_size = schema->estimate_size() * 20;
+            uint32_t rec_size = schema->estimate_size() * 200;
             LOG_DEBUG("Estimated record size = %d", rec_size);
 
             for (int ii = 10; ii < 20; ii++) {
@@ -53,13 +53,17 @@ main(const int argc, const char **argv) {
                 CHECK_NOT_NULL(data);
                 // data->print();
                 memset(buffer, 0, rec_size);
-                writer->write(buffer, data, 0, rec_size);
+                uint64_t w_size = writer->write(buffer, data, 0, rec_size);
+                LOG_DEBUG("[%s] size=%lu", ts->get_key(), w_size);
                 CHECK_AND_FREE(data);
 
                 record_struct *rec = nullptr;
                 reader->read(buffer, &rec, 0, rec_size);
                 CHECK_NOT_NULL(rec);
+                test_schema *rs = new test_schema();
+                rs->deserialize(rec);
                 CHECK_AND_FREE(rec);
+                CHECK_AND_FREE(rs);
             }
             FREE_PTR(buffer);
 
