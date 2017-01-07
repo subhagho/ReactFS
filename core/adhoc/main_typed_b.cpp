@@ -64,19 +64,24 @@ void test_indexed(char *schemaf) {
     block->open(REUSE_BLOCK_INDEX_ID, p.get_path());
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
     string txid = block->start_transaction(0);
-    mutable_test_schema *ts = generate_schema(schema, 100);
+    mutable_test_schema *ts = generate_schema(schema, 10);
     CHECK_NOT_NULL(ts);
     mutable_record_struct *dt = ts->serialize();
     int index = block->write(dt, 0, txid);
     block->commit(txid);
 
-    vector<record_struct *> records;
-    int c = block->read_struct(index, 1, &records);
-    POSTCONDITION(c > 0);
-    record_struct *p0 = records[0];
+    vector<record_struct *> *records = new vector<record_struct *>();
+    CHECK_ALLOC(records, TYPE_NAME(vector));
+    int c = block->read_struct(index, 1, records);
+    POSTCONDITION(records->size() > 0);
+    record_struct *p0 = (*records)[0];
     test_schema * nts = new test_schema();
     nts->deserialize(p0);
     CHECK_NOT_NULL(nts);
+    for(auto vp : *records) {
+        CHECK_AND_FREE(vp);
+    }
+    CHECK_AND_FREE(records);
     CHECK_AND_FREE(block);
     
 }

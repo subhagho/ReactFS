@@ -147,10 +147,10 @@ com::wookler::reactfs::core::typed_block::__read_record(uint64_t index, uint64_t
     __dt_struct *dt_struct = dynamic_cast<__dt_struct *>(handler);
     CHECK_CAST(dt_struct, TYPE_NAME(__base_datatype_io), TYPE_NAME(__dt_struct));
 
-    record_struct *st_data = new record_struct(this->datetype);
-    CHECK_ALLOC(st_data, TYPE_NAME(record_struct));
+    record_struct *st_data = nullptr;
 
-    dt_struct->read(rptr, st_data, 0, size);
+    dt_struct->read(rptr, &st_data, 0, record->header->data_size);
+    CHECK_NOT_NULL(st_data);
     record->data_ptr = st_data;
 
     POSTCONDITION(record->header->index == index);
@@ -183,11 +183,6 @@ com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t c
             break;
     }
 
-    __base_datatype_io *handler = this->datetype->get_type_handler(__record_mode::RM_READ);
-    CHECK_NOT_NULL(handler);
-    __dt_struct *dt_struct = dynamic_cast<__dt_struct *>(handler);
-    CHECK_CAST(dt_struct, TYPE_NAME(__base_datatype_io), TYPE_NAME(__dt_struct));
-
     uint64_t read_bytes = 0;
     nano_timer t;
     t.start();
@@ -213,9 +208,8 @@ com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t c
                 break;
         }
 
-        record_struct *st = nullptr;
-        dt_struct->read(ptr->data_ptr, &st, 0, ptr->header->data_size);
-        CHECK_NOT_NULL(st);
+        record_struct *st = static_cast<record_struct *>(ptr->data_ptr);
+        CHECK_CAST(st, TYPE_NAME(void *), TYPE_NAME(record_struct));
         data->push_back(st);
 
         current_index++;

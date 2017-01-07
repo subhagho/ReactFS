@@ -481,7 +481,7 @@ REACTFS_NS_CORE
                          */
                         void *get_data_ptr(void *source, uint64_t size, uint64_t offset, uint64_t max_length) {
                             CHECK_NOT_NULL(source);
-                            PRECONDITION((offset + size) < max_length);
+                            PRECONDITION(size <= max_length);
                             return buffer_utils::increment_data_ptr(source, offset);
                         }
 

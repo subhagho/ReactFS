@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cstdlib>
 #include <cstring>
 #include <stdlib.h>
 
@@ -32,7 +31,7 @@ main(const int argc, const char **argv) {
 
             vector<mutable_test_schema *> source;
 
-            uint32_t rec_size = schema->estimate_size() * 200;
+            uint32_t rec_size = schema->estimate_size() * 200 * 5;
             LOG_DEBUG("Estimated record size = %d", rec_size);
 
             for (int ii = 10; ii < 20; ii++) {
@@ -47,23 +46,30 @@ main(const int argc, const char **argv) {
             CHECK_NOT_NULL(reader);
 
             void *buffer = malloc(sizeof(char) * rec_size);
+            uint64_t offset = 0;
             for (int ii = 0; ii < 10; ii++) {
                 mutable_test_schema *ts = source[ii];
                 mutable_record_struct *data = ts->serialize();
                 CHECK_NOT_NULL(data);
-                // data->print();
-                memset(buffer, 0, rec_size);
-                uint64_t w_size = writer->write(buffer, data, 0, rec_size);
+                uint64_t w_size = writer->write(buffer, data, offset, rec_size);
                 LOG_DEBUG("[%s] size=%lu", ts->get_key(), w_size);
+                offset += w_size;
                 CHECK_AND_FREE(data);
 
+
+            }
+            offset = 0;
+            for (int ii = 0; ii < 10; ii++) {
                 record_struct *rec = nullptr;
-                reader->read(buffer, &rec, 0, rec_size);
+                uint64_t r_size = reader->read(buffer, &rec, offset, rec_size);
                 CHECK_NOT_NULL(rec);
                 test_schema *rs = new test_schema();
+                CHECK_ALLOC(rs, TYPE_NAME(test_schema));
                 rs->deserialize(rec);
+                LOG_DEBUG("[%s] size=%lu", rs->get_key(), r_size);
                 CHECK_AND_FREE(rec);
                 CHECK_AND_FREE(rs);
+                offset += r_size;
             }
             FREE_PTR(buffer);
 

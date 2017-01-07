@@ -318,7 +318,7 @@ REACTFS_NS_CORE
                             TRACE("[write][type=%d][name=%s] [name] Offset = %d", this->type,
                                   this->get_canonical_name().c_str(), pos.offset);
                             pos.size += buffer_utils::write_8str(buffer, &pos.offset, this->name.c_str(),
-                                                               this->name.length());
+                                                                 this->name.length());
 
                             // Write is nullable
                             TRACE("[write][type=%d][name=%s] [nullable] Offset = %d", this->type,
@@ -427,7 +427,8 @@ REACTFS_NS_CORE
                                 TRACE("[read][type=%d][name=%s] [constraint] Offset = %d", this->type,
                                       this->get_canonical_name().c_str(), (offset + pos.size));
                                 uint64_t size = 0;
-                                this->constraint = __constraint_loader::read(buffer, (offset + pos.size), this->datatype,
+                                this->constraint = __constraint_loader::read(buffer, (offset + pos.size),
+                                                                             this->datatype,
                                                                              &size);
                                 CHECK_NOT_NULL(this->constraint);
                                 POSTCONDITION(size > 0);
@@ -438,7 +439,8 @@ REACTFS_NS_CORE
                                 TRACE("[read][type=%d][name=%s] [default value] Offset = %d", this->type,
                                       this->get_canonical_name().c_str(), (offset + pos.size));
                                 uint64_t size = 0;
-                                this->default_value = __defaults_loader::read(buffer, (offset + pos.size), this->datatype,
+                                this->default_value = __defaults_loader::read(buffer, (offset + pos.size),
+                                                                              this->datatype,
                                                                               &size);
                                 CHECK_NOT_NULL(this->default_value);
                                 POSTCONDITION(size > 0);
@@ -789,10 +791,14 @@ REACTFS_NS_CORE
 
                             // Write the number of fields in this definition.
                             uint8_t size = (uint8_t) fields.size();
-                            LOG_DEBUG("[type=%d][name=%s] Size = %d", this->type, this->name.c_str(), size);
+                            TRACE("[type=%d][name=%s] Size = %d", this->type, this->name.c_str(), size);
                             TRACE("[write][type=%d][name=%s] [field count] Offset = %d", this->type,
                                   this->get_canonical_name().c_str(), pos.offset);
                             pos.size += buffer_utils::write<uint8_t>(buffer, &pos.offset, size);
+
+                            // Write the type name of this complex type.
+                            pos.size += buffer_utils::write_8str(buffer, &pos.offset, type_name.c_str(),
+                                                                 type_name.length());
 
                             unordered_map<uint8_t, __native_type *>::iterator iter;
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
@@ -825,7 +831,13 @@ REACTFS_NS_CORE
                                   this->get_canonical_name().c_str(), pos.offset);
                             pos.size += buffer_utils::read<uint8_t>(buffer, &pos.offset, &size);
                             CHECK_NOT_NULL(size);
-                            LOG_DEBUG("[type=%d][name=%s] Field count = %d", this->type, this->name.c_str(), *size);
+                            TRACE("[type=%d][name=%s] Field count = %d", this->type, this->name.c_str(), *size);
+
+                            // Read the type name of this complex type.
+                            CHARBUFF cb = nullptr;
+                            pos.size += buffer_utils::read_8str(buffer, &pos.offset, &cb);
+                            CHECK_NOT_NULL(cb);
+                            this->type_name = string(cb);
 
                             vector<__native_type *> types;
                             loader->read(this, buffer, (offset + pos.size), *size, &types, &pos.size);

@@ -83,6 +83,7 @@ REACTFS_NS_CORE
                             pos.size += buffer_utils::read<uint64_t>(buffer, &pos.offset, &w_size);
                             CHECK_NOT_NULL(w_size);
                             uint64_t size = *w_size;
+                            POSTCONDITION(size <= max_length);
 
                             unordered_map<uint8_t, __native_type *> types = fields->get_fields();
                             CHECK_NOT_EMPTY(types);
