@@ -265,7 +265,7 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index) {
     return record;
 }
 
-string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeout) {
+string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeout, const string &tid) {
     CHECK_STATE_AVAILABLE(state);
     string txid;
     char *user_name = getenv("USER");
@@ -275,7 +275,7 @@ string com::wookler::reactfs::core::base_block::start_transaction(uint64_t timeo
     PRECONDITION(NOT_NULL(user_name));
     string uname(user_name);
 
-    txid = block_lock->get_lock(uname, timeout);
+    txid = block_lock->get_lock(uname, timeout, tid);
     if (!IS_EMPTY(txid)) {
         setup_transaction(txid);
     } else {

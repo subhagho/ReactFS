@@ -559,7 +559,7 @@ namespace com {
                      *
                      * @return - Transaction UUID.
                      */
-                    virtual string start_transaction(uint64_t timeout);
+                    virtual string start_transaction(uint64_t timeout, const string &tid = common_consts::EMPTY_STRING);
 
                     /*!
                      * Commit the current transcation.

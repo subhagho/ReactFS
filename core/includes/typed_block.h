@@ -100,11 +100,23 @@ REACTFS_NS_CORE
                      * the call will throw an exception.
                      *
                      * @param source - Source buffer to copy data from.
-                     * @param length - Length of data to copy.
+                     * @param length - Length of data to copy (Redundant field, not used for typed blocks).
                      * @param transaction_id - Transaction ID.
                      * @return - Record index of the create record.
                      */
                     virtual uint64_t write(void *source, uint32_t length, string transaction_id) override;
+
+                    /*!
+                     * Write a data record to the block. Check should be done to ensure that
+                     * enough space is available in the block for the required data length, else
+                     * the call will throw an exception.
+                     *
+                     * @param source - Source buffer to copy data from.
+                     * @return - Record index of the create record.
+                     */
+                    uint64_t write(void *source, string transaction_id) {
+                        return write(source, 0, transaction_id);
+                    }
 
 
                     /*!
@@ -115,7 +127,7 @@ REACTFS_NS_CORE
                      * @return - Record pointer of the added record.
                      */
                     __record *
-                    __write_record(mutable_record_struct *source, string transcation_id, uint64_t uncompressed_size);
+                    __write_record(mutable_record_struct *source, string transcation_id);
 
                     /*!
                      * Read a record from this block at the specified index.

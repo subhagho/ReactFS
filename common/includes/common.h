@@ -19,6 +19,7 @@
 
 #if defined(__unix)
 #include <malloc.h>
+#include <stdlib.h>
 #endif
 
 #include <algorithm>

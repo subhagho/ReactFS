@@ -294,10 +294,9 @@ REACTFS_NS_COMMON
                      * @param timeout - Timeout for retrying.
                      * @return - New transaction ID, or empty string if acquire failed.
                      */
-                    string get_lock(string owner, uint64_t timeout) {
+                    string get_lock(string owner, uint64_t timeout, const string &tid = common_consts::EMPTY_STRING) {
                         CHECK_STATE_AVAILABLE(state);
                         PRECONDITION(!IS_EMPTY(owner));
-                        PRECONDITION(IS_EMPTY(txn_id));
 
                         uint64_t startt = time_utils::now();
                         string thread_id = thread_utils::get_current_thread();
@@ -309,14 +308,23 @@ REACTFS_NS_COMMON
                             TRY_LOCK(lock, 0, timeout, ret);
                             if (ret) {
                                 if (has_write_lock(thread_id)) {
-                                    locked = true;
+                                    if (IS_EMPTY(tid)) {
+                                        locked = true;
+                                    } else if (tid == txn_id) {
+                                        locked = true;
+                                    } else {
+                                        break;
+                                    }
                                 } else if (!lock_struct->write_locked) {
                                     lock_struct->write_locked = true;
                                     memset(lock_struct->owner.owner, 0, SIZE_USER_NAME);
                                     strncpy(lock_struct->owner.owner, owner.c_str(), owner.length());
                                     lock_struct->owner.process_id = getpid();
                                     memset(lock_struct->owner.txn_id, 0, SIZE_UUID);
-                                    txn_id = common_utils::uuid();
+                                    if (IS_EMPTY(tid))
+                                        txn_id = common_utils::uuid();
+                                    else
+                                        txn_id = string(tid);
                                     strncpy(lock_struct->owner.txn_id, txn_id.c_str(), txn_id.length());
                                     memset(lock_struct->owner.thread_id, 0, SIZE_THREAD_ID);
                                     strncpy(lock_struct->owner.thread_id, thread_id.c_str(),

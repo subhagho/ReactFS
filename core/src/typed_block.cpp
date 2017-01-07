@@ -62,7 +62,7 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
 }
 
 __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_record_struct *source,
-                                                                   string transaction_id, uint64_t uncompressed_size) {
+                                                                   string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(source);
 
@@ -84,7 +84,6 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
     record->header->index = get_next_index();
     record->header->offset = get_write_offset();
     record->header->timestamp = time_utils::now();
-    record->header->uncompressed_size = uncompressed_size;
     record->header->state = __record_state::R_DIRTY;
 
     w_ptr = buffer_utils::increment_data_ptr(w_ptr, sizeof(__record_header));
@@ -98,6 +97,7 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
     uint64_t w_size = dt_struct->write(record->data_ptr, source, 0, free_s);
     uint32_t checksum = common_utils::crc32c(0, (BYTE *) record->data_ptr, w_size);
     record->header->data_size = w_size;
+    record->header->uncompressed_size = w_size;
     record->header->checksum = checksum;
 
     rollback_info->used_bytes += w_size;
@@ -119,7 +119,7 @@ uint64_t com::wookler::reactfs::core::typed_block::write(void *source, uint32_t 
     CHECK_NOT_NULL(source);
     mutable_record_struct *data = static_cast<mutable_record_struct *>(source);
     CHECK_CAST(data, TYPE_NAME(void), TYPE_NAME(__struct_datatype__));
-    __record *r_ptr = __write_record(data, transaction_id, 0);
+    __record *r_ptr = __write_record(data, transaction_id);
 
     index_ptr->write_index(r_ptr->header->index, r_ptr->header->offset, r_ptr->header->data_size, transaction_id);
 

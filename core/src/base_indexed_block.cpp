@@ -23,8 +23,8 @@ void com::wookler::reactfs::core::base_indexed_block::close() {
     CHECK_AND_FREE(index_ptr);
 }
 
-string com::wookler::reactfs::core::base_indexed_block::start_transaction(uint64_t timeout) {
-    string txid = base_block::start_transaction(timeout);
+string com::wookler::reactfs::core::base_indexed_block::start_transaction(uint64_t timeout, const string &tid) {
+    string txid = base_block::start_transaction(timeout, tid);
     index_ptr->start_transaction(txid);
 
     return txid;
