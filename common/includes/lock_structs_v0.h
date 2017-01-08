@@ -29,11 +29,46 @@ REACTFS_NS_COMMON
                     uint64_t lock_timestamp = 0;
                 } __lock_readers_v0;
 
+
+                /*!
+                 * Enum defines ths current state of this instance of the lock.
+                 */
+                typedef enum __lock_state_enum__ {
+                    /// Lock state is unknown
+                            LOCK_UNKNOWN = 0,
+                    /// Lock is free and can be acquired.
+                            LOCK_FREE = 1,
+                    /// Lock has already been aqcuired.
+                            LOCK_LOCKED = 2,
+                    /// Lock has expired or lease has run out.
+                            LOCK_EXPIRED = 3,
+                    /// Lock has been reset due to inactivity.
+                            LOCK_RESET = 4,
+                    /// Lock is in an error state.
+                            LOCK_ERROR = 5
+                } __lock_state_enum;
+
+                /*!
+                 * Enum defines the isolation mode this lock instance is created with.
+                 */
+                typedef enum __lock_isolation_mode__ {
+                    /// No isolation mode defined.
+                            LOCK_MODE_NONE,
+                    /// Lock is isolated by threads.
+                            LOCK_MODE_THREAD,
+                    /// Lock is isolated by processes.
+                            LOCK_MODE_PROCESS,
+                    /// Lock is isolated by transactions
+                            LOCK_MODE_TRANSACTION
+                }__lock_isolation_mode;
+
                 typedef struct __w_lock_struct_v0__ {
                     bool used = false;
                     char name[SIZE_LOCK_NAME + 1];
+                    __lock_isolation_mode mode = __lock_isolation_mode::LOCK_MODE_NONE;
                     uint64_t last_used = 0;
                     bool write_locked = false;
+                    __lock_state_enum write_state = __lock_state_enum::LOCK_UNKNOWN;
                     uint32_t ref_count = 0;
                     __owner_v0 owner;
                 } __w_lock_struct_v0;

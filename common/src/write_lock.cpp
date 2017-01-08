@@ -7,7 +7,7 @@
 using namespace com::wookler::reactfs::common;
 
 com::wookler::reactfs::common::__w_lock_struct *com::wookler::reactfs::common::w_lock_table::add_lock(
-        string name, uint64_t timeout) {
+        string name, uint64_t timeout, __lock_isolation_mode mode) {
     PRECONDITION(NOT_NULL(locks));
     PRECONDITION(!IS_EMPTY(name));
     PRECONDITION(name.length() < SIZE_LOCK_NAME);
@@ -39,6 +39,7 @@ com::wookler::reactfs::common::__w_lock_struct *com::wookler::reactfs::common::w
             r_ptr = locks + found_index;
             POSTCONDITION(NOT_NULL(r_ptr));
             POSTCONDITION(r_ptr->used);
+            POSTCONDITION(r_ptr->mode == mode);
         }
         if (free_index >= 0) {
             r_ptr = locks + free_index;
@@ -47,6 +48,7 @@ com::wookler::reactfs::common::__w_lock_struct *com::wookler::reactfs::common::w
 
             memset(r_ptr, 0, sizeof(__w_lock_struct));
             r_ptr->used = true;
+            memcpy(r_ptr, &mode, sizeof(__lock_isolation_mode));
             memset(r_ptr->name, 0, SIZE_LOCK_NAME);
             strncpy(r_ptr->name, name.c_str(), name.length());
             header_ptr->used_count++;

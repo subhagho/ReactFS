@@ -33,20 +33,21 @@ using namespace com::wookler::reactfs::core;
 using namespace com::wookler::reactfs::core::types;
 using namespace com::wookler::reactfs::core::parsers;
 
-void write_data(typed_block *block, __complex_type *schema, int count, vector<int> *indexes) {
-    string txid = block->start_transaction(0);
-    CHECK_NOT_EMPTY(txid);
+uint64_t write_data(typed_block *block, __complex_type *schema, int count, vector<int> *indexes, string &txid) {
+    timer tw;
     for(int ii=0; ii < count; ii++) {
         mutable_test_schema *ts = generate_schema(schema, 10);
         CHECK_NOT_NULL(ts);
+        tw.start();
         mutable_record_struct *dt = ts->serialize();
         int index = block->write(dt, 0, txid);
+        tw.pause();
         POSTCONDITION(index >= RECORD_START_INDEX);
         indexes->push_back(index);
         CHECK_AND_FREE(dt);
         CHECK_AND_FREE(ts);
     }
-    block->commit(txid);
+    return tw.get_elapsed();
 }
 
 void test_indexed(char *schemaf) {
@@ -82,12 +83,16 @@ void test_indexed(char *schemaf) {
     vector<int> indexes;
     timer tw, tr;
     tw.start();
-    for(int ii=0; ii < 100; ii++) {
-        write_data(block, schema, 20, &indexes);
+    string txid = block->start_transaction(0);
+    uint64_t tt = 0;
+    CHECK_NOT_EMPTY(txid);
+    for(int ii=0; ii < 1000; ii++) {
+        tt += write_data(block, schema, 20, &indexes, txid);
     }
+    block->commit(txid);
     tw.stop();
 
-    LOG_INFO("Written [%d] records to block in %d msec.", indexes.size(), tw.get_elapsed());
+    LOG_INFO("Written [%d] records to block in %d msec. [write time=%d]", indexes.size(), tw.get_elapsed(), tt);
     vector<record_struct *> *records = new vector<record_struct *>();
     CHECK_ALLOC(records, TYPE_NAME(vector));
     tr.start();
