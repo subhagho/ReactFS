@@ -56,16 +56,22 @@ void com::wookler::reactfs::common::write_lock_manager::check_lock_states() {
             if (NOT_NULL(ptr)) {
                 if (ptr->write_locked) {
                     uint64_t now = time_utils::now();
-                    if ((now - ptr->owner.lock_timestamp) > DEFAULT_WRITE_LOCK_TIMEOUT) {
+                    uint64_t delta = now - ptr->owner.last_updated;
+                    if (delta > DEFAULT_WRITE_LOCK_TIMEOUT) {
+                        LOG_WARN("Clearing expired write lock. [name=%s][expiry=%d][last used=%s]", ptr->name, delta,
+                                 time_utils::get_time_string(ptr->owner.last_updated).c_str());
                         ptr->owner.lock_timestamp = 0;
                         ptr->owner.process_id = -1;
                         memset(ptr->owner.txn_id, 0, SIZE_UUID + 1);
                         memset(ptr->owner.owner, 0, SIZE_USER_NAME);
                         ptr->write_locked = false;
+                        ptr->state = __lock_state_enum::LOCK_EXPIRED;
                     }
                 }
                 uint64_t delta = (time_utils::now() - ptr->last_used + 1);
                 if (ptr->ref_count <= 0 && delta >= DEFAULT_W_LOCK_EXPIRY) {
+                    LOG_WARN("Removed expired lock. [name=%s][expiry=%d][last used=%s]", ptr->name, delta,
+                             time_utils::get_time_string(ptr->last_used).c_str());
                     table->remove_lock(ptr->name);
                 }
             }

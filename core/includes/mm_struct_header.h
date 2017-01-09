@@ -189,7 +189,7 @@ namespace com {
 
                         uint64_t r_index = 0;
                         if (header->block_count > 0) {
-                            base_block *block = get_block(header->write_block_index);
+                            base_block *block = get_block(header->write_block_index, true);
                             CHECK_NOT_NULL(block);
                             r_index = block->get_last_index();
                             POSTCONDITION(r_index == header->last_written_index);
@@ -272,7 +272,7 @@ namespace com {
                         return false;
                     }
 
-                    base_block *get_block(uint32_t index) {
+                    base_block *get_block(uint32_t index, bool for_update) {
                         CHECK_STATE_AVAILABLE(state);
                         base_block *block = nullptr;
                         unordered_map<uint32_t, base_block *>::const_iterator iter = block_index.find(index);
@@ -300,7 +300,7 @@ namespace com {
 
                                 block = new base_block();
                                 CHECK_ALLOC(block, TYPE_NAME(base_block));
-                                block->open(bi->block_id, bi->filename);
+                                block->open(bi->block_id, bi->filename, for_update);
                                 POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
                                 block_index[index] = block;
@@ -404,7 +404,7 @@ namespace com {
 
                     bool start_transaction(uint64_t timeout = DEFAULT_LOCK_TIMEOUT) {
                         TRY_LOCK_WITH_ERROR(data_lock, 0, timeout);
-                        base_block *w_block = get_block(header->write_block_index);
+                        base_block *w_block = get_block(header->write_block_index, true);
                         string txid = transaction_info.start_transaction(w_block, timeout);
                         if (IS_EMPTY(txid)) {
                             return false;
@@ -434,12 +434,12 @@ namespace com {
                         TRY_LOCK_WITH_ERROR(data_lock, 0, timeout);
                         PRECONDITION(transaction_info.has_valid_transaction());
                         try {
-                            base_block *w_block = get_block(header->write_block_index);
+                            base_block *w_block = get_block(header->write_block_index, true);
                             uint32_t free_space = w_block->get_free_space();
                             if (free_space < size) {
                                 transaction_info.commit();
                                 create_new_block();
-                                w_block = get_block(header->write_block_index);
+                                w_block = get_block(header->write_block_index, true);
                                 bool r = start_transaction();
                                 POSTCONDITION(r);
                             }
@@ -473,7 +473,7 @@ namespace com {
                         CHECK_NOT_NULL(block_info);
                         PRECONDITION(index >= 0 && index <= header->last_written_index);
 
-                        base_block *block = get_block(block_info->block_id);
+                        base_block *block = get_block(block_info->block_id, false);
                         CHECK_NOT_NULL(block);
                         PRECONDITION(index >= block->get_start_index() && index <= block->get_last_index());
 
@@ -491,7 +491,7 @@ namespace com {
                         PRECONDITION(block_index >= 0 && block_index < header->block_count);
                         PRECONDITION(index >= 0 && index <= header->last_written_index);
 
-                        base_block *block = get_block(block_index);
+                        base_block *block = get_block(block_index, false);
                         CHECK_NOT_NULL(block);
                         PRECONDITION(index >= block->get_start_index() && index <= block->get_last_index());
 
@@ -513,7 +513,7 @@ namespace com {
                         TRY_LOCK_WITH_ERROR(data_lock, 0, timeout);
                         PRECONDITION(transaction_info.has_valid_transaction());
 
-                        base_block *block = get_block(block_index);
+                        base_block *block = get_block(block_index, true);
                         CHECK_NOT_NULL(block);
                         PRECONDITION(index >= block->get_start_index() && index <= block->get_last_index());
 
@@ -568,7 +568,7 @@ namespace com {
                             bi->deleted = true;
                             if (is_block_loaded(block_index)) {
                                 lock_guard<std::mutex> lock(thread_mutex);
-                                base_block *block = get_block(block_index);
+                                base_block *block = get_block(block_index, false);
                                 CHECK_AND_FREE(block);
                                 this->block_index.erase(block_index);
                             }

@@ -111,7 +111,9 @@ namespace com {
                     /// Block is writable
                             WRITABLE = 1,
                     /// Block has been closed for write.
-                            CLOSED = 2
+                            CLOSED = 2,
+                    /// Block records can be updated (deleted)
+                            UPDATEABLE = 3
                 } __write_state;
 
                 /*!

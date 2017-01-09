@@ -99,7 +99,7 @@ com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, uint6
     }
 }
 
-void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, string filename) {
+void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, string filename, bool for_update) {
     Path p(filename);
     if (!p.exists()) {
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_FILE_NOT_FOUND, "File not found. [path=%s]",
@@ -122,12 +122,13 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
                              version_utils::get_version_string(version).c_str());
     }
 
-    if (IS_NULL(block_lock) && header->write_state == __write_state::WRITABLE) {
+    if (IS_NULL(block_lock) &&  for_update) {
         string lock_name = get_lock_name(header->block_id, header->block_uid);
         write_lock_client *env = shared_lock_utils::get()->get_w_client(BLOCK_LOCK_GROUP);
 
         block_lock = env->add_lock(lock_name);
         CHECK_NOT_NULL(block_lock);
+        this->updateable = true;
     }
     this->filename = string(p.get_path());
 
@@ -171,9 +172,11 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
 
     PRECONDITION(is_writeable());
     PRECONDITION(has_space(size));
-    PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
-
+    if (!in_transaction()) {
+        force_rollback();
+        throw FS_BASE_ERROR("Transaction is no longer valid. [transaction id=%s]", transaction_id.c_str());
+    }
     void *w_ptr = get_write_ptr();
 
     nano_timer t;
@@ -450,9 +453,9 @@ void com::wookler::reactfs::core::base_block::force_rollback() {
     end_transaction();
 }
 
-void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string filename) {
+void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string filename, bool for_update) {
 
-    void *ptr = __open_block(block_id, filename);
+    void *ptr = __open_block(block_id, filename, for_update);
     POSTCONDITION(NOT_NULL(ptr));
     void *bptr = get_data_ptr();
     CHECK_NOT_NULL(bptr);

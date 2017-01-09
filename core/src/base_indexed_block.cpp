@@ -141,9 +141,9 @@ void com::wookler::reactfs::core::base_indexed_block::rollback(string transactio
     force_rollback();
 }
 
-void com::wookler::reactfs::core::base_indexed_block::open(uint64_t block_id, string filename) {
+void com::wookler::reactfs::core::base_indexed_block::open(uint64_t block_id, string filename, bool for_update) {
 
-    void *ptr = __open_block(block_id, filename);
+    void *ptr = __open_block(block_id, filename, for_update);
     POSTCONDITION(NOT_NULL(ptr));
     void *bptr = get_data_ptr();
     CHECK_NOT_NULL(bptr);

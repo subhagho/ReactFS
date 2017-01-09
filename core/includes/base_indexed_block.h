@@ -95,9 +95,10 @@ namespace com {
                      *
                      * @param block_id - Unique block id for this data block.
                      * @param filename - Backing filename for this data block.
+                     * @param for_update - Open block for update.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    virtual void open(uint64_t block_id, string filename) override;
+                    virtual void open(uint64_t block_id, string filename, bool for_update) override;
 
                     /*!
                      * Validate the data sanity of this block.

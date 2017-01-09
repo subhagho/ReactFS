@@ -78,7 +78,7 @@ void test_indexed(char *schemaf) {
 
     typed_block *block = new typed_block();
     CHECK_ALLOC(block, TYPE_NAME(typed_block));
-    block->open(REUSE_BLOCK_INDEX_ID, p.get_path());
+    block->open(REUSE_BLOCK_INDEX_ID, p.get_path(), true);
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
     vector<int> indexes;
     timer tw, tr;
@@ -93,6 +93,12 @@ void test_indexed(char *schemaf) {
     tw.stop();
 
     LOG_INFO("Written [%d] records to block in %d msec. [write time=%d]", indexes.size(), tw.get_elapsed(), tt);
+
+    CHECK_AND_FREE(block);
+    block = new typed_block();
+    block->open(REUSE_BLOCK_INDEX_ID, p.get_path(), false);
+    POSTCONDITION(block->get_block_state() == __state_enum::Available);
+
     vector<record_struct *> *records = new vector<record_struct *>();
     CHECK_ALLOC(records, TYPE_NAME(vector));
     tr.start();

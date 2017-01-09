@@ -95,6 +95,9 @@ namespace com {
                     /// Base pointer for the mapped data.
                     void *base_ptr = nullptr;
 
+                    /// Block has been opened for updates.
+                    bool updateable = false;
+
                     /// Rollback information (in case a write transaction is in progress)
                     __rollback_info *rollback_info = nullptr;
 
@@ -125,9 +128,10 @@ namespace com {
                      *
                      * @param block_id - Unique block id for this data block.
                      * @param filename - Backing filename for this data block.
+                     * @param for_update - Open this block for update.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    void *__open_block(uint64_t block_id, string filename);
+                    void *__open_block(uint64_t block_id, string filename, bool for_update);
 
                     /*!
                      * Read a record from this block at the specified index.
@@ -294,8 +298,8 @@ namespace com {
                     __record *write_record(void *source, uint32_t length, string transaction_id);
 
                     virtual void process_record_data(__record *ptr, temp_buffer *buffer,
-                                             temp_buffer *writebuff,
-                                             vector<shared_read_ptr> *data);
+                                                     temp_buffer *writebuff,
+                                                     vector<shared_read_ptr> *data);
 
                 public:
                     base_block() {
@@ -591,8 +595,15 @@ namespace com {
                         if (NOT_NULL(rollback_info)) {
                             if (rollback_info->in_transaction) {
                                 string thread_id = thread_utils::get_current_thread();
-                                PRECONDITION(block_lock->has_write_lock(thread_id));
-                                return true;
+                                if (block_lock->has_write_lock(thread_id)) {
+                                    return true;
+                                } else if (block_lock->is_lock_reset()) {
+                                    LOG_INFO("Lock has been reset. Re-registering lock instance. [name=%s]",
+                                             block_lock->get_name().c_str());
+                                    block_lock->check_and_register();
+                                    if (block_lock->has_write_lock(thread_id))
+                                        return true;
+                                }
                             }
                         }
                         return false;
@@ -625,9 +636,10 @@ namespace com {
                      *
                      * @param block_id - Unique block id for this data block.
                      * @param filename - Backing filename for this data block.
+                     * @param for_update - Open this block for update.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    virtual void open(uint64_t block_id, string filename);
+                    virtual void open(uint64_t block_id, string filename, bool for_update);
 
                     /*!
                      * Write a data record to the block. Check should be done to ensure that
@@ -650,7 +662,7 @@ namespace com {
                      */
                     virtual bool delete_record(uint64_t index, string transaction_id) {
                         CHECK_STATE_AVAILABLE(state);
-                        PRECONDITION(is_writeable());
+                        PRECONDITION(is_updateable());
                         PRECONDITION(in_transaction());
                         PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
                         PRECONDITION(index >= header->start_index && index <= get_current_index());
@@ -700,7 +712,17 @@ namespace com {
                      */
                     bool is_writeable() {
                         CHECK_STATE_AVAILABLE(state);
-                        return (header->write_state == __write_state::WRITABLE);
+                        return (this->updateable && header->write_state == __write_state::WRITABLE);
+                    }
+
+                    /*!
+                     * Block can  updated?
+                     *
+                     * @return - Can update?
+                     */
+                    bool is_updateable() {
+                        CHECK_STATE_AVAILABLE(state);
+                        return (header->write_state == __write_state::WRITABLE || this->updateable);
                     }
 
                     /*!

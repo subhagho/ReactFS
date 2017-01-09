@@ -29,9 +29,6 @@
 #define CHECK_LOCK_AVAILABLE (state.get_state() != __lock_state_enum::LOCK_UNKNOWN && state.get_state() != __lock_state_enum::LOCK_ERROR)
 #define CHECK_LOCK_FREE (state.get_state() == __lock_state_enum::LOCK_FREE)
 #define CHECK_LOCK_LOCKED (state.get_state() == __lock_state_enum::LOCK_LOCKED)
-#define LOCK_ISOLATION_PROC (mode == __lock_isolation_mode::LOCK_MODE_PROCESS)
-#define LOCK_ISOLATION_THREAD (mode == __lock_isolation_mode::LOCK_MODE_THREAD)
-#define LOCK_ISOLATION_TNX (mode == __lock_isolation_mode::LOCK_MODE_TRANSACTION)
 
 REACTFS_NS_COMMON
                 typedef __lock_readers_v0 __lock_readers;
@@ -115,8 +112,7 @@ REACTFS_NS_COMMON
                      * @param timeout - Lock add timeout, defaults to DEFAULT_WRITE_LOCK_TIMEOUT
                      * @return - Allocated shared lock record.
                      */
-                    __w_lock_struct *add_lock(string name, uint64_t timeout = DEFAULT_WRITE_LOCK_TIMEOUT,
-                                              const __lock_isolation_mode = __lock_isolation_mode::LOCK_MODE_NONE);
+                    __w_lock_struct *add_lock(string name, uint64_t timeout = DEFAULT_WRITE_LOCK_TIMEOUT);
 
                     /*!
                      * Remove the shared lock record, already registered.
@@ -129,7 +125,7 @@ REACTFS_NS_COMMON
                 };
 
 
-                class __lock_state {
+                class __w_lock_state {
                 private:
                     __lock_state_enum state = __lock_state_enum::LOCK_UNKNOWN;
                     const exception *error = nullptr;
@@ -177,13 +173,10 @@ REACTFS_NS_COMMON
                     mutex __thread_lock;
 
                     /// State of this instance of the RW lock.
-                    __lock_state state;
+                    __w_lock_state state;
 
                     /// Shared exclusive lock, used to control SHM updates.
                     exclusive_lock *lock;
-
-                    /// Lock isolation mode for this lock instance.
-                    __lock_isolation_mode mode;
 
                     /// SHM mapped structure for this lock instance.
                     __w_lock_struct *lock_struct;
@@ -209,14 +202,15 @@ REACTFS_NS_COMMON
                     virtual bool check_lock_valid() {
                         bool r = true;
                         if (!lock_struct->used) {
-                            state.set_state(__lock_state_enum::LOCK_RESET);
+                            clear_lock_reset();
                             r = false;
                         } else if (strncmp(lock_struct->name, name.c_str(), name.length()) != 0) {
-                            state.set_state(__lock_state_enum::LOCK_RESET);
+                            clear_lock_reset();
                             r = false;
                         }
                         uint64_t delta = (time_utils::now() - lock_struct->last_used);
                         if (delta >= DEFAULT_W_LOCK_EXPIRY) {
+                            std::lock_guard<std::mutex> lock(__thread_lock);
                             state.set_state(__lock_state_enum::LOCK_EXPIRED);
                             r = false;
                         }
@@ -242,6 +236,15 @@ REACTFS_NS_COMMON
                     }
 
                     /*!
+                     * Set the lock state to indicate that it has been reset.
+                     */
+                    void clear_lock_reset() {
+                        std::lock_guard<std::mutex> lock(__thread_lock);
+                        state.set_state(__lock_state_enum::LOCK_RESET);
+                        this->lock_struct = nullptr;
+                    }
+
+                    /*!
                      * Register this lock in the global lock table.
                      */
                     void register_lock() {
@@ -256,8 +259,7 @@ REACTFS_NS_COMMON
                      * Default constructor.
                      * @return
                      */
-                    write_lock(const __lock_isolation_mode mode = __lock_isolation_mode::LOCK_MODE_NONE) {
-                        this->mode = mode;
+                    write_lock() {
                     }
 
                     /*!<destructor
@@ -391,6 +393,7 @@ REACTFS_NS_COMMON
                                     int r = strncmp(lock_struct->owner.thread_id, thread_id.c_str(),
                                                     thread_id.length());
                                     if (r == 0) {
+                                        lock_struct->owner.last_updated = lock_struct->last_used;
                                         ret = true;
                                     } else {
                                         TRACE("Thread owner doesn't match. [owner=%s][current=%s]", thread_id.c_str(),
@@ -404,7 +407,7 @@ REACTFS_NS_COMMON
                                 TRACE("PID doesn't match. [pid=%d][current=%d]", pid, lock_struct->owner.process_id);
                             }
                         } else {
-                            TRACE("No write lock valid.");
+                            TRACE("Write lock reset due to expiry.");
                         }
                         return ret;
                     }

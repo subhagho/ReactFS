@@ -49,7 +49,7 @@ void test_basic() {
     POSTCONDITION(!IS_EMPTY(uuid));
 
     base_block *block = new base_block();
-    block->open(REUSE_BLOCK_ID, p.get_path());
+    block->open(REUSE_BLOCK_ID, p.get_path(), true);
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
     string txid = block->start_transaction();
@@ -79,7 +79,7 @@ void test_basic() {
 
     CHECK_AND_FREE(block);
     block = new base_block();
-    block->open(REUSE_BLOCK_ID, p.get_path());
+    block->open(REUSE_BLOCK_ID, p.get_path(), true);
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
     txid = block->start_transaction();
@@ -159,7 +159,7 @@ void test_indexed() {
     POSTCONDITION(!IS_EMPTY(uuid));
 
     base_block *block = new base_indexed_block();
-    block->open(REUSE_BLOCK_INDEX_ID, p.get_path());
+    block->open(REUSE_BLOCK_INDEX_ID, p.get_path(), true);
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
     string txid = block->start_transaction();
@@ -189,7 +189,7 @@ void test_indexed() {
 
     CHECK_AND_FREE(block);
     block = new base_indexed_block();
-    block->open(REUSE_BLOCK_INDEX_ID, p.get_path());
+    block->open(REUSE_BLOCK_INDEX_ID, p.get_path(), true);
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
     txid = block->start_transaction();

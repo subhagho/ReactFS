@@ -97,12 +97,12 @@ namespace com {
                         if (block_type == __block_def::BASIC) {
                             base_block *block = new base_block();
                             CHECK_ALLOC(block, TYPE_NAME(base_block));
-                            block->open(block_id, filename);
+                            block->open(block_id, filename, false);
                             CHECK_AND_FREE(block);
                         } else if (block_type == __block_def::INDEXED) {
                             base_block *block = new base_indexed_block();
                             CHECK_ALLOC(block, TYPE_NAME(base_indexed_block));
-                            block->open(block_id, filename);
+                            block->open(block_id, filename, false);
                             CHECK_AND_FREE(block);
                         } else {
                             throw FS_BASE_ERROR("Un-supported block type. [type=%d]", block_type);

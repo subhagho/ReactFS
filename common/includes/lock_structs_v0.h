@@ -20,6 +20,7 @@ REACTFS_NS_COMMON
                     pid_t process_id;
                     char thread_id[SIZE_THREAD_ID + 1];
                     uint64_t lock_timestamp = 0;
+                    uint64_t last_updated = 0;
                 } __owner_v0;
 
                 typedef struct __lock_readers_v0__ {
@@ -48,27 +49,12 @@ REACTFS_NS_COMMON
                             LOCK_ERROR = 5
                 } __lock_state_enum;
 
-                /*!
-                 * Enum defines the isolation mode this lock instance is created with.
-                 */
-                typedef enum __lock_isolation_mode__ {
-                    /// No isolation mode defined.
-                            LOCK_MODE_NONE,
-                    /// Lock is isolated by threads.
-                            LOCK_MODE_THREAD,
-                    /// Lock is isolated by processes.
-                            LOCK_MODE_PROCESS,
-                    /// Lock is isolated by transactions
-                            LOCK_MODE_TRANSACTION
-                }__lock_isolation_mode;
-
                 typedef struct __w_lock_struct_v0__ {
                     bool used = false;
                     char name[SIZE_LOCK_NAME + 1];
-                    __lock_isolation_mode mode = __lock_isolation_mode::LOCK_MODE_NONE;
                     uint64_t last_used = 0;
                     bool write_locked = false;
-                    __lock_state_enum write_state = __lock_state_enum::LOCK_UNKNOWN;
+                    __lock_state_enum state = __lock_state_enum::LOCK_UNKNOWN;
                     uint32_t ref_count = 0;
                     __owner_v0 owner;
                 } __w_lock_struct_v0;

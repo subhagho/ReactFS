@@ -32,8 +32,8 @@ string com::wookler::reactfs::core::typed_block::create(uint64_t block_id, uint6
     return uuid;
 }
 
-void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string filename) {
-    void *ptr = __open_block(block_id, filename);
+void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string filename, bool for_update) {
+    void *ptr = __open_block(block_id, filename, for_update);
     POSTCONDITION(NOT_NULL(ptr));
 
     index_ptr = new base_block_index();
