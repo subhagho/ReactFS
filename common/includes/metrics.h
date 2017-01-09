@@ -30,10 +30,24 @@
 #include "log_utils.h"
 #include "__state__.h"
 
-#define START_TIMER(n) timer _t_##n; \
-     _t_##n.start();
+#define START_TIMER(n, i)  \
+    timer _t_##i; \
+    _t_##i.start();
 
-#define END_TIMER(m, n) com::wookler::reactfs::common::metrics_utils::timed_metric(m, _t_##n);
+#define END_TIMER(m, i) do { \
+    if (!IS_EMPTY(m)) \
+        com::wookler::reactfs::common::metrics_utils::timed_metric(m, _t_##i); \
+} while(0);
+
+#define DUMP_METRIC(n) do { \
+    if (!IS_EMPTY(n)) \
+        com::wookler::reactfs::common::metrics_utils::dump(n); \
+} while(0);
+
+#define REMOVE_METRIC(n) do { \
+    if (!IS_EMPTY(n)) \
+        com::wookler::reactfs::common::metrics_utils::remove(n); \
+} while(0);
 
 REACTFS_NS_COMMON
 
@@ -319,7 +333,7 @@ REACTFS_NS_COMMON
                      * @param thread_safe
                      * @return
                      */
-                    static bool create_metric(string name, __metric_type_enum type, bool thread_safe) {
+                    static bool create_metric(const string &name, __metric_type_enum type, bool thread_safe) {
                         if (!state.is_available())
                             return false;
 
@@ -348,6 +362,17 @@ REACTFS_NS_COMMON
                         return false;
                     }
 
+                    static void remove(const string &name) {
+                        if (!state.is_available())
+                            return;
+
+                        std::lock_guard<std::mutex> guard(g_lock);
+
+                        if (NOT_NULL(metrics)) {
+                            metrics->erase(name);
+                        }
+                    }
+
                     static void dispose() {
                         std::lock_guard<std::mutex> guard(g_lock);
                         state.set_state(Disposed);
@@ -365,7 +390,7 @@ REACTFS_NS_COMMON
                         CHECK_AND_FREE(metrics);
                     }
 
-                    static bool update(string name, double value) {
+                    static bool update(const string &name, double value) {
                         if (!state.is_available())
                             return false;
 
@@ -387,7 +412,7 @@ REACTFS_NS_COMMON
                         return false;
                     }
 
-                    static bool update(string name, double value, double div) {
+                    static bool update(const string &name, double value, double div) {
                         if (!state.is_available())
                             return false;
 
@@ -411,9 +436,8 @@ REACTFS_NS_COMMON
                         return false;
                     }
 
-                    static bool timed_metric(string name, timer t) {
+                    static bool timed_metric(const string &name, timer t) {
                         t.stop();
-
                         uint64_t elapsed = t.get_elapsed();
 
                         return update(name, elapsed);
@@ -426,6 +450,21 @@ REACTFS_NS_COMMON
                         if (!IS_EMPTY_P(metrics)) {
                             __metrics_map::iterator iter;
                             for (iter = metrics->begin(); iter != metrics->end(); iter++) {
+                                __metric *metric = iter->second;
+                                if (NOT_NULL(metric)) {
+                                    metric->print();
+                                }
+                            }
+                        }
+                    }
+
+                    static void dump(string name) {
+                        if (!state.is_available())
+                            return;
+
+                        if (!IS_EMPTY_P(metrics)) {
+                            __metrics_map::iterator iter = metrics->find(name);
+                            if (iter != metrics->end()) {
                                 __metric *metric = iter->second;
                                 if (NOT_NULL(metric)) {
                                     metric->print();

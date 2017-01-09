@@ -125,7 +125,7 @@ uint64_t com::wookler::reactfs::core::typed_block::write(void *source, uint32_t 
     mutable_record_struct *data = static_cast<mutable_record_struct *>(source);
     CHECK_CAST(data, TYPE_NAME(void), TYPE_NAME(__struct_datatype__));
     __record *r_ptr = __write_record(data, transaction_id);
-
+    LOG_DEBUG("Written typed record of size %d.", r_ptr->header->data_size);
     index_ptr->write_index(r_ptr->header->index, r_ptr->header->offset, r_ptr->header->data_size, transaction_id);
 
     uint64_t index = r_ptr->header->index;

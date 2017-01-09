@@ -23,14 +23,14 @@
 
 #define DEFAULT_BLOCK_SIZE 1024 * 1024 * 32
 #define RECORD_START_INDEX 100000
-#define COUNT_RECORDS 500
+#define COUNT_RECORDS 10000
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
 
 typedef struct {
     uint64_t timestamp;
-    char value[128];
+    char value[1024];
     uint32_t index;
 } _test_typed;
 
@@ -56,7 +56,7 @@ void test_basic() {
     POSTCONDITION(!IS_EMPTY(txid));
     int count = 0;
     vector<uint64_t> to_deleted;
-
+    timer tw;
     for (int ii = 0; ii < COUNT_RECORDS; ii++) {
         _test_typed t;
         t.index = ii;
@@ -66,7 +66,9 @@ void test_basic() {
 
         if (block->get_free_space() < sizeof(_test_typed))
             break;
+        tw.restart();
         uint64_t index = block->write(&t, sizeof(_test_typed), txid);
+        tw.pause();
         POSTCONDITION(index >= 0);
         if (ii % 5 == 0) {
             to_deleted.push_back(index);
@@ -74,7 +76,8 @@ void test_basic() {
         count++;
     }
     block->commit(txid);
-    LOG_INFO("Written [%d] records to block. [used bytes=%lu]", count, block->get_used_space());
+    LOG_INFO("Written [%d] records to block. [used bytes=%lu][write time=%d]", count, block->get_used_space(),
+             tw.get_current_elapsed());
 
 
     CHECK_AND_FREE(block);

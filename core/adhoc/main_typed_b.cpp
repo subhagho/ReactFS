@@ -24,7 +24,7 @@
 #define REUSE_BLOCK_FILE_COMP "/tmp/block_reused.comp"
 #define REUSE_BLOCK_ID_COMP 1025
 
-#define DEFAULT_BLOCK_SIZE 1024 * 1024 * 256
+#define DEFAULT_BLOCK_SIZE 1024 * 1024 * 512
 #define RECORD_START_INDEX 100000
 #define COUNT_RECORDS 500
 
@@ -35,18 +35,18 @@ using namespace com::wookler::reactfs::core::parsers;
 
 uint64_t write_data(typed_block *block, __complex_type *schema, int count, vector<int> *indexes, string &txid) {
     timer tw;
+    mutable_test_schema *ts = generate_schema(schema, 5);
+    CHECK_NOT_NULL(ts);
     for(int ii=0; ii < count; ii++) {
-        mutable_test_schema *ts = generate_schema(schema, 10);
-        CHECK_NOT_NULL(ts);
-        tw.start();
+        tw.restart();
         mutable_record_struct *dt = ts->serialize();
         int index = block->write(dt, 0, txid);
         tw.pause();
         POSTCONDITION(index >= RECORD_START_INDEX);
         indexes->push_back(index);
         CHECK_AND_FREE(dt);
-        CHECK_AND_FREE(ts);
     }
+    CHECK_AND_FREE(ts);
     return tw.get_elapsed();
 }
 
@@ -86,8 +86,8 @@ void test_indexed(char *schemaf) {
     string txid = block->start_transaction(0);
     uint64_t tt = 0;
     CHECK_NOT_EMPTY(txid);
-    for(int ii=0; ii < 1000; ii++) {
-        tt += write_data(block, schema, 20, &indexes, txid);
+    for(int ii=0; ii < 20; ii++) {
+        tt += write_data(block, schema, 2000, &indexes, txid);
     }
     block->commit(txid);
     tw.stop();
@@ -102,7 +102,7 @@ void test_indexed(char *schemaf) {
     vector<record_struct *> *records = new vector<record_struct *>();
     CHECK_ALLOC(records, TYPE_NAME(vector));
     for(int index : indexes) {
-        tr.start();
+        tr.restart();
         int c = block->read_struct(index, 1, records);
         POSTCONDITION(records->size() > 0);
         record_struct *p0 = (*records)[0];

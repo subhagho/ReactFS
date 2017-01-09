@@ -152,7 +152,7 @@ namespace com {
                         CHECK_NOT_NULL(err);
 
                         string m_name = get_metrics_name(METRIC_LOCK_PREFIX, name, priority);
-                        START_TIMER(m_name);
+                        START_TIMER(m_name, 0);
 
                         timer t;
                         t.start();
@@ -174,7 +174,7 @@ namespace com {
                                 break;
                             }
                         }
-                        END_TIMER(m_name, m_name);
+                        END_TIMER(m_name, 0);
                         return ret;
                     }
 

@@ -22,6 +22,7 @@
 
 using namespace com::wookler::reactfs::core;
 
+
 string
 com::wookler::reactfs::core::base_block::__create_block(uint64_t block_id, uint64_t parent_id, string filename,
                                                         __block_usage usage, __block_def type, uint64_t block_size,
@@ -135,6 +136,12 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
     if (header->compression.compressed) {
         compression = compression_factory::get_compression_handler(header->compression.type);
     }
+
+    bool r = metrics_utils::create_metric(get_read_metric_name(), AverageMetric, false);
+    POSTCONDITION(r);
+    r = metrics_utils::create_metric(get_write_metric_name(), AverageMetric, false);
+    POSTCONDITION(r);
+
     return base_ptr;
 }
 
@@ -169,7 +176,8 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
                                                         uint64_t uncompressed_size) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(source);
-
+    string m_name = get_write_metric_name();
+    START_TIMER(m_name, 0);
     PRECONDITION(is_writeable());
     PRECONDITION(has_space(size));
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
@@ -214,6 +222,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
 
     header->update_time = record->header->timestamp;
 
+    END_TIMER(m_name, 0);
     return record;
 }
 
@@ -221,6 +230,8 @@ __record *
 com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint64_t offset, uint64_t size) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
+    string m_name = get_read_metric_name();
+    START_TIMER(m_name, 0);
 
     void *ptr = get_data_ptr();
     void *rptr = buffer_utils::increment_data_ptr(ptr, offset);
@@ -237,6 +248,7 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint64_t 
     uint32_t checksum = common_utils::crc32c(0, (BYTE *) record->data_ptr, record->header->data_size);
     POSTCONDITION(checksum == record->header->checksum);
 
+    END_TIMER(m_name, 0);
     return record;
 }
 
@@ -244,6 +256,8 @@ __record *
 com::wookler::reactfs::core::base_block::__read_record(uint64_t index) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
+    string m_name = get_read_metric_name();
+    START_TIMER(m_name, 0);
 
     void *ptr = get_data_ptr();
     uint64_t ii = header->start_index;
@@ -265,6 +279,7 @@ com::wookler::reactfs::core::base_block::__read_record(uint64_t index) {
     uint32_t checksum = common_utils::crc32c(0, (BYTE *) record->data_ptr, record->header->data_size);
     POSTCONDITION(checksum == record->header->checksum);
 
+    END_TIMER(m_name, 0);
     return record;
 }
 

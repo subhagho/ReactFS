@@ -32,6 +32,7 @@
 #include "common/includes/shared_lock_utils.h"
 #include "common/includes/mapped_data.h"
 #include "common/includes/buffer_utils.h"
+#include "common/includes/metrics.h"
 
 #include "common_structs.h"
 #include "fs_error_base.h"
@@ -43,6 +44,9 @@
 
 #define BLOCK_VERSION_MAJOR ((uint16_t) 0)
 #define BLOCK_VERSION_MINOR ((uint16_t) 1)
+
+#define BLOCK_METRIC_READ_PREFIX "matrics.block.read"
+#define BLOCK_METRIC_WRITE_PREFIX "matrics.block.write"
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
@@ -302,6 +306,20 @@ namespace com {
                                                      temp_buffer *writebuff,
                                                      vector<shared_read_ptr> *data);
 
+                    string get_read_metric_name() {
+                        if (NOT_NULL(header)) {
+                            return common_utils::format("%s.%lu", BLOCK_METRIC_READ_PREFIX, header->block_id);
+                        }
+                        return common_consts::EMPTY_STRING;
+                    }
+
+                    string get_write_metric_name() {
+                        if (NOT_NULL(header)) {
+                            return common_utils::format("%s.%lu", BLOCK_METRIC_WRITE_PREFIX, header->block_id);
+                        }
+                        return common_consts::EMPTY_STRING;
+                    }
+
                 public:
                     base_block() {
                         version.major = BLOCK_VERSION_MAJOR;
@@ -312,6 +330,12 @@ namespace com {
                      * Base class destructor.
                      */
                     virtual ~base_block() {
+                        DUMP_METRIC(get_read_metric_name());
+                        DUMP_METRIC(get_write_metric_name());
+
+                        REMOVE_METRIC(get_read_metric_name());
+                        REMOVE_METRIC(get_write_metric_name());
+
                         this->close();
                     }
 

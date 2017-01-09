@@ -33,7 +33,8 @@ using namespace com::wookler::watergate::core;
 
 #define CONTROL_NAME "dummy-resource-1"
 #define REQUIRE _assert
-#define METRIC_LOCK_TIME "lock.acquire.wait.time"
+
+const string METRIC_LOCK_TIME("lock.acquire.wait.time");
 
 typedef struct {
     string thread_id;
@@ -59,12 +60,12 @@ void rund(const control_client *control, int priority, thread_record *record) {
             int err = 0;
             int retry_count = 0;
             while (true) {
-                START_TIMER(METRIC_LOCK_TIME);
+                START_TIMER(METRIC_LOCK_TIME, 0);
                 tl.restart();
                 err = 0;
                 __lock_state r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
-                END_TIMER(METRIC_LOCK_TIME, METRIC_LOCK_TIME);
+                END_TIMER(METRIC_LOCK_TIME, 0);
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
@@ -120,12 +121,12 @@ void run(const control_client *control, int priority, thread_record *record) {
             int err = 0;
             int retry_count = 0;
             while (true) {
-                START_TIMER(METRIC_LOCK_TIME);
+                START_TIMER(METRIC_LOCK_TIME, 0);
                 tl.restart();
                 err = 0;
                 __lock_state r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
-                END_TIMER(METRIC_LOCK_TIME, METRIC_LOCK_TIME);
+                END_TIMER(METRIC_LOCK_TIME, 0);
 
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
@@ -191,7 +192,7 @@ int main(int argc, char *argv[]) {
 
         bool r = metrics_utils::create_metric(METRIC_LOCK_TIME, AverageMetric, true);
         if (!r) {
-            throw BASE_ERROR("Error creating metrics. [name=%s]", METRIC_LOCK_TIME);
+            throw BASE_ERROR("Error creating metrics. [name=%s]", METRIC_LOCK_TIME.c_str());
         }
 
         int t_count = 6;

@@ -1526,6 +1526,7 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(value);
                             CHARBUFF s = (CHARBUFF) value;
                             uint32_t size = strlen(s);
+                            PRECONDITION(max_length >= (sizeof(uint32_t) + size));
                             uint64_t w_size = buffer_utils::write_32str(buffer, &offset, s, size);
                             return w_size;
                         }
@@ -1632,6 +1633,7 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(value);
                             CHARBUFF s = (CHARBUFF) value;
                             uint8_t size = strlen(s);
+                            PRECONDITION(max_length >= (sizeof(uint8_t) + size));
                             uint64_t w_size = buffer_utils::write_8str(buffer, &offset, s, size);
                             return w_size;
                         }

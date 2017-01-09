@@ -112,10 +112,11 @@ REACTFS_NS_CORE
                         }
 
                         virtual uint64_t
-                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t buffer_size, ...) override {
                             const mutable_record_struct *rec = (const mutable_record_struct *) value;
                             CHECK_NOT_NULL(rec);
                             POSTCONDITION(rec->get_field_count() == fields->get_field_count());
+                            long max_length = (long) buffer_size;
                             PRECONDITION(max_length > 0);
 
                             __pos pos;
@@ -326,13 +327,15 @@ REACTFS_NS_CORE
                         * @param buffer - Output data buffer the data is to be copied to.
                         * @param value - Data value pointer to copy from.
                         * @param offset - Offset in the output buffer to start writing from.
-                        * @param max_length - Max lenght of the output buffer.
+                        * @param buffer_size - Max lenght of the output buffer.
                         * @return - Total number of bytes written.
                         */
                         virtual uint64_t
-                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t buffer_size, ...) override {
                             CHECK_NOT_NULL(value);
                             CHECK_NOT_NULL(type_handler);
+
+                            long max_length = (long) buffer_size;
                             PRECONDITION(max_length > 0);
 
                             __pos pos;
@@ -591,14 +594,15 @@ REACTFS_NS_CORE
                         * @param buffer - Output data buffer the data is to be copied to.
                         * @param value - Data value pointer to copy from.
                         * @param offset - Offset in the output buffer to start writing from.
-                        * @param max_length - Max lenght of the output buffer.
+                        * @param buffer_size - Max lenght of the output buffer.
                         * @return - Total number of bytes written.
                         */
                         virtual uint64_t
-                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t buffer_size, ...) override {
                             CHECK_NOT_NULL(kt_handler);
                             CHECK_NOT_NULL(vt_handler);
                             CHECK_NOT_NULL(value);
+                            long max_length = (long) buffer_size;
                             PRECONDITION(max_length > 0);
 
                             __pos pos;
@@ -687,7 +691,7 @@ REACTFS_NS_CORE
                                 const unordered_map<__K, mutable_record_struct *> *data = static_cast<const unordered_map<__K, mutable_record_struct *> *>(value);
                                 for (auto iter = data->begin(); iter != data->end(); iter++) {
                                     const __K key = iter->first;
-                                    const mutable_record_struct * value = iter->second;
+                                    const mutable_record_struct *value = iter->second;
                                     kt_handler->print(&key);
                                     vt_handler->print(value);
                                 }
@@ -723,14 +727,16 @@ REACTFS_NS_CORE
                         * @param buffer - Output data buffer the data is to be copied to.
                         * @param value - Data value pointer to copy from.
                         * @param offset - Offset in the output buffer to start writing from.
-                        * @param max_length - Max lenght of the output buffer.
+                        * @param buffer_size - Max lenght of the output buffer.
                         * @return - Total number of bytes written.
                         */
                         virtual uint64_t
-                        write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
+                        write(void *buffer, const void *value, uint64_t offset, uint64_t buffer_size, ...) override {
                             CHECK_NOT_NULL(this->kt_handler);
                             CHECK_NOT_NULL(this->vt_handler);
                             CHECK_NOT_NULL(value);
+                            long max_length = (long) buffer_size;
+                            PRECONDITION(max_length > 0);
 
                             const unordered_map<string, __V *> *map = (const unordered_map<string, __V *> *) value;
                             CHECK_NOT_NULL(map);
@@ -744,13 +750,17 @@ REACTFS_NS_CORE
 
                             uint16_t m_size = map->size();
                             pos.size = buffer_utils::write<uint16_t>(buffer, &pos.offset, m_size);
+                            max_length -= pos.size;
 
                             if (!map->empty()) {
                                 for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                    PRECONDITION(max_length > 0);
                                     string key = (iter->first);
                                     uint64_t r = this->kt_handler->write(buffer, key.c_str(), pos.offset, max_length);
                                     pos.offset += r;
                                     pos.size += r;
+                                    max_length -= r;
+                                    PRECONDITION(max_length > 0);
                                     r = this->vt_handler->write(buffer, iter->second, pos.offset, max_length);
                                     pos.offset += r;
                                     pos.size += r;
