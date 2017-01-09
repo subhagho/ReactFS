@@ -168,7 +168,7 @@ REACTFS_NS_COMMON
                  * SHM backed data structure to define write locking semantics.
                  */
                 class write_lock {
-                private:
+                protected:
                     /// Mutex to control lock state changes.
                     mutex __thread_lock;
 
@@ -457,7 +457,8 @@ REACTFS_NS_COMMON
                                     memset(lock_struct->owner.thread_id, 0, SIZE_THREAD_ID);
                                     strncpy(lock_struct->owner.thread_id, thread_id.c_str(),
                                             thread_id.length());
-
+                                    lock_struct->owner.lock_timestamp = time_utils::now();
+                                    lock_struct->owner.last_updated = lock_struct->owner.lock_timestamp;
                                     locked = true;
                                 }
                             }

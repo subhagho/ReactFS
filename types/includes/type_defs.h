@@ -116,6 +116,7 @@ REACTFS_NS_CORE
                             const mutable_record_struct *rec = (const mutable_record_struct *) value;
                             CHECK_NOT_NULL(rec);
                             POSTCONDITION(rec->get_field_count() == fields->get_field_count());
+                            PRECONDITION(max_length > 0);
 
                             __pos pos;
                             pos.offset = offset;
@@ -126,11 +127,13 @@ REACTFS_NS_CORE
                             *w_size = 0;
                             pos.size += sizeof(uint64_t);
                             pos.offset += sizeof(uint64_t);
+                            max_length -= pos.size;
 
                             unordered_map<uint8_t, __native_type *> types = fields->get_fields();
                             CHECK_NOT_EMPTY(types);
                             unordered_map<uint8_t, __native_type *>::const_iterator iter;
                             for (iter = types.begin(); iter != types.end(); iter++) {
+                                PRECONDITION(max_length > 0);
                                 __native_type *type = iter->second;
                                 CHECK_NOT_NULL(type);
                                 __base_datatype_io *handler = type->get_type_handler(__record_mode::RM_WRITE);
@@ -163,10 +166,13 @@ REACTFS_NS_CORE
                                     uint64_t r = buffer_utils::write<uint8_t>(buffer, &pos.offset, ci);
                                     pos.size += r;
                                     *w_size += r;
+                                    max_length -= r;
+                                    PRECONDITION(max_length > 0);
                                     r = handler->write(buffer, d, pos.offset, max_length);
                                     pos.offset += r;
                                     pos.size += r;
                                     *w_size += r;
+                                    max_length -= r;
                                 }
                             }
                             return pos.size;
@@ -327,6 +333,7 @@ REACTFS_NS_CORE
                         write(void *buffer, const void *value, uint64_t offset, uint64_t max_length, ...) override {
                             CHECK_NOT_NULL(value);
                             CHECK_NOT_NULL(type_handler);
+                            PRECONDITION(max_length > 0);
 
                             __pos pos;
                             pos.offset = offset;
@@ -336,12 +343,15 @@ REACTFS_NS_CORE
 
                             uint16_t a_size = list->size();
                             pos.size = buffer_utils::write<uint16_t>(buffer, &pos.offset, a_size);
-
+                            max_length -= pos.size;
+                            PRECONDITION(max_length > 0);
                             if (a_size > 0) {
                                 for (uint64_t ii = 0; ii < a_size; ii++) {
+                                    PRECONDITION(max_length > 0);
                                     uint64_t r = type_handler->write(buffer, (*list)[ii], pos.offset, max_length);
                                     pos.offset += r;
                                     pos.size += r;
+                                    max_length -= r;
                                 }
                                 return pos.size;
                             }
@@ -589,6 +599,7 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(kt_handler);
                             CHECK_NOT_NULL(vt_handler);
                             CHECK_NOT_NULL(value);
+                            PRECONDITION(max_length > 0);
 
                             __pos pos;
                             pos.offset = offset;
@@ -602,15 +613,20 @@ REACTFS_NS_CORE
 
                             uint16_t m_size = map->size();
                             pos.size = buffer_utils::write<uint16_t>(buffer, &pos.offset, m_size);
+                            max_length -= pos.size;
 
                             if (!map->empty()) {
                                 for (auto iter = map->begin(); iter != map->end(); iter++) {
+                                    PRECONDITION(max_length > 0);
                                     uint64_t r = kt_handler->write(buffer, &(iter->first), pos.offset, max_length);
                                     pos.offset += r;
                                     pos.size += r;
+                                    max_length -= r;
+                                    PRECONDITION(max_length > 0);
                                     r = vt_handler->write(buffer, iter->second, pos.offset, max_length);
                                     pos.offset += r;
                                     pos.size += r;
+                                    max_length -= r;
                                 }
                                 return pos.size;
                             }

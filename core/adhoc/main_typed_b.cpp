@@ -24,7 +24,7 @@
 #define REUSE_BLOCK_FILE_COMP "/tmp/block_reused.comp"
 #define REUSE_BLOCK_ID_COMP 1025
 
-#define DEFAULT_BLOCK_SIZE 1024 * 1024 * 128
+#define DEFAULT_BLOCK_SIZE 1024 * 1024 * 256
 #define RECORD_START_INDEX 100000
 #define COUNT_RECORDS 500
 
@@ -101,14 +101,15 @@ void test_indexed(char *schemaf) {
 
     vector<record_struct *> *records = new vector<record_struct *>();
     CHECK_ALLOC(records, TYPE_NAME(vector));
-    tr.start();
     for(int index : indexes) {
+        tr.start();
         int c = block->read_struct(index, 1, records);
         POSTCONDITION(records->size() > 0);
         record_struct *p0 = (*records)[0];
         test_schema *nts = new test_schema();
         CHECK_ALLOC(nts, TYPE_NAME(test_schema));
         nts->deserialize(p0);
+        tr.pause();
         CHECK_AND_FREE(nts);
     }
     tr.stop();

@@ -196,6 +196,7 @@ namespace com {
                         rollback_info->start_time = time_utils::now();
                         rollback_info->transaction_id->assign(txid);
                         rollback_info->write_offset = header->write_offset;
+                        rollback_info->start_offset = header->write_offset;
                         rollback_info->start_index = nullptr;
                         rollback_info->used_bytes = 0;
                         rollback_info->block_checksum = header->block_checksum;
@@ -331,10 +332,14 @@ namespace com {
                     uint64_t get_free_space() const {
                         CHECK_STATE_AVAILABLE(state);
                         if (in_transaction()) {
-                            return (header->block_size -
-                                    (header->used_bytes + rollback_info->used_bytes + sizeof(__record_header)));
+                            uint64_t used = (header->used_bytes + rollback_info->used_bytes + sizeof(__record_header));
+                            if (header->block_size > used)
+                                return (header->block_size - used);
                         }
-                        return (header->block_size - (header->used_bytes + sizeof(__record_header)));
+                        uint64_t used = (header->used_bytes + sizeof(__record_header));
+                        if (header->block_size > used)
+                            return (header->block_size - used);
+                        return 0;
                     }
 
                     /*!

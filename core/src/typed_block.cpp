@@ -93,8 +93,13 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
     CHECK_NOT_NULL(handler);
     __dt_struct *dt_struct = dynamic_cast<__dt_struct *>(handler);
     CHECK_CAST(dt_struct, TYPE_NAME(__base_datatype_io), TYPE_NAME(__dt_struct));
+
     uint64_t free_s = this->get_free_space();
+    free_s -= sizeof(__record_header);
+    POSTCONDITION(free_s > 0);
+
     uint64_t w_size = dt_struct->write(record->data_ptr, source, 0, free_s);
+
     uint32_t checksum = common_utils::crc32c(0, (BYTE *) record->data_ptr, w_size);
     record->header->data_size = w_size;
     record->header->uncompressed_size = w_size;
