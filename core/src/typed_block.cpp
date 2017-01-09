@@ -58,6 +58,13 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     this->datetype->read(ptr, 0);
     this->datetype->print();
 
+    bool r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_READ_PREFIX), AverageMetric, false);
+    POSTCONDITION(r);
+    r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_WRITE_PREFIX), AverageMetric, false);
+    POSTCONDITION(r);
+    r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_LOCK_PREFIX), AverageMetric, false);
+    POSTCONDITION(r);
+
     state.set_state(__state_enum::Available);
 }
 
@@ -65,9 +72,13 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
                                                                    string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(source);
-
+    string m_name = get_metric_name(BLOCK_METRIC_WRITE_PREFIX);
+    START_TIMER(m_name, 0);
     PRECONDITION(is_writeable());
+    string lm_name = get_metric_name(BLOCK_TYPED_METRIC_LOCK_PREFIX);
+    START_TIMER(lm_name, 2);
     PRECONDITION(in_transaction());
+    END_TIMER(lm_name, 2);
     PRECONDITION((!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id)));
 
     void *w_ptr = get_write_ptr();
@@ -79,6 +90,8 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
     CHECK_ALLOC(record, TYPE_NAME(__record));
 
 
+    string tm_name = get_metric_name(BLOCK_TYPED_METRIC_WRITE_PREFIX);
+    START_TIMER(tm_name, 1);
     record->header = static_cast<__record_header *>(w_ptr);
     memset(record->header, 0, sizeof(__record_header));
     record->header->index = get_next_index();
@@ -88,6 +101,7 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
 
     w_ptr = buffer_utils::increment_data_ptr(w_ptr, sizeof(__record_header));
     record->data_ptr = w_ptr;
+
 
     __base_datatype_io *handler = this->datetype->get_type_handler(__record_mode::RM_WRITE);
     CHECK_NOT_NULL(handler);
@@ -104,12 +118,14 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
     record->header->data_size = w_size;
     record->header->uncompressed_size = w_size;
     record->header->checksum = checksum;
+    END_TIMER(tm_name, 1);
 
     rollback_info->used_bytes += w_size;
     rollback_info->write_offset += (sizeof(__record_header) + w_size);
     rollback_info->block_checksum += record->header->checksum;
 
     t.stop();
+
     uint64_t write_bytes = (sizeof(__record_header) + w_size);
     node_client_env *n_env = node_init_client::get_client_env();
     mount_client *m_client = n_env->get_mount_client();
@@ -117,6 +133,7 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
 
     header->update_time = record->header->timestamp;
 
+    END_TIMER(m_name, 0);
     return record;
 }
 
@@ -140,12 +157,18 @@ com::wookler::reactfs::core::typed_block::__read_record(uint64_t index, uint64_t
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
 
+    string m_name = get_metric_name(BLOCK_METRIC_READ_PREFIX);
+    START_TIMER(m_name, 0);
+
     void *ptr = get_data_ptr();
     void *rptr = buffer_utils::increment_data_ptr(ptr, offset);
     __record *record = (__record *) malloc(sizeof(__record));
     CHECK_ALLOC(record, TYPE_NAME(__record));
     record->header = static_cast<__record_header *>(rptr);
     rptr = buffer_utils::increment_data_ptr(rptr, sizeof(__record_header));
+
+    string tm_name = get_metric_name(BLOCK_TYPED_METRIC_READ_PREFIX);
+    START_TIMER(tm_name, 1);
 
     __base_datatype_io *handler = this->datetype->get_type_handler(__record_mode::RM_READ);
     CHECK_NOT_NULL(handler);
@@ -156,6 +179,8 @@ com::wookler::reactfs::core::typed_block::__read_record(uint64_t index, uint64_t
 
     dt_struct->read(rptr, &st_data, 0, record->header->data_size);
     CHECK_NOT_NULL(st_data);
+    END_TIMER(tm_name, 1);
+
     record->data_ptr = st_data;
 
     POSTCONDITION(record->header->index == index);
@@ -165,6 +190,7 @@ com::wookler::reactfs::core::typed_block::__read_record(uint64_t index, uint64_t
     uint32_t checksum = common_utils::crc32c(0, (BYTE *) rptr, record->header->data_size);
     POSTCONDITION(checksum == record->header->checksum);
 
+    END_TIMER(m_name, 0);
     return record;
 }
 

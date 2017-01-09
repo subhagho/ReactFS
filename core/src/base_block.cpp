@@ -123,7 +123,7 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
                              version_utils::get_version_string(version).c_str());
     }
 
-    if (IS_NULL(block_lock) &&  for_update) {
+    if (IS_NULL(block_lock) && for_update) {
         string lock_name = get_lock_name(header->block_id, header->block_uid);
         write_lock_client *env = shared_lock_utils::get()->get_w_client(BLOCK_LOCK_GROUP);
 
@@ -137,9 +137,9 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
         compression = compression_factory::get_compression_handler(header->compression.type);
     }
 
-    bool r = metrics_utils::create_metric(get_read_metric_name(), AverageMetric, false);
+    bool r = metrics_utils::create_metric(get_metric_name(BLOCK_METRIC_WRITE_PREFIX), AverageMetric, false);
     POSTCONDITION(r);
-    r = metrics_utils::create_metric(get_write_metric_name(), AverageMetric, false);
+    r = metrics_utils::create_metric(get_metric_name(BLOCK_METRIC_READ_PREFIX), AverageMetric, false);
     POSTCONDITION(r);
 
     return base_ptr;
@@ -176,7 +176,7 @@ com::wookler::reactfs::core::base_block::__write_record(void *source, uint64_t s
                                                         uint64_t uncompressed_size) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(source);
-    string m_name = get_write_metric_name();
+    string m_name = get_metric_name(BLOCK_METRIC_WRITE_PREFIX);
     START_TIMER(m_name, 0);
     PRECONDITION(is_writeable());
     PRECONDITION(has_space(size));
@@ -230,7 +230,7 @@ __record *
 com::wookler::reactfs::core::base_block::__read_record(uint64_t index, uint64_t offset, uint64_t size) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
-    string m_name = get_read_metric_name();
+    string m_name = get_metric_name(BLOCK_METRIC_READ_PREFIX);
     START_TIMER(m_name, 0);
 
     void *ptr = get_data_ptr();
@@ -256,7 +256,7 @@ __record *
 com::wookler::reactfs::core::base_block::__read_record(uint64_t index) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
-    string m_name = get_read_metric_name();
+    string m_name = get_metric_name(BLOCK_METRIC_READ_PREFIX);
     START_TIMER(m_name, 0);
 
     void *ptr = get_data_ptr();

@@ -31,6 +31,10 @@
 #include "base_block.h"
 #include "base_indexed_block.h"
 
+#define BLOCK_TYPED_METRIC_READ_PREFIX "metric.typed.block.read"
+#define BLOCK_TYPED_METRIC_WRITE_PREFIX "metric.typed.block.write"
+#define BLOCK_TYPED_METRIC_LOCK_PREFIX "metric.typed.block.lock"
+
 using namespace REACTFS_NS_CORE_PREFIX::types;
 
 REACTFS_NS_CORE
@@ -51,6 +55,16 @@ REACTFS_NS_CORE
                     }
 
                 public:
+                    ~typed_block() {
+                        DUMP_METRIC(get_metric_name(BLOCK_TYPED_METRIC_READ_PREFIX));
+                        DUMP_METRIC(get_metric_name(BLOCK_TYPED_METRIC_WRITE_PREFIX));
+                        DUMP_METRIC(get_metric_name(BLOCK_TYPED_METRIC_LOCK_PREFIX));
+
+                        REMOVE_METRIC(get_metric_name(BLOCK_TYPED_METRIC_READ_PREFIX));
+                        REMOVE_METRIC(get_metric_name(BLOCK_TYPED_METRIC_WRITE_PREFIX));
+                        REMOVE_METRIC(get_metric_name(BLOCK_TYPED_METRIC_LOCK_PREFIX));
+                    }
+
                     void set_datatype(__complex_type *datatype) {
                         CHECK_NOT_NULL(datatype);
                         this->datetype = datatype;
