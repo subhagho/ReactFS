@@ -277,7 +277,8 @@ REACTFS_NS_CORE
                          * @param name - Declared variable name for the collection instance.
                          * @return - Inner type definition.
                          */
-                        __native_type *create_inner_type(__native_type *parent, __declare *field, string &name) {
+                        __native_type *
+                        create_inner_type(__native_type *parent, __declare *field, string &name, uint8_t index) {
                             CHECK_NOT_NULL(field);
 
                             if (!field->is_reference) {
@@ -285,7 +286,7 @@ REACTFS_NS_CORE
                                 POSTCONDITION(type != __type_def_enum::TYPE_UNKNOWN);
                                 PRECONDITION(__type_enum_helper::is_inner_type_valid(type));
                                 if (__type_enum_helper::is_native(type)) {
-                                    __native_type *nt = new __native_type(parent, 0, name, type);
+                                    __native_type *nt = new __native_type(parent, index, name, type);
                                     CHECK_ALLOC(nt, TYPE_NAME(__native_type));
                                     return nt;
                                 }
@@ -298,7 +299,7 @@ REACTFS_NS_CORE
                                 }
                                 __reference_type *rt = iter->second;
                                 CHECK_NOT_NULL(rt);
-                                return create_type(parent, name, rt, 0);
+                                return create_type(parent, name, rt, index);
                             }
                             return nullptr;
                         }
@@ -334,7 +335,7 @@ REACTFS_NS_CORE
                                         POSTCONDITION(__type_enum_helper::is_inner_type_valid(it));
 
                                         __native_type *inner = create_inner_type(nullptr, inner_type,
-                                                                                 *(field->variable));
+                                                                                 *(field->variable), index);
                                         CHECK_NOT_NULL(inner);
                                         __list_type *at = new __list_type(type, index, *(field->variable), it, inner);
                                         CHECK_ALLOC(at, TYPE_NAME(__list_type));
@@ -346,7 +347,7 @@ REACTFS_NS_CORE
                                         __type_def_enum it = __type_def_enum::TYPE_STRUCT;
 
                                         __native_type *inner = create_inner_type(nullptr, inner_type,
-                                                                                 *(field->variable));
+                                                                                 *(field->variable), index);
                                         CHECK_NOT_NULL(inner);
                                         __list_type *at = new __list_type(type, index, *(field->variable), it, inner);
                                         CHECK_ALLOC(at, TYPE_NAME(__list_type));
@@ -375,7 +376,7 @@ REACTFS_NS_CORE
                                     POSTCONDITION(__type_enum_helper::is_inner_type_valid(vt));
 
                                     string value_name(MAP_TYPE_VALUE_NAME);
-                                    __native_type *value = create_inner_type(nullptr, value_type, value_name);
+                                    __native_type *value = create_inner_type(nullptr, value_type, value_name, 1);
                                     CHECK_NOT_NULL(value);
 
                                     __map_type *mt = new __map_type(type, index, *(field->variable), kt, vt, value);
@@ -383,7 +384,7 @@ REACTFS_NS_CORE
                                     value->set_parent(mt);
 
                                     string key_name(MAP_TYPE_KEY_NAME);
-                                    __native_type *key = create_inner_type(mt, key_type, key_name);
+                                    __native_type *key = create_inner_type(mt, key_type, key_name, 0);
                                     CHECK_NOT_NULL(key);
 
                                     mt->set_key_type(key);

@@ -125,22 +125,6 @@ REACTFS_NS_CORE
                         /// Parent type of which this field is a part.
                         __native_type *parent = nullptr;
 
-
-                        virtual const __native_type *find(vector<string> &path, uint8_t index) const {
-                            PRECONDITION(index == (path.size() - 1));
-                            PRECONDITION(path[index] == this->name);
-
-                            return this;
-                        }
-
-                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const {
-                            PRECONDITION(index == (count - 1));
-                            uint8_t ii = parts[index];
-                            PRECONDITION(ii == this->index);
-
-                            return this;
-                        }
-
                     public:
                         /*!
                          * Default empty constructor, to be instantiated
@@ -540,6 +524,22 @@ REACTFS_NS_CORE
                             return false;
                         }
 
+
+                        virtual const __native_type *find(vector<string> &path, uint8_t index) const {
+                            PRECONDITION(index == (path.size() - 1));
+                            PRECONDITION(path[index] == this->name);
+
+                            return this;
+                        }
+
+                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const {
+                            PRECONDITION(index == (count - 1));
+                            uint8_t ii = parts[index];
+                            PRECONDITION(ii == this->index);
+
+                            return this;
+                        }
+
                     };
 
                     typedef struct __field_value__ {
@@ -669,33 +669,6 @@ REACTFS_NS_CORE
                             field_index.insert({name, index});
                         }
 
-
-                    protected:
-                        virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
-                            PRECONDITION(index < (path.size() - 1));
-                            string key = path[index];
-                            POSTCONDITION(key == this->name);
-                            string nkey = path[index + 1];
-                            unordered_map<string, __native_type *>::const_iterator iter = name_index.find(nkey);
-                            if (iter != name_index.end()) {
-                                const __native_type *type = iter->second;
-                                CHECK_NOT_NULL(type);
-                                return type->find(path, (index + 1));
-                            }
-                            return nullptr;
-                        }
-
-                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const {
-                            PRECONDITION(index < count);
-                            uint8_t ii = parts[index];
-                            unordered_map<uint8_t, __native_type *>::const_iterator iter = fields.find(ii);
-                            if (iter != fields.end()) {
-                                const __native_type *type = iter->second;
-                                CHECK_NOT_NULL(type);
-                                return type->find(parts, count, (index + 1));
-                            }
-                            return nullptr;
-                        }
 
                     public:
                         /*!
@@ -960,6 +933,32 @@ REACTFS_NS_CORE
                                 const __native_type *type = iter->second;
                                 CHECK_NOT_NULL(type);
                                 return type->find(parts, count, 1);
+                            }
+                            return nullptr;
+                        }
+
+                        virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
+                            PRECONDITION(index < (path.size() - 1));
+                            string key = path[index];
+                            POSTCONDITION(key == this->name);
+                            string nkey = path[index + 1];
+                            unordered_map<string, __native_type *>::const_iterator iter = name_index.find(nkey);
+                            if (iter != name_index.end()) {
+                                const __native_type *type = iter->second;
+                                CHECK_NOT_NULL(type);
+                                return type->find(path, (index + 1));
+                            }
+                            return nullptr;
+                        }
+
+                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const override {
+                            PRECONDITION(index < count);
+                            uint8_t ii = parts[index];
+                            unordered_map<uint8_t, __native_type *>::const_iterator iter = fields.find(ii);
+                            if (iter != fields.end()) {
+                                const __native_type *type = iter->second;
+                                CHECK_NOT_NULL(type);
+                                return type->find(parts, count, (index + 1));
                             }
                             return nullptr;
                         }
@@ -1389,30 +1388,6 @@ REACTFS_NS_CORE
                         __native_type *inner = nullptr;
                         __base_datatype_io *write_handler = nullptr;
 
-                    protected:
-                        virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
-                            string key = path[index];
-                            PRECONDITION(key == this->name);
-                            if (index == (path.size() - 1)) {
-                                return this;
-                            } else {
-                                PRECONDITION(inner_type == __type_def_enum::TYPE_STRUCT);
-                                return inner->find(path, index);
-                            }
-                        }
-
-                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const {
-                            PRECONDITION(index < count);
-                            uint8_t ii = parts[index];
-                            PRECONDITION(this->index == ii);
-                            if (index == (count - 1)) {
-                                return this;
-                            } else {
-                                PRECONDITION(inner_type == __type_def_enum::TYPE_STRUCT);
-                                return inner->find(parts, count, index);
-                            }
-                        }
-
                     public:
                         __list_type(__native_type *parent) : __native_type(parent) {
                             this->type = __field_type::LIST;
@@ -1558,6 +1533,28 @@ REACTFS_NS_CORE
                             return inner->has_complex_type();
                         }
 
+                        virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
+                            string key = path[index];
+                            PRECONDITION(key == this->name);
+                            if (index == (path.size() - 1)) {
+                                return this;
+                            } else {
+                                PRECONDITION(inner_type == __type_def_enum::TYPE_STRUCT);
+                                return inner->find(path, index);
+                            }
+                        }
+
+                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const override {
+                            PRECONDITION(index < count);
+                            uint8_t ii = parts[index];
+                            PRECONDITION(this->index == ii);
+                            if (index == (count - 1)) {
+                                return this;
+                            } else {
+                                PRECONDITION(inner_type == __type_def_enum::TYPE_STRUCT);
+                                return inner->find(parts, count, index);
+                            }
+                        }
 
                     };
 
@@ -1568,41 +1565,6 @@ REACTFS_NS_CORE
                         __type_def_enum value_type;
                         __native_type *value = nullptr;
                         __base_datatype_io *write_handler = nullptr;
-
-                    protected:
-                        virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
-                            string key = path[index];
-                            PRECONDITION(key == this->name);
-                            string nkey = path[index + 1];
-                            if (nkey == MAP_TYPE_KEY_NAME) {
-                                PRECONDITION(index == (path.size() - 1));
-                                return this->key->find(path, index);
-                            } else if (nkey == MAP_TYPE_VALUE_NAME) {
-                                if (index == (path.size() - 1)) {
-                                    PRECONDITION(__type_enum_helper::is_native(value_type));
-                                    return value->find(path, index);
-                                } else {
-                                    PRECONDITION(value_type == __type_def_enum::TYPE_STRUCT);
-                                    return value->find(path, index);
-                                }
-                            } else {
-                                throw BASE_ERROR("Invalid field name. [name=%s]", key.c_str());
-                            }
-                        }
-
-                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const {
-                            PRECONDITION(index < (count - 1));
-                            uint8_t ii = parts[index];
-                            PRECONDITION(this->index == ii);
-                            uint8_t in = parts[index + 1];
-                            if (in == 0) {
-                                return this->key;
-                            } else if (in == 1) {
-                                
-                            } else {
-                                throw BASE_ERROR("Invalid map field index. [index=%d]", in);
-                            }
-                        }
 
                     public:
                         __map_type(__native_type *parent) : __native_type(parent) {
@@ -1769,6 +1731,45 @@ REACTFS_NS_CORE
                             return value->has_complex_type();
                         }
 
+                        virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
+                            string key = path[index];
+                            PRECONDITION(key == this->name);
+                            string nkey = path[index + 1];
+                            if (nkey == MAP_TYPE_KEY_NAME) {
+                                PRECONDITION(index == (path.size() - 1));
+                                return this->key->find(path, index);
+                            } else if (nkey == MAP_TYPE_VALUE_NAME) {
+                                if (index == (path.size() - 1)) {
+                                    PRECONDITION(__type_enum_helper::is_native(value_type));
+                                    return value->find(path, index + 1);
+                                } else {
+                                    PRECONDITION(value_type == __type_def_enum::TYPE_STRUCT);
+                                    return value->find(path, index + 1);
+                                }
+                            } else {
+                                throw BASE_ERROR("Invalid field name. [name=%s]", key.c_str());
+                            }
+                        }
+
+                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const override {
+                            PRECONDITION(index < (count - 1));
+                            uint8_t ii = parts[index];
+                            PRECONDITION(this->index == ii);
+                            uint8_t in = parts[index + 1];
+                            if (in == 0) {
+                                return this->key;
+                            } else if (in == 1) {
+                                if (index == (count - 2)) {
+                                    PRECONDITION(__type_enum_helper::is_native(value_type));
+                                    return this->value;
+                                } else {
+                                    PRECONDITION(value_type == __type_def_enum::TYPE_STRUCT);
+                                    return value->find(parts, count, index + 1);
+                                }
+                            } else {
+                                throw BASE_ERROR("Invalid map field index. [index=%d]", in);
+                            }
+                        }
 
                     };
 
