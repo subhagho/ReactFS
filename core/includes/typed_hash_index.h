@@ -48,7 +48,7 @@ using namespace com::wookler::reactfs::core;
 #define HASH_INDEX_VERSION_MINOR ((uint16_t) 1)
 
 REACTFS_NS_CORE
-                class typed_hash_index {
+                class typed_hash_index : public typed_index_base {
 
                 };
 REACTFS_NS_CORE_END

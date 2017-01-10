@@ -22,5 +22,5 @@ schema test_schema {
 } set_key_fields(key, testLong);
 // comment.
 
-index i_test_schema_01 on test_schema (key, testLong DESC, testTypeRef.name) FULLTEXT;
-index i_test_schema_02 on test_schema (key, testLong DESC, testListRef.testString) FULLTEXT;
+index i_test_schema_01 on test_schema (key, testLong DESC, testTypeRef.name) HASH;
+index i_test_schema_02 on test_schema (key, testLong DESC, testListRef.testString) HASH;

@@ -124,6 +124,23 @@ REACTFS_NS_CORE
                         bool nullable = false;
                         /// Parent type of which this field is a part.
                         __native_type *parent = nullptr;
+
+
+                        virtual const __native_type *find(vector<string> &path, uint8_t index) const {
+                            PRECONDITION(index == (path.size() - 1));
+                            PRECONDITION(path[index] == this->name);
+
+                            return this;
+                        }
+
+                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const {
+                            PRECONDITION(index == (count - 1));
+                            uint8_t ii = parts[index];
+                            PRECONDITION(ii == this->index);
+
+                            return this;
+                        }
+
                     public:
                         /*!
                          * Default empty constructor, to be instantiated
@@ -522,6 +539,7 @@ REACTFS_NS_CORE
                         virtual bool has_complex_type() const {
                             return false;
                         }
+
                     };
 
                     typedef struct __field_value__ {
@@ -649,6 +667,34 @@ REACTFS_NS_CORE
 
                             fields.insert({index, type});
                             field_index.insert({name, index});
+                        }
+
+
+                    protected:
+                        virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
+                            PRECONDITION(index < (path.size() - 1));
+                            string key = path[index];
+                            POSTCONDITION(key == this->name);
+                            string nkey = path[index + 1];
+                            unordered_map<string, __native_type *>::const_iterator iter = name_index.find(nkey);
+                            if (iter != name_index.end()) {
+                                const __native_type *type = iter->second;
+                                CHECK_NOT_NULL(type);
+                                return type->find(path, (index + 1));
+                            }
+                            return nullptr;
+                        }
+
+                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const {
+                            PRECONDITION(index < count);
+                            uint8_t ii = parts[index];
+                            unordered_map<uint8_t, __native_type *>::const_iterator iter = fields.find(ii);
+                            if (iter != fields.end()) {
+                                const __native_type *type = iter->second;
+                                CHECK_NOT_NULL(type);
+                                return type->find(parts, count, (index + 1));
+                            }
+                            return nullptr;
                         }
 
                     public:
@@ -893,6 +939,161 @@ REACTFS_NS_CORE
 
                         virtual bool has_complex_type() const override {
                             return true;
+                        }
+
+                        const __native_type *find(string key) const {
+                            CHECK_NOT_EMPTY(key);
+                            vector<string> parts;
+                            string_utils::split(key, '.', &parts);
+                            POSTCONDITION(parts.size() > 0);
+
+                            if (parts[0] != this->name) {
+                                parts.insert(parts.begin(), this->name);
+                            }
+                            return this->find(parts, 0);
+                        }
+
+                        const __native_type *find(uint8_t *parts, uint8_t count) const {
+                            uint8_t ii = parts[0];
+                            unordered_map<uint8_t, __native_type *>::const_iterator iter = fields.find(ii);
+                            if (iter != fields.end()) {
+                                const __native_type *type = iter->second;
+                                CHECK_NOT_NULL(type);
+                                return type->find(parts, count, 1);
+                            }
+                            return nullptr;
+                        }
+                    };
+
+                    typedef enum __index_type__ {
+                        HASH = 0, TREE = 1, FULLTEXT = 2
+                    } __index_type;
+
+                    typedef struct __index_column__ {
+                        uint8_t sequence = 0;
+                        uint8_t *path = nullptr;
+                        uint8_t count = 0;
+                        bool dir_asc = true;
+                        const __native_type *type = nullptr;
+                    } __index_column;
+
+                    class record_index {
+                    private:
+                        __index_type *type;
+                        vector<__index_column *> *columns = nullptr;
+                        uint8_t *count = 0;
+                        bool allocated = false;
+                    public:
+                        record_index() {
+                            allocated = false;
+                        }
+
+                        record_index(uint8_t count, __index_type type) {
+                            PRECONDITION(count > 0);
+                            columns = new vector<__index_column *>(count);
+                            CHECK_ALLOC(columns, TYPE_NAME(vector));
+                            for (uint8_t ii = 0; ii < count; ii++) {
+                                (*columns)[ii] = nullptr;
+                            }
+                            this->type = (__index_type *) malloc(sizeof(__index_type));
+                            CHECK_ALLOC(this->type, TYPE_NAME(__index_type));
+                            *this->type = type;
+
+                            this->count = (uint8_t *) malloc(sizeof(uint8_t));
+                            CHECK_ALLOC(this->count, TYPE_NAME(uint8_t));
+                            *this->count = count;
+                        }
+
+                        ~record_index() {
+                            if (allocated) {
+                                for (uint8_t ii = 0; ii < *count; ii++) {
+                                    if (NOT_NULL((*columns)[ii])) {
+                                        if (NOT_NULL((*columns)[ii]->path)) {
+                                            FREE_PTR((*columns)[ii]->path);
+                                        }
+                                        FREE_PTR((*columns)[ii]);
+                                    }
+                                }
+                                FREE_PTR(this->count);
+                                FREE_PTR(this->type);
+                            }
+                            CHECK_AND_FREE(this->columns);
+                        }
+
+                        void add_index(uint8_t index, uint8_t *values, uint8_t count) {
+                            PRECONDITION(index < *this->count);
+                            (*columns)[index]->path = (uint8_t *) malloc(sizeof(uint8_t) * count);
+                            CHECK_ALLOC((*columns)[index]->path, TYPE_NAME(uint8_t));
+                            for (uint8_t ii = 0; ii < count; ii++) {
+                                (*columns)[index]->path[ii] = values[ii];
+                            }
+                        }
+
+                        const __index_column *get_index(uint8_t index) {
+                            PRECONDITION(index < *this->count);
+                            return (*columns)[index];
+                        }
+
+                        uint64_t write(void *buffer, uint64_t offset) {
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
+
+                            memcpy(buffer, this->type, sizeof(__index_type));
+                            pos.offset += sizeof(__index_type);
+                            pos.size += sizeof(__index_type);
+
+                            pos.size += buffer_utils::write<uint8_t>(buffer, &pos.offset, *this->count);
+
+                            for (uint8_t ii = 0; ii < *count; ii++) {
+                                void *ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
+                                memcpy(ptr, (*columns)[ii], sizeof(__index_column));
+                                pos.size += sizeof(__index_column);
+                                pos.offset += sizeof(__index_column);
+
+                                uint32_t size = sizeof(uint8_t) * (*columns)[ii]->count;
+                                ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
+                                memcpy(ptr, (*columns)[ii]->path, size);
+                                pos.size += size;
+                                pos.offset += size;
+                            }
+                            return pos.size;
+                        }
+
+                        uint64_t read(void *buffer, uint64_t offset) {
+                            __pos pos;
+                            pos.offset = offset;
+                            pos.size = 0;
+
+                            pos.size += buffer_utils::read<__index_type>(buffer, &pos.offset, &this->type);
+
+                            pos.size += buffer_utils::read<uint8_t>(buffer, &pos.offset, &count);
+                            CHECK_NOT_NULL(count);
+                            POSTCONDITION(*count > 0);
+
+                            columns = new vector<__index_column *>(*this->count);
+                            CHECK_ALLOC(columns, TYPE_NAME(vector));
+                            for (uint8_t ii = 0; ii < *this->count; ii++) {
+                                (*columns)[ii] = nullptr;
+                            }
+
+                            for (uint8_t ii = 0; ii < *this->count; ii++) {
+                                void *ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
+                                __index_column *ip = static_cast<__index_column *>(ptr);
+                                ip->path = nullptr;
+
+                                pos.offset += sizeof(__index_column);
+                                pos.size += sizeof(__index_column);
+
+                                ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
+                                ip->path = static_cast<uint8_t *>(ptr);
+
+                                uint32_t size = sizeof(uint8_t) * ip->count;
+                                pos.offset += size;
+                                pos.size += size;
+                            }
+
+                            return pos.size;
                         }
                     };
 
@@ -1188,6 +1389,30 @@ REACTFS_NS_CORE
                         __native_type *inner = nullptr;
                         __base_datatype_io *write_handler = nullptr;
 
+                    protected:
+                        virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
+                            string key = path[index];
+                            PRECONDITION(key == this->name);
+                            if (index == (path.size() - 1)) {
+                                return this;
+                            } else {
+                                PRECONDITION(inner_type == __type_def_enum::TYPE_STRUCT);
+                                return inner->find(path, index);
+                            }
+                        }
+
+                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const {
+                            PRECONDITION(index < count);
+                            uint8_t ii = parts[index];
+                            PRECONDITION(this->index == ii);
+                            if (index == (count - 1)) {
+                                return this;
+                            } else {
+                                PRECONDITION(inner_type == __type_def_enum::TYPE_STRUCT);
+                                return inner->find(parts, count, index);
+                            }
+                        }
+
                     public:
                         __list_type(__native_type *parent) : __native_type(parent) {
                             this->type = __field_type::LIST;
@@ -1332,6 +1557,8 @@ REACTFS_NS_CORE
                         virtual bool has_complex_type() const override {
                             return inner->has_complex_type();
                         }
+
+
                     };
 
                     class __map_type : public __native_type {
@@ -1341,6 +1568,41 @@ REACTFS_NS_CORE
                         __type_def_enum value_type;
                         __native_type *value = nullptr;
                         __base_datatype_io *write_handler = nullptr;
+
+                    protected:
+                        virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
+                            string key = path[index];
+                            PRECONDITION(key == this->name);
+                            string nkey = path[index + 1];
+                            if (nkey == MAP_TYPE_KEY_NAME) {
+                                PRECONDITION(index == (path.size() - 1));
+                                return this->key->find(path, index);
+                            } else if (nkey == MAP_TYPE_VALUE_NAME) {
+                                if (index == (path.size() - 1)) {
+                                    PRECONDITION(__type_enum_helper::is_native(value_type));
+                                    return value->find(path, index);
+                                } else {
+                                    PRECONDITION(value_type == __type_def_enum::TYPE_STRUCT);
+                                    return value->find(path, index);
+                                }
+                            } else {
+                                throw BASE_ERROR("Invalid field name. [name=%s]", key.c_str());
+                            }
+                        }
+
+                        virtual const __native_type *find(uint8_t *parts, uint8_t count, uint8_t index) const {
+                            PRECONDITION(index < (count - 1));
+                            uint8_t ii = parts[index];
+                            PRECONDITION(this->index == ii);
+                            uint8_t in = parts[index + 1];
+                            if (in == 0) {
+                                return this->key;
+                            } else if (in == 1) {
+                                
+                            } else {
+                                throw BASE_ERROR("Invalid map field index. [index=%d]", in);
+                            }
+                        }
 
                     public:
                         __map_type(__native_type *parent) : __native_type(parent) {
@@ -1506,6 +1768,8 @@ REACTFS_NS_CORE
                         virtual bool has_complex_type() const override {
                             return value->has_complex_type();
                         }
+
+
                     };
 
                 }
