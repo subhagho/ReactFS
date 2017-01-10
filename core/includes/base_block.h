@@ -45,6 +45,8 @@
 #define BLOCK_VERSION_MAJOR ((uint16_t) 0)
 #define BLOCK_VERSION_MINOR ((uint16_t) 1)
 
+#define BLOCK_USAGE_FLUSH_INTERVAL 5 * 1000
+
 #define BLOCK_METRIC_READ_PREFIX "metric.block.read"
 #define BLOCK_METRIC_WRITE_PREFIX "metric.block.write"
 
@@ -56,12 +58,17 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
+                typedef struct __block_usage_stat__ {
+                    uint64_t bytes_used = 0;
+                    uint64_t elapsed_time = 0;
+                    uint64_t last_synced = 0;
+                } __block_usage_stat;
+
                 typedef struct __block_check_record__ {
                     uint64_t block_id;
                     string block_uuid;
                     uint64_t record_index_start;
                     uint64_t record_index_last;
-                    uint64_t checksum;
                     uint64_t commit_sequence;
                 } __block_check_record;
 
@@ -77,6 +84,9 @@ namespace com {
                 class base_block {
                 protected:
                     __version_header version;
+
+                    /// Mutex used for updating read usage stats.
+                    mutex stat_lock;
 
                     //! State of this instance of the block object.
                     __state__ state;
@@ -109,6 +119,47 @@ namespace com {
 
                     /// Compression handler instance (in case compression is turned on)
                     compression_handler *compression = nullptr;
+
+                    __block_usage_stat write_usage;
+                    __block_usage_stat read_usage;
+
+                    void flush_write_usage() {
+                        node_client_env *n_env = node_init_client::get_client_env();
+                        mount_client *m_client = n_env->get_mount_client();
+                        m_client->update_write_metrics(&filename, write_usage.bytes_used, write_usage.elapsed_time);
+                        write_usage.bytes_used = 0;
+                        write_usage.elapsed_time = 0;
+                        write_usage.last_synced = time_utils::now();
+                    }
+
+                    void flush_read_usage() {
+                        node_client_env *n_env = node_init_client::get_client_env();
+                        mount_client *m_client = n_env->get_mount_client();
+                        m_client->update_write_metrics(&filename, read_usage.bytes_used, read_usage.elapsed_time);
+                        read_usage.bytes_used = 0;
+                        read_usage.elapsed_time = 0;
+                        read_usage.last_synced = time_utils::now();
+                    }
+
+                    void update_write_usage(uint64_t bytes, uint64_t elapsed) {
+                        write_usage.bytes_used += bytes;
+                        write_usage.elapsed_time += elapsed;
+                        uint64_t delta = time_utils::now() - write_usage.last_synced;
+                        if (delta > BLOCK_USAGE_FLUSH_INTERVAL) {
+                            flush_write_usage();
+                        }
+                    }
+
+                    void update_read_usage(uint64_t bytes, uint64_t elapsed) {
+                        std::lock_guard<std::mutex> lock(stat_lock);
+
+                        read_usage.bytes_used += bytes;
+                        read_usage.elapsed_time += elapsed;
+                        uint64_t delta = time_utils::now() - read_usage.last_synced;
+                        if (delta > BLOCK_USAGE_FLUSH_INTERVAL) {
+                            flush_write_usage();
+                        }
+                    }
 
                     /*!
                      * Create a new file backed data block.
@@ -203,7 +254,6 @@ namespace com {
                         rollback_info->start_offset = header->write_offset;
                         rollback_info->start_index = nullptr;
                         rollback_info->used_bytes = 0;
-                        rollback_info->block_checksum = header->block_checksum;
 
                         return *rollback_info->transaction_id;
                     }
@@ -225,7 +275,6 @@ namespace com {
                         rollback_info->write_offset = 0;
                         rollback_info->start_index = nullptr;
                         rollback_info->used_bytes = 0;
-                        rollback_info->block_checksum = 0;
 
                         block_lock->release_lock();
                     }
@@ -537,16 +586,6 @@ namespace com {
                     }
 
                     /*!
-                     * Get the block checksum for this block.
-                     *
-                     * @return - Block checksum
-                     */
-                    uint64_t get_block_checksum() const {
-                        CHECK_STATE_AVAILABLE(state);
-                        return header->block_checksum;
-                    }
-
-                    /*!
                      * Start a new write transcation on this block. If block is currently locked for write,
                      * then the call will wait till the block is available.
                      *
@@ -695,7 +734,6 @@ namespace com {
                                                  "Record not found in block. [index=%lu]", index);
                         }
                         PRECONDITION(is_record_in_valid_state(ptr));
-                        rollback_info->block_checksum -= ptr->header->checksum;
                         rollback_info_deletes.push_back(index);
 
                         CHECK_AND_FREE(ptr);
@@ -762,10 +800,9 @@ namespace com {
                                   header->block_id,
                                   header->block_uid, header->state, ct.c_str(), ut.c_str());
                         LOG_DEBUG(
-                                "[block id=%lu][used bytes=%lu][total records=%lu][deleted records=%lu], [checksum=%lu]",
+                                "[block id=%lu][used bytes=%lu][total records=%lu][deleted records=%lu]",
                                 header->block_id, header->used_bytes, header->total_records,
-                                header->deleted_records,
-                                header->block_checksum);
+                                header->deleted_records);
                     }
 
                     /*!

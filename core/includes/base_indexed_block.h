@@ -36,6 +36,10 @@ namespace com {
                     base_block_index *index_ptr = nullptr;
 
                 public:
+                    virtual ~base_indexed_block() {
+
+                    }
+
                     /*!
                      * Write a data record to the block. Check should be done to ensure that
                      * enough space is available in the block for the required data length, else
@@ -161,7 +165,6 @@ namespace com {
                                                  "Record not found in block. [index=%lu]", index);
                         }
                         PRECONDITION(is_record_in_valid_state(ptr));
-                        rollback_info->block_checksum -= ptr->header->checksum;
                         CHECK_AND_FREE(ptr);
 
                         header->update_time = time_utils::now();

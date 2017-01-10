@@ -454,7 +454,6 @@ namespace com {
                             CHECK_NOT_NULL(bi);
                             bi->block_last_index = i;
                             bi->updated_time = time_utils::now();
-                            bi->block_checksum = w_block->get_block_checksum();
 
                             return bi;
                         } catch (const exception &e) {
@@ -525,7 +524,6 @@ namespace com {
                         __mm_block_info *bi = get_block_info(block_index);
                         CHECK_NOT_NULL(bi);
                         bi->updated_time = time_utils::now();
-                        bi->block_checksum = block->get_block_checksum();
 
                         return r;
                     }

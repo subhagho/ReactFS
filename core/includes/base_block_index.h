@@ -35,6 +35,7 @@
 #include "common/includes/read_write_lock.h"
 #include "common/includes/mapped_data.h"
 #include "common/includes/buffer_utils.h"
+#include "common/includes/metrics.h"
 
 #include "core.h"
 #include "common_structs.h"
@@ -46,6 +47,8 @@ using namespace com::wookler::reactfs::core;
 #define DEFAULT_BLOAT_FACTOR (15 / 10)
 #define BLOCK_INDEX_VERSION_MAJOR ((uint16_t) 0)
 #define BLOCK_INDEX_VERSION_MINOR ((uint16_t) 1)
+#define BLOCK_INDEX_METRIC_READ_PREFIX "metric.index.block.read"
+#define BLOCK_INDEX_METRIC_WRITE_PREFIX "metric.index.block.write"
 
 REACTFS_NS_CORE
                 class base_block_index {
@@ -252,6 +255,13 @@ REACTFS_NS_CORE
                      */
                     __record_index_ptr *__read_index(uint64_t index, bool all);
 
+                    string get_metric_name(const string name) {
+                        if (NOT_NULL(header)) {
+                            return common_utils::format("%s.%lu", name.c_str(), header->block_id);
+                        }
+                        return common_consts::EMPTY_STRING;
+                    }
+
                 public:
                     base_block_index() {
                         version.major = BLOCK_INDEX_VERSION_MAJOR;
@@ -259,6 +269,11 @@ REACTFS_NS_CORE
                     }
 
                     virtual ~base_block_index() {
+                        DUMP_METRIC(get_metric_name(BLOCK_INDEX_METRIC_READ_PREFIX));
+                        DUMP_METRIC(get_metric_name(BLOCK_INDEX_METRIC_WRITE_PREFIX));
+
+                        REMOVE_METRIC(get_metric_name(BLOCK_INDEX_METRIC_READ_PREFIX));
+                        REMOVE_METRIC(get_metric_name(BLOCK_INDEX_METRIC_WRITE_PREFIX));
                         this->close();
                     }
 

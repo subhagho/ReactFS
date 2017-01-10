@@ -125,7 +125,6 @@ void com::wookler::reactfs::core::base_indexed_block::commit(string transaction_
     header->last_index = rollback_info->last_index;
     header->used_bytes += rollback_info->used_bytes;
     header->write_offset = rollback_info->write_offset;
-    header->block_checksum = rollback_info->block_checksum;
     header->commit_sequence++;
     header->total_records += added;
 
@@ -164,7 +163,6 @@ void com::wookler::reactfs::core::base_indexed_block::open(uint64_t block_id, st
 __block_check_record *com::wookler::reactfs::core::base_indexed_block::check_block_sanity() {
     CHECK_STATE_AVAILABLE(state);
 
-    uint64_t block_checksum = 0;
     uint32_t total_records = 0;
     uint32_t deleted_records = 0;
 
@@ -177,28 +175,11 @@ __block_check_record *com::wookler::reactfs::core::base_indexed_block::check_blo
         if (iptr->readable) {
             __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
             CHECK_NOT_NULL(ptr);
-            uint32_t checksum = common_utils::crc32c(0, (BYTE *) ptr->data_ptr, ptr->header->data_size);
-            if (checksum != ptr->header->checksum) {
-                throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
-                                     "[block id=%lu][record id=%lu] Record checksum check failed. [expected=%lu][computed=%lu]",
-                                     header->block_id, ii, ptr->header->checksum, checksum);
-            }
-            TRACE("[block id=%lu][record id=%lu] Record checksum check. [expected=%lu][computed=%lu]",
-                  header->block_id, ii, ptr->header->checksum, checksum);
-
-            block_checksum += checksum;
         } else {
             deleted_records++;
         }
         total_records++;
     }
-    if (block_checksum != header->block_checksum) {
-        throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
-                             "[block id=%lu] Block checksum check failed. [expected=%lu][computed=%d]",
-                             header->block_id, header->block_checksum, block_checksum);
-    }
-    TRACE("[block id=%lu] Block checksum check. [expected=%lu][computed=%lu]",
-          header->block_id, header->block_checksum, block_checksum);
     if (total_records != header->total_records) {
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
                              "[block id=%lu] Block record count mismatch. [expected=%lu][computed=%lu]",
@@ -217,7 +198,6 @@ __block_check_record *com::wookler::reactfs::core::base_indexed_block::check_blo
     __block_check_record *bcr = (__block_check_record *) malloc(sizeof(__block_check_record));
     CHECK_ALLOC(bcr, TYPE_NAME(__block_check_record));
     bcr->block_id = header->block_id;
-    bcr->checksum = header->block_checksum;
     bcr->block_uuid = string(header->block_uid);
     bcr->commit_sequence = header->commit_sequence;
     bcr->record_index_last = header->last_index;

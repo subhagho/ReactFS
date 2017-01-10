@@ -100,6 +100,11 @@ void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block
 
     this->filename = string(p->get_path());
 
+    bool r = metrics_utils::create_metric(get_metric_name(BLOCK_INDEX_METRIC_READ_PREFIX), AverageMetric, false);
+    POSTCONDITION(r);
+    r = metrics_utils::create_metric(get_metric_name(BLOCK_INDEX_METRIC_WRITE_PREFIX), AverageMetric, false);
+    POSTCONDITION(r);
+
     return base_ptr;
 }
 
@@ -137,6 +142,9 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(header->write_state == __write_state::WRITABLE);
     PRECONDITION(has_space(sizeof(__record_index_ptr)));
+    string m_name = get_metric_name(BLOCK_INDEX_METRIC_WRITE_PREFIX);
+    START_TIMER(m_name, 0);
+
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
     uint64_t last_index = get_last_index();
@@ -157,12 +165,16 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     rollback_info->used_bytes += sizeof(__record_index_ptr);
     rollback_info->write_offset += sizeof(__record_index_ptr);
 
+    END_TIMER(m_name, 0);
     return iptr;
 }
 
 __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(uint64_t index, bool all) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(index >= header->start_index && index <= header->last_index);
+    string m_name = get_metric_name(BLOCK_INDEX_METRIC_READ_PREFIX);
+    START_TIMER(m_name, 0);
+
     uint64_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
 
     void *ptr = get_data_ptr();
@@ -175,6 +187,7 @@ __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(
     if (!all && !iptr->readable)
         return nullptr;
 
+    END_TIMER(m_name, 0);
     return iptr;
 }
 

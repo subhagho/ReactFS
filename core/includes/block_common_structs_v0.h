@@ -139,7 +139,6 @@ namespace com {
                     uint64_t data_size = 0;
                     uint64_t uncompressed_size = 0;
                     uint64_t timestamp = 0;
-                    uint32_t checksum;
                 } __record_header_v0;
 
                 typedef struct __record__v0__ {
@@ -177,7 +176,6 @@ namespace com {
                     uint64_t used_bytes = 0;
                     uint64_t last_index = 0;
                     uint64_t start_time = 0;
-                    uint64_t block_checksum = 0;
                     __record_index_ptr_v0 *start_index = nullptr;
                 } __rollback_info_v0;
 
@@ -198,7 +196,6 @@ namespace com {
                     uint64_t block_size;
                     uint64_t write_offset;
                     uint64_t used_bytes = 0;
-                    uint64_t block_checksum = 0;
                     uint64_t commit_sequence = 0;
                     uint32_t total_records = 0;
                     uint32_t deleted_records = 0;

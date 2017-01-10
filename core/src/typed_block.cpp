@@ -62,8 +62,6 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     POSTCONDITION(r);
     r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_WRITE_PREFIX), AverageMetric, false);
     POSTCONDITION(r);
-    r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_LOCK_PREFIX), AverageMetric, false);
-    POSTCONDITION(r);
 
     state.set_state(__state_enum::Available);
 }
@@ -75,10 +73,7 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
     string m_name = get_metric_name(BLOCK_METRIC_WRITE_PREFIX);
     START_TIMER(m_name, 0);
     PRECONDITION(is_writeable());
-    string lm_name = get_metric_name(BLOCK_TYPED_METRIC_LOCK_PREFIX);
-    START_TIMER(lm_name, 2);
     PRECONDITION(in_transaction());
-    END_TIMER(lm_name, 2);
     PRECONDITION((!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id)));
 
     void *w_ptr = get_write_ptr();
@@ -114,26 +109,21 @@ __record* com::wookler::reactfs::core::typed_block::__write_record(mutable_recor
 
     uint64_t w_size = dt_struct->write(record->data_ptr, source, 0, free_s);
 
-    uint32_t checksum = common_utils::crc32c(0, (BYTE *) record->data_ptr, w_size);
     record->header->data_size = w_size;
     record->header->uncompressed_size = w_size;
-    record->header->checksum = checksum;
     END_TIMER(tm_name, 1);
 
     rollback_info->used_bytes += w_size;
     rollback_info->write_offset += (sizeof(__record_header) + w_size);
-    rollback_info->block_checksum += record->header->checksum;
 
     t.stop();
+    END_TIMER(m_name, 0);
 
     uint64_t write_bytes = (sizeof(__record_header) + w_size);
-    node_client_env *n_env = node_init_client::get_client_env();
-    mount_client *m_client = n_env->get_mount_client();
-    m_client->update_write_metrics(&filename, write_bytes, t.get_elapsed());
+    update_write_usage(write_bytes, t.get_elapsed());
 
     header->update_time = record->header->timestamp;
 
-    END_TIMER(m_name, 0);
     return record;
 }
 
@@ -186,9 +176,6 @@ com::wookler::reactfs::core::typed_block::__read_record(uint64_t index, uint64_t
     POSTCONDITION(record->header->index == index);
     POSTCONDITION(record->header->offset == offset);
     POSTCONDITION(record->header->data_size == size);
-
-    uint32_t checksum = common_utils::crc32c(0, (BYTE *) rptr, record->header->data_size);
-    POSTCONDITION(checksum == record->header->checksum);
 
     END_TIMER(m_name, 0);
     return record;
@@ -249,9 +236,7 @@ com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t c
     t.stop();
 
     if (read_bytes > 0) {
-        node_client_env *n_env = node_init_client::get_client_env();
-        mount_client *m_client = n_env->get_mount_client();
-        m_client->update_read_metrics(&filename, read_bytes, t.get_elapsed());
+        update_read_usage(read_bytes, t.get_elapsed());
     }
     return data->size();
 }
