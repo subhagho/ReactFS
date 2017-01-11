@@ -261,7 +261,7 @@ void com::wookler::reactfs::core::typed_block::add_index(record_index *index) {
     PRECONDITION(*this->index_count < BLOCK_MAX_INDEXES);
     PRECONDITION(is_writeable());
 
-    string txid = start_transaction();
+    string txid = start_transaction(0);
     CHECK_NOT_EMPTY(txid);
     try {
         __index_type *iptr = find_free_index_ptr();

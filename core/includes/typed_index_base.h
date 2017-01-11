@@ -64,12 +64,12 @@ REACTFS_NS_CORE
 
                         return p;
                     }
+
                 public:
                     /*!
                      * Base virtual destructor.
                      */
-                    virtual ~typed_index_base() {
-                    }
+                    virtual ~typed_index_base() = default;
 
                     /*!
                      * Create a new file backed data block index.
@@ -167,7 +167,7 @@ REACTFS_NS_CORE
                      */
                     virtual void close() = 0;
 
-                    virtual void sync(bool recreate = false);
+                    virtual void sync(bool recreate = false) = 0;
                 };
 REACTFS_NS_CORE_END
 

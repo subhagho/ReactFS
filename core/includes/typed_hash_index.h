@@ -50,6 +50,109 @@ using namespace com::wookler::reactfs::core;
 REACTFS_NS_CORE
                 class typed_hash_index : public typed_index_base {
 
+                public:
+
+                    ~typed_hash_index() {
+
+                    }
+
+                    /*!
+                     * Create a new file backed data block index.
+                     *
+                     * @param block_id - Unique block id for this data block.
+                     * @param block_uuid - UUID of the data block.
+                     * @param filename - Backing filename for this data block.
+                     * @param estimated_records - Estimated number of records the data file is expected to have.
+                     * @param start_index - Starting record index for this block.
+                     * @param overwrite - Overwrite if data block file already exists?
+                     * @return - Filename of the index file created.
+                     */
+                    string
+                    create_index(uint64_t block_id, string block_uuid, string filename, uint32_t estimated_records,
+                                 uint64_t start_index,
+                                 bool overwrite) override;
+
+                    /*!
+                     * Open a new instance of the specified data block index.
+                     *
+                     * @param block_id - Unique block id for this data block.
+                     * @param block_uuid - UUID of the data block.
+                     * @param filename - Backing filename for this data block.
+                     * @return - Base pointer of the memory-mapped buffer.
+                     */
+                    void open_index(uint64_t block_id, string block_uuid, string filename) override;
+
+                    /*!
+                    * Commit the current transcation.
+                    *
+                    * @param transaction_id - Transaction ID obtained via a start_transaction call.
+                    */
+                    void commit(string txid) override;
+
+                    /*!
+                     * Rollback the current transcation.
+                     *
+                     * @param transaction_id - Transaction ID obtained via a start_transaction call.
+                     */
+                    void rollback(string txid) override;
+
+                    /*!
+                     * Force a transaction rollback.
+                     *
+                     * Should be used only in exception cases, such as transaction timeout.
+                     */
+                    void force_rollback() override;
+
+                    /*!
+                     * Delete the specified index record.
+                     *
+                     * @param index - Index key of Record to delete.
+                     * @param transaction_id - Current transaction ID.
+                     * @return - Is deleted?
+                     */
+                    bool delete_index(__index_key_set *index, string transaction_id) override;
+
+                    /*!
+                     * Get the available free space that this block has.
+                     *
+                     * @return - Space available (in bytes).
+                     */
+                    const uint64_t get_free_space() const override;
+
+                    /*!
+                     * Get the space currently used by this block.
+                     *
+                     * @return - Space used (in bytes).
+                     */
+                    const uint64_t get_used_space() const override;
+
+                    /*!
+                     * Create a new index record for the specified index and offset.
+                     *
+                     * @param index - Record sequence index.
+                     * @param offset - Read offset in the data file.
+                     * @param size - Size of the data record in bytes.
+                     * @param transaction_id - Current transaction ID.
+                     * @return - Created index pointer.
+                     */
+                    const __record_index_ptr *
+                    write_index(__index_key_set *index, uint64_t offset, uint64_t size, string transaction_id) override;
+
+                    /*!
+                     * Read the index record for the specified index.
+                     *
+                     * @param index - Data record index.
+                     * @param all - Allow to read dirty/deleted records?
+                     * @return - Index record pointer.
+                     */
+                    const __record_index_ptr *read_index(__index_key_set *index, bool all = false) override;
+
+                    /*!
+                     * Close this instance of the block index.
+                     */
+                    void close() override;
+
+                    void sync(bool recreate = false) override;
                 };
 REACTFS_NS_CORE_END
 
