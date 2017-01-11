@@ -51,6 +51,8 @@ public:
 };
 
 class test_callback : public __callback {
+private:
+    string callBackContext;
 public:
     test_callback(test_type *value) {
         this->set_context(value);
@@ -60,6 +62,7 @@ public:
         test_type *p = nullptr;
         p = get_context(p);
         LOG_INFO("Callback context [value=%s]", p->get_value().c_str());
+        this->callBackContext = p->get_value();
     }
 
     void error() override {
@@ -68,6 +71,10 @@ public:
 
     void error(exception *e) override {
 
+    }
+
+    string getCallBackContext() {
+        return this->callBackContext;
     }
 };
 
