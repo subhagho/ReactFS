@@ -494,3 +494,13 @@ __complex_type *com::wookler::reactfs::core::parsers::schema_driver::translate()
     translator tr(schema_def, &types, &indexes);
     return tr.translate();
 }
+
+vector<record_index *>* com::wookler::reactfs::core::parsers::schema_driver::get_indexes(__complex_type *schema) {
+    CHECK_NOT_NULL(schema);
+    CHECK_NOT_NULL(schema_stack);
+    CHECK_NOT_NULL(schema_stack->current_schema);
+
+    __schema_def *schema_def = schema_stack->current_schema;
+    translator tr(schema_def, &types, &indexes);
+    return tr.get_indexes(schema);
+}

@@ -675,6 +675,7 @@ REACTFS_NS_CORE
 
                             fields.insert({index, type});
                             field_index.insert({name, index});
+                            name_index.insert({name, type});
                         }
 
 
@@ -948,10 +949,13 @@ REACTFS_NS_CORE
                         virtual const __native_type *find(vector<string> &path, uint8_t index) const override {
                             PRECONDITION(index < (path.size() - 1));
                             string key = path[index];
+                            TRACE("Find field. [this=%s][passed=%s]", this->name.c_str(), key.c_str());
                             POSTCONDITION(key == this->name);
                             string nkey = path[index + 1];
+                            TRACE("Looking for field. [field=%s][this=%s]", nkey.c_str(), key.c_str());
                             unordered_map<string, __native_type *>::const_iterator iter = name_index.find(nkey);
                             if (iter != name_index.end()) {
+                                TRACE("Found field. [name=%s]", iter->first.c_str());
                                 const __native_type *type = iter->second;
                                 CHECK_NOT_NULL(type);
                                 return type->find(path, (index + 1));
@@ -1010,10 +1014,12 @@ REACTFS_NS_CORE
                             *this->count = count;
 
                             uint8_t nl = sizeof(char) * (name.length() + 1);
-                            this->name = (char *)malloc(nl);
+                            this->name = (char *) malloc(nl);
                             CHECK_ALLOC(this->name, TYPE_NAME(char));
                             memset(this->name, 0, nl);
                             strncpy(this->name, name.c_str(), name.length());
+
+                            this->allocated = true;
                         }
 
                         ~record_index() {
@@ -1033,9 +1039,14 @@ REACTFS_NS_CORE
                             CHECK_AND_FREE(this->columns);
                         }
 
-                        void add_index(uint8_t index, vector<uint8_t> *values, uint8_t count, bool dir) {
+                        void add_index(uint8_t index, vector<uint8_t> *values, uint8_t count, bool dir,
+                                       const __native_type *type) {
                             PRECONDITION(index < *this->count);
                             PRECONDITION(values->size() == count);
+                            CHECK_NOT_NULL(type);
+
+                            (*columns)[index] = (__index_column *) malloc(sizeof(__index_column));
+                            CHECK_ALLOC((*columns)[index], TYPE_NAME(__index_column__));
 
                             (*columns)[index]->sequence = index;
                             (*columns)[index]->path = (uint8_t *) malloc(sizeof(uint8_t) * count);
@@ -1044,6 +1055,7 @@ REACTFS_NS_CORE
                                 (*columns)[index]->path[ii] = (*values)[ii];
                             }
                             (*columns)[index]->sort_asc = dir;
+                            (*columns)[index]->type = type;
                         }
 
                         const __index_column *get_index(uint8_t index) {

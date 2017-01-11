@@ -35,6 +35,12 @@ main(const int argc, const char **argv) {
             for (auto iter = fields.begin(); iter != fields.end(); iter++) {
                 LOG_DEBUG("FIELD : [%s]", iter->first.c_str());
             }
+            vector<record_index *> *indexes = driver.get_indexes(schema);
+            CHECK_NOT_EMPTY_P(indexes);
+            for(record_index *ri : *indexes) {
+                CHECK_AND_FREE(ri);
+            }
+            CHECK_AND_FREE(indexes);
             CHECK_AND_FREE(schema);
 
             env_utils::dispose();
