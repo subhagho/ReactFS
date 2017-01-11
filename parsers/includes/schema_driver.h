@@ -419,6 +419,60 @@ REACTFS_NS_CORE
                             type->add_field(nt, index);
                         }
 
+                        record_index *get_pk_index(__complex_type *schema, __schema_def *def) {
+                            if (NOT_NULL(def->pk_columns)) {
+                                uint8_t count = 0;
+                                __key_column *kc = def->pk_columns;
+                                while (NOT_NULL(kc)) {
+                                    count++;
+                                    kc = kc->next;
+                                }
+                                PRECONDITION(count > 0);
+                                string pkn = common_utils::format("PK_%s", def->name->c_str());
+                                record_index *index = new record_index(pkn, count,
+                                                                       __index_type_enum::HASH_INDEX);
+                                CHECK_ALLOC(index, TYPE_NAME(record_index));
+
+                                kc = def->pk_columns;
+                                count = 0;
+                                while (NOT_NULL(kc)) {
+                                    const __native_type *f = schema->find(*kc->name);
+                                    CHECK_NOT_NULL(f);
+
+                                    vector<uint8_t> path;
+                                    f->get_field_path(&path);
+                                    CHECK_NOT_EMPTY(path);
+
+                                    index->add_index(count, &path, path.size(), kc->sort_asc);
+                                    count++;
+                                    kc = kc->next;
+                                }
+                                return index;
+                            }
+                            return nullptr;
+                        }
+
+                        record_index *get_index(__complex_type *schema, __index_def *def) {
+                            record_index *index = new record_index(*def->name, def->field_count, def->type);
+                            CHECK_ALLOC(index, TYPE_NAME(record_index));
+
+                            __key_column *kc = def->columns;
+                            uint8_t count = 0;
+                            while (NOT_NULL(kc) && count < def->field_count) {
+                                const __native_type *f = schema->find(*kc->name);
+                                CHECK_NOT_NULL(f);
+
+                                vector<uint8_t> path;
+                                f->get_field_path(&path);
+                                CHECK_NOT_EMPTY(path);
+
+                                index->add_index(count, &path, path.size(), kc->sort_asc);
+                                count++;
+                                kc = kc->next;
+                            }
+                            return index;
+                        }
+
                     public:
                         /*!
                          * Default constructor of the translator.
@@ -457,6 +511,33 @@ REACTFS_NS_CORE
                                 }
                             }
                             return type;
+                        }
+
+                        vector<record_index *> *get_indexes(__complex_type *schema) {
+                            CHECK_NOT_NULL(schema);
+                            if (!IS_EMPTY_P(indexes) || NOT_NULL(schema_def->pk_columns)) {
+                                vector<record_index *> *parsed = new vector<record_index *>();
+                                CHECK_ALLOC(parsed, TYPE_NAME(vector));
+
+                                if (NOT_NULL(schema_def->pk_columns)) {
+                                    record_index *ri = get_pk_index(schema, schema_def);
+                                    CHECK_NOT_NULL(ri);
+                                    parsed->push_back(ri);
+                                }
+                                if (!IS_EMPTY_P(indexes)) {
+                                    unordered_map<string, __index_def *>::iterator iter;
+                                    for (iter = indexes->begin(); iter != indexes->end(); iter++) {
+                                        __index_def *index = iter->second;
+                                        CHECK_NOT_NULL(index);
+
+                                        record_index *ri = get_index(schema, index);
+                                        CHECK_NOT_NULL(ri);
+                                        parsed->push_back(ri);
+                                    }
+                                }
+                                return parsed;
+                            }
+                            return nullptr;
                         }
                     };
 

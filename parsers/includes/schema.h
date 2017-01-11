@@ -12,8 +12,10 @@
 #include "common/includes/time_utils.h"
 #include "common/includes/base_error.h"
 #include "core/includes/core.h"
+#include "types/includes/type_core.h"
 
 using namespace REACTFS_NS_COMMON_PREFIX;
+using namespace REACTFS_NS_CORE_PREFIX::types;
 
 REACTFS_NS_CORE
                 namespace parsers {
@@ -48,10 +50,6 @@ REACTFS_NS_CORE
                         bool sort_asc = true;
                         __key_column__ *next = nullptr;
                     } __key_column;
-
-                    typedef enum __index_type_enum__ {
-                        HASH_INDEX, TREE_INDEX, FULLTEXT_INDEX
-                    } __index_type_enum;
 
                     typedef struct __index_def__ {
                         string *name;

@@ -30,6 +30,7 @@
 #include "core/includes/core.h"
 
 #include "types_common.h"
+#include "type_core.h"
 #include "schema_common.h"
 #include "__constraints.h"
 #include "schema_helpers.h"
@@ -540,6 +541,13 @@ REACTFS_NS_CORE
                             return this;
                         }
 
+                        virtual void get_field_path(vector<uint8_t> *path) const {
+                            CHECK_NOT_NULL(path);
+                            if (NOT_NULL(this->parent)) {
+                                parent->get_field_path(path);
+                            }
+                            path->push_back(this->index);
+                        }
                     };
 
                     typedef struct __field_value__ {
@@ -964,43 +972,48 @@ REACTFS_NS_CORE
                         }
                     };
 
-                    typedef enum __index_type__ {
-                        HASH = 0, TREE = 1, FULLTEXT = 2
-                    } __index_type;
-
                     typedef struct __index_column__ {
                         uint8_t sequence = 0;
                         uint8_t *path = nullptr;
                         uint8_t count = 0;
-                        bool dir_asc = true;
+                        bool sort_asc = true;
                         const __native_type *type = nullptr;
                     } __index_column;
 
+
                     class record_index {
                     private:
-                        __index_type *type;
+                        char *name = nullptr;
+                        __index_type_enum *type;
                         vector<__index_column *> *columns = nullptr;
                         uint8_t *count = 0;
                         bool allocated = false;
+
                     public:
                         record_index() {
                             allocated = false;
                         }
 
-                        record_index(uint8_t count, __index_type type) {
+                        record_index(const string &name, uint8_t count, __index_type_enum type) {
                             PRECONDITION(count > 0);
                             columns = new vector<__index_column *>(count);
                             CHECK_ALLOC(columns, TYPE_NAME(vector));
                             for (uint8_t ii = 0; ii < count; ii++) {
                                 (*columns)[ii] = nullptr;
                             }
-                            this->type = (__index_type *) malloc(sizeof(__index_type));
+                            this->type = (__index_type_enum *) malloc(sizeof(__index_type_enum));
                             CHECK_ALLOC(this->type, TYPE_NAME(__index_type));
                             *this->type = type;
 
                             this->count = (uint8_t *) malloc(sizeof(uint8_t));
                             CHECK_ALLOC(this->count, TYPE_NAME(uint8_t));
                             *this->count = count;
+
+                            uint8_t nl = sizeof(char) * (name.length() + 1);
+                            this->name = (char *)malloc(nl);
+                            CHECK_ALLOC(this->name, TYPE_NAME(char));
+                            memset(this->name, 0, nl);
+                            strncpy(this->name, name.c_str(), name.length());
                         }
 
                         ~record_index() {
@@ -1015,17 +1028,22 @@ REACTFS_NS_CORE
                                 }
                                 FREE_PTR(this->count);
                                 FREE_PTR(this->type);
+                                FREE_PTR(this->name);
                             }
                             CHECK_AND_FREE(this->columns);
                         }
 
-                        void add_index(uint8_t index, uint8_t *values, uint8_t count) {
+                        void add_index(uint8_t index, vector<uint8_t> *values, uint8_t count, bool dir) {
                             PRECONDITION(index < *this->count);
+                            PRECONDITION(values->size() == count);
+
+                            (*columns)[index]->sequence = index;
                             (*columns)[index]->path = (uint8_t *) malloc(sizeof(uint8_t) * count);
                             CHECK_ALLOC((*columns)[index]->path, TYPE_NAME(uint8_t));
                             for (uint8_t ii = 0; ii < count; ii++) {
-                                (*columns)[index]->path[ii] = values[ii];
+                                (*columns)[index]->path[ii] = (*values)[ii];
                             }
+                            (*columns)[index]->sort_asc = dir;
                         }
 
                         const __index_column *get_index(uint8_t index) {
@@ -1038,9 +1056,11 @@ REACTFS_NS_CORE
                             pos.offset = offset;
                             pos.size = 0;
 
-                            memcpy(buffer, this->type, sizeof(__index_type));
-                            pos.offset += sizeof(__index_type);
-                            pos.size += sizeof(__index_type);
+                            memcpy(buffer, this->type, sizeof(__index_type_enum));
+                            pos.offset += sizeof(__index_type_enum);
+                            pos.size += sizeof(__index_type_enum);
+
+                            pos.size += buffer_utils::write_8str(buffer, &pos.offset, this->name, strlen(this->name));
 
                             pos.size += buffer_utils::write<uint8_t>(buffer, &pos.offset, *this->count);
 
@@ -1064,7 +1084,8 @@ REACTFS_NS_CORE
                             pos.offset = offset;
                             pos.size = 0;
 
-                            pos.size += buffer_utils::read<__index_type>(buffer, &pos.offset, &this->type);
+                            pos.size += buffer_utils::read<__index_type_enum>(buffer, &pos.offset, &this->type);
+                            pos.size += buffer_utils::read_8str(buffer, &pos.offset, &this->name);
 
                             pos.size += buffer_utils::read<uint8_t>(buffer, &pos.offset, &count);
                             CHECK_NOT_NULL(count);
