@@ -11,7 +11,9 @@ string com::wookler::reactfs::core::typed_block::create(uint64_t block_id, uint6
 
     string uuid = __create_block(block_id, parent_id, filename, usage, __block_def::INDEXED,
                                  block_size, start_index, overwrite);
+    PRECONDITION(est_record_size > 0);
     uint32_t estimated_records = (block_size / est_record_size);
+    this->estimated_record_size = est_record_size;
 
     index_ptr = new base_block_index();
     CHECK_ALLOC(index_ptr, TYPE_NAME(base_block_index));
@@ -20,11 +22,18 @@ string com::wookler::reactfs::core::typed_block::create(uint64_t block_id, uint6
                             header->start_index, overwrite);
 
     void *ptr = buffer_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
-    uint64_t *type_header_size = static_cast<uint64_t *>(ptr);
+    type_header_size = static_cast<uint64_t *>(ptr);
     *type_header_size = 0;
 
     ptr = buffer_utils::increment_data_ptr(ptr, sizeof(uint64_t));
     *type_header_size = this->datetype->write(ptr, 0);
+
+    ptr = buffer_utils::increment_data_ptr(ptr, *type_header_size);
+    index_count = static_cast<uint8_t *>(ptr);
+    *index_count = 0;
+
+    ptr = buffer_utils::increment_data_ptr(ptr, sizeof(uint8_t));
+    index_ptrs = static_cast<__index_type *>(ptr);
 
     close();
 
@@ -41,22 +50,28 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     index_ptr->open_index(header->block_id, header->block_uid, this->filename);
 
     ptr = buffer_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
-    uint64_t *type_header_size = static_cast<uint64_t *>(ptr);
-
-    this->read_ptr = buffer_utils::increment_data_ptr(ptr, (sizeof(uint64_t) + (*type_header_size) * sizeof(BYTE)));
-    void *bptr = get_data_ptr();
-    CHECK_NOT_NULL(bptr);
-
-    if (header->write_state == __write_state::WRITABLE) {
-        write_ptr = bptr;
-    } else {
-        write_ptr = nullptr;
-    }
+    type_header_size = static_cast<uint64_t *>(ptr);
 
     ptr = buffer_utils::increment_data_ptr(ptr, sizeof(uint64_t));
     this->datetype = new __complex_type(nullptr);
     this->datetype->read(ptr, 0);
     this->datetype->print();
+    ptr = buffer_utils::increment_data_ptr(ptr, *type_header_size);
+
+    index_count = static_cast<uint8_t *>(ptr);
+    ptr = buffer_utils::increment_data_ptr(ptr, sizeof(uint8_t));
+    index_ptrs = static_cast<__index_type *>(ptr);
+    ptr = buffer_utils::increment_data_ptr(ptr, (sizeof(__index_type) * BLOCK_MAX_INDEXES));
+
+    this->read_ptr = ptr;
+    void *bptr = get_data_ptr();
+    CHECK_NOT_NULL(bptr);
+
+    if (header->write_state == __write_state::WRITABLE) {
+        write_ptr = buffer_utils::increment_data_ptr(bptr, header->write_offset);
+    } else {
+        write_ptr = nullptr;
+    }
 
     bool r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_READ_PREFIX), AverageMetric, false);
     POSTCONDITION(r);
@@ -66,7 +81,7 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     state.set_state(__state_enum::Available);
 }
 
-__record* com::wookler::reactfs::core::typed_block::__write_record(mutable_record_struct *source,
+__record *com::wookler::reactfs::core::typed_block::__write_record(mutable_record_struct *source,
                                                                    string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(source);
@@ -227,7 +242,7 @@ com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t c
         }
 
         record_struct *st = static_cast<record_struct *>(ptr->data_ptr);
-        CHECK_CAST(st, TYPE_NAME(void *), TYPE_NAME(record_struct));
+        CHECK_CAST(st, TYPE_NAME(void * ), TYPE_NAME(record_struct));
         data->push_back(st);
 
         current_index++;
@@ -239,4 +254,53 @@ com::wookler::reactfs::core::typed_block::read_struct(uint64_t index, uint32_t c
         update_read_usage(read_bytes, t.get_elapsed());
     }
     return data->size();
+}
+
+void com::wookler::reactfs::core::typed_block::add_index(record_index *index) {
+    CHECK_NOT_NULL(index);
+    PRECONDITION(*this->index_count < BLOCK_MAX_INDEXES);
+    PRECONDITION(is_writeable());
+
+    string txid = start_transaction();
+    CHECK_NOT_EMPTY(txid);
+    try {
+        __index_type *iptr = find_free_index_ptr();
+        CHECK_NOT_NULL(iptr);
+        POSTCONDITION(!iptr->used);
+        typed_index_base *bi = create_index_instance(index->get_type());
+        CHECK_NOT_NULL(bi);
+        uint32_t est_records = (header->block_size / estimated_record_size);
+        string if_name = bi->create_index(header->block_id, header->block_uid, this->filename, est_records,
+                                          header->start_index, true);
+        CHECK_NOT_EMPTY(if_name);
+        size_t nl = strlen(index->get_name());
+        PRECONDITION(nl <= SIZE_MAX_NAME);
+
+        iptr->used = true;
+        memset(iptr->name, 0, SIZE_MAX_NAME + 1);
+        strncpy(iptr->name, index->get_name(), nl);
+
+        size_t pl = if_name.length();
+        PRECONDITION(pl <= SIZE_MAX_PATH);
+        memset(iptr->block_path, 0, SIZE_MAX_PATH + 1);
+        strncpy(iptr->block_path, if_name.c_str(), pl);
+
+        commit(txid);
+
+        bi->sync(true);
+        bi->close();
+
+        CHECK_AND_FREE(bi);
+    } catch (const exception &e) {
+        rollback(txid);
+        throw FS_BASE_ERROR("Error occurred while adding index. [error=%s]", e.what());
+    } catch (...) {
+        rollback(txid);
+        throw FS_BASE_ERROR("Unknown error occurred while adding index. [index name=%s]", index->get_name());
+    }
+
+}
+
+void com::wookler::reactfs::core::typed_block::open_index(__index_type *def) {
+    CHECK_NOT_NULL(def);
 }

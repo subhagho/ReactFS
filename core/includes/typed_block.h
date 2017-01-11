@@ -30,18 +30,33 @@
 #include "core.h"
 #include "base_block.h"
 #include "base_indexed_block.h"
+#include "typed_index_base.h"
+#include "typed_hash_index.h"
 
 #define BLOCK_TYPED_METRIC_READ_PREFIX "metric.typed.block.read"
 #define BLOCK_TYPED_METRIC_WRITE_PREFIX "metric.typed.block.write"
+
+#define BLOCK_MAX_INDEXES 16
 
 using namespace REACTFS_NS_CORE_PREFIX::types;
 
 REACTFS_NS_CORE
 
+                typedef struct __index_type__ {
+                    bool used = false;
+                    char name[SIZE_MAX_NAME + 1];
+                    char block_path[SIZE_MAX_PATH + 1];
+                } __index_type;
+
                 class typed_block : public base_indexed_block {
                 protected:
                     __complex_type *datetype = nullptr;
+                    uint64_t *type_header_size = nullptr;
+                    uint8_t *index_count = nullptr;
+                    __index_type *index_ptrs = nullptr;
+                    unordered_map<string, typed_index_base *> indexes;
                     void *read_ptr = nullptr;
+                    uint32_t estimated_record_size = 0;
 
                     /*!
                      * Get the base address pointing to where the block data starts.
@@ -53,7 +68,37 @@ REACTFS_NS_CORE
                         return read_ptr;
                     }
 
+                    uint64_t get_header_offset() {
+                        return (sizeof(uint64_t) + (*type_header_size * sizeof(BYTE)) +
+                                (sizeof(__index_type) * BLOCK_MAX_INDEXES) + sizeof(uint8_t));
+                    }
+
+                    void open_index(__index_type *def);
+
+                    typed_index_base *create_index_instance(const __index_type_enum type) {
+                        if (type == __index_type_enum::HASH_INDEX) {
+                            typed_index_base *ptr = new typed_hash_index();
+                            CHECK_ALLOC(ptr, TYPE_NAME(typed_hash_index));
+                            return ptr;
+                        }
+                        throw new FS_BASE_ERROR("Invalid index type specified. [type=%d]", type);
+                    }
+
+                    __index_type *find_free_index_ptr() {
+                        __index_type *ptr = index_ptrs;
+                        for (uint8_t ii = 0; ii < *index_count; ii++) {
+                            if (!ptr->used) {
+                                return ptr;
+                            }
+                            ptr++;
+                        }
+                        return nullptr;
+                    }
+
                 public:
+                    typed_block() {
+                    }
+
                     virtual ~typed_block() {
                         DUMP_METRIC(get_metric_name(BLOCK_TYPED_METRIC_READ_PREFIX));
                         DUMP_METRIC(get_metric_name(BLOCK_TYPED_METRIC_WRITE_PREFIX));
@@ -151,6 +196,7 @@ REACTFS_NS_CORE
                      */
                     __record *__read_record(uint64_t index, uint64_t offset, uint64_t size);
 
+                    void add_index(record_index *index);
                 };
 
 REACTFS_NS_CORE_END

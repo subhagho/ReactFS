@@ -60,7 +60,7 @@ void com::wookler::reactfs::common::read_write_lock_manager::check_lock_states()
                         ptr->w_lock_struct.owner.lock_timestamp = 0;
                         ptr->w_lock_struct.owner.process_id = -1;
                         memset(ptr->w_lock_struct.owner.txn_id, 0, SIZE_UUID + 1);
-                        memset(ptr->w_lock_struct.owner.owner, 0, SIZE_USER_NAME + 1);
+                        memset(ptr->w_lock_struct.owner.owner, 0, SIZE_MAX_NAME + 1);
                         ptr->w_lock_struct.write_locked = false;
                     }
                 }
@@ -96,7 +96,7 @@ void com::wookler::reactfs::common::read_write_lock_manager::reset() {
                     ptr->w_lock_struct.owner.lock_timestamp = 0;
                     ptr->w_lock_struct.owner.process_id = -1;
                     memset(ptr->w_lock_struct.owner.txn_id, 0, SIZE_UUID + 1);
-                    memset(ptr->w_lock_struct.owner.owner, 0, SIZE_USER_NAME + 1);
+                    memset(ptr->w_lock_struct.owner.owner, 0, SIZE_MAX_NAME + 1);
                     ptr->w_lock_struct.write_locked = false;
                 } else {
                     uint64_t now = time_utils::now();
@@ -104,7 +104,7 @@ void com::wookler::reactfs::common::read_write_lock_manager::reset() {
                         ptr->w_lock_struct.owner.lock_timestamp = 0;
                         ptr->w_lock_struct.owner.process_id = -1;
                         memset(ptr->w_lock_struct.owner.txn_id, 0, SIZE_UUID + 1);
-                        memset(ptr->w_lock_struct.owner.owner, 0, SIZE_USER_NAME + 1);
+                        memset(ptr->w_lock_struct.owner.owner, 0, SIZE_MAX_NAME + 1);
                         ptr->w_lock_struct.write_locked = false;
                     }
                 }

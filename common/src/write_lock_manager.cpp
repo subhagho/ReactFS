@@ -63,7 +63,7 @@ void com::wookler::reactfs::common::write_lock_manager::check_lock_states() {
                         ptr->owner.lock_timestamp = 0;
                         ptr->owner.process_id = -1;
                         memset(ptr->owner.txn_id, 0, SIZE_UUID + 1);
-                        memset(ptr->owner.owner, 0, SIZE_USER_NAME);
+                        memset(ptr->owner.owner, 0, SIZE_MAX_NAME);
                         ptr->write_locked = false;
                         ptr->state = __lock_state_enum::LOCK_EXPIRED;
                     }
@@ -92,7 +92,7 @@ void com::wookler::reactfs::common::write_lock_manager::reset() {
                     ptr->owner.lock_timestamp = 0;
                     ptr->owner.process_id = -1;
                     memset(ptr->owner.txn_id, 0, SIZE_UUID + 1);
-                    memset(ptr->owner.owner, 0, SIZE_USER_NAME + 1);
+                    memset(ptr->owner.owner, 0, SIZE_MAX_NAME + 1);
                     ptr->write_locked = false;
                 } else {
                     uint64_t now = time_utils::now();
@@ -100,7 +100,7 @@ void com::wookler::reactfs::common::write_lock_manager::reset() {
                         ptr->owner.lock_timestamp = 0;
                         ptr->owner.process_id = -1;
                         memset(ptr->owner.txn_id, 0, SIZE_UUID + 1);
-                        memset(ptr->owner.owner, 0, SIZE_USER_NAME + 1);
+                        memset(ptr->owner.owner, 0, SIZE_MAX_NAME + 1);
                         ptr->write_locked = false;
                     }
                 }

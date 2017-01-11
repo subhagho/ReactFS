@@ -15,7 +15,7 @@
 
 REACTFS_NS_COMMON
                 typedef struct __owner_v0__ {
-                    char owner[SIZE_USER_NAME + 1];
+                    char owner[SIZE_MAX_NAME + 1];
                     char txn_id[SIZE_UUID + 1];
                     pid_t process_id;
                     char thread_id[SIZE_THREAD_ID + 1];

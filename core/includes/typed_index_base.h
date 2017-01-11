@@ -47,6 +47,23 @@ REACTFS_NS_CORE
 
                     /// Base pointer for the mapped data.
                     void *base_ptr = nullptr;
+
+                    Path *get_index_file(string block_file, uint64_t block_id, string index_name) {
+                        CHECK_NOT_EMPTY(block_file);
+                        CHECK_NOT_EMPTY(index_name);
+
+                        Path bp = Path(block_file);
+                        const string pp = bp.get_parent_dir();
+
+                        Path *p = new Path(pp);
+                        CHECK_ALLOC(p, TYPE_NAME(Path));
+                        PRECONDITION(p->exists());
+
+                        string filename = common_utils::format("%lu_%s.index", block_id, index_name.c_str());
+                        p->append(filename);
+
+                        return p;
+                    }
                 public:
                     /*!
                      * Base virtual destructor.
@@ -149,6 +166,8 @@ REACTFS_NS_CORE
                      * Close this instance of the block index.
                      */
                     virtual void close() = 0;
+
+                    virtual void sync(bool recreate = false);
                 };
 REACTFS_NS_CORE_END
 

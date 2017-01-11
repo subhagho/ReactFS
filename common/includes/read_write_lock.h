@@ -416,7 +416,7 @@ REACTFS_NS_COMMON
                                 } else if (!lock_struct->w_lock_struct.write_locked && lock_struct->reader_count == 0) {
                                     lock_struct->w_lock_struct.write_locked = true;
                                     lock_struct->w_lock_struct.owner.lock_timestamp = time_utils::now();
-                                    memset(lock_struct->w_lock_struct.owner.owner, 0, SIZE_USER_NAME);
+                                    memset(lock_struct->w_lock_struct.owner.owner, 0, SIZE_MAX_NAME);
                                     strncpy(lock_struct->w_lock_struct.owner.owner, owner.c_str(), owner.length());
                                     lock_struct->w_lock_struct.owner.process_id = getpid();
                                     memset(lock_struct->w_lock_struct.owner.txn_id, 0, SIZE_UUID);
@@ -540,7 +540,7 @@ REACTFS_NS_COMMON
                                 lock_struct->w_lock_struct.owner.process_id = -1;
                                 lock_struct->w_lock_struct.owner.lock_timestamp = 0;
                                 memset(lock_struct->w_lock_struct.owner.txn_id, 0, SIZE_UUID);
-                                memset(lock_struct->w_lock_struct.owner.owner, 0, SIZE_USER_NAME);
+                                memset(lock_struct->w_lock_struct.owner.owner, 0, SIZE_MAX_NAME);
                                 memset(lock_struct->w_lock_struct.owner.thread_id, 0, SIZE_THREAD_ID);
                                 lock_struct->w_lock_struct.write_locked = false;
                                 txn_id = common_consts::EMPTY_STRING;

@@ -1039,6 +1039,15 @@ REACTFS_NS_CORE
                             CHECK_AND_FREE(this->columns);
                         }
 
+                        const char *get_name() const {
+                            return this->name;
+                        }
+
+                        const __index_type_enum get_type() const {
+                            CHECK_NOT_NULL(this->type);
+                            return *this->type;
+                        }
+
                         void add_index(uint8_t index, vector<uint8_t> *values, uint8_t count, bool dir,
                                        const __native_type *type) {
                             PRECONDITION(index < *this->count);
