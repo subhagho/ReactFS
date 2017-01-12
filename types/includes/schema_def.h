@@ -516,7 +516,7 @@ REACTFS_NS_CORE
                             map->insert({key, this});
                         }
 
-                        virtual uint32_t estimate_size() {
+                        virtual uint32_t estimate_size() const {
                             CHECK_NOT_NULL(this->type_handler);
                             return this->type_handler->estimate_size();
                         }
@@ -905,7 +905,7 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        virtual uint32_t estimate_size() override {
+                        virtual uint32_t estimate_size() const override {
                             uint32_t size = 0;
                             unordered_map<uint8_t, __native_type *>::iterator iter;
                             for (iter = fields.begin(); iter != fields.end(); iter++) {
@@ -1046,6 +1046,11 @@ REACTFS_NS_CORE
                         const __index_type_enum get_type() const {
                             CHECK_NOT_NULL(this->type);
                             return *this->type;
+                        }
+
+                        uint8_t get_column_count() {
+                            CHECK_NOT_NULL(this->count);
+                            return *this->count;
                         }
 
                         void add_index(uint8_t index, vector<uint8_t> *values, uint8_t count, bool dir,

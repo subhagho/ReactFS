@@ -22,7 +22,7 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
         }
         LOG_INFO("Creating index : [name=%s][file=%s]", name.c_str(), ip->get_path().c_str());
 
-        uint64_t r_size = estimate_file_size(estimated_records);
+        uint64_t r_size = estimate_file_size(estimated_records, index_def);
         uint64_t ifile_size =
                 sizeof(__typed_index_header) + sizeof(__hash_index_header) + r_size;
         LOG_DEBUG("Creating index file with size = %lu", ifile_size);

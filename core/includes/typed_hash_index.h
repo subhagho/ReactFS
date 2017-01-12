@@ -86,12 +86,14 @@ REACTFS_NS_CORE
                         return common_utils::find_prime(b_size);
                     }
 
-                    uint64_t estimate_file_size(uint32_t est_record_count) {
+                    uint64_t estimate_file_size(uint32_t est_record_count, record_index *index_def) {
+                        uint32_t i_size = compute_index_record_size(index_def);
                         uint32_t b_size = 0;
                         uint16_t b_count = compute_bucket_prime(est_record_count);
                         uint32_t bucket_size = compute_bucket_size(est_record_count, b_count);
                         uint16_t r_size =
-                                sizeof(__typed_index_bucket) + (HASH_COLLISION_ESTIMATE * sizeof(__typed_index_record));
+                                sizeof(__typed_index_bucket) +
+                                (HASH_COLLISION_ESTIMATE * (sizeof(__typed_index_record) + i_size));
                         uint64_t bt_size = b_count * bucket_size * r_size;
                         b_size += (bt_size * HASH_DEFAULT_BLOAT_FACTOR);
                         return b_size;

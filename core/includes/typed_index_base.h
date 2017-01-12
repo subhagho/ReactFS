@@ -124,6 +124,22 @@ REACTFS_NS_CORE
                         return common_consts::EMPTY_STRING;
                     }
 
+                    uint32_t compute_index_record_size(record_index *index_def) {
+                        CHECK_NOT_NULL(index_def);
+                        uint32_t size = 0;
+                        for (uint8_t ii = 0; ii < index_def->get_column_count(); ii++) {
+                            const __index_column *column = index_def->get_index(ii);
+                            CHECK_NOT_NULL(column);
+                            PRECONDITION(__type_enum_helper::is_native(column->type->get_datatype()));
+                            if (column->type->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                size += UCHAR_MAX;
+                            } else {
+                                size += column->type->estimate_size();
+                            }
+                        }
+                        return size;
+                    }
+
                 public:
                     /*!
                      * Base virtual destructor.
