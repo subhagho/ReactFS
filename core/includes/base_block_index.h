@@ -40,9 +40,11 @@
 #include "core.h"
 #include "common_structs.h"
 #include "fs_error_base.h"
+#include "clients/node_client_env.h"
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
+using namespace com::wookler::reactfs::core::client;
 
 #define DEFAULT_BLOAT_FACTOR (15 / 10)
 #define BLOCK_INDEX_VERSION_MAJOR ((uint16_t) 0)
@@ -54,6 +56,9 @@ REACTFS_NS_CORE
                 class base_block_index {
                 protected:
                     __version_header version;
+
+                    /// Mutex used for updating read usage stats.
+                    mutex stat_lock;
 
                     //! State of this instance of the block object.
                     __state__ state;
@@ -77,6 +82,9 @@ REACTFS_NS_CORE
                     __rollback_info *rollback_info = nullptr;
 
                     vector<uint64_t> rollback_info_deletes;
+
+                    __block_usage_stat write_usage;
+                    __block_usage_stat read_usage;
 
                     /*!
                      * Get the index filename for the specified block file.
@@ -260,6 +268,45 @@ REACTFS_NS_CORE
                             return common_utils::format("%s.%lu", name.c_str(), header->block_id);
                         }
                         return common_consts::EMPTY_STRING;
+                    }
+
+                    void flush_write_usage() {
+                        node_client_env *n_env = node_init_client::get_client_env();
+                        mount_client *m_client = n_env->get_mount_client();
+                        m_client->update_write_metrics(&filename, write_usage.bytes_used, write_usage.elapsed_time);
+                        write_usage.bytes_used.store(0);
+                        write_usage.elapsed_time.store(0);
+                        write_usage.last_synced = time_utils::now();
+                    }
+
+                    void flush_read_usage() {
+                        node_client_env *n_env = node_init_client::get_client_env();
+                        mount_client *m_client = n_env->get_mount_client();
+                        m_client->update_write_metrics(&filename, read_usage.bytes_used, read_usage.elapsed_time);
+                        read_usage.bytes_used.store(0);
+                        read_usage.elapsed_time.store(0);
+                        read_usage.last_synced = time_utils::now();
+                    }
+
+                    void update_write_usage(uint64_t bytes, uint64_t elapsed) {
+                        write_usage.bytes_used += bytes;
+                        write_usage.elapsed_time += elapsed;
+                        uint64_t delta = time_utils::now() - write_usage.last_synced;
+                        if (delta > BLOCK_USAGE_FLUSH_INTERVAL) {
+                            flush_write_usage();
+                        }
+                    }
+
+                    void update_read_usage(uint64_t bytes, uint64_t elapsed) {
+                        read_usage.bytes_used += bytes;
+                        read_usage.elapsed_time += elapsed;
+                        uint64_t delta = time_utils::now() - read_usage.last_synced;
+                        if (delta > BLOCK_USAGE_FLUSH_INTERVAL) {
+                            std::lock_guard<std::mutex> lock(stat_lock);
+                            delta = time_utils::now() - read_usage.last_synced;
+                            if (delta > BLOCK_USAGE_FLUSH_INTERVAL)
+                                flush_write_usage();
+                        }
                     }
 
                 public:

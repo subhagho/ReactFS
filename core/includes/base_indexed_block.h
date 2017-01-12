@@ -37,7 +37,7 @@ namespace com {
 
                 public:
                     virtual ~base_indexed_block() {
-
+                        this->close();
                     }
 
                     /*!

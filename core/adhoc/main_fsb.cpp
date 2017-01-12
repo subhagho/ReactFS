@@ -28,9 +28,15 @@
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
 
+const char *DUMMY_TEXT = "All hermetic lotus praise each other, only inner cows have a solitude."
+        "Ferox buxums ducunt ad urbs.Place the chicken in a casserole, and toss fast with cold ketchup."
+        "Confucius says: the aspect is like the monkey. Nunquam promissio cannabis. It is a reliable pressure, sir. "
+        "Iced, rich pudding is best decorated with ground teriyaki. Per guest prepare six tablespoons of beer with smashed popcorn for dessert. "
+        "The parrot robs with malaria, pull the lighthouse. In the mind all lamas handle zen.";
 typedef struct {
     uint64_t timestamp;
-    char value[1024];
+    char key[256];
+    char value[2048];
     uint32_t index;
 } _test_typed;
 
@@ -62,7 +68,10 @@ void test_basic() {
         t.index = ii;
         t.timestamp = time_utils::now() + (ii * 10000);
         string uuid = common_utils::uuid();
-        strncpy(t.value, uuid.c_str(), uuid.length());
+        memset(t.key, 0, 256);
+        strncpy(t.key, uuid.c_str(), uuid.length());
+        memset(t.value, 0, 2048);
+        strcpy(t.value, DUMMY_TEXT);
 
         if (block->get_free_space() < sizeof(_test_typed))
             break;
@@ -175,7 +184,10 @@ void test_indexed() {
         t.index = ii;
         t.timestamp = time_utils::now() + (ii * 10000);
         string uuid = common_utils::uuid();
-        strncpy(t.value, uuid.c_str(), uuid.length());
+        memset(t.key, 0, 256);
+        strncpy(t.key, uuid.c_str(), uuid.length());
+        memset(t.value, 0, 2048);
+        strcpy(t.value, DUMMY_TEXT);
 
         if (block->get_free_space() < sizeof(_test_typed))
             break;

@@ -84,7 +84,7 @@ void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block
     if (header->block_id != block_id) {
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
                              "Block id read from index file does not match. [read block id=%lu][expected block id=%lu]",
-                                     header->block_id, block_id);
+                             header->block_id, block_id);
     }
     if (strncmp(header->block_uid, block_uuid.c_str(), block_uuid.length()) != 0) {
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
@@ -145,6 +145,9 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     string m_name = get_metric_name(BLOCK_INDEX_METRIC_WRITE_PREFIX);
     START_TIMER(m_name, 0);
 
+    nano_timer t;
+    t.start();
+
     PRECONDITION(in_transaction());
     PRECONDITION(!IS_EMPTY(transaction_id) && (*rollback_info->transaction_id == transaction_id));
     uint64_t last_index = get_last_index();
@@ -165,6 +168,11 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     rollback_info->used_bytes += sizeof(__record_index_ptr);
     rollback_info->write_offset += sizeof(__record_index_ptr);
 
+    t.stop();
+
+    uint64_t write_bytes = (sizeof(__record_index_ptr));
+    update_write_usage(write_bytes, t.get_elapsed());
+
     END_TIMER(m_name, 0);
     return iptr;
 }
@@ -174,6 +182,8 @@ __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(
     PRECONDITION(index >= header->start_index && index <= header->last_index);
     string m_name = get_metric_name(BLOCK_INDEX_METRIC_READ_PREFIX);
     START_TIMER(m_name, 0);
+    nano_timer t;
+    t.start();
 
     uint64_t offset = (index - header->start_index) * sizeof(__record_index_ptr);
 
@@ -187,6 +197,9 @@ __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(
     if (!all && !iptr->readable)
         return nullptr;
 
+    t.stop();
+
+    update_read_usage(sizeof(__record_index_ptr), t.get_elapsed());
     END_TIMER(m_name, 0);
     return iptr;
 }

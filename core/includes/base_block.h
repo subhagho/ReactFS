@@ -45,8 +45,6 @@
 #define BLOCK_VERSION_MAJOR ((uint16_t) 0)
 #define BLOCK_VERSION_MINOR ((uint16_t) 1)
 
-#define BLOCK_USAGE_FLUSH_INTERVAL 15 * 1000
-
 #define BLOCK_METRIC_READ_PREFIX "metric.block.read"
 #define BLOCK_METRIC_WRITE_PREFIX "metric.block.write"
 
@@ -58,11 +56,6 @@ namespace com {
     namespace wookler {
         namespace reactfs {
             namespace core {
-                typedef struct __block_usage_stat__ {
-                    atomic<uint64_t> bytes_used;
-                    atomic<uint64_t> elapsed_time;
-                    uint64_t last_synced = 0;
-                } __block_usage_stat;
 
                 typedef struct __block_check_record__ {
                     uint64_t block_id;

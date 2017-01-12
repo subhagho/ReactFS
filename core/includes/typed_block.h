@@ -163,6 +163,8 @@ REACTFS_NS_CORE
                      */
                     virtual uint64_t write(void *source, uint32_t length, string transaction_id) override;
 
+                    virtual void close() override;
+
                     /*!
                      * Write a data record to the block. Check should be done to ensure that
                      * enough space is available in the block for the required data length, else

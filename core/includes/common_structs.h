@@ -26,6 +26,8 @@
 #include "common/includes/base_error.h"
 #include "block_common_structs_v0.h"
 
+#define BLOCK_USAGE_FLUSH_INTERVAL 15 * 1000
+
 using namespace com::wookler::reactfs::common;
 
 namespace com {
@@ -40,6 +42,12 @@ namespace com {
                 typedef __record_index_ptr_v0 __record_index_ptr;
                 typedef __rollback_info_v0 __rollback_info;
                 typedef __block_header_v0 __block_header;
+
+                typedef struct __block_usage_stat__ {
+                    atomic<uint64_t> bytes_used;
+                    atomic<uint64_t> elapsed_time;
+                    uint64_t last_synced = 0;
+                } __block_usage_stat;
 
                 class __mapped_ptr {
                 private:

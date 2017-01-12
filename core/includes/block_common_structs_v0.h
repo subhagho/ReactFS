@@ -53,7 +53,7 @@ namespace com {
                     /// Row indexed data block.
                             INDEXED = 1,
                     /// Data block with sortable index.
-                            SORTABLE = 2,
+                            TYPED = 2,
                     /// Data block with Map based index.
                             MAP = 3
                 } __block_def;

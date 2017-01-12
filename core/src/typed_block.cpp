@@ -81,6 +81,10 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     state.set_state(__state_enum::Available);
 }
 
+void com::wookler::reactfs::core::typed_block::close() {
+    base_indexed_block::close();
+}
+
 __record *com::wookler::reactfs::core::typed_block::__write_record(mutable_record_struct *source,
                                                                    string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
