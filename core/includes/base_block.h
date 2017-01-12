@@ -45,7 +45,7 @@
 #define BLOCK_VERSION_MAJOR ((uint16_t) 0)
 #define BLOCK_VERSION_MINOR ((uint16_t) 1)
 
-#define BLOCK_USAGE_FLUSH_INTERVAL 5 * 1000
+#define BLOCK_USAGE_FLUSH_INTERVAL 15 * 1000
 
 #define BLOCK_METRIC_READ_PREFIX "metric.block.read"
 #define BLOCK_METRIC_WRITE_PREFIX "metric.block.write"
@@ -59,8 +59,8 @@ namespace com {
         namespace reactfs {
             namespace core {
                 typedef struct __block_usage_stat__ {
-                    uint64_t bytes_used = 0;
-                    uint64_t elapsed_time = 0;
+                    atomic<uint64_t> bytes_used;
+                    atomic<uint64_t> elapsed_time;
                     uint64_t last_synced = 0;
                 } __block_usage_stat;
 
@@ -127,8 +127,8 @@ namespace com {
                         node_client_env *n_env = node_init_client::get_client_env();
                         mount_client *m_client = n_env->get_mount_client();
                         m_client->update_write_metrics(&filename, write_usage.bytes_used, write_usage.elapsed_time);
-                        write_usage.bytes_used = 0;
-                        write_usage.elapsed_time = 0;
+                        write_usage.bytes_used.store(0);
+                        write_usage.elapsed_time.store(0);
                         write_usage.last_synced = time_utils::now();
                     }
 
@@ -136,8 +136,8 @@ namespace com {
                         node_client_env *n_env = node_init_client::get_client_env();
                         mount_client *m_client = n_env->get_mount_client();
                         m_client->update_write_metrics(&filename, read_usage.bytes_used, read_usage.elapsed_time);
-                        read_usage.bytes_used = 0;
-                        read_usage.elapsed_time = 0;
+                        read_usage.bytes_used.store(0);
+                        read_usage.elapsed_time.store(0);
                         read_usage.last_synced = time_utils::now();
                     }
 
@@ -151,13 +151,14 @@ namespace com {
                     }
 
                     void update_read_usage(uint64_t bytes, uint64_t elapsed) {
-                        std::lock_guard<std::mutex> lock(stat_lock);
-
                         read_usage.bytes_used += bytes;
                         read_usage.elapsed_time += elapsed;
                         uint64_t delta = time_utils::now() - read_usage.last_synced;
                         if (delta > BLOCK_USAGE_FLUSH_INTERVAL) {
-                            flush_write_usage();
+                            std::lock_guard<std::mutex> lock(stat_lock);
+                            delta = time_utils::now() - read_usage.last_synced;
+                            if (delta > BLOCK_USAGE_FLUSH_INTERVAL)
+                                flush_write_usage();
                         }
                     }
 
@@ -366,6 +367,12 @@ namespace com {
                     base_block() {
                         version.major = BLOCK_VERSION_MAJOR;
                         version.minor = BLOCK_VERSION_MINOR;
+                        write_usage.bytes_used.store(0);
+                        write_usage.elapsed_time.store(0);
+                        write_usage.last_synced = time_utils::now();
+                        read_usage.bytes_used.store(0);
+                        read_usage.elapsed_time.store(0);
+                        read_usage.last_synced = time_utils::now();
                     }
 
                     /*!< destructor

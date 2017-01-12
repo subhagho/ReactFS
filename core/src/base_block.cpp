@@ -136,9 +136,9 @@ void *com::wookler::reactfs::core::base_block::__open_block(uint64_t block_id, s
         compression = compression_factory::get_compression_handler(header->compression.type);
     }
 
-    bool r = metrics_utils::create_metric(get_metric_name(BLOCK_METRIC_WRITE_PREFIX), AverageMetric, false);
+    bool r = metrics_utils::create_metric(get_metric_name(BLOCK_METRIC_WRITE_PREFIX), AverageMetric);
     POSTCONDITION(r);
-    r = metrics_utils::create_metric(get_metric_name(BLOCK_METRIC_READ_PREFIX), AverageMetric, false);
+    r = metrics_utils::create_metric(get_metric_name(BLOCK_METRIC_READ_PREFIX), AverageMetric);
     POSTCONDITION(r);
 
     return base_ptr;

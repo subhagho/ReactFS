@@ -35,7 +35,7 @@ using namespace com::wookler::reactfs::core::parsers;
 
 uint64_t write_data(typed_block *block, __complex_type *schema, int count, vector<int> *indexes, string &txid) {
     timer tw;
-    mutable_test_schema *ts = generate_schema(schema, 5);
+    mutable_test_schema *ts = generate_schema(schema, 10);
     CHECK_NOT_NULL(ts);
     for(int ii=0; ii < count; ii++) {
         tw.restart();

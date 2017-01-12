@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
         const control_client *control = init_utils::init_control_client(env, CONTROL_CONFIG_PATH);
         REQUIRE(NOT_NULL(control));
 
-        bool r = metrics_utils::create_metric(METRIC_LOCK_TIME, AverageMetric, true);
+        bool r = metrics_utils::create_metric(METRIC_LOCK_TIME, AverageMetric);
         if (!r) {
             throw BASE_ERROR("Error creating metrics. [name=%s]", METRIC_LOCK_TIME.c_str());
         }

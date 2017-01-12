@@ -63,20 +63,20 @@ void com::wookler::watergate::core::control_def::add_resource_lock(const __app *
     for (int ii = 0; ii < sem->get_max_priority(); ii++) {
         string m = get_metrics_name(METRIC_LOCK_PREFIX, *sem->get_name(), ii);
         if (!IS_EMPTY(m)) {
-            metrics_utils::create_metric(m, AverageMetric, true);
+            metrics_utils::create_metric(m, AverageMetric);
         }
         m = get_metrics_name(METRIC_LOCK_TIMEOUT_PREFIX, *sem->get_name(), ii);
         if (!IS_EMPTY(m)) {
-            metrics_utils::create_metric(m, BasicMetric, true);
+            metrics_utils::create_metric(m, BasicMetric);
         }
     }
     string m = get_metrics_name(METRIC_QUOTA_PREFIX, *sem->get_name(), -1);
     if (!IS_EMPTY(m)) {
-        metrics_utils::create_metric(m, BasicMetric, true);
+        metrics_utils::create_metric(m, BasicMetric);
     }
     m = get_metrics_name(METRIC_QUOTA_REACHED_PREFIX, *sem->get_name(), -1);
     if (!IS_EMPTY(m)) {
-        metrics_utils::create_metric(m, BasicMetric, true);
+        metrics_utils::create_metric(m, BasicMetric);
     }
     LOG_INFO("Created new semaphore handle. [name=%s]...", sem->get_name()->c_str());
 }

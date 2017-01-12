@@ -354,7 +354,7 @@ namespace com {
                     static __avg_metric *get_hourly_metric(string name, __hourly_usage_metric *metric) {
                         uint32_t hour = time_utils::get_hour(nullptr);
                         POSTCONDITION(hour >= 0 && hour < 24);
-                        __avg_metric *avg = new __avg_metric(name, false);
+                        __avg_metric *avg = new __avg_metric(name);
                         CHECK_ALLOC(metric, TYPE_NAME(_avg_metric));
                         avg->set(metric->records[hour].value, metric->records[hour].time);
 

@@ -52,7 +52,7 @@ REACTFS_NS_CORE
 
                 public:
 
-                    ~typed_hash_index() {
+                    virtual ~typed_hash_index() {
 
                     }
 

@@ -6,7 +6,7 @@
         "env.config.workdir": "/work/temp/core"
       },
       "logging": {
-        "level": "trace",
+        "level": "info",
         "size": "5M",
         "max-files": "3",
         "console": "true"

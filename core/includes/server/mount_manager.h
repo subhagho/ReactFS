@@ -64,10 +64,10 @@ namespace com {
                             for (int ii = 0; ii < mounts->mount_count; ii++) {
                                 string name = string(mounts->mounts[ii].path);
                                 string r_name = common_utils::format("%s_%s", name.c_str(), MOUNT_METRIC_NAME_R);
-                                this->read_metric[ii] = new __avg_metric(r_name, false);
+                                this->read_metric[ii] = new __avg_metric(r_name);
                                 CHECK_ALLOC(this->read_metric[ii], TYPE_NAME(__avg_metric));
                                 string w_name = common_utils::format("%s_%s", name.c_str(), MOUNT_METRIC_NAME_W);
-                                this->write_metric[ii] = new __avg_metric(w_name, false);
+                                this->write_metric[ii] = new __avg_metric(w_name);
                                 CHECK_ALLOC(this->write_metric[ii], TYPE_NAME(__avg_metric));
                             }
                         }

@@ -73,9 +73,9 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
         write_ptr = nullptr;
     }
 
-    bool r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_READ_PREFIX), AverageMetric, false);
+    bool r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_READ_PREFIX), AverageMetric);
     POSTCONDITION(r);
-    r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_WRITE_PREFIX), AverageMetric, false);
+    r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_WRITE_PREFIX), AverageMetric);
     POSTCONDITION(r);
 
     state.set_state(__state_enum::Available);

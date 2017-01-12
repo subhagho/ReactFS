@@ -100,9 +100,9 @@ void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block
 
     this->filename = string(p->get_path());
 
-    bool r = metrics_utils::create_metric(get_metric_name(BLOCK_INDEX_METRIC_READ_PREFIX), AverageMetric, false);
+    bool r = metrics_utils::create_metric(get_metric_name(BLOCK_INDEX_METRIC_READ_PREFIX), AverageMetric);
     POSTCONDITION(r);
-    r = metrics_utils::create_metric(get_metric_name(BLOCK_INDEX_METRIC_WRITE_PREFIX), AverageMetric, false);
+    r = metrics_utils::create_metric(get_metric_name(BLOCK_INDEX_METRIC_WRITE_PREFIX), AverageMetric);
     POSTCONDITION(r);
 
     return base_ptr;

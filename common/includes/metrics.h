@@ -21,6 +21,7 @@
 #ifndef WATERGATE_METRICS_H
 #define WATERGATE_METRICS_H
 
+#include <atomic>
 #include <mutex>
 #include <unordered_map>
 
@@ -70,13 +71,10 @@ REACTFS_NS_COMMON
                     __metric_type_enum type;
 
                     /// Metric value
-                    double value = 0.0f;
-
-                    /// Is this instance expected to be thread safe?
-                    bool thread_safe = false;
+                    atomic<uint64_t> value;
 
                     /// Max value this metric can have.
-                    double max_value = 0;
+                    atomic<uint64_t> max_value;
 
                 public:
                     /*!<constructor
@@ -90,23 +88,8 @@ REACTFS_NS_COMMON
                         this->type = BasicMetric;
                         this->name = new string(name);
                         CHECK_ALLOC(this->name, TYPE_NAME(string));
-                        this->value = 0;
-                    }
-
-                    /*!<constructor
-                     * Constructor with metric and thread safe parameter.
-                     *
-                     * @param name - Metric name
-                     * @param thread_safe - Is thread safe?
-                     */
-                    __metric(string name, bool thread_safe) {
-                        PRECONDITION(!IS_EMPTY(name));
-
-                        this->type = BasicMetric;
-                        this->name = new string(name);
-                        CHECK_ALLOC(this->name, TYPE_NAME(string));
-                        this->value = 0;
-                        this->thread_safe = thread_safe;
+                        this->value.store(0);
+                        this->max_value.store(0);
                     }
 
                     /*!<destructor
@@ -150,20 +133,11 @@ REACTFS_NS_COMMON
                     }
 
                     /*!
-                     * Is this metric expected to be thread safe?
-                     *
-                     * @return - Is thread safe?
-                     */
-                    bool is_thread_safe() {
-                        return this->thread_safe;
-                    }
-
-                    /*!
                      * Overwrite the value of this metric.
                      *
                      * @param value - Value to overwrite with.
                      */
-                    virtual double set_value(double value) {
+                    virtual uint64_t set_value(uint64_t value) {
                         this->value = value;
                         return this->value;
                     }
@@ -182,12 +156,23 @@ REACTFS_NS_COMMON
                      *
                      * @param value - Value to increment by.
                      */
-                    virtual double increment(double value) {
+                    virtual uint64_t increment(uint64_t value) {
                         this->value += value;
-                        if (value > max_value) {
-                            this->max_value = value;
+                        uint64_t m_value = this->max_value;
+                        if (value > m_value) {
+                            while (!this->max_value.compare_exchange_weak(m_value, value, std::memory_order_release,
+                                                                          std::memory_order_relaxed)) {
+                                m_value = this->max_value;
+                                if (value <= m_value) {
+                                    break;
+                                }
+                            }
                         }
                         return this->value;
+                    }
+
+                    virtual double get_max_value() {
+                        return this->max_value;
                     }
 
                     /*!
@@ -195,9 +180,9 @@ REACTFS_NS_COMMON
                      */
                     virtual void print() {
                         if (NOT_EMPTY_P(this->name))
-                            LOG_INFO("[name=%s][type=%s][value=%f][max value=%f]", this->name->c_str(),
+                            LOG_INFO("[name=%s][type=%s][value=%lu][max value=%lu]", this->name->c_str(),
                                      get_type_string().c_str(),
-                                     get_value(), max_value);
+                                     get_value(), get_max_value());
                     }
 
                 };
@@ -207,7 +192,7 @@ REACTFS_NS_COMMON
                  */
                 class __avg_metric : public __metric {
                 private:
-                    uint64_t count = 0;
+                    atomic<uint64_t> count;
 
                 public:
                     /*!<constructor
@@ -217,16 +202,7 @@ REACTFS_NS_COMMON
                      */
                     __avg_metric(string name) : __metric(name) {
                         this->type = AverageMetric;
-                    }
-
-                    /*!<constructor
-                     * Constructor with metric and thread safe parameter.
-                     *
-                     * @param name - Metric name
-                     * @param thread_safe - Is thread safe?
-                     */
-                    __avg_metric(string name, bool thread_safe) : __metric(name, thread_safe) {
-                        this->type = AverageMetric;
+                        this->count.store(0);
                     }
 
                     /*!
@@ -235,7 +211,7 @@ REACTFS_NS_COMMON
                      * @param value - Value to increment this metric by.
                      * @return - Incremented average value.
                      */
-                    double increment(double value) override {
+                    uint64_t increment(uint64_t value) override {
                         __metric::increment(value);
                         this->count++;
 
@@ -249,9 +225,9 @@ REACTFS_NS_COMMON
                      */
                     double get_value() override {
                         if (this->count > 0) {
-                            return (this->value / this->count);
+                            return (((double) this->value) / this->count);
                         }
-                        return 0.0;
+                        return 0;
                     }
 
                     /*!
@@ -261,7 +237,7 @@ REACTFS_NS_COMMON
                      * @param div - Denominator value to overwrite.
                      * @return - New average value.
                      */
-                    double set(double value, uint64_t div) {
+                    uint64_t set(uint64_t value, uint64_t div) {
                         __metric::set_value(value);
                         this->count = div;
 
@@ -275,14 +251,31 @@ REACTFS_NS_COMMON
                      * @param div - Denominator value increment.
                      * @return - New average value.
                      */
-                    double increment(double value, uint64_t div) {
+                    uint64_t increment(uint64_t value, uint64_t div) {
                         __metric::increment(value);
                         this->count += div;
-                        double a = value / div;
-                        if (a > max_value) {
-                            max_value = a;
+                        if (div > 0) {
+                            uint64_t a = (value * 100) / div;
+                            uint64_t m_value = max_value;
+                            if (a > m_value) {
+                                while (!this->max_value.compare_exchange_weak(m_value, a, std::memory_order_release,
+                                                                              std::memory_order_relaxed)) {
+                                    m_value = this->max_value;
+                                    if (a <= m_value) {
+                                        break;
+                                    }
+                                }
+                            }
                         }
                         return get_value();
+                    }
+
+                    double get_max_value() override {
+                        return ((double) this->max_value) / 100;
+                    }
+
+                    uint64_t get_count() {
+                        return this->count;
                     }
 
                     /*!
@@ -290,10 +283,12 @@ REACTFS_NS_COMMON
                      */
                     void print() override {
                         if (NOT_EMPTY_P(this->name)) {
-                            LOG_INFO("[name=%s][type=%s][total=%f][average=%f][max value=%f][count=%lu]",
+                            uint64_t v = this->value;
+                            uint64_t c = this->count;
+                            LOG_INFO("[name=%s][type=%s][total=%lu][average=%f][max value=%f][count=%lu]",
                                      this->name->c_str(),
-                                     get_type_string().c_str(), this->value, get_value(),
-                                     this->max_value, this->count);
+                                     get_type_string().c_str(), v, get_value(),
+                                     get_max_value(), c);
                         }
                     }
                 };
@@ -330,10 +325,9 @@ REACTFS_NS_COMMON
                      *
                      * @param name
                      * @param type
-                     * @param thread_safe
                      * @return
                      */
-                    static bool create_metric(const string &name, __metric_type_enum type, bool thread_safe) {
+                    static bool create_metric(const string &name, __metric_type_enum type) {
                         if (!state.is_available())
                             return false;
 
@@ -347,10 +341,10 @@ REACTFS_NS_COMMON
 
                             __metric *metric = nullptr;
                             if (type == BasicMetric) {
-                                metric = new __metric(name, thread_safe);
+                                metric = new __metric(name);
                                 CHECK_ALLOC(metric, TYPE_NAME(__metric));
                             } else if (type == AverageMetric) {
-                                metric = new __avg_metric(name, thread_safe);
+                                metric = new __avg_metric(name);
                                 CHECK_ALLOC(metric, TYPE_NAME(_avg_metric));
                             }
 
@@ -390,7 +384,7 @@ REACTFS_NS_COMMON
                         CHECK_AND_FREE(metrics);
                     }
 
-                    static bool update(const string &name, double value) {
+                    static bool update(const string &name, uint64_t value) {
                         if (!state.is_available())
                             return false;
 
@@ -399,12 +393,7 @@ REACTFS_NS_COMMON
                             if (iter != metrics->end()) {
                                 __metric *metric = iter->second;
                                 if (NOT_NULL(metric)) {
-                                    if (metric->is_thread_safe()) {
-                                        std::lock_guard<std::mutex> guard(g_lock);
-                                        metric->increment(value);
-                                    } else {
-                                        metric->increment(value);
-                                    }
+                                    metric->increment(value);
                                 }
                                 return true;
                             }
@@ -412,7 +401,7 @@ REACTFS_NS_COMMON
                         return false;
                     }
 
-                    static bool update(const string &name, double value, double div) {
+                    static bool update(const string &name, uint64_t value, uint64_t div) {
                         if (!state.is_available())
                             return false;
 
@@ -423,12 +412,7 @@ REACTFS_NS_COMMON
                                 if (NOT_NULL(metric) && metric->get_type() == __metric_type_enum::AverageMetric) {
                                     __avg_metric *avg = dynamic_cast<__avg_metric *>(metric);
                                     CHECK_CAST(avg, TYPE_NAME(__metric), TYPE_NAME(__avg_metric));
-                                    if (metric->is_thread_safe()) {
-                                        std::lock_guard<std::mutex> guard(g_lock);
-                                        avg->increment(value, div);
-                                    } else {
-                                        avg->increment(value, div);
-                                    }
+                                    avg->increment(value, div);
                                 }
                                 return true;
                             }
