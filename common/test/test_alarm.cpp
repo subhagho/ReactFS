@@ -19,10 +19,11 @@
 //
 
 #include "test_alarm.h"
-
+#include <boost/filesystem.hpp>
 
 TEST_CASE("Test time function.", "[com::watergate::common::timer]") {
-    env_utils::create_env(CONFIG_FILE);
+    const char* file = "test/data/test-conf.json";
+    env_utils::create_env(boost::filesystem::absolute(file).string());
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
@@ -39,12 +40,15 @@ TEST_CASE("Test time function.", "[com::watergate::common::timer]") {
     t.stop();
 
     LOG_INFO("Recorded elapsed time = %d", t.get_elapsed());
+    REQUIRE(t.get_elapsed() >= 4000);
 
     env_utils::dispose();
 }
 
 TEST_CASE("Test alarm with callback.", "[com::watergate::common::alarm]") {
-    env_utils::create_env(CONFIG_FILE);
+    const char* file = "test/data/test-conf.json";
+    env_utils::create_env(boost::filesystem::absolute(file).string());
+
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
@@ -53,9 +57,10 @@ TEST_CASE("Test alarm with callback.", "[com::watergate::common::alarm]") {
 
     timer t;
 
-    string *id = new string(common_utils::uuid());
-    test_type *tt = new test_type(id);
-    test_callback *tc = new test_callback(tt);
+    string id = common_utils::uuid();
+
+    test_type tt(&id);
+    test_callback tc(&tt);
 
     t.start();
 
@@ -67,16 +72,14 @@ TEST_CASE("Test alarm with callback.", "[com::watergate::common::alarm]") {
     START_ALARM(1);
 
     t.restart();
-    NEW_ALARM_WITH_CALLBACK("5s", tc, 2);
+    NEW_ALARM_WITH_CALLBACK("5s", &tc, 2);
     START_ALARM(2);
 
     t.stop();
 
-    CHECK_AND_FREE(tt);
-    CHECK_AND_FREE(tc);
-    CHECK_AND_FREE(id);
-
     LOG_INFO("Recorded elapsed time = %d", t.get_elapsed());
+    REQUIRE(id == tc.getCallBackContext());
 
     env_utils::dispose();
+
 }

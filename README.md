@@ -9,7 +9,7 @@ Distributed File System with change reactors
 
 Now make use of *macports* and install the following.
 
-* Invoke macports using : `sudo ports`
+* Invoke macports using : `sudo port`
 * Now run the below set of commands to install the pre-requiste libraries
 
 ```
@@ -18,6 +18,7 @@ install openssl
 install flex
 install bison
 install astyle (devel)
+install boost
 ```
 
 ### Pre-requisites for building on Linux
@@ -29,6 +30,18 @@ install openssl (devel)
 install flex
 install bison
 install astyle (devel)
+```
+
+#### Ubuntu
+```
+sudo apt-get install cmake
+sudo apt-get install uuid
+sudo apt-get install zlib1g-dev
+sudo apt-get install libssl-dev
+sudo apt-get install flex
+sudo apt-get install bison
+sudo apt-get install astyle
+sudo apt-get install libboost-all-dev
 ```
 
 #### Create build environment file:

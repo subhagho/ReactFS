@@ -42,6 +42,11 @@ target_link_libraries(adhoc ${COMMON_LIB_NAME} ${RFS_SYS_LIBRARIES})
 
 find_package(Threads)
 
+# Adding boost libraries
+find_package(Boost REQUIRED COMPONENTS system thread filesystem)
+include_directories(${Boost_INCLUDE_DIRS})
+target_link_libraries(reactfs-common ${Boost_LIBRARIES})
+
 # Build Catch unit tests
 add_library(catch INTERFACE)
 target_include_directories(catch INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
