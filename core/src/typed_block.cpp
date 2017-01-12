@@ -274,8 +274,8 @@ void com::wookler::reactfs::core::typed_block::add_index(record_index *index) {
         typed_index_base *bi = create_index_instance(index->get_type());
         CHECK_NOT_NULL(bi);
         uint32_t est_records = (header->block_size / estimated_record_size);
-        string if_name = bi->create_index(header->block_id, header->block_uid, this->filename, est_records,
-                                          header->start_index, true);
+        string if_name = bi->create_index(index->get_name(), header->block_id, header->block_uid, this->filename,
+                                          est_records, header->start_index, true);
         CHECK_NOT_EMPTY(if_name);
         size_t nl = strlen(index->get_name());
         PRECONDITION(nl <= SIZE_MAX_NAME);

@@ -37,7 +37,7 @@ uint64_t write_data(typed_block *block, __complex_type *schema, int count, vecto
     timer tw;
     mutable_test_schema *ts = generate_schema(schema, 10);
     CHECK_NOT_NULL(ts);
-    for(int ii=0; ii < count; ii++) {
+    for (int ii = 0; ii < count; ii++) {
         tw.restart();
         mutable_record_struct *dt = ts->serialize();
         int index = block->write(dt, 0, txid);
@@ -63,6 +63,10 @@ void test_indexed(char *schemaf) {
     uint32_t rec_size = schema->estimate_size();
     LOG_DEBUG("Estimated record size = %d", rec_size);
 
+    vector<record_index *> *r_indexes = driver.get_indexes(schema);
+    CHECK_NOT_EMPTY_P(r_indexes);
+
+
     string s = block_utils::get_block_dir(c_env->get_mount_client(), DEFAULT_BLOCK_SIZE);
     Path p(s);
     p.append(REUSE_BLOCK_INDEX_FILE);
@@ -70,10 +74,14 @@ void test_indexed(char *schemaf) {
     LOG_DEBUG("Using block file [%s]", p.get_path().c_str());
 
     string uuid = block_utils::create_typed_block(schema, REUSE_BLOCK_INDEX_ID, REUSE_PARENT_ID, p.get_path(),
-                                                  __block_def::INDEXED,
                                                   __block_usage::PRIMARY,
                                                   DEFAULT_BLOCK_SIZE,
-                                                  rec_size, RECORD_START_INDEX, true);
+                                                  rec_size, RECORD_START_INDEX, r_indexes, true);
+    for (record_index *ri : *r_indexes) {
+        CHECK_AND_FREE(ri);
+    }
+    CHECK_AND_FREE(r_indexes);
+
     POSTCONDITION(!IS_EMPTY(uuid));
 
     typed_block *block = new typed_block();
@@ -86,7 +94,7 @@ void test_indexed(char *schemaf) {
     string txid = block->start_transaction(0);
     uint64_t tt = 0;
     CHECK_NOT_EMPTY(txid);
-    for(int ii=0; ii < 20; ii++) {
+    for (int ii = 0; ii < 20; ii++) {
         tt += write_data(block, schema, 2000, &indexes, txid);
     }
     block->commit(txid);
@@ -101,7 +109,7 @@ void test_indexed(char *schemaf) {
 
     vector<record_struct *> *records = new vector<record_struct *>();
     CHECK_ALLOC(records, TYPE_NAME(vector));
-    for(int index : indexes) {
+    for (int index : indexes) {
         tr.restart();
         int c = block->read_struct(index, 1, records);
         POSTCONDITION(records->size() > 0);
@@ -114,12 +122,12 @@ void test_indexed(char *schemaf) {
     }
     tr.stop();
     LOG_INFO("Read [%d] records from block in %d msec.", records->size(), tr.get_elapsed());
-    for(auto vp : *records) {
+    for (auto vp : *records) {
         CHECK_AND_FREE(vp);
     }
     CHECK_AND_FREE(records);
     CHECK_AND_FREE(block);
-    
+
 }
 
 

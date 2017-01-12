@@ -37,6 +37,7 @@ main(const int argc, const char **argv) {
             }
             vector<record_index *> *indexes = driver.get_indexes(schema);
             CHECK_NOT_EMPTY_P(indexes);
+
             for(record_index *ri : *indexes) {
                 CHECK_AND_FREE(ri);
             }

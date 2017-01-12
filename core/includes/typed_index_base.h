@@ -5,6 +5,8 @@
 #ifndef REACTFS_TYPED_INDEX_BASE_H
 #define REACTFS_TYPED_INDEX_BASE_H
 
+#include <openssl/md5.h>
+
 #include "common/includes/common.h"
 #include "common/includes/__state__.h"
 #include "common/includes/log_utils.h"
@@ -20,6 +22,7 @@
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
+using namespace com::wookler::reactfs::core::types;
 
 REACTFS_NS_CORE
                 typedef struct __index_key__ {
@@ -31,6 +34,38 @@ REACTFS_NS_CORE
                     __index_key *keys = nullptr;
                     uint8_t count = 0;
                 } __index_key_set;
+
+                struct __typed_index_record_v0__ {
+                    unsigned char digest[MD5_DIGEST_LENGTH];
+                    void *data_ptr = nullptr;
+                };
+
+                struct __typed_index_bucket_v0__ {
+                    uint64_t bucket_index = 0;
+                    bool has_next_ptr = false;
+                    uint64_t next_ptr_offset = 0;
+                    uint16_t record_count = 0;
+                    void *data_ptr = nullptr;
+                };
+
+                struct __typed_index_header_v0__ {
+                    char block_uid[SIZE_UUID + 1];
+                    __version_header version;
+                    uint64_t block_id;
+                    __index_type_enum type;
+                    uint64_t create_time = 0;
+                    uint64_t update_time = 0;
+                    uint64_t start_index = 0;
+                    uint64_t last_index = 0;
+                    __write_state write_state = __write_state::WRITABLE;
+                    uint64_t total_size = 0;
+                    uint64_t used_size = 0;
+                    uint64_t write_offset = 0;
+                };
+
+                typedef __typed_index_record_v0__ __typed_index_record;
+                typedef __typed_index_bucket_v0__ __typed_index_bucket;
+                typedef __typed_index_header_v0__ __typed_index_header;
 
                 class typed_index_base {
                 protected:
@@ -47,6 +82,23 @@ REACTFS_NS_CORE
 
                     /// Base pointer for the mapped data.
                     void *base_ptr = nullptr;
+
+                    void *write_ptr = nullptr;
+
+                    __typed_index_header *header = nullptr;
+
+                    record_index *index_def = nullptr;
+
+                    uint64_t header_offset = 0;
+
+                    /*!
+                     * Get the base address pointing to where the block data starts.
+                     *
+                     * @return - Base data address
+                     */
+                    void *get_data_ptr() {
+                        return buffer_utils::increment_data_ptr(base_ptr, header_offset);
+                    }
 
                     Path *get_index_file(string block_file, uint64_t block_id, string index_name) {
                         CHECK_NOT_EMPTY(block_file);
@@ -65,6 +117,13 @@ REACTFS_NS_CORE
                         return p;
                     }
 
+                    string get_metric_name(const string name) {
+                        if (NOT_NULL(header)) {
+                            return common_utils::format("%s.%lu", name.c_str(), header->block_id);
+                        }
+                        return common_consts::EMPTY_STRING;
+                    }
+
                 public:
                     /*!
                      * Base virtual destructor.
@@ -74,28 +133,32 @@ REACTFS_NS_CORE
                     /*!
                      * Create a new file backed data block index.
                      *
+                     * @param name - Name of this index definition.
                      * @param block_id - Unique block id for this data block.
                      * @param block_uuid - UUID of the data block.
                      * @param filename - Backing filename for this data block.
                      * @param estimated_records - Estimated number of records the data file is expected to have.
                      * @param start_index - Starting record index for this block.
+                     * @param index_def - Index definition.
                      * @param overwrite - Overwrite if data block file already exists?
                      * @return - Filename of the index file created.
                      */
                     virtual string
-                    create_index(uint64_t block_id, string block_uuid, string filename, uint32_t estimated_records,
-                                 uint64_t start_index,
+                    create_index(const string &name, uint64_t block_id, string block_uuid, string filename,
+                                 uint32_t estimated_records, uint64_t start_index, record_index *index_def,
                                  bool overwrite) = 0;
 
                     /*!
                      * Open a new instance of the specified data block index.
                      *
+                     * @param name - Name of this index definition.
                      * @param block_id - Unique block id for this data block.
                      * @param block_uuid - UUID of the data block.
                      * @param filename - Backing filename for this data block.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    virtual void open_index(uint64_t block_id, string block_uuid, string filename) = 0;
+                    virtual void
+                    open_index(const string &name, uint64_t block_id, string block_uuid, string filename) = 0;
 
                     /*!
                     * Commit the current transcation.

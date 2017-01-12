@@ -35,6 +35,7 @@ extern "C"
 #include <unistd.h>
 #include <regex>
 #include <locale>
+#include <math.h>
 #include <openssl/md5.h>
 
 
@@ -556,6 +557,26 @@ REACTFS_NS_COMMON
                         return string(buff);
                     }
 
+                    static uint32_t find_prime(uint32_t startnum) {
+                        uint32_t p = 0;
+                        if (startnum <= 1) {
+                            startnum = 2;
+                        }
+                        for (uint32_t ii = startnum; ii < (2 * startnum); ii++) {
+                            uint8_t count = 0;
+                            for (uint32_t jj = 2; jj <= sqrt(ii); jj++) {
+                                if (ii % jj == 0) {
+                                    count++;
+                                    break;
+                                }
+                            }
+                            if (count == 0 && ii != 1) {
+                                p = ii;
+                                break;
+                            }
+                        }
+                        return p;
+                    }
 
                     static __version_header *parse_version(const string &str) {
                         __version_header *v = (__version_header *) malloc(sizeof(__version_header));

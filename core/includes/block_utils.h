@@ -26,9 +26,9 @@ namespace com {
                 public:
                     static string
                     create_typed_block(__complex_type *datatype, uint64_t block_id, uint64_t parent_id,
-                                       const string filename,
-                                       __block_def block_type, __block_usage usage, uint32_t block_size,
-                                       uint32_t est_record_size, uint64_t start_index, bool overwrite = false) {
+                                       const string filename, __block_usage usage, uint32_t block_size,
+                                       uint32_t est_record_size, uint64_t start_index, vector<record_index *> *indexes,
+                                       bool overwrite = false) {
                         typed_block *block = new typed_block();
                         CHECK_ALLOC(block, TYPE_NAME(typed_block));
                         block->set_datatype(datatype);
@@ -36,6 +36,11 @@ namespace com {
                                                     est_record_size,
                                                     overwrite);
                         POSTCONDITION(!IS_EMPTY(uuid));
+                        if (!NOT_EMPTY_P(indexes)) {
+                            for (record_index *ri : *indexes) {
+                                block->add_index(ri);
+                            }
+                        }
                         CHECK_AND_FREE(block);
 
                         return uuid;
