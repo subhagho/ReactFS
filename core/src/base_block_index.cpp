@@ -220,5 +220,5 @@ bool com::wookler::reactfs::core::base_block_index::delete_index(uint64_t index,
     }
 
     rollback_info_deletes.push_back(index);
-    return false;
+    return true;
 }

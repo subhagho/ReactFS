@@ -21,7 +21,7 @@
 #define REUSE_BLOCK_FILE_COMP "/tmp/block_reused.comp"
 #define REUSE_BLOCK_ID_COMP 1025
 
-#define DEFAULT_BLOCK_SIZE 1024 * 1024 * 32
+#define DEFAULT_BLOCK_SIZE 1024 * 1024 * 64
 #define RECORD_START_INDEX 100000
 #define COUNT_RECORDS 10000
 
@@ -32,11 +32,26 @@ const char *DUMMY_TEXT = "All hermetic lotus praise each other, only inner cows 
         "Ferox buxums ducunt ad urbs.Place the chicken in a casserole, and toss fast with cold ketchup."
         "Confucius says: the aspect is like the monkey. Nunquam promissio cannabis. It is a reliable pressure, sir. "
         "Iced, rich pudding is best decorated with ground teriyaki. Per guest prepare six tablespoons of beer with smashed popcorn for dessert. "
+        "The parrot robs with malaria, pull the lighthouse. In the mind all lamas handle zen."
+        "All hermetic lotus praise each other, only inner cows have a solitude."
+        "Ferox buxums ducunt ad urbs.Place the chicken in a casserole, and toss fast with cold ketchup."
+        "Confucius says: the aspect is like the monkey. Nunquam promissio cannabis. It is a reliable pressure, sir. "
+        "Iced, rich pudding is best decorated with ground teriyaki. Per guest prepare six tablespoons of beer with smashed popcorn for dessert. "
+        "The parrot robs with malaria, pull the lighthouse. In the mind all lamas handle zen."
+        "All hermetic lotus praise each other, only inner cows have a solitude."
+        "Ferox buxums ducunt ad urbs.Place the chicken in a casserole, and toss fast with cold ketchup."
+        "Confucius says: the aspect is like the monkey. Nunquam promissio cannabis. It is a reliable pressure, sir. "
+        "Iced, rich pudding is best decorated with ground teriyaki. Per guest prepare six tablespoons of beer with smashed popcorn for dessert. "
+        "The parrot robs with malaria, pull the lighthouse. In the mind all lamas handle zen."
+        "All hermetic lotus praise each other, only inner cows have a solitude."
+        "Ferox buxums ducunt ad urbs.Place the chicken in a casserole, and toss fast with cold ketchup."
+        "Confucius says: the aspect is like the monkey. Nunquam promissio cannabis. It is a reliable pressure, sir. "
+        "Iced, rich pudding is best decorated with ground teriyaki. Per guest prepare six tablespoons of beer with smashed popcorn for dessert. "
         "The parrot robs with malaria, pull the lighthouse. In the mind all lamas handle zen.";
 typedef struct {
     uint64_t timestamp;
     char key[256];
-    char value[2048];
+    char value[4096];
     uint32_t index;
 } _test_typed;
 
@@ -70,7 +85,7 @@ void test_basic() {
         string uuid = common_utils::uuid();
         memset(t.key, 0, 256);
         strncpy(t.key, uuid.c_str(), uuid.length());
-        memset(t.value, 0, 2048);
+        memset(t.value, 0, 4096);
         strcpy(t.value, DUMMY_TEXT);
 
         if (block->get_free_space() < sizeof(_test_typed))
@@ -149,7 +164,11 @@ void test_basic() {
             break;
     }
 
-    block->check_block_sanity();
+    __block_check_record *bcr = block->check_block_sanity();
+    CHECK_NOT_NULL(bcr);
+    CHECK_AND_FREE(bcr->block_uuid);
+    FREE_PTR(bcr);
+
     block->dump_block_state();
 
     CHECK_AND_FREE(block);
@@ -262,7 +281,11 @@ void test_indexed() {
             break;
     }
 
-    block->check_block_sanity();
+    __block_check_record *bcr = block->check_block_sanity();
+    CHECK_NOT_NULL(bcr);
+    CHECK_AND_FREE(bcr->block_uuid);
+    FREE_PTR(bcr);
+
     block->dump_block_state();
 
     CHECK_AND_FREE(block);

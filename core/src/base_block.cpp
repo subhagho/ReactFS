@@ -505,7 +505,8 @@ __block_check_record *com::wookler::reactfs::core::base_block::check_block_sanit
     __block_check_record *bcr = (__block_check_record *) malloc(sizeof(__block_check_record));
     CHECK_ALLOC(bcr, TYPE_NAME(__block_check_record));
     bcr->block_id = header->block_id;
-    bcr->block_uuid = string(header->block_uid);
+    bcr->block_uuid = new string(header->block_uid);
+    CHECK_ALLOC(bcr->block_uuid, TYPE_NAME(string));
     bcr->commit_sequence = header->commit_sequence;
     bcr->record_index_last = header->last_index;
     bcr->record_index_start = header->start_index;

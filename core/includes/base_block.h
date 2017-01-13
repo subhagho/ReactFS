@@ -59,7 +59,7 @@ namespace com {
 
                 typedef struct __block_check_record__ {
                     uint64_t block_id;
-                    string block_uuid;
+                    string *block_uuid = nullptr;
                     uint64_t record_index_start;
                     uint64_t record_index_last;
                     uint64_t commit_sequence;
