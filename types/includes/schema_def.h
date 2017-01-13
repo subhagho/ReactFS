@@ -907,8 +907,7 @@ REACTFS_NS_CORE
 
                         virtual uint32_t estimate_size() const override {
                             uint32_t size = 0;
-                            unordered_map<uint8_t, __native_type *>::iterator iter;
-                            for (iter = fields.begin(); iter != fields.end(); iter++) {
+                            for (auto iter = fields.begin(); iter != fields.end(); iter++) {
                                 __native_type *nt = iter->second;
                                 size += nt->estimate_size();
                             }

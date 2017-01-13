@@ -22,6 +22,8 @@
 #ifndef REACTFS_COMMON_STRUCTS_H
 #define REACTFS_COMMON_STRUCTS_H
 
+#include <atomic>
+
 #include "common/includes/common.h"
 #include "common/includes/base_error.h"
 #include "block_common_structs_v0.h"
