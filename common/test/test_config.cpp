@@ -24,7 +24,8 @@ using namespace com::wookler::reactfs::common;
 
 
 TEST_CASE("Create environment and load configuration", "[com::watergate::common::_env]") {
-    env_utils::create_env(CONFIG_FILE);
+    string cfgFile = file_utils::cannonical_path("test/data/test-conf.json");
+    env_utils::create_env(cfgFile);
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
@@ -36,7 +37,7 @@ TEST_CASE("Create environment and load configuration", "[com::watergate::common:
     env_utils::dispose();
 
     SECTION("Test environment reload") {
-        env_utils::create_env(CONFIG_FILE);
+        env_utils::create_env(cfgFile);
         const __env *env0 = env_utils::get_env();
         REQUIRE(NOT_NULL(env0));
 
@@ -45,7 +46,8 @@ TEST_CASE("Create environment and load configuration", "[com::watergate::common:
 }
 
 TEST_CASE("Configuration Lookup Test : 1", "[com::watergate::common::Config]") {
-    env_utils::create_env(CONFIG_FILE);
+    string cfgFile = file_utils::cannonical_path("test/data/test-conf.json");
+    env_utils::create_env(cfgFile);
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
@@ -95,7 +97,8 @@ TEST_CASE("Configuration Lookup Test : 1", "[com::watergate::common::Config]") {
 }
 
 TEST_CASE("Configuration Lookup Test : 2", "[com::watergate::common::Config]") {
-    env_utils::create_env(CONFIG_FILE);
+    string cfgFile = file_utils::cannonical_path("test/data/test-conf.json");
+    env_utils::create_env(cfgFile);
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
@@ -105,17 +108,11 @@ TEST_CASE("Configuration Lookup Test : 2", "[com::watergate::common::Config]") {
     const ConfigValue *c = config->find("/configuration/adhoc-list");
     REQUIRE(NOT_NULL(c));
 
-    const ConfigValue *cv = c->find(".[3]/nested/params[key2]");
+    const ConfigValue *cv = c->find(".[2]/nested/params[key2]");
     assert (NOT_NULL(cv));
     cv->print("");
 
-    try {
-        config->find("/this/is/an/error/path", true);
-        assert(false);
-    } catch (const not_found_error &ne) {
-        LOG_DEBUG("Raised not found error [%s]", ne.what());
-    }
-
+    CHECK_THROWS(config->find("/this/is/an/error/path", true));
     env_utils::dispose();
 }
 

@@ -12,6 +12,41 @@
         "console": "true"
       }
     },
+    "adhoc-list":[
+      {
+        "nested": {
+          "params": {
+            "key1": "value1",
+            "key2": "value2",
+            "key3": "value3",
+            "key4": "value4"
+          },
+          "string": "string_value"
+        }
+      },
+      {
+        "nested": {
+          "params": {
+            "key1": "value1",
+            "key2": "value2",
+            "key3": "value3",
+            "key4": "value4"
+          },
+          "string": "string_value"
+        }
+      },
+      {
+        "nested": {
+          "params": {
+            "key1": "value1",
+            "key2": "value2",
+            "key3": "value3",
+            "key4": "value4"
+          },
+          "string": "string_value"
+        }
+      }
+    ],
     "test-list": [
       "value1",
       "value2",
