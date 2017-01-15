@@ -21,7 +21,8 @@
 #include "test_file_utils.h"
 
 TEST_CASE("Basic path tests", "[com::watergate::common::file_utils]") {
-    env_utils::create_env(CONFIG_FILE);
+    string cfgFile = file_utils::cannonical_path("test/data/test-conf.json");
+    env_utils::create_env(cfgFile);
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
@@ -29,25 +30,30 @@ TEST_CASE("Basic path tests", "[com::watergate::common::file_utils]") {
     REQUIRE(NOT_NULL(config));
 
     Path p("/tmp/adhoc/dir/file.txt");
+    REQUIRE((p.get_parent_dir().compare("/tmp/adhoc/dir")) ==0);
     LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());
     p = Path("who/cares/file.txt");
+    REQUIRE((p.get_parent_dir().compare("who/cares")) ==0);
     LOG_DEBUG("Parent dir [%s]", p.get_parent_dir().c_str());
 
     env_utils::dispose();
 }
 
 TEST_CASE("Test file copy/delete.", "[com::watergate::common::file_utils]") {
-    env_utils::create_env(CONFIG_FILE);
+    string cfgFile = file_utils::cannonical_path("test/data/test-conf.json");
+    env_utils::create_env(cfgFile);
     const __env *env = env_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = env_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
-    Path source(COPY_FILE_PATH);
-    Path *dest = env->get_temp_dir(COPY_DEST_PATH, 0755);
+    Path source(file_utils::cannonical_path(cfgFile));
+    Path *dest = env->get_temp_dir(file_utils::cannonical_path(COPY_DEST_PATH), 0755);
+    dest->append(source.get_filename());
 
-    file_copy::copy(&source, dest);
+    uint64_t t = file_copy::copy(&source, dest);
+    REQUIRE( t > 0);
 
     LOG_DEBUG("Copied file [source=%s] to [dest=%s]", source.get_path().c_str(), dest->get_path().c_str());
 
