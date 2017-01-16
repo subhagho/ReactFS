@@ -107,6 +107,17 @@ void test_indexed(char *schemaf) {
     block->open(REUSE_BLOCK_INDEX_ID, p.get_path(), false);
     POSTCONDITION(block->get_block_state() == __state_enum::Available);
 
+    timer tro;
+    vector<shared_read_ptr> recs;
+    for (int index : indexes) {
+        tro.restart();
+        int c = block->read(index, 1, &recs);
+        POSTCONDITION(c > 0);
+        tro.pause();
+    }
+    tro.stop();
+    LOG_INFO("Read [%d] records from block in %d msec.", recs.size(), tro.get_elapsed());
+    recs.clear();
     vector<record_struct *> *records = new vector<record_struct *>();
     CHECK_ALLOC(records, TYPE_NAME(vector));
     for (int index : indexes) {
