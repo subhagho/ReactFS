@@ -140,14 +140,13 @@ REACTFS_NS_COMMON
                      */
                     static inline string cannonical_path(const string &path) {
                         if (!IS_EMPTY(path)) {
-                            if (file_exists(path)) {
-                                char buff[SIZE_MAX_PATH];
-                                memset(buff, 0, SIZE_MAX_PATH);
-                                realpath(path.c_str(), buff);
-                                string p(buff);
-                                if (!IS_EMPTY(p)) {
-                                    return p;
-                                }
+                            char buff[SIZE_MAX_PATH];
+                            memset(buff, 0, SIZE_MAX_PATH);
+                            realpath(path.c_str(), buff);
+                            string p(buff);
+                            //Check if the file exists and then return the cannonical path.
+                            if (!IS_EMPTY(p) && file_exists(p)) {
+                                return p;
                             }
                         }
                         return path;
@@ -492,7 +491,7 @@ REACTFS_NS_COMMON
                 class Path {
                 private:
                     /// Path string
-                    string *path = new string();
+                    string path;
 
                 public:
                     /*!<constructor
@@ -506,15 +505,8 @@ REACTFS_NS_COMMON
                      *
                      * @param p - Path string.
                      */
-                    Path(const string p) {
+                    Path(const string p){
                         append(p);
-                    }
-
-                    /*!<destructor
-                     * Default desctructor.
-                     */
-                    ~Path() {
-                        CHECK_AND_FREE(this->path);
                     }
 
                     /*!
@@ -523,7 +515,7 @@ REACTFS_NS_COMMON
                      * @return - Path string.
                      */
                     const string get_path() const {
-                        return *path;
+                        return path;
                     }
 
                     /*!
@@ -532,7 +524,7 @@ REACTFS_NS_COMMON
                     * @return - Path string pointer.
                     */
                     const string *get_path_p() const {
-                        return path;
+                        return &path;
                     }
 
                     /*!
@@ -544,16 +536,16 @@ REACTFS_NS_COMMON
                     const string append(const string p) {
                         CHECK_NOT_EMPTY(p);
 
-                        if (IS_EMPTY_P(path)) {
-                            path->append(p);
+                        if (path.empty()) {
+                            path.append(p);
                         } else {
-                            string sp = string(*path);
+                            string sp = string(path);
                             string np = file_utils::concat_path(sp, p);
-                            path->clear();
-                            path->append(np);
+                            path.clear();
+                            path.append(np);
                         }
 
-                        return *path;
+                        return path;
                     }
 
                     /*!
@@ -562,8 +554,8 @@ REACTFS_NS_COMMON
                      * @return - Path exists?
                      */
                     bool exists() const {
-                        if (!path->empty()) {
-                            return file_utils::file_exists(path->c_str());
+                        if (!path.empty()) {
+                            return file_utils::file_exists(path.c_str());
                         }
                         return false;
                     }
@@ -575,9 +567,9 @@ REACTFS_NS_COMMON
                      */
                     const string get_parent_dir() const {
                         vector<string> parts;
-                        string_utils::split(*path, '/', &parts);
+                        string_utils::split(path, '/', &parts);
                         if (parts.size() > 1) {
-                            string ss = string();
+                            string ss;
                             if (!IS_EMPTY(parts[0])) {
                                 ss.append(parts[0]);
                             }
@@ -597,7 +589,7 @@ REACTFS_NS_COMMON
                      */
                     const string get_filename() const {
                         vector<string> parts;
-                        string_utils::split(*path, '/', &parts);
+                        string_utils::split(path, '/', &parts);
                         if (parts.size() > 0) {
                             return string(parts[parts.size() - 1]);
                         }
@@ -631,8 +623,8 @@ REACTFS_NS_COMMON
                      * @return - Is file?
                      */
                     bool is_file() const {
-                        if (!path->empty()) {
-                            return file_utils::is_file(path->c_str());
+                        if (!path.empty()) {
+                            return file_utils::is_file(path.c_str());
                         }
                         return false;
                     }
@@ -643,8 +635,8 @@ REACTFS_NS_COMMON
                      * @return - Is directory?
                      */
                     bool is_directory() const {
-                        if (!path->empty()) {
-                            return file_utils::is_dir(path->c_str());
+                        if (!path.empty()) {
+                            return file_utils::is_dir(path.c_str());
                         }
                         return false;
                     }
@@ -656,10 +648,10 @@ REACTFS_NS_COMMON
                      * @return - Path to directory.
                      */
                     const string create(mode_t mode) {
-                        if (!path->empty()) {
-                            return file_utils::create_directory(*path, mode);
+                        if (!path.empty()) {
+                            return file_utils::create_directory(path, mode);
                         }
-                        return *path;
+                        return path;
                     }
 
                     /*!
@@ -669,8 +661,8 @@ REACTFS_NS_COMMON
                      * @return - Has been removed?
                      */
                     bool remove() {
-                        if (!path->empty()) {
-                            return file_utils::remove_file(*path, true);
+                        if (!path.empty()) {
+                            return file_utils::remove_file(path, true);
                         }
                         return false;
                     }
@@ -681,8 +673,8 @@ REACTFS_NS_COMMON
                      * @return - Has contents been cleared?
                      */
                     bool clear() {
-                        if (!path->empty() && is_directory()) {
-                            return file_utils::clean_directory(*path);
+                        if (!path.empty() && is_directory()) {
+                            return file_utils::clean_directory(path);
                         }
                         return false;
                     }
