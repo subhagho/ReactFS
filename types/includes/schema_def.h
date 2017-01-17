@@ -653,7 +653,7 @@ REACTFS_NS_CORE
                         /// Map of column index/types.
                         unordered_map<uint8_t, __native_type *> fields;
                         /// Index map of fields by name.
-                        unordered_map<string, uint8_t> field_index;
+                        unordered_map <string, uint8_t> field_index;
                         /// Index of canonical field names.
                         unordered_map<string, __native_type *> name_index;
                         /// Type loader helper instance.
@@ -1104,7 +1104,7 @@ REACTFS_NS_CORE
                             return pos.size;
                         }
 
-                        uint64_t read(void *buffer, uint64_t offset) {
+                        uint64_t read(void *buffer, uint64_t offset, const __complex_type *datatype) {
                             __pos pos;
                             pos.offset = offset;
                             pos.size = 0;
@@ -1126,6 +1126,7 @@ REACTFS_NS_CORE
                                 void *ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
                                 __index_column *ip = static_cast<__index_column *>(ptr);
                                 ip->path = nullptr;
+                                ip->type = nullptr;
 
                                 pos.offset += sizeof(__index_column);
                                 pos.size += sizeof(__index_column);
@@ -1136,6 +1137,9 @@ REACTFS_NS_CORE
                                 uint32_t size = sizeof(uint8_t) * ip->count;
                                 pos.offset += size;
                                 pos.size += size;
+
+                                ip->type = datatype->find(ip->path, ip->count);
+                                CHECK_NOT_NULL(ip->type);
                             }
 
                             return pos.size;

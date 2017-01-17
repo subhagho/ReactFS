@@ -49,7 +49,7 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
         void *ptr = buffer_utils::increment_data_ptr(base_ptr, sizeof(__typed_index_header));
         hash_header = static_cast<__hash_index_header *>(ptr);
         hash_header->bucket_prime = compute_bucket_prime(estimated_records);
-        hash_header->bucket_size = compute_bucket_size(estimated_records, hash_header->bucket_prime);
+        hash_header->bucket_count = compute_bucket_size(estimated_records, hash_header->bucket_prime);
 
         ptr = buffer_utils::increment_data_ptr(ptr, sizeof(__hash_index_header));
         uint64_t d_size = index_def->write(ptr, 0);
@@ -81,7 +81,7 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
 }
 
 void com::wookler::reactfs::core::typed_hash_index::open_index(const string &name, uint64_t block_id, string block_uuid,
-                                                               string filename) {
+                                                               string filename, bool for_update) {
     Path *p = new Path(filename);
 
     LOG_DEBUG("Opening new index file. [file=%s]", p->get_path().c_str());
@@ -121,18 +121,19 @@ void com::wookler::reactfs::core::typed_hash_index::open_index(const string &nam
 
     ptr = buffer_utils::increment_data_ptr(ptr, sizeof(__hash_index_header));
     index_def = new record_index();
-    uint64_t d_size = index_def->read(ptr, 0);
+    uint64_t d_size = index_def->read(ptr, 0, this->datatype);
     header_offset += d_size;
 
     void *bptr = get_data_ptr();
     CHECK_NOT_NULL(bptr);
 
-    if (header->write_state == __write_state::WRITABLE) {
+    if (header->write_state == __write_state::WRITABLE || for_update) {
         write_ptr = bptr;
+        overflow = get_base_overflow_ptr();
     } else {
         write_ptr = nullptr;
+        hash_header->overflow_offset = 0;
     }
-    state.set_state(Available);
 
     this->filename = string(p->get_path());
 
@@ -141,6 +142,8 @@ void com::wookler::reactfs::core::typed_hash_index::open_index(const string &nam
     r = metrics_utils::create_metric(get_metric_name(HASH_INDEX_METRIC_WRITE_PREFIX), AverageMetric);
     POSTCONDITION(r);
 
+    CHECK_AND_FREE(p);
+    state.set_state(Available);
 }
 
 void com::wookler::reactfs::core::typed_hash_index::close() {

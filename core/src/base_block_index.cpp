@@ -66,7 +66,7 @@ string com::wookler::reactfs::core::base_block_index::__create_index(uint64_t bl
 }
 
 void *com::wookler::reactfs::core::base_block_index::__open_index(uint64_t block_id, string block_uuid,
-                                                                  string filename) {
+                                                                  string filename, bool for_update) {
     Path *p = get_index_file(filename);
 
     LOG_DEBUG("Opening new index file. [file=%s]", p->get_path().c_str());
@@ -122,13 +122,14 @@ void com::wookler::reactfs::core::base_block_index::close() {
     base_ptr = nullptr;
 }
 
-void com::wookler::reactfs::core::base_block_index::open_index(uint64_t block_id, string block_uuid, string filename) {
-    void *ptr = __open_index(block_id, block_uuid, filename);
+void com::wookler::reactfs::core::base_block_index::open_index(uint64_t block_id, string block_uuid, string filename,
+                                                               bool for_update) {
+    void *ptr = __open_index(block_id, block_uuid, filename, for_update);
     CHECK_NOT_NULL(ptr);
     void *bptr = get_data_ptr();
     CHECK_NOT_NULL(bptr);
 
-    if (header->write_state == __write_state::WRITABLE) {
+    if (header->write_state == __write_state::WRITABLE || for_update) {
         write_ptr = bptr;
     } else {
         write_ptr = nullptr;

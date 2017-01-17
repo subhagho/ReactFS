@@ -47,7 +47,7 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
 
     index_ptr = new base_block_index();
     CHECK_ALLOC(index_ptr, TYPE_NAME(base_block_index));
-    index_ptr->open_index(header->block_id, header->block_uid, this->filename);
+    index_ptr->open_index(header->block_id, header->block_uid, this->filename, for_update);
 
     ptr = buffer_utils::increment_data_ptr(base_ptr, sizeof(__block_header));
     type_header_size = static_cast<uint64_t *>(ptr);

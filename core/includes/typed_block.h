@@ -76,8 +76,10 @@ REACTFS_NS_CORE
                     void open_index(__index_type *def);
 
                     typed_index_base *create_index_instance(const __index_type_enum type) {
+                        CHECK_NOT_NULL(this->datetype);
+
                         if (type == __index_type_enum::HASH_INDEX) {
-                            typed_index_base *ptr = new typed_hash_index();
+                            typed_index_base *ptr = new typed_hash_index(this->datetype);
                             CHECK_ALLOC(ptr, TYPE_NAME(typed_hash_index));
                             return ptr;
                         }

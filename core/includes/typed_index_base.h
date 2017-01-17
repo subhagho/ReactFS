@@ -91,6 +91,10 @@ REACTFS_NS_CORE
 
                     uint64_t header_offset = 0;
 
+                    const __complex_type *datatype = nullptr;
+
+                    __native_type **types = nullptr;
+
                     /*!
                      * Get the base address pointing to where the block data starts.
                      *
@@ -171,10 +175,12 @@ REACTFS_NS_CORE
                      * @param block_id - Unique block id for this data block.
                      * @param block_uuid - UUID of the data block.
                      * @param filename - Backing filename for this data block.
+                     * @param for_update - Block is write closed, but opened for update/delete.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
                     virtual void
-                    open_index(const string &name, uint64_t block_id, string block_uuid, string filename) = 0;
+                    open_index(const string &name, uint64_t block_id, string block_uuid, string filename,
+                               bool for_update) = 0;
 
                     /*!
                     * Commit the current transcation.

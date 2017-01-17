@@ -578,6 +578,16 @@ REACTFS_NS_COMMON
                         return p;
                     }
 
+                    static uint32_t find_pow2(uint32_t startnum) {
+                        uint32_t p2 = log2(startnum);
+                        uint32_t pv = pow(2, p2);
+                        if (startnum % pv == 0) {
+                            return pv;
+                        } else {
+                            return pow(2, (p2 + 1));
+                        }
+                    }
+
                     static __version_header *parse_version(const string &str) {
                         __version_header *v = (__version_header *) malloc(sizeof(__version_header));
                         if (IS_NULL(v)) {

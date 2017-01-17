@@ -45,7 +45,7 @@ using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
 
 #define HASH_DEFAULT_BLOAT_FACTOR (15 / 10)
-#define HASH_COLLISION_ESTIMATE 8
+#define HASH_COLLISION_ESTIMATE 4
 #define HASH_INDEX_METRIC_READ_PREFIX "metric.hash.index.block.read"
 #define HASH_INDEX_METRIC_WRITE_PREFIX "metric.hash.index.block.write"
 
@@ -55,7 +55,8 @@ using namespace com::wookler::reactfs::core;
 REACTFS_NS_CORE
                 struct __hash_index_header_v0__ {
                     uint16_t bucket_prime = 0;
-                    uint32_t bucket_size = 0;
+                    uint32_t bucket_count = 0;
+                    uint64_t overflow_offset = 0;
                 };
 
                 typedef __hash_index_header_v0__ __hash_index_header;
@@ -63,6 +64,7 @@ REACTFS_NS_CORE
                 class typed_hash_index : public typed_index_base {
                 protected:
                     __hash_index_header *hash_header = nullptr;
+                    void *overflow = nullptr;
 
                     uint16_t compute_bucket_prime(uint32_t est_record_count) {
                         if (est_record_count <= 4096) {
@@ -86,23 +88,63 @@ REACTFS_NS_CORE
                         return common_utils::find_prime(b_size);
                     }
 
-                    uint64_t estimate_file_size(uint32_t est_record_count, record_index *index_def) {
+                    uint16_t compute_record_size() {
                         uint32_t i_size = compute_index_record_size(index_def);
+                        return sizeof(__typed_index_bucket) +
+                               (HASH_COLLISION_ESTIMATE * (sizeof(__typed_index_record) + i_size));
+                    }
+
+                    uint64_t estimate_file_size(uint32_t est_record_count, record_index *index_def) {
                         uint32_t b_size = 0;
                         uint16_t b_count = compute_bucket_prime(est_record_count);
                         uint32_t bucket_size = compute_bucket_size(est_record_count, b_count);
-                        uint16_t r_size =
-                                sizeof(__typed_index_bucket) +
-                                (HASH_COLLISION_ESTIMATE * (sizeof(__typed_index_record) + i_size));
+                        uint16_t r_size = compute_record_size();
                         uint64_t bt_size = b_count * bucket_size * r_size;
                         b_size += (bt_size * HASH_DEFAULT_BLOAT_FACTOR);
                         return b_size;
                     }
 
+                    void *get_base_overflow_ptr() {
+                        uint16_t r_size = compute_record_size();
+                        uint64_t offset = r_size * hash_header->bucket_count;
+
+                        void *ptr = get_data_ptr();
+                        return buffer_utils::increment_data_ptr(ptr, offset);
+                    }
+
+                    uint32_t get_bucket_index(uint32_t *hashes, uint8_t count) {
+                        uint32_t index = 0;
+                        for (uint8_t ii = 0; ii < count; ii++) {
+                            uint32_t p = hashes[ii] ^ hash_header->bucket_count;
+                            if (ii == 0) {
+                                index = p;
+                            } else {
+                                index &= p;
+                            }
+                        }
+                        return index % hash_header->bucket_count;
+                    }
+
+                    uint32_t get_bucket_offset(uint64_t *hashes, uint8_t count) {
+                        uint64_t index = 0;
+                        for (uint8_t ii = 0; ii < count; ii++) {
+                            uint32_t p = hashes[ii] ^ hash_header->bucket_prime;
+                            if (ii == 0) {
+                                index = p;
+                            } else {
+                                index &= p;
+                            }
+                        }
+                        return index % hash_header->bucket_prime;
+                    }
+
                 public:
-                    typed_hash_index() {
+                    typed_hash_index(const __complex_type *datatype) {
+                        CHECK_NOT_NULL(datatype);
                         version.major = HASH_INDEX_VERSION_MAJOR;
                         version.minor = HASH_INDEX_VERSION_MINOR;
+
+                        this->datatype = datatype;
                     }
 
                     virtual ~typed_hash_index() {
@@ -139,10 +181,12 @@ REACTFS_NS_CORE
                      * @param block_id - Unique block id for this data block.
                      * @param block_uuid - UUID of the data block.
                      * @param filename - Backing filename for this data block.
+                     * @param for_update - Block is write closed but opened for updates.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
                     virtual void
-                    open_index(const string &name, uint64_t block_id, string block_uuid, string filename) override;
+                    open_index(const string &name, uint64_t block_id, string block_uuid, string filename,
+                               bool for_update) override;
 
                     /*!
                     * Commit the current transcation.

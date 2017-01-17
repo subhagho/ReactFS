@@ -126,9 +126,10 @@ REACTFS_NS_CORE
                      * @param block_id - Unique block id for this data block.
                      * @param block_uuid - UUID of the data block.
                      * @param filename - Backing filename for this data block.
+                     * @param for_update - Block is write closed but opened for updates.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    void *__open_index(uint64_t block_id, string block_uuid, string filename);
+                    void *__open_index(uint64_t block_id, string block_uuid, string filename, bool for_update);
 
                     /*!
                      * Close this instance of the block index.
@@ -352,9 +353,10 @@ REACTFS_NS_CORE
                      * @param block_id - Unique block id for this data block.
                      * @param block_uuid - UUID of the data block.
                      * @param filename - Backing filename for this data block.
+                     * @param for_update - Block is write closed but opened for updates.
                      * @return - Base pointer of the memory-mapped buffer.
                      */
-                    virtual void open_index(uint64_t block_id, string block_uuid, string filename);
+                    virtual void open_index(uint64_t block_id, string block_uuid, string filename, bool for_update);
 
                     /*!
                      * Close this block index from further writes.

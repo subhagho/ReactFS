@@ -155,7 +155,7 @@ void com::wookler::reactfs::core::base_indexed_block::open(uint64_t block_id, st
 
     index_ptr = new base_block_index();
     CHECK_ALLOC(index_ptr, TYPE_NAME(base_block_index));
-    index_ptr->open_index(header->block_id, header->block_uid, this->filename);
+    index_ptr->open_index(header->block_id, header->block_uid, this->filename, for_update);
 
     state.set_state(__state_enum::Available);
 }
