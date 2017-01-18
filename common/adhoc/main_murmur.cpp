@@ -19,17 +19,36 @@ typedef struct __key {
     uint64_t id;
 } key;
 
-uint32_t find_offset(uint32_t *keys, uint8_t count, uint32_t div) {
-    uint32_t offset = 0;
-    for (uint8_t ii = 0; ii < count; ii++) {
-        uint32_t p = keys[ii] ^div;
-        if (ii == 0) {
-            offset = p;
-        } else {
-            offset &= p;
-        }
+uint32_t find_bucket(uint32_t hash, uint32_t size) {
+    uint8_t b[4];
+    memset(b, 0, 4 * sizeof(uint8_t));
+    memcpy(b, &hash, sizeof(uint32_t));
+
+    uint16_t h = 0;
+    memcpy(&h, b, sizeof(uint16_t));
+
+    uint8_t ii = 32;
+    while (h >= size) {
+        h = bitset_utils::clear_uint32_bit(h, ii);
+        ii--;
     }
-    return offset % div;
+    return h;
+}
+
+uint32_t find_index(uint32_t hash, uint32_t size) {
+    uint8_t b[4];
+    memset(b, 0, 4 * sizeof(uint8_t));
+    memcpy(b, &hash, sizeof(uint32_t));
+
+    uint16_t h = 0;
+    memcpy(&h, b + 2, sizeof(uint16_t));
+
+    uint8_t ii = 32;
+    while (h >= size) {
+        h = bitset_utils::clear_uint32_bit(h, ii);
+        ii--;
+    }
+    return h;
 }
 
 int main(int argc, char **argv) {
@@ -47,8 +66,8 @@ int main(int argc, char **argv) {
 
         unordered_map<string, short> keys;
 
-        uint32_t b_prime = common_utils::find_prime(200);
-        uint32_t b_size = KEY_COUNT / b_prime;
+        uint32_t b_prime = common_utils::find_prime(100);
+        uint32_t b_size = KEY_COUNT / b_prime ;
         b_size = common_utils::find_prime(b_size);
 
         LOG_DEBUG("Using bucket prime = %d bucket size = %d", b_prime, b_size);
@@ -69,16 +88,11 @@ int main(int argc, char **argv) {
             strncpy(k.key, uuid.c_str(), uuid.length());
             k.id = ii % 32;
 
-            uint32_t k_hash = 0;
-            MurmurHash3_x86_32(k.key, UCHAR_MAX, seed, &k_hash);
-            uint32_t i_hash = 0;
-            MurmurHash3_x86_32(&k.id, sizeof(uint64_t), seed, &i_hash);
             uint32_t t_hash = 0;
             MurmurHash3_x86_32(&k, sizeof(key), seed, &t_hash);
 
-            uint32_t b[] = {k_hash, i_hash};
-            uint32_t o1 = find_offset(b, 2, b_size);
-            uint32_t o2 = (t_hash ^ b_size) % b_prime;
+            uint32_t o1 = t_hash % b_size;
+            uint32_t o2 = t_hash % b_prime;
 
             string kk = common_utils::format("%d:%d", o1, o2);
             unordered_map<string, short>::iterator iter = keys.find(kk);

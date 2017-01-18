@@ -2,6 +2,7 @@
 // Created by Subhabrata Ghosh on 21/12/16.
 //
 
+#include <core/includes/typed_index_base.h>
 #include "core/includes/typed_hash_index.h"
 
 string
@@ -29,6 +30,7 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
         mm_data = new file_mapped_data(ip->get_path(), ifile_size);
         CHECK_ALLOC(mm_data, TYPE_NAME(file_mapped_data));
         base_ptr = mm_data->get_base_ptr();
+        header_offset = 0;
 
         header = static_cast<__typed_index_header *>(base_ptr);
         header->block_id = block_id;
@@ -45,16 +47,30 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
         header->write_offset = 0;
         header->write_state = __write_state::WRITABLE;
         header->type = __index_type_enum::HASH_INDEX;
+        header_offset += sizeof(__typed_index_header);
 
         void *ptr = buffer_utils::increment_data_ptr(base_ptr, sizeof(__typed_index_header));
         hash_header = static_cast<__hash_index_header *>(ptr);
         hash_header->bucket_prime = compute_bucket_prime(estimated_records);
         hash_header->bucket_count = compute_bucket_size(estimated_records, hash_header->bucket_prime);
+        hash_header->key_size = compute_index_record_size(index_def);
+        header_offset += sizeof(__hash_index_header);
 
         ptr = buffer_utils::increment_data_ptr(ptr, sizeof(__hash_index_header));
         uint64_t d_size = index_def->write(ptr, 0);
         POSTCONDITION(d_size > 0);
+        header_offset += d_size;
 
+        void *bptr = get_data_ptr();
+        CHECK_NOT_NULL(bptr);
+
+        for (uint32_t bucket = 0; bucket < hash_header->bucket_count; bucket++) {
+            for (uint16_t offset = 0; offset < hash_header->bucket_prime; offset++) {
+                void *ptr = get_index_ptr(bucket, offset);
+                CHECK_NOT_NULL(ptr);
+                __typed_index_bucket::init_index_record(ptr, 0, offset, HASH_COLLISION_ESTIMATE, hash_header->key_size);
+            }
+        }
         state.set_state(__state_enum::Available);
 
         mm_data->flush();
@@ -95,6 +111,7 @@ void com::wookler::reactfs::core::typed_hash_index::open_index(const string &nam
 
     base_ptr = mm_data->get_base_ptr();
 
+    header_offset = 0;
     header = static_cast<__typed_index_header *>(base_ptr);
     header_offset += sizeof(__typed_index_header);
 

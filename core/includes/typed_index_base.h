@@ -25,28 +25,13 @@ using namespace com::wookler::reactfs::core;
 using namespace com::wookler::reactfs::core::types;
 
 REACTFS_NS_CORE
-                typedef struct __index_key__ {
-                    BYTE *bytes = nullptr;
-                    uint16_t size = 0;
-                } __index_key;
 
-                typedef struct __index_key_set__ {
-                    __index_key *keys = nullptr;
-                    uint8_t count = 0;
-                } __index_key_set;
-
-                struct __typed_index_record_v0__ {
-                    unsigned char digest[MD5_DIGEST_LENGTH];
+                typedef struct __typed_index_record__ {
+                    bool *used = nullptr;
+                    uint8_t *digest = nullptr;
+                    uint16_t *data_size = nullptr;
                     void *data_ptr = nullptr;
-                };
-
-                struct __typed_index_bucket_v0__ {
-                    uint64_t bucket_index = 0;
-                    bool has_next_ptr = false;
-                    uint64_t next_ptr_offset = 0;
-                    uint16_t record_count = 0;
-                    void *data_ptr = nullptr;
-                };
+                } __typed_index_record;
 
                 struct __typed_index_header_v0__ {
                     char block_uid[SIZE_UUID + 1];
@@ -63,7 +48,102 @@ REACTFS_NS_CORE
                     uint64_t write_offset = 0;
                 };
 
-                typedef __typed_index_record_v0__ __typed_index_record;
+
+                class __typed_index_bucket_v0__ {
+                private:
+                    uint64_t *bucket_index = nullptr;
+                    bool *has_next_ptr = nullptr;
+                    uint64_t *next_ptr_offset = nullptr;
+                    uint16_t *record_count = nullptr;
+
+
+                    __typed_index_record **key_set = nullptr;
+                    record_index *index_def = nullptr;
+                    void *alloc_buffer = nullptr;
+
+                    void alloc_index_sets(uint8_t key_set_size) {
+                        key_set = (__typed_index_record **) malloc(sizeof(__typed_index_record *) * key_set_size);
+                        CHECK_ALLOC(key_set, TYPE_NAME(__index_key_set * ));
+
+                        alloc_buffer = malloc(sizeof(__typed_index_record) * key_set_size);
+                        CHECK_ALLOC(alloc_buffer, TYPE_NAME(void * ));
+
+                        void *ptr = alloc_buffer;
+                        for (uint8_t ii = 0; ii < key_set_size; ii++) {
+                            key_set[ii] = static_cast<__typed_index_record *>(ptr);
+                            key_set[ii]->data_ptr = nullptr;
+                            key_set[ii]->data_size = nullptr;
+                            key_set[ii]->digest = nullptr;
+
+                            ptr = buffer_utils::increment_data_ptr(ptr, sizeof(__typed_index_record));
+                        }
+                    }
+
+                public:
+                    __typed_index_bucket_v0__(record_index *index_def, uint8_t key_set_size) {
+                        CHECK_NOT_NULL(index_def);
+                        PRECONDITION(key_set_size > 0);
+
+                        this->index_def = index_def;
+                        alloc_index_sets(key_set_size);
+                    }
+
+                    ~__typed_index_bucket_v0__() {
+                        FREE_PTR(alloc_buffer);
+                        FREE_PTR(key_set);
+                    }
+
+                    void read(void *buffer, uint64_t offset, uint64_t index) {
+                        CHECK_NOT_NULL(buffer);
+
+                        __pos pos;
+                        pos.offset = offset;
+                        pos.size = 0;
+
+                        pos.size += buffer_utils::read<uint64_t>(buffer, &pos.offset, &this->bucket_index);
+                        CHECK_NOT_NULL(this->bucket_index);
+                        POSTCONDITION(*this->bucket_index == index);
+
+                        pos.size += buffer_utils::read<bool>(buffer, &pos.offset, &this->has_next_ptr);
+                        CHECK_NOT_NULL(this->has_next_ptr);
+
+                        pos.size += buffer_utils::read(buffer, &pos.offset, &this->next_ptr_offset);
+                        CHECK_NOT_NULL(this->next_ptr_offset);
+                    }
+
+                    static uint32_t
+                    init_index_record(void *buffer, uint64_t offset, uint64_t index, uint8_t key_set_size,
+                                      uint16_t key_size) {
+                        CHECK_NOT_NULL(buffer);
+                        __pos pos;
+                        pos.offset = offset;
+                        pos.size = 0;
+
+                        pos.size += buffer_utils::write<uint64_t>(buffer, &pos.offset, index);
+                        bool bvalue = false;
+                        pos.size += buffer_utils::write<bool>(buffer, &pos.offset, bvalue);
+                        uint64_t lvalue = 0;
+                        pos.size += buffer_utils::write<uint64_t>(buffer, &pos.offset, lvalue);
+                        uint16_t svalue = 0;
+                        pos.size += buffer_utils::write<uint16_t>(buffer, &pos.offset, svalue);
+
+                        for (uint8_t ii = 0; ii < key_set_size; ii++) {
+                            pos.size += buffer_utils::write<bool>(buffer, &pos.offset, bvalue);
+
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
+                            memset(ptr, 0, MD5_DIGEST_LENGTH);
+                            pos.offset += MD5_DIGEST_LENGTH;
+                            pos.size += MD5_DIGEST_LENGTH;
+
+                            pos.size += buffer_utils::write(buffer, &pos.offset, key_size);
+                            ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
+                            memset(ptr, 0, key_size);
+                            pos.offset += key_size;
+                            pos.size += key_size;
+                        }
+                    }
+                };
+
                 typedef __typed_index_bucket_v0__ __typed_index_bucket;
                 typedef __typed_index_header_v0__ __typed_index_header;
 
