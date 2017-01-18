@@ -52,9 +52,10 @@ REACTFS_NS_CORE
                 class __typed_index_bucket_v0__ {
                 private:
                     uint64_t *bucket_index = nullptr;
+                    uint64_t *bucket_offset = nullptr;
                     bool *has_next_ptr = nullptr;
                     uint64_t *next_ptr_offset = nullptr;
-                    uint16_t *record_count = nullptr;
+                    uint8_t *record_count = nullptr;
 
 
                     __typed_index_record **key_set = nullptr;
@@ -119,28 +120,68 @@ REACTFS_NS_CORE
                         pos.offset = offset;
                         pos.size = 0;
 
+                        // Write the index of this record.
                         pos.size += buffer_utils::write<uint64_t>(buffer, &pos.offset, index);
+                        // Write the buffer offset of this record
+                        pos.size += buffer_utils::write<uint64_t>(buffer, &pos.offset, pos.offset);
                         bool bvalue = false;
+                        // Write the has overflow value
                         pos.size += buffer_utils::write<bool>(buffer, &pos.offset, bvalue);
                         uint64_t lvalue = 0;
+                        // Write the overflow offset value
                         pos.size += buffer_utils::write<uint64_t>(buffer, &pos.offset, lvalue);
-                        uint16_t svalue = 0;
-                        pos.size += buffer_utils::write<uint16_t>(buffer, &pos.offset, svalue);
+                        uint8_t svalue = 0;
+                        // Write the used records count.
+                        pos.size += buffer_utils::write<uint8_t>(buffer, &pos.offset, svalue);
 
+                        // For record ket set
                         for (uint8_t ii = 0; ii < key_set_size; ii++) {
+                            // Write is key set used?
                             pos.size += buffer_utils::write<bool>(buffer, &pos.offset, bvalue);
 
+                            // Write MD5 hash of the key set.
                             void *ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
                             memset(ptr, 0, MD5_DIGEST_LENGTH);
                             pos.offset += MD5_DIGEST_LENGTH;
                             pos.size += MD5_DIGEST_LENGTH;
 
-                            pos.size += buffer_utils::write(buffer, &pos.offset, key_size);
+                            // Write the data size of the key set.
+                            pos.size += buffer_utils::write<uint16_t>(buffer, &pos.offset, key_size);
+
+                            // Write the key set value.
                             ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
                             memset(ptr, 0, key_size);
                             pos.offset += key_size;
                             pos.size += key_size;
                         }
+                        return pos.size;
+                    }
+
+                    static uint16_t
+                    get_index_record_size(uint8_t key_set_size, uint16_t key_size) {
+                        uint16_t size = 0;
+                        // Bucket index
+                        size += sizeof(uint64_t);
+                        // Bucket offset
+                        size += sizeof(uint64_t);
+                        // Has overflow flag
+                        size += sizeof(bool);
+                        // Overflow offset
+                        size += sizeof(uint64_t);
+                        // Used records count
+                        size += sizeof(uint8_t);
+
+                        uint16_t k_size = key_size;
+                        // Key set used flag
+                        k_size += sizeof(bool);
+                        // Digest size
+                        k_size += (MD5_DIGEST_LENGTH * sizeof(uint8_t));
+                        // Key size
+                        k_size += sizeof(uint16_t);
+
+                        size += (k_size * key_set_size);
+
+                        return size;
                     }
                 };
 
@@ -206,22 +247,6 @@ REACTFS_NS_CORE
                             return common_utils::format("%s.%lu", name.c_str(), header->block_id);
                         }
                         return common_consts::EMPTY_STRING;
-                    }
-
-                    uint32_t compute_index_record_size(record_index *index_def) {
-                        CHECK_NOT_NULL(index_def);
-                        uint32_t size = 0;
-                        for (uint8_t ii = 0; ii < index_def->get_column_count(); ii++) {
-                            const __index_column *column = index_def->get_index(ii);
-                            CHECK_NOT_NULL(column);
-                            PRECONDITION(__type_enum_helper::is_native(column->type->get_datatype()));
-                            if (column->type->get_datatype() == __type_def_enum::TYPE_STRING) {
-                                size += UCHAR_MAX;
-                            } else {
-                                size += column->type->estimate_size();
-                            }
-                        }
-                        return size;
                     }
 
                 public:

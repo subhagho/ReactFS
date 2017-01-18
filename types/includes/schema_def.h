@@ -653,7 +653,7 @@ REACTFS_NS_CORE
                         /// Map of column index/types.
                         unordered_map<uint8_t, __native_type *> fields;
                         /// Index map of fields by name.
-                        unordered_map <string, uint8_t> field_index;
+                        unordered_map<string, uint8_t> field_index;
                         /// Index of canonical field names.
                         unordered_map<string, __native_type *> name_index;
                         /// Type loader helper instance.
@@ -984,6 +984,12 @@ REACTFS_NS_CORE
                     } __index_column;
 
 
+                    typedef struct __index_key_set__ {
+                        uint8_t *key_count = nullptr;
+                        uint16_t *key_size = nullptr;
+                        void *key_data = nullptr;
+                    } __index_key_set;
+
                     class record_index {
                     private:
                         char *name = nullptr;
@@ -1074,6 +1080,21 @@ REACTFS_NS_CORE
                         const __index_column *get_index(uint8_t index) {
                             PRECONDITION(index < *this->count);
                             return (*columns)[index];
+                        }
+
+                        uint32_t compute_index_record_size() {
+                            uint32_t size = 0;
+                            for (uint8_t ii = 0; ii < *this->count; ii++) {
+                                const __index_column *column = get_index(ii);
+                                CHECK_NOT_NULL(column);
+                                PRECONDITION(__type_enum_helper::is_native(column->type->get_datatype()));
+                                if (column->type->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                    size += UCHAR_MAX;
+                                } else {
+                                    size += column->type->estimate_size();
+                                }
+                            }
+                            return size;
                         }
 
                         uint64_t write(void *buffer, uint64_t offset) {

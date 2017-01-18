@@ -53,7 +53,9 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
         hash_header = static_cast<__hash_index_header *>(ptr);
         hash_header->bucket_prime = compute_bucket_prime(estimated_records);
         hash_header->bucket_count = compute_bucket_size(estimated_records, hash_header->bucket_prime);
-        hash_header->key_size = compute_index_record_size(index_def);
+        hash_header->key_size = index_def->compute_index_record_size();
+        hash_header->overflow_write_index = 0;
+
         header_offset += sizeof(__hash_index_header);
 
         ptr = buffer_utils::increment_data_ptr(ptr, sizeof(__hash_index_header));
@@ -64,12 +66,32 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
         void *bptr = get_data_ptr();
         CHECK_NOT_NULL(bptr);
 
+        uint64_t w_size = 0;
         for (uint32_t bucket = 0; bucket < hash_header->bucket_count; bucket++) {
             for (uint16_t offset = 0; offset < hash_header->bucket_prime; offset++) {
                 void *ptr = get_index_ptr(bucket, offset);
                 CHECK_NOT_NULL(ptr);
-                __typed_index_bucket::init_index_record(ptr, 0, offset, HASH_COLLISION_ESTIMATE, hash_header->key_size);
+                w_size += __typed_index_bucket::init_index_record(ptr, 0, offset, HASH_COLLISION_ESTIMATE,
+                                                                  hash_header->key_size);
             }
+        }
+
+        uint64_t available_size = header->total_size - w_size;
+        hash_header->overflow_offset = header_offset + w_size;
+        uint16_t ir_size = compute_record_size();
+        __pos pos;
+        pos.offset = hash_header->overflow_offset;
+        pos.size = 0;
+        void *overflow_ptr = get_base_overflow_ptr();
+        while (available_size > ir_size) {
+            uint32_t size = __typed_index_bucket::init_index_record(overflow_ptr, pos.offset,
+                                                                    hash_header->overflow_count,
+                                                                    HASH_COLLISION_ESTIMATE,
+                                                                    hash_header->key_size);
+            pos.offset += size;
+            pos.size += size;
+            available_size -= size;
+            hash_header->overflow_count++;
         }
         state.set_state(__state_enum::Available);
 
@@ -149,7 +171,6 @@ void com::wookler::reactfs::core::typed_hash_index::open_index(const string &nam
         overflow = get_base_overflow_ptr();
     } else {
         write_ptr = nullptr;
-        hash_header->overflow_offset = 0;
     }
 
     this->filename = string(p->get_path());

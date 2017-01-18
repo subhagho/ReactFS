@@ -57,8 +57,9 @@ REACTFS_NS_CORE
                     uint16_t bucket_prime = 0;
                     uint32_t bucket_count = 0;
                     uint16_t key_size = 0;
+                    uint32_t overflow_count = 0;
                     uint64_t overflow_offset = 0;
-                    uint64_t overflow_write_offset = 0;
+                    uint32_t overflow_write_index = 0;
                 };
 
                 typedef __hash_index_header_v0__ __hash_index_header;
@@ -88,9 +89,14 @@ REACTFS_NS_CORE
                     }
 
                     uint16_t compute_record_size() {
-                        uint32_t i_size = compute_index_record_size(index_def);
-                        return sizeof(__typed_index_bucket) +
-                               (HASH_COLLISION_ESTIMATE * (sizeof(__typed_index_record) + i_size));
+                        uint32_t i_size = 0;
+                        if (NOT_NULL(hash_header)) {
+                            i_size = hash_header->key_size;
+                        }
+                        if (i_size == 0) {
+                            i_size = index_def->compute_index_record_size();
+                        }
+                        return __typed_index_bucket::get_index_record_size(HASH_COLLISION_ESTIMATE, i_size);
                     }
 
                     uint64_t estimate_file_size(uint32_t est_record_count, record_index *index_def) {
@@ -104,11 +110,8 @@ REACTFS_NS_CORE
                     }
 
                     void *get_base_overflow_ptr() {
-                        uint16_t r_size = compute_record_size();
-                        uint64_t offset = r_size * hash_header->bucket_count;
-
                         void *ptr = get_data_ptr();
-                        return buffer_utils::increment_data_ptr(ptr, offset);
+                        return buffer_utils::increment_data_ptr(ptr, hash_header->overflow_offset);
                     }
 
                     void *get_index_ptr(uint32_t bucket, uint32_t offset) {
@@ -118,10 +121,19 @@ REACTFS_NS_CORE
                         return buffer_utils::increment_data_ptr(ptr, off);
                     }
 
-                    void *get_overflow_write_ptr() {
-                        void *ptr = get_data_ptr();
+                    bool has_overflow_space() {
+                        return (hash_header->overflow_write_index < hash_header->overflow_count);
                     }
 
+                    uint64_t get_next_overflow_offset() {
+                        PRECONDITION(has_overflow_space());
+                        uint16_t r_size = compute_record_size();
+
+                        uint64_t offset = hash_header->overflow_offset + (r_size * hash_header->overflow_write_index);
+                        hash_header->overflow_write_index++;
+
+                        return offset;
+                    }
 
                 public:
                     typed_hash_index(const __complex_type *datatype) {
