@@ -27,10 +27,11 @@ using namespace com::wookler::reactfs::core::types;
 REACTFS_NS_CORE
 
                 typedef struct __typed_index_record__ {
-                    bool *used = nullptr;
-                    uint8_t *digest = nullptr;
-                    uint16_t *data_size = nullptr;
-                    void *data_ptr = nullptr;
+                    uint8_t state = BLOCK_RECORD_STATE_FREE;
+                    uint32_t hash_value = 0;
+                    uint64_t data_offset = 0;
+                    uint64_t data_size = 0;
+                    void *key_data_ptr = nullptr;
                 } __typed_index_record;
 
                 struct __typed_index_header_v0__ {
@@ -52,64 +53,110 @@ REACTFS_NS_CORE
                 class __typed_index_bucket_v0__ {
                 private:
                     uint64_t *bucket_index = nullptr;
-                    uint64_t *bucket_offset = nullptr;
+                    uint8_t *bucket_size = nullptr;
                     bool *has_next_ptr = nullptr;
                     uint64_t *next_ptr_offset = nullptr;
                     uint8_t *record_count = nullptr;
+                    __typed_index_record *key_set = nullptr;
 
-
-                    __typed_index_record **key_set = nullptr;
                     record_index *index_def = nullptr;
-                    void *alloc_buffer = nullptr;
-
-                    void alloc_index_sets(uint8_t key_set_size) {
-                        key_set = (__typed_index_record **) malloc(sizeof(__typed_index_record *) * key_set_size);
-                        CHECK_ALLOC(key_set, TYPE_NAME(__index_key_set * ));
-
-                        alloc_buffer = malloc(sizeof(__typed_index_record) * key_set_size);
-                        CHECK_ALLOC(alloc_buffer, TYPE_NAME(void * ));
-
-                        void *ptr = alloc_buffer;
-                        for (uint8_t ii = 0; ii < key_set_size; ii++) {
-                            key_set[ii] = static_cast<__typed_index_record *>(ptr);
-                            key_set[ii]->data_ptr = nullptr;
-                            key_set[ii]->data_size = nullptr;
-                            key_set[ii]->digest = nullptr;
-
-                            ptr = buffer_utils::increment_data_ptr(ptr, sizeof(__typed_index_record));
-                        }
-                    }
 
                 public:
-                    __typed_index_bucket_v0__(record_index *index_def, uint8_t key_set_size) {
+                    __typed_index_bucket_v0__(record_index *index_def) {
                         CHECK_NOT_NULL(index_def);
-                        PRECONDITION(key_set_size > 0);
-
                         this->index_def = index_def;
-                        alloc_index_sets(key_set_size);
                     }
 
                     ~__typed_index_bucket_v0__() {
-                        FREE_PTR(alloc_buffer);
-                        FREE_PTR(key_set);
                     }
 
-                    void read(void *buffer, uint64_t offset, uint64_t index) {
+                    bool has_overflow() {
+                        CHECK_NOT_NULL(this->has_next_ptr);
+                        return *this->has_next_ptr;
+                    }
+
+                    uint64_t get_overflow_offset() {
+                        CHECK_NOT_NULL(this->has_next_ptr);
+                        if (*this->has_next_ptr) {
+                            CHECK_NOT_NULL(this->next_ptr_offset);
+                            return *this->next_ptr_offset;
+                        }
+                        throw BASE_ERROR("Record does not have overflow.");
+                    }
+
+                    void set_overflow_offset(uint64_t offset) {
+                        PRECONDITION(!has_next_ptr);
+                        PRECONDITION(*record_count == *bucket_size);
+
+                        *has_next_ptr = true;
+                        *next_ptr_offset = offset;
+                    }
+
+                    bool can_write_index() {
+                        if (!has_overflow()) {
+                            return (*record_count < *bucket_size);
+                        }
+                        return false;
+                    }
+
+                    void read(void *buffer, uint64_t offset, uint64_t index, uint16_t key_size) {
                         CHECK_NOT_NULL(buffer);
 
                         __pos pos;
                         pos.offset = offset;
                         pos.size = 0;
 
+                        // Read bucket index.
                         pos.size += buffer_utils::read<uint64_t>(buffer, &pos.offset, &this->bucket_index);
                         CHECK_NOT_NULL(this->bucket_index);
                         POSTCONDITION(*this->bucket_index == index);
 
+                        // Read bucket size
+                        pos.size += buffer_utils::read<uint8_t>(buffer, &pos.offset, &this->bucket_size);
+                        CHECK_NOT_NULL(this->bucket_size);
+                        POSTCONDITION(*this->bucket_size > 0);
+
+                        // Read has overflow
                         pos.size += buffer_utils::read<bool>(buffer, &pos.offset, &this->has_next_ptr);
                         CHECK_NOT_NULL(this->has_next_ptr);
 
+                        // Read overflow offset
                         pos.size += buffer_utils::read(buffer, &pos.offset, &this->next_ptr_offset);
                         CHECK_NOT_NULL(this->next_ptr_offset);
+
+                        // Read record count
+                        pos.size += buffer_utils::read<uint8_t>(buffer, &pos.offset, &this->record_count);
+                        CHECK_NOT_NULL(this->record_count);
+
+                        // For record ket set
+                        for (uint8_t ii = 0; ii < *this->bucket_size; ii++) {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
+                            __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
+                            if (IS_NULL(this->key_set)) {
+                                this->key_set = rec;
+                            }
+                            pos.offset += sizeof(__typed_index_record) + key_size;
+                            pos.size += sizeof(__typed_index_record) + key_size;
+                        }
+                    }
+
+                    void write(uint32_t hash, __index_key_set *key, uint64_t offset, uint64_t size) {
+                        PRECONDITION(can_write_index());
+                        CHECK_NOT_NULL(key);
+                        CHECK_NOT_NULL(key->key_data);
+                        CHECK_NOT_NULL(this->key_set);
+
+                        void *ptr = this->key_set;
+                        uint64_t incr = (sizeof(__typed_index_record) + *key->key_size) * (*record_count);
+                        ptr = buffer_utils::increment_data_ptr(ptr, incr);
+                        __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
+                        POSTCONDITION(rec->state == BLOCK_RECORD_STATE_FREE);
+
+                        rec->state = BLOCK_RECORD_STATE_USED;
+                        rec->hash_value = hash;
+                        rec->data_offset = offset;
+                        rec->data_size = size;
+                        memcpy(rec->key_data_ptr, key->key_data, *key->key_size);
                     }
 
                     static uint32_t
@@ -122,8 +169,9 @@ REACTFS_NS_CORE
 
                         // Write the index of this record.
                         pos.size += buffer_utils::write<uint64_t>(buffer, &pos.offset, index);
-                        // Write the buffer offset of this record
-                        pos.size += buffer_utils::write<uint64_t>(buffer, &pos.offset, pos.offset);
+                        // Write record size
+                        pos.size += buffer_utils::write<uint8_t>(buffer, &pos.offset, key_set_size);
+
                         bool bvalue = false;
                         // Write the has overflow value
                         pos.size += buffer_utils::write<bool>(buffer, &pos.offset, bvalue);
@@ -136,23 +184,17 @@ REACTFS_NS_CORE
 
                         // For record ket set
                         for (uint8_t ii = 0; ii < key_set_size; ii++) {
-                            // Write is key set used?
-                            pos.size += buffer_utils::write<bool>(buffer, &pos.offset, bvalue);
-
-                            // Write MD5 hash of the key set.
                             void *ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
-                            memset(ptr, 0, MD5_DIGEST_LENGTH);
-                            pos.offset += MD5_DIGEST_LENGTH;
-                            pos.size += MD5_DIGEST_LENGTH;
-
-                            // Write the data size of the key set.
-                            pos.size += buffer_utils::write<uint16_t>(buffer, &pos.offset, key_size);
-
-                            // Write the key set value.
-                            ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
-                            memset(ptr, 0, key_size);
-                            pos.offset += key_size;
-                            pos.size += key_size;
+                            __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
+                            rec->state = BLOCK_RECORD_STATE_FREE;
+                            rec->hash_value = 0;
+                            rec->data_offset = 0;
+                            rec->data_size = 0;
+                            ptr = buffer_utils::increment_data_ptr(ptr, (pos.offset + sizeof(__typed_index_record)));
+                            rec->key_data_ptr = ptr;
+                            memset(rec->key_data_ptr, 0, key_size);
+                            pos.offset += sizeof(__typed_index_record) + (key_size * sizeof(char));
+                            pos.size += sizeof(__typed_index_record) + (key_size * sizeof(char));
                         }
                         return pos.size;
                     }
@@ -171,13 +213,7 @@ REACTFS_NS_CORE
                         // Used records count
                         size += sizeof(uint8_t);
 
-                        uint16_t k_size = key_size;
-                        // Key set used flag
-                        k_size += sizeof(bool);
-                        // Digest size
-                        k_size += (MD5_DIGEST_LENGTH * sizeof(uint8_t));
-                        // Key size
-                        k_size += sizeof(uint16_t);
+                        uint16_t k_size = sizeof(__typed_index_record) + (key_size * sizeof(char));
 
                         size += (k_size * key_set_size);
 

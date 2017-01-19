@@ -163,7 +163,7 @@ com::wookler::reactfs::core::base_block_index::__write_index(uint64_t index, uin
     iptr->index = index;
     iptr->offset = offset;
     iptr->size = size;
-    iptr->readable = false;
+    iptr->state = BLOCK_RECORD_STATE_USED;
 
     rollback_info->last_index = iptr->index;
     rollback_info->used_bytes += sizeof(__record_index_ptr);
@@ -195,7 +195,7 @@ __record_index_ptr *com::wookler::reactfs::core::base_block_index::__read_index(
         throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
                              "Block index miss-match. [expected index=%lu][found index=%lu]", index, iptr->index);
     }
-    if (!all && !iptr->readable)
+    if (!all && (iptr->state != BLOCK_RECORD_STATE_READABLE))
         return nullptr;
 
     t.stop();

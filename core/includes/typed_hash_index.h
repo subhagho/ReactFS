@@ -43,6 +43,7 @@
 
 using namespace com::wookler::reactfs::common;
 using namespace com::wookler::reactfs::core;
+using namespace com::wookler::reactfs::core::types;
 
 #define HASH_DEFAULT_BLOAT_FACTOR (15 / 10)
 #define HASH_COLLISION_ESTIMATE 8
@@ -52,8 +53,11 @@ using namespace com::wookler::reactfs::core;
 #define HASH_INDEX_VERSION_MAJOR ((uint16_t) 0)
 #define HASH_INDEX_VERSION_MINOR ((uint16_t) 1)
 
+#define HASH_INDEX_ERROR_NO_SPACE 255
+
 REACTFS_NS_CORE
                 struct __hash_index_header_v0__ {
+                    uint32_t block_seed = 0;
                     uint16_t bucket_prime = 0;
                     uint32_t bucket_count = 0;
                     uint16_t key_size = 0;
@@ -129,11 +133,15 @@ REACTFS_NS_CORE
                         PRECONDITION(has_overflow_space());
                         uint16_t r_size = compute_record_size();
 
-                        uint64_t offset = hash_header->overflow_offset + (r_size * hash_header->overflow_write_index);
+                        uint64_t offset = (r_size * hash_header->overflow_write_index);
                         hash_header->overflow_write_index++;
 
                         return offset;
                     }
+
+                    __typed_index_record *
+                    __write_index(uint32_t hash, __index_key_set *index, uint64_t offset, uint64_t size,
+                                  uint8_t *error);
 
                 public:
                     typed_hash_index(const __complex_type *datatype) {

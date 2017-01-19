@@ -390,12 +390,12 @@ REACTFS_NS_CORE
                         while (offset < rollback_info->write_offset) {
                             void *ptr = buffer_utils::increment_data_ptr(write_ptr, offset);
                             __record_index_ptr *iptr = reinterpret_cast<__record_index_ptr *>(ptr);
-                            if (iptr->readable) {
+                            if (iptr->state != BLOCK_RECORD_STATE_USED) {
                                 throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_INDEX_COPRRUPTED,
                                                      "Tying to commit an index record already committed. [index=%lu]",
                                                      iptr->index);
                             }
-                            iptr->readable = true;
+                            iptr->state = BLOCK_RECORD_STATE_READABLE;
                             offset += sizeof(__record_index_ptr);
                         }
                         header->last_index = rollback_info->last_index;
@@ -410,7 +410,7 @@ REACTFS_NS_CORE
                                                          "Tying to commit an index delete for an index that does not exist. [index=%lu]",
                                                          index);
                                 }
-                                ptr->readable = false;
+                                ptr->state = BLOCK_RECORD_STATE_DELETED;
                             }
                         }
                         end_transaction();

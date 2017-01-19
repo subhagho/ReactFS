@@ -56,6 +56,9 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
         hash_header->key_size = index_def->compute_index_record_size();
         hash_header->overflow_write_index = 0;
 
+        srand(time(NULL));
+        hash_header->block_seed = rand();
+
         header_offset += sizeof(__hash_index_header);
 
         ptr = buffer_utils::increment_data_ptr(ptr, sizeof(__hash_index_header));
@@ -219,10 +222,67 @@ const __record_index_ptr *com::wookler::reactfs::core::typed_hash_index::read_in
     return nullptr;
 }
 
+__typed_index_record *
+com::wookler::reactfs::core::typed_hash_index::__write_index(uint32_t hash, __index_key_set *index,
+                                                             uint64_t offset, uint64_t size, uint8_t *error) {
+    uint32_t bucket = hash % hash_header->bucket_count;
+    uint32_t boff = hash % hash_header->bucket_prime;
+    uint64_t b_index = (bucket * hash_header->bucket_count) + boff;
+
+    __typed_index_record *rec = nullptr;
+    void *b_ptr = get_index_ptr(bucket, boff);
+    CHECK_NOT_NULL(b_ptr);
+
+    __typed_index_bucket ib(this->index_def);
+    while (true) {
+        ib.read(b_ptr, 0, b_index, hash_header->key_size);
+        if (!ib.can_write_index()) {
+            if (ib.has_overflow()) {
+                uint64_t n_offset = ib.get_overflow_offset();
+                void *ptr = get_base_overflow_ptr();
+                b_ptr = buffer_utils::increment_data_ptr(ptr, n_offset);
+                continue;
+            } else {
+                if (has_overflow_space()) {
+                    uint64_t n_offset = get_next_overflow_offset();
+                    ib.set_overflow_offset(n_offset);
+
+                    void *ptr = get_base_overflow_ptr();
+                    b_ptr = buffer_utils::increment_data_ptr(ptr, n_offset);
+                    continue;
+                } else {
+                    *error = HASH_INDEX_ERROR_NO_SPACE;
+                    break;
+                }
+            }
+        }
+        ib.write(hash, index, offset, size);
+    }
+    return rec;
+}
 
 const __record_index_ptr *com::wookler::reactfs::core::typed_hash_index::write_index(__index_key_set *index,
                                                                                      uint64_t offset, uint64_t size,
                                                                                      string transaction_id) {
+    CHECK_STATE_AVAILABLE(state);
+    PRECONDITION(header->write_state == __write_state::WRITABLE);
+    CHECK_NOT_NULL(index);
+    CHECK_NOT_NULL(index->key_data);
+    PRECONDITION(*index->key_size > 0);
+
+    uint32_t hash = 0;
+    MurmurHash3_x86_32(index->key_data, *index->key_size, hash_header->block_seed, &hash);
+
+    uint8_t error = 0;
+    __typed_index_record *rec = __write_index(hash, index, offset, size, &error);
+    if (IS_NULL(rec)) {
+        if (error == HASH_INDEX_ERROR_NO_SPACE) {
+            throw FS_SPACE_ERROR("Hash index block out of free space.");
+        } else {
+            throw FS_BASE_ERROR("Error writing hash index. [error=%d]", error);
+        }
+    }
+
     return nullptr;
 }
 

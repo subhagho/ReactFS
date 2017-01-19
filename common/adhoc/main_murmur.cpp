@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
         unordered_map<string, short> keys;
 
         uint32_t b_prime = common_utils::find_prime(100);
-        uint32_t b_size = KEY_COUNT / b_prime ;
+        uint32_t b_size = KEY_COUNT / b_prime / 2;
         b_size = common_utils::find_prime(b_size);
 
         LOG_DEBUG("Using bucket prime = %d bucket size = %d", b_prime, b_size);

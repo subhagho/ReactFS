@@ -27,6 +27,12 @@
 
 using namespace com::wookler::reactfs::common;
 
+#define BLOCK_RECORD_STATE_FREE 0
+#define BLOCK_RECORD_STATE_USED 1
+#define BLOCK_RECORD_STATE_READABLE 2
+#define BLOCK_RECORD_STATE_DELETED 4
+#define BLOCK_RECORD_STATE_UPDATED 8
+
 namespace com {
     namespace wookler {
         namespace reactfs {
@@ -163,7 +169,7 @@ namespace com {
 
                 typedef struct __record_index_ptr_v0__ {
                     uint64_t index = 0;
-                    bool readable = false;
+                    uint8_t state = BLOCK_RECORD_STATE_FREE;
                     uint64_t offset = 0;
                     uint64_t size = 0;
                 } __record_index_ptr_v0;

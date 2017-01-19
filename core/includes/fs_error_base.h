@@ -31,6 +31,9 @@
 #define FS_BASE_ERROR(fmt, ...) fs_error_base(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define FS_BASE_ERROR_PTR(fmt, ...) new fs_error_base(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
+#define FS_SPACE_ERROR(fmt, ...) fs_block_sapce_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+#define FS_SPACE_ERROR_PTR(fmt, ...) new fs_block_sapce_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
+
 #define FS_BASE_ERROR_E(e) fs_error_base(__FILE__, __LINE__, e)
 #define FS_BASE_ERROR_E_PTR(e) new fs_error_base(__FILE__, __LINE__, e)
 
@@ -65,6 +68,18 @@ namespace com {
                     const exception *get_nested_error() {
                         return error;
                     }
+                };
+
+                class fs_block_sapce_error : public fs_error_base {
+                public:
+                    fs_block_sapce_error(char const *file, const int line, string mesg) : fs_error_base(file, line,
+                                                                                                        mesg) {
+                    }
+
+                    fs_block_sapce_error(char const *file, const int line, exception *e) : fs_error_base(file, line,
+                                                                                                         e) {
+                    }
+
                 };
 
                 class fs_block_error : public base_error {

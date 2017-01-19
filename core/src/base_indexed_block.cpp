@@ -172,7 +172,7 @@ __block_check_record *com::wookler::reactfs::core::base_indexed_block::check_blo
             throw FS_BLOCK_ERROR(fs_block_error::ERRCODE_BLOCK_SANITY_FAILED,
                                  "[block id=%lu] Missing index record. [index=%lu]", header->block_id, ii);
         }
-        if (iptr->readable) {
+        if (iptr->state == BLOCK_RECORD_STATE_READABLE) {
             __record *ptr = __read_record(iptr->index, iptr->offset, iptr->size);
             CHECK_NOT_NULL(ptr);
         } else {
