@@ -218,8 +218,37 @@ const uint64_t com::wookler::reactfs::core::typed_hash_index::get_used_space() c
     return 0;
 }
 
-const __record_index_ptr *com::wookler::reactfs::core::typed_hash_index::read_index(__index_key_set *index, bool all) {
-    return nullptr;
+const __typed_index_record *
+com::wookler::reactfs::core::typed_hash_index::read_index(__index_key_set *index, uint8_t rec_state) {
+    CHECK_STATE_AVAILABLE(state);
+    CHECK_NOT_NULL(index);
+    CHECK_NOT_NULL(index->key_data);
+    PRECONDITION(*index->key_size > 0);
+
+    uint32_t hash = 0;
+    MurmurHash3_x86_32(index->key_data, *index->key_size, hash_header->block_seed, &hash);
+
+    uint32_t bucket = hash % hash_header->bucket_count;
+    uint32_t boff = hash % hash_header->bucket_prime;
+
+    const __typed_index_record *rec = nullptr;
+    void *b_ptr = get_index_ptr(bucket, boff);
+    CHECK_NOT_NULL(b_ptr);
+
+    __typed_index_bucket ib(this->index_def);
+    while (true) {
+        rec = ib.find(hash, index, rec_state);
+        if (IS_NULL(rec)) {
+            if (ib.has_overflow()) {
+                uint64_t n_offset = ib.get_overflow_offset();
+                void *ptr = get_base_overflow_ptr();
+                b_ptr = buffer_utils::increment_data_ptr(ptr, n_offset);
+                continue;
+            }
+        }
+        break;
+    }
+    return rec;
 }
 
 __typed_index_record *
@@ -256,14 +285,14 @@ com::wookler::reactfs::core::typed_hash_index::__write_index(uint32_t hash, __in
                 }
             }
         }
-        ib.write(hash, index, offset, size);
+        rec = ib.write(hash, index, offset, size);
     }
     return rec;
 }
 
-const __record_index_ptr *com::wookler::reactfs::core::typed_hash_index::write_index(__index_key_set *index,
-                                                                                     uint64_t offset, uint64_t size,
-                                                                                     string transaction_id) {
+const __typed_index_record *com::wookler::reactfs::core::typed_hash_index::write_index(__index_key_set *index,
+                                                                                       uint64_t offset, uint64_t size,
+                                                                                       string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(header->write_state == __write_state::WRITABLE);
     CHECK_NOT_NULL(index);
@@ -282,11 +311,19 @@ const __record_index_ptr *com::wookler::reactfs::core::typed_hash_index::write_i
             throw FS_BASE_ERROR("Error writing hash index. [error=%d]", error);
         }
     }
-
-    return nullptr;
+    return rec;
 }
 
 bool com::wookler::reactfs::core::typed_hash_index::delete_index(__index_key_set *index, string transaction_id) {
+    CHECK_STATE_AVAILABLE(state);
+    PRECONDITION(header->write_state == __write_state::WRITABLE);
+    CHECK_NOT_NULL(index);
+    CHECK_NOT_NULL(index->key_data);
+    PRECONDITION(*index->key_size > 0);
+
+    uint32_t hash = 0;
+    MurmurHash3_x86_32(index->key_data, *index->key_size, hash_header->block_seed, &hash);
+
     return false;
 }
 

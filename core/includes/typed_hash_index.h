@@ -66,12 +66,45 @@ REACTFS_NS_CORE
                     uint32_t overflow_write_index = 0;
                 };
 
+                typedef struct __write_rollback__ {
+                    uint64_t bucket_offset = 0;
+                    uint8_t record_count = 0;
+                    bool has_next_ptr = false;
+                    uint64_t next_ptr_offset = 0;
+                } __write_rollback;
+
+                typedef struct __delete_rollback__ {
+                    uint64_t bucket_offset = 0;
+                    uint8_t delete_index = 0;
+                } __delete_rollback;
+
+                typedef struct __update_rollback__ {
+                    uint64_t bucket_offset = 0;
+                    uint8_t update_offset = 0;
+                    uint64_t data_offset = 0;
+                    uint64_t data_size = 0;
+                } __update_rollback;
+
+                struct __hash_rollback_info_v0__ {
+                    bool in_transaction = false;
+                    string *transaction_id = nullptr;
+                    uint64_t start_time = 0;
+                    uint64_t overflow_offset = 0;
+                    uint32_t overflow_count = 0;
+                    uint32_t overflow_write_index = 0;
+                    vector<__write_rollback *> *writes = nullptr;
+                    vector<__update_rollback *> *updates = nullptr;
+                    vector<__delete_rollback *> *deletes = nullptr;
+                };
+
                 typedef __hash_index_header_v0__ __hash_index_header;
+                typedef __hash_rollback_info_v0__ __hash_rollback_info;
 
                 class typed_hash_index : public typed_index_base {
                 protected:
                     __hash_index_header *hash_header = nullptr;
                     void *overflow = nullptr;
+                    __hash_rollback_info *rollback_info = nullptr;
 
                     uint16_t compute_bucket_prime(uint32_t est_record_count) {
                         if (est_record_count <= 4096) {
@@ -139,6 +172,103 @@ REACTFS_NS_CORE
                         return offset;
                     }
 
+                    bool in_transaction() {
+                        if (NOT_NULL(rollback_info)) {
+                            if (rollback_info->in_transaction) {
+                                if (NOT_EMPTY_P(rollback_info->transaction_id)) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    }
+
+                    void setup_transaction(string tnx_id) {
+                        PRECONDITION(!in_transaction());
+                        CHECK_NOT_EMPTY(tnx_id);
+
+                        if (IS_NULL(rollback_info)) {
+                            rollback_info = (__hash_rollback_info *) malloc(sizeof(__hash_rollback_info));
+                            CHECK_ALLOC(rollback_info, TYPE_NAME(__hash_rollback_info));
+
+                            rollback_info->transaction_id = new string();
+                        }
+                        rollback_info->in_transaction = true;
+                        rollback_info->transaction_id->assign(tnx_id);
+                        rollback_info->start_time = time_utils::now();
+                    }
+
+                    void free_rollback_data() {
+                        if (NOT_NULL(rollback_info)) {
+                            rollback_info->in_transaction = false;
+                            rollback_info->transaction_id->clear();
+
+                            if (NOT_EMPTY_P(rollback_info->writes)) {
+                                for (__write_rollback *wr : *(rollback_info->writes)) {
+                                    FREE_PTR(wr);
+                                }
+                                rollback_info->writes->clear();
+                            }
+                            if (NOT_EMPTY_P(rollback_info->updates)) {
+                                for (__update_rollback *ur : (*rollback_info->updates)) {
+                                    FREE_PTR(ur);
+                                }
+                                rollback_info->updates->clear();
+                            }
+                            if (NOT_EMPTY_P(rollback_info->deletes)) {
+                                for (__delete_rollback *dr : (*rollback_info->deletes)) {
+                                    FREE_PTR(dr);
+                                }
+                                rollback_info->deletes->clear();
+                            }
+                        }
+                    }
+
+                    __write_rollback *get_write_rollback() {
+                        PRECONDITION(in_transaction());
+
+                        __write_rollback *wr = (__write_rollback *) malloc(sizeof(__write_rollback));
+                        CHECK_ALLOC(wr, TYPE_NAME(__write_rollback));
+
+                        if (IS_NULL(rollback_info->writes)) {
+                            rollback_info->writes = new vector<__write_rollback *>();
+                            CHECK_ALLOC(rollback_info->writes, TYPE_NAME(vector));
+                        }
+                        rollback_info->writes->push_back(wr);
+
+                        return wr;
+                    }
+
+                    __update_rollback *get_update_rollback() {
+                        PRECONDITION(in_transaction());
+
+                        __update_rollback *ur = (__update_rollback *) malloc(sizeof(__update_rollback));
+                        CHECK_ALLOC(ur, TYPE_NAME(__update_rollback));
+
+                        if (IS_NULL(rollback_info->updates)) {
+                            rollback_info->updates = new vector<__update_rollback *>();
+                            CHECK_ALLOC(rollback_info->updates, TYPE_NAME(vector));
+                        }
+                        rollback_info->updates->push_back(ur);
+
+                        return ur;
+                    }
+
+                    __delete_rollback *get_delete_rollback() {
+                        PRECONDITION(in_transaction());
+
+                        __delete_rollback *dr = (__delete_rollback *) malloc(sizeof(__delete_rollback));
+                        CHECK_ALLOC(dr, TYPE_NAME(__delete_rollback));
+
+                        if (IS_NULL(rollback_info->deletes)) {
+                            rollback_info->deletes = new vector<__delete_rollback *>();
+                            CHECK_ALLOC(rollback_info->deletes, TYPE_NAME(vector));
+                        }
+                        rollback_info->deletes->push_back(dr);
+
+                        return dr;
+                    }
+
                     __typed_index_record *
                     __write_index(uint32_t hash, __index_key_set *index, uint64_t offset, uint64_t size,
                                   uint8_t *error);
@@ -158,6 +288,14 @@ REACTFS_NS_CORE
 
                         REMOVE_METRIC(get_metric_name(HASH_INDEX_METRIC_READ_PREFIX));
                         REMOVE_METRIC(get_metric_name(HASH_INDEX_METRIC_WRITE_PREFIX));
+
+                        if (NOT_NULL(rollback_info)) {
+                            free_rollback_data();
+                            CHECK_AND_FREE(rollback_info->writes);
+                            CHECK_AND_FREE(rollback_info->updates);
+                            CHECK_AND_FREE(rollback_info->deletes);
+                            CHECK_AND_FREE(rollback_info->transaction_id);
+                        }
                         this->close();
                     }
 
@@ -246,17 +384,18 @@ REACTFS_NS_CORE
                      * @param transaction_id - Current transaction ID.
                      * @return - Created index pointer.
                      */
-                    const __record_index_ptr *
+                    const __typed_index_record *
                     write_index(__index_key_set *index, uint64_t offset, uint64_t size, string transaction_id) override;
 
                     /*!
                      * Read the index record for the specified index.
                      *
                      * @param index - Data record index.
-                     * @param all - Allow to read dirty/deleted records?
+                     * @param rec_state - Allow to read dirty/deleted records?
                      * @return - Index record pointer.
                      */
-                    const __record_index_ptr *read_index(__index_key_set *index, bool all = false) override;
+                    const __typed_index_record *
+                    read_index(__index_key_set *index, uint8_t rec_state = BLOCK_RECORD_STATE_READABLE) override;
 
                     /*!
                      * Close this instance of the block index.

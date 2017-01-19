@@ -140,7 +140,7 @@ REACTFS_NS_CORE
                         }
                     }
 
-                    void write(uint32_t hash, __index_key_set *key, uint64_t offset, uint64_t size) {
+                    __typed_index_record *write(uint32_t hash, __index_key_set *key, uint64_t offset, uint64_t size) {
                         PRECONDITION(can_write_index());
                         CHECK_NOT_NULL(key);
                         CHECK_NOT_NULL(key->key_data);
@@ -157,6 +157,34 @@ REACTFS_NS_CORE
                         rec->data_offset = offset;
                         rec->data_size = size;
                         memcpy(rec->key_data_ptr, key->key_data, *key->key_size);
+
+                        return rec;
+                    }
+
+                    const __typed_index_record *
+                    find(uint32_t hash, __index_key_set *key, uint8_t state = BLOCK_RECORD_STATE_READABLE) {
+                        CHECK_NOT_NULL(key);
+                        CHECK_NOT_NULL(key->key_data);
+                        CHECK_NOT_NULL(this->key_set);
+                        if (*record_count > 0) {
+                            void *ptr = nullptr;
+                            for (uint8_t ii = 0; ii < *record_count; ii++) {
+                                uint32_t offset = (sizeof(__typed_index_record) + *key->key_size) * ii;
+                                ptr = buffer_utils::increment_data_ptr(this->key_set, offset);
+                                __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
+                                if (rec->state == BLOCK_RECORD_STATE_FREE) {
+                                    throw FS_BASE_ERROR("Hash index corrupted : Record state is free.");
+                                }
+                                if (rec->state == state || state == BLOCK_RECORD_STATE_FREE) {
+                                    if (rec->hash_value == hash) {
+                                        if (memcmp(rec->key_data_ptr, key->key_data, *key->key_size) == 0) {
+                                            return rec;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return nullptr;
                     }
 
                     static uint32_t
@@ -376,17 +404,18 @@ REACTFS_NS_CORE
                      * @param transaction_id - Current transaction ID.
                      * @return - Created index pointer.
                      */
-                    virtual const __record_index_ptr *
+                    virtual const __typed_index_record *
                     write_index(__index_key_set *index, uint64_t offset, uint64_t size, string transaction_id) = 0;
 
                     /*!
                      * Read the index record for the specified index.
                      *
                      * @param index - Data record index.
-                     * @param all - Allow to read dirty/deleted records?
+                     * @param rec_state - Allow to read dirty/deleted records?
                      * @return - Index record pointer.
                      */
-                    virtual const __record_index_ptr *read_index(__index_key_set *index, bool all = false) = 0;
+                    virtual const __typed_index_record *
+                    read_index(__index_key_set *index, uint8_t rec_state = BLOCK_RECORD_STATE_READABLE) = 0;
 
                     /*!
                      * Close this instance of the block index.

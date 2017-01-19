@@ -176,7 +176,7 @@ namespace com {
 
                 typedef struct __rollback_info_v0__ {
                     bool in_transaction = false;
-                    string *transaction_id;
+                    string *transaction_id = nullptr;
                     uint64_t start_offset = 0;
                     uint64_t write_offset = 0; // Write-offset of the last committed write.
                     uint64_t used_bytes = 0;
