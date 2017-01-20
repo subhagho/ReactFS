@@ -34,6 +34,12 @@ REACTFS_NS_CORE
                     void *key_data_ptr = nullptr;
                 } __typed_index_record;
 
+                typedef struct __typed_index_read__ {
+                    __typed_index_record *record = nullptr;
+                    uint64_t bucket_offset = 0;
+                    uint8_t record_index = 0;
+                } __typed_index_read;
+
                 struct __typed_index_header_v0__ {
                     char block_uid[SIZE_UUID + 1];
                     __version_header version;

@@ -280,7 +280,7 @@ REACTFS_NS_CORE
                     __write_index(uint32_t hash, __index_key_set *index, uint64_t offset, uint64_t size,
                                   uint8_t *error);
 
-                    __typed_index_record *__read_index(uint32_t hash, __index_key_set *index, uint8_t rec_state);
+                    __typed_index_read *__read_index(uint32_t hash, __index_key_set *index, uint8_t rec_state);
 
                 public:
                     typed_hash_index(const __complex_type *datatype) {
