@@ -55,6 +55,11 @@ using namespace com::wookler::reactfs::core::types;
 
 #define HASH_INDEX_ERROR_NO_SPACE 255
 
+#define HASH_UPDATE_NONE 0
+#define HASH_UPDATE_WRITE 1
+#define HASH_UPDATE_UPDATE 2
+#define HASH_UPDATE_DELETE 4
+
 REACTFS_NS_CORE
                 struct __hash_index_header_v0__ {
                     uint32_t block_seed = 0;
@@ -66,21 +71,22 @@ REACTFS_NS_CORE
                     uint32_t overflow_write_index = 0;
                 };
 
-                typedef struct __write_rollback__ {
+                typedef struct __rollback_record__ {
+                    uint8_t update_type = HASH_UPDATE_NONE;
                     uint64_t bucket_offset = 0;
+                    uint8_t bucket_cell = 0;
+                } __rollback_record;
+
+                typedef struct __write_rollback__ : __rollback_record {
                     uint8_t record_count = 0;
                     bool has_next_ptr = false;
                     uint64_t next_ptr_offset = 0;
                 } __write_rollback;
 
-                typedef struct __delete_rollback__ {
-                    uint64_t bucket_offset = 0;
-                    uint8_t delete_index = 0;
+                typedef struct __delete_rollback__ : __rollback_record {
                 } __delete_rollback;
 
-                typedef struct __update_rollback__ {
-                    uint64_t bucket_offset = 0;
-                    uint8_t update_offset = 0;
+                typedef struct __update_rollback__ : __rollback_record {
                     uint64_t data_offset = 0;
                     uint64_t data_size = 0;
                 } __update_rollback;
@@ -92,9 +98,7 @@ REACTFS_NS_CORE
                     uint64_t overflow_offset = 0;
                     uint32_t overflow_count = 0;
                     uint32_t overflow_write_index = 0;
-                    vector<__write_rollback *> *writes = nullptr;
-                    vector<__update_rollback *> *updates = nullptr;
-                    vector<__delete_rollback *> *deletes = nullptr;
+                    vector<__rollback_record *> *updates = nullptr;
                 };
 
                 typedef __hash_index_header_v0__ __hash_index_header;
@@ -159,15 +163,20 @@ REACTFS_NS_CORE
                     }
 
                     bool has_overflow_space() {
+                        if (in_transaction()) {
+                            return (rollback_info->overflow_write_index < rollback_info->overflow_count);
+                        }
                         return (hash_header->overflow_write_index < hash_header->overflow_count);
                     }
 
                     uint64_t get_next_overflow_offset() {
+                        PRECONDITION(in_transaction());
                         PRECONDITION(has_overflow_space());
                         uint16_t r_size = compute_record_size();
 
-                        uint64_t offset = (r_size * hash_header->overflow_write_index);
-                        hash_header->overflow_write_index++;
+                        uint64_t offset = (r_size * rollback_info->overflow_write_index);
+                        rollback_info->overflow_write_index++;
+                        rollback_info->overflow_count++;
 
                         return offset;
                     }
@@ -203,6 +212,9 @@ REACTFS_NS_CORE
                         rollback_info->in_transaction = true;
                         rollback_info->transaction_id->assign(tnx_id);
                         rollback_info->start_time = time_utils::now();
+                        rollback_info->overflow_count = hash_header->overflow_count;
+                        rollback_info->overflow_write_index = hash_header->overflow_write_index;
+                        rollback_info->overflow_offset = hash_header->overflow_offset;
                     }
 
                     void free_rollback_data() {
@@ -210,24 +222,15 @@ REACTFS_NS_CORE
                             rollback_info->in_transaction = false;
                             rollback_info->transaction_id->clear();
 
-                            if (NOT_EMPTY_P(rollback_info->writes)) {
-                                for (__write_rollback *wr : *(rollback_info->writes)) {
-                                    FREE_PTR(wr);
-                                }
-                                rollback_info->writes->clear();
-                            }
                             if (NOT_EMPTY_P(rollback_info->updates)) {
-                                for (__update_rollback *ur : (*rollback_info->updates)) {
-                                    FREE_PTR(ur);
+                                for (__rollback_record *wr : *(rollback_info->updates)) {
+                                    FREE_PTR(wr);
                                 }
                                 rollback_info->updates->clear();
                             }
-                            if (NOT_EMPTY_P(rollback_info->deletes)) {
-                                for (__delete_rollback *dr : (*rollback_info->deletes)) {
-                                    FREE_PTR(dr);
-                                }
-                                rollback_info->deletes->clear();
-                            }
+                            rollback_info->overflow_count = 0;
+                            rollback_info->overflow_write_index = 0;
+                            rollback_info->overflow_offset = 0;
                         }
                     }
 
@@ -236,15 +239,17 @@ REACTFS_NS_CORE
 
                         __write_rollback *wr = (__write_rollback *) malloc(sizeof(__write_rollback));
                         CHECK_ALLOC(wr, TYPE_NAME(__write_rollback));
+                        wr->update_type = HASH_UPDATE_WRITE;
 
-                        if (IS_NULL(rollback_info->writes)) {
-                            rollback_info->writes = new vector<__write_rollback *>();
-                            CHECK_ALLOC(rollback_info->writes, TYPE_NAME(vector));
+                        if (IS_NULL(rollback_info->updates)) {
+                            rollback_info->updates = new vector<__rollback_record *>();
+                            CHECK_ALLOC(rollback_info->updates, TYPE_NAME(vector));
                         }
-                        rollback_info->writes->push_back(wr);
+                        rollback_info->updates->push_back(wr);
 
                         return wr;
                     }
+
 
                     __update_rollback *get_update_rollback() {
                         PRECONDITION(in_transaction());
@@ -253,7 +258,7 @@ REACTFS_NS_CORE
                         CHECK_ALLOC(ur, TYPE_NAME(__update_rollback));
 
                         if (IS_NULL(rollback_info->updates)) {
-                            rollback_info->updates = new vector<__update_rollback *>();
+                            rollback_info->updates = new vector<__rollback_record *>();
                             CHECK_ALLOC(rollback_info->updates, TYPE_NAME(vector));
                         }
                         rollback_info->updates->push_back(ur);
@@ -267,11 +272,11 @@ REACTFS_NS_CORE
                         __delete_rollback *dr = (__delete_rollback *) malloc(sizeof(__delete_rollback));
                         CHECK_ALLOC(dr, TYPE_NAME(__delete_rollback));
 
-                        if (IS_NULL(rollback_info->deletes)) {
-                            rollback_info->deletes = new vector<__delete_rollback *>();
-                            CHECK_ALLOC(rollback_info->deletes, TYPE_NAME(vector));
+                        if (IS_NULL(rollback_info->updates)) {
+                            rollback_info->updates = new vector<__rollback_record *>();
+                            CHECK_ALLOC(rollback_info->updates, TYPE_NAME(vector));
                         }
-                        rollback_info->deletes->push_back(dr);
+                        rollback_info->updates->push_back(dr);
 
                         return dr;
                     }
@@ -281,6 +286,33 @@ REACTFS_NS_CORE
                                   uint8_t *error);
 
                     __typed_index_read *__read_index(uint32_t hash, __index_key_set *index, uint8_t rec_state);
+
+                    void commit_change(__rollback_record *record) {
+                        if (record->update_type == HASH_UPDATE_WRITE) {
+                            __write_rollback *r = static_cast<__write_rollback *>(record);
+                            commit_write_change(r);
+                        } else if (record->update_type == HASH_UPDATE_UPDATE) {
+                            __update_rollback *r = static_cast<__update_rollback *>(record);
+                            commit_update_change(r);
+                        } else if (record->update_type == HASH_UPDATE_DELETE) {
+                            __delete_rollback *r = static_cast<__delete_rollback *>(record);
+                            commit_delete_change(r);
+                        } else {
+                            throw FS_BASE_ERROR("Invalid record change type. [type=%d]", record->update_type);
+                        }
+                    }
+
+                    void commit_write_change(__write_rollback *record) {
+
+                    }
+
+                    void commit_update_change(__update_rollback *record) {
+
+                    }
+
+                    void commit_delete_change(__delete_rollback *record) {
+
+                    }
 
                 public:
                     typed_hash_index(const __complex_type *datatype) {
@@ -300,9 +332,7 @@ REACTFS_NS_CORE
 
                         if (NOT_NULL(rollback_info)) {
                             free_rollback_data();
-                            CHECK_AND_FREE(rollback_info->writes);
                             CHECK_AND_FREE(rollback_info->updates);
-                            CHECK_AND_FREE(rollback_info->deletes);
                             CHECK_AND_FREE(rollback_info->transaction_id);
                         }
                         this->close();
@@ -422,6 +452,22 @@ REACTFS_NS_CORE
                     void close() override;
 
                     void sync(bool recreate = false) override;
+
+                    static bool update_rollback_compare(__rollback_record *w1, __rollback_record *w2) {
+                        if (IS_NULL(w1) && NOT_NULL(w2)) {
+                            return true;
+                        } else if (NOT_NULL(w1) && IS_NULL(w2)) {
+                            return false;
+                        } else if (IS_NULL(w1) && IS_NULL(w1)) {
+                            return true;
+                        }
+                        if (w1->bucket_offset < w2->bucket_offset) {
+                            return true;
+                        } else if (w1->bucket_offset > w2->bucket_offset) {
+                            return false;
+                        }
+                        return true;
+                    }
                 };
 REACTFS_NS_CORE_END
 

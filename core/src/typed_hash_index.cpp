@@ -201,7 +201,22 @@ void com::wookler::reactfs::core::typed_hash_index::close() {
 }
 
 void com::wookler::reactfs::core::typed_hash_index::commit(string txid) {
+    CHECK_STATE_AVAILABLE(state);
+    PRECONDITION(header->write_state == __write_state::WRITABLE || header->write_state == __write_state::UPDATEABLE);
+    PRECONDITION(in_transaction(txid));
+    if (NOT_EMPTY_P(rollback_info->updates)) {
+        std::sort(rollback_info->updates->begin(), rollback_info->updates->end(),
+                  typed_hash_index::update_rollback_compare);
+        for (__rollback_record *wr : *rollback_info->updates) {
+            CHECK_NOT_NULL(wr);
+            commit_change(wr);
+        }
+    }
+    hash_header->overflow_write_index = rollback_info->overflow_write_index;
+    hash_header->overflow_count = rollback_info->overflow_count;
+    hash_header->overflow_offset = rollback_info->overflow_offset;
 
+    force_rollback();
 }
 
 void com::wookler::reactfs::core::typed_hash_index::force_rollback() {
@@ -212,7 +227,11 @@ void com::wookler::reactfs::core::typed_hash_index::force_rollback() {
 }
 
 void com::wookler::reactfs::core::typed_hash_index::rollback(string txid) {
+    CHECK_STATE_AVAILABLE(state);
+    PRECONDITION(header->write_state == __write_state::WRITABLE || header->write_state == __write_state::UPDATEABLE);
+    PRECONDITION(in_transaction(txid));
 
+    force_rollback();
 }
 
 const uint64_t com::wookler::reactfs::core::typed_hash_index::get_free_space() const {
@@ -297,7 +316,7 @@ com::wookler::reactfs::core::typed_hash_index::__write_index(uint32_t hash, __in
             __update_rollback *ur = get_update_rollback();
             CHECK_NOT_NULL(ur);
             ur->bucket_offset = ib.get_bucket_offset();
-            ur->update_offset = r_offset;
+            ur->bucket_cell = r_offset;
             ur->data_offset = offset;
             ur->data_size = size;
             return r_rec;
@@ -381,7 +400,7 @@ bool com::wookler::reactfs::core::typed_hash_index::delete_index(__index_key_set
                 __delete_rollback *dr = get_delete_rollback();
                 CHECK_NOT_NULL(dr);
                 dr->bucket_offset = ptr->bucket_offset;
-                dr->delete_index = ptr->record_index;
+                dr->bucket_cell = ptr->record_index;
 
                 return true;
             }
