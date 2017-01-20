@@ -303,7 +303,7 @@ REACTFS_NS_CORE
                     }
 
                     void commit_write_change(__write_rollback *record) {
-
+                        
                     }
 
                     void commit_update_change(__update_rollback *record) {
