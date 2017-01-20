@@ -151,7 +151,7 @@ REACTFS_NS_CORE
                         return buffer_utils::increment_data_ptr(ptr, hash_header->overflow_offset);
                     }
 
-                    void *get_index_ptr(uint32_t bucket, uint32_t offset) {
+                    void *get_index_ptr(uint32_t bucket, uint32_t offset, uint64_t *base_offset) {
                         void *ptr = get_data_ptr();
                         uint64_t off = ((bucket * hash_header->bucket_prime) + offset) * hash_header->key_size;
                         POSTCONDITION(off < header->total_size);
@@ -179,6 +179,13 @@ REACTFS_NS_CORE
                                     return true;
                                 }
                             }
+                        }
+                        return false;
+                    }
+
+                    bool in_transaction(string txid) {
+                        if (in_transaction()) {
+                            return (txid == *rollback_info->transaction_id);
                         }
                         return false;
                     }
@@ -273,6 +280,8 @@ REACTFS_NS_CORE
                     __write_index(uint32_t hash, __index_key_set *index, uint64_t offset, uint64_t size,
                                   uint8_t *error);
 
+                    __typed_index_record *__read_index(uint32_t hash, __index_key_set *index, uint8_t rec_state);
+
                 public:
                     typed_hash_index(const __complex_type *datatype) {
                         CHECK_NOT_NULL(datatype);
@@ -330,6 +339,16 @@ REACTFS_NS_CORE
                     virtual void
                     open_index(const string &name, uint64_t block_id, string block_uuid, string filename,
                                bool for_update) override;
+
+                    /*!
+                     * Start a new write transaction on this block index. The block index does not provide any
+                     * locked isolation and assumes the attached block is managing concurrency control.
+                     *
+                     * @param txid - Transaction ID of the transaction started by the attached block.
+                     */
+                    void start_transaction(string txid) {
+                        setup_transaction(txid);
+                    }
 
                     /*!
                     * Commit the current transcation.

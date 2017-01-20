@@ -463,7 +463,8 @@ void com::wookler::reactfs::core::base_block::open(uint64_t block_id, string fil
     void *bptr = get_data_ptr();
     CHECK_NOT_NULL(bptr);
 
-    if (header->write_state == __write_state::WRITABLE) {
+    if (header->write_state == __write_state::WRITABLE ||
+        (for_update && header->write_state == __write_state::UPDATEABLE)) {
         write_ptr = bptr;
     } else {
         write_ptr = nullptr;

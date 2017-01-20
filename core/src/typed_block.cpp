@@ -67,7 +67,8 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
     void *bptr = get_data_ptr();
     CHECK_NOT_NULL(bptr);
 
-    if (header->write_state == __write_state::WRITABLE) {
+    if (header->write_state == __write_state::WRITABLE ||
+        (for_update && header->write_state == __write_state::UPDATEABLE)) {
         write_ptr = buffer_utils::increment_data_ptr(bptr, header->write_offset);
     } else {
         write_ptr = nullptr;

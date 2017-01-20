@@ -611,9 +611,17 @@ namespace com {
                     }
 
                     /*!
-                     * Close this block for further writes.
+                     * Close this block for further writes, updates can still be supported where applicable.
                      */
                     void finish() {
+                        CHECK_STATE_AVAILABLE(state);
+                        header->write_state = __write_state::UPDATEABLE;
+                    }
+
+                    /*!
+                     * Close this block for any further writes/updates.
+                     */
+                    void archive() {
                         CHECK_STATE_AVAILABLE(state);
                         header->write_state = __write_state::CLOSED;
                     }
@@ -782,7 +790,8 @@ namespace com {
                      */
                     bool is_updateable() {
                         CHECK_STATE_AVAILABLE(state);
-                        return (header->write_state == __write_state::WRITABLE || this->updateable);
+                        return (header->write_state == __write_state::WRITABLE ||
+                                (this->updateable && header->write_state == __write_state::UPDATEABLE));
                     }
 
                     /*!

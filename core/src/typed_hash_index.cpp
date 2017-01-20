@@ -72,9 +72,10 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
         uint64_t w_size = 0;
         for (uint32_t bucket = 0; bucket < hash_header->bucket_count; bucket++) {
             for (uint16_t offset = 0; offset < hash_header->bucket_prime; offset++) {
-                void *ptr = get_index_ptr(bucket, offset);
+                uint64_t base_offset = 0;
+                void *ptr = get_index_ptr(bucket, offset, &base_offset);
                 CHECK_NOT_NULL(ptr);
-                w_size += __typed_index_bucket::init_index_record(ptr, 0, offset, HASH_COLLISION_ESTIMATE,
+                w_size += __typed_index_bucket::init_index_record(ptr, 0, base_offset, HASH_COLLISION_ESTIMATE,
                                                                   hash_header->key_size);
             }
         }
@@ -88,7 +89,7 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
         void *overflow_ptr = get_base_overflow_ptr();
         while (available_size > ir_size) {
             uint32_t size = __typed_index_bucket::init_index_record(overflow_ptr, pos.offset,
-                                                                    hash_header->overflow_count,
+                                                                    pos.offset,
                                                                     HASH_COLLISION_ESTIMATE,
                                                                     hash_header->key_size);
             pos.offset += size;
@@ -169,7 +170,8 @@ void com::wookler::reactfs::core::typed_hash_index::open_index(const string &nam
     void *bptr = get_data_ptr();
     CHECK_NOT_NULL(bptr);
 
-    if (header->write_state == __write_state::WRITABLE || for_update) {
+    if (header->write_state == __write_state::WRITABLE ||
+        (for_update && header->write_state == __write_state::UPDATEABLE)) {
         write_ptr = bptr;
         overflow = get_base_overflow_ptr();
     } else {
@@ -203,7 +205,10 @@ void com::wookler::reactfs::core::typed_hash_index::commit(string txid) {
 }
 
 void com::wookler::reactfs::core::typed_hash_index::force_rollback() {
+    CHECK_STATE_AVAILABLE(state);
+    PRECONDITION(in_transaction());
 
+    free_rollback_data();
 }
 
 void com::wookler::reactfs::core::typed_hash_index::rollback(string txid) {
@@ -218,26 +223,21 @@ const uint64_t com::wookler::reactfs::core::typed_hash_index::get_used_space() c
     return 0;
 }
 
-const __typed_index_record *
-com::wookler::reactfs::core::typed_hash_index::read_index(__index_key_set *index, uint8_t rec_state) {
-    CHECK_STATE_AVAILABLE(state);
-    CHECK_NOT_NULL(index);
-    CHECK_NOT_NULL(index->key_data);
-    PRECONDITION(*index->key_size > 0);
-
-    uint32_t hash = 0;
-    MurmurHash3_x86_32(index->key_data, *index->key_size, hash_header->block_seed, &hash);
-
+__typed_index_record *com::wookler::reactfs::core::typed_hash_index::__read_index(uint32_t hash, __index_key_set *index,
+                                                                                  uint8_t rec_state) {
     uint32_t bucket = hash % hash_header->bucket_count;
     uint32_t boff = hash % hash_header->bucket_prime;
 
-    const __typed_index_record *rec = nullptr;
-    void *b_ptr = get_index_ptr(bucket, boff);
+    uint64_t base_offset = 0;
+    void *b_ptr = get_index_ptr(bucket, boff, &base_offset);
     CHECK_NOT_NULL(b_ptr);
 
+    __typed_index_record *rec = nullptr;
     __typed_index_bucket ib(this->index_def);
     while (true) {
-        rec = ib.find(hash, index, rec_state);
+        ib.read(b_ptr, 0, hash_header->key_size);
+        uint8_t r_offset = 0;
+        rec = ib.find(hash, index, &r_offset, rec_state);
         if (IS_NULL(rec)) {
             if (ib.has_overflow()) {
                 uint64_t n_offset = ib.get_overflow_offset();
@@ -251,33 +251,64 @@ com::wookler::reactfs::core::typed_hash_index::read_index(__index_key_set *index
     return rec;
 }
 
+const __typed_index_record *
+com::wookler::reactfs::core::typed_hash_index::read_index(__index_key_set *index, uint8_t rec_state) {
+    CHECK_STATE_AVAILABLE(state);
+    CHECK_NOT_NULL(index);
+    CHECK_NOT_NULL(index->key_data);
+    PRECONDITION(*index->key_size > 0);
+
+    uint32_t hash = 0;
+    MurmurHash3_x86_32(index->key_data, *index->key_size, hash_header->block_seed, &hash);
+
+    return __read_index(hash, index, rec_state);
+}
+
 __typed_index_record *
 com::wookler::reactfs::core::typed_hash_index::__write_index(uint32_t hash, __index_key_set *index,
                                                              uint64_t offset, uint64_t size, uint8_t *error) {
     uint32_t bucket = hash % hash_header->bucket_count;
     uint32_t boff = hash % hash_header->bucket_prime;
-    uint64_t b_index = (bucket * hash_header->bucket_count) + boff;
 
     __typed_index_record *rec = nullptr;
-    void *b_ptr = get_index_ptr(bucket, boff);
+    uint64_t base_offset = 0;
+    void *b_ptr = get_index_ptr(bucket, boff, &base_offset);
     CHECK_NOT_NULL(b_ptr);
 
     __typed_index_bucket ib(this->index_def);
     while (true) {
-        ib.read(b_ptr, 0, b_index, hash_header->key_size);
+        ib.read(b_ptr, 0, hash_header->key_size);
+        uint8_t r_offset = 0;
+        __typed_index_record *r_rec = ib.find(hash, index, &r_offset, BLOCK_RECORD_STATE_FREE);
+        if (NOT_NULL(r_rec)) {
+            __update_rollback *ur = get_update_rollback();
+            CHECK_NOT_NULL(ur);
+            ur->bucket_offset = ib.get_bucket_offset();
+            ur->update_offset = r_offset;
+            ur->data_offset = offset;
+            ur->data_size = size;
+            return r_rec;
+        }
         if (!ib.can_write_index()) {
             if (ib.has_overflow()) {
                 uint64_t n_offset = ib.get_overflow_offset();
                 void *ptr = get_base_overflow_ptr();
                 b_ptr = buffer_utils::increment_data_ptr(ptr, n_offset);
+                base_offset = hash_header->overflow_offset + n_offset;
                 continue;
             } else {
                 if (has_overflow_space()) {
                     uint64_t n_offset = get_next_overflow_offset();
+                    __write_rollback *wr = get_write_rollback();
+                    CHECK_NOT_NULL(wr);
+                    wr->bucket_offset = ib.get_bucket_offset();
+                    wr->has_next_ptr = false;
+                    wr->next_ptr_offset = n_offset;
                     ib.set_overflow_offset(n_offset);
 
                     void *ptr = get_base_overflow_ptr();
                     b_ptr = buffer_utils::increment_data_ptr(ptr, n_offset);
+                    base_offset = hash_header->overflow_offset + n_offset;
                     continue;
                 } else {
                     *error = HASH_INDEX_ERROR_NO_SPACE;
@@ -285,6 +316,10 @@ com::wookler::reactfs::core::typed_hash_index::__write_index(uint32_t hash, __in
                 }
             }
         }
+        __write_rollback *wr = get_write_rollback();
+        CHECK_NOT_NULL(wr);
+        wr->bucket_offset = ib.get_bucket_offset();
+        wr->record_count = 1;
         rec = ib.write(hash, index, offset, size);
     }
     return rec;
@@ -298,12 +333,13 @@ const __typed_index_record *com::wookler::reactfs::core::typed_hash_index::write
     CHECK_NOT_NULL(index);
     CHECK_NOT_NULL(index->key_data);
     PRECONDITION(*index->key_size > 0);
+    PRECONDITION(in_transaction(transaction_id));
 
     uint32_t hash = 0;
     MurmurHash3_x86_32(index->key_data, *index->key_size, hash_header->block_seed, &hash);
 
     uint8_t error = 0;
-    __typed_index_record *rec = __write_index(hash, index, offset, size, &error);
+    const __typed_index_record *rec = __write_index(hash, index, offset, size, &error);
     if (IS_NULL(rec)) {
         if (error == HASH_INDEX_ERROR_NO_SPACE) {
             throw FS_SPACE_ERROR("Hash index block out of free space.");
@@ -316,7 +352,6 @@ const __typed_index_record *com::wookler::reactfs::core::typed_hash_index::write
 
 bool com::wookler::reactfs::core::typed_hash_index::delete_index(__index_key_set *index, string transaction_id) {
     CHECK_STATE_AVAILABLE(state);
-    PRECONDITION(header->write_state == __write_state::WRITABLE);
     CHECK_NOT_NULL(index);
     CHECK_NOT_NULL(index->key_data);
     PRECONDITION(*index->key_size > 0);

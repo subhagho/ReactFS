@@ -52,7 +52,7 @@ REACTFS_NS_CORE
 
                 class __typed_index_bucket_v0__ {
                 private:
-                    uint64_t *bucket_index = nullptr;
+                    uint64_t *bucket_offset = nullptr;
                     uint8_t *bucket_size = nullptr;
                     bool *has_next_ptr = nullptr;
                     uint64_t *next_ptr_offset = nullptr;
@@ -92,6 +92,11 @@ REACTFS_NS_CORE
                         *next_ptr_offset = offset;
                     }
 
+                    uint64_t get_bucket_offset() {
+                        CHECK_NOT_NULL(this->bucket_offset);
+                        return *this->bucket_offset;
+                    }
+
                     bool can_write_index() {
                         if (!has_overflow()) {
                             return (*record_count < *bucket_size);
@@ -99,17 +104,16 @@ REACTFS_NS_CORE
                         return false;
                     }
 
-                    void read(void *buffer, uint64_t offset, uint64_t index, uint16_t key_size) {
+                    void read(void *buffer, uint64_t offset, uint16_t key_size) {
                         CHECK_NOT_NULL(buffer);
 
                         __pos pos;
                         pos.offset = offset;
                         pos.size = 0;
 
-                        // Read bucket index.
-                        pos.size += buffer_utils::read<uint64_t>(buffer, &pos.offset, &this->bucket_index);
-                        CHECK_NOT_NULL(this->bucket_index);
-                        POSTCONDITION(*this->bucket_index == index);
+                        // Read bucket offset.
+                        pos.size += buffer_utils::read<uint64_t>(buffer, &pos.offset, &this->bucket_offset);
+                        CHECK_NOT_NULL(this->bucket_offset);
 
                         // Read bucket size
                         pos.size += buffer_utils::read<uint8_t>(buffer, &pos.offset, &this->bucket_size);
@@ -161,16 +165,38 @@ REACTFS_NS_CORE
                         return rec;
                     }
 
-                    const __typed_index_record *
-                    find(uint32_t hash, __index_key_set *key, uint8_t state = BLOCK_RECORD_STATE_READABLE) {
+                    __typed_index_record *update(uint32_t hash, __index_key_set *key, uint64_t offset, uint64_t size) {
+                        PRECONDITION(can_write_index());
+                        CHECK_NOT_NULL(key);
+                        CHECK_NOT_NULL(key->key_data);
+                        CHECK_NOT_NULL(this->key_set);
+
+                        void *ptr = this->key_set;
+                        uint64_t incr = (sizeof(__typed_index_record) + *key->key_size) * (*record_count);
+                        ptr = buffer_utils::increment_data_ptr(ptr, incr);
+                        __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
+                        POSTCONDITION(rec->state != BLOCK_RECORD_STATE_FREE);
+
+                        rec->state = BLOCK_RECORD_STATE_USED;
+                        rec->hash_value = hash;
+                        rec->data_offset = offset;
+                        rec->data_size = size;
+                        memcpy(rec->key_data_ptr, key->key_data, *key->key_size);
+
+                        return rec;
+                    }
+
+                    __typed_index_record *
+                    find(uint32_t hash, __index_key_set *key, uint8_t *offset,
+                         uint8_t state = BLOCK_RECORD_STATE_READABLE) {
                         CHECK_NOT_NULL(key);
                         CHECK_NOT_NULL(key->key_data);
                         CHECK_NOT_NULL(this->key_set);
                         if (*record_count > 0) {
                             void *ptr = nullptr;
                             for (uint8_t ii = 0; ii < *record_count; ii++) {
-                                uint32_t offset = (sizeof(__typed_index_record) + *key->key_size) * ii;
-                                ptr = buffer_utils::increment_data_ptr(this->key_set, offset);
+                                uint32_t off = (sizeof(__typed_index_record) + *key->key_size) * ii;
+                                ptr = buffer_utils::increment_data_ptr(this->key_set, off);
                                 __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
                                 if (rec->state == BLOCK_RECORD_STATE_FREE) {
                                     throw FS_BASE_ERROR("Hash index corrupted : Record state is free.");
@@ -178,6 +204,7 @@ REACTFS_NS_CORE
                                 if (rec->state == state || state == BLOCK_RECORD_STATE_FREE) {
                                     if (rec->hash_value == hash) {
                                         if (memcmp(rec->key_data_ptr, key->key_data, *key->key_size) == 0) {
+                                            *offset = ii;
                                             return rec;
                                         }
                                     }
@@ -188,15 +215,15 @@ REACTFS_NS_CORE
                     }
 
                     static uint32_t
-                    init_index_record(void *buffer, uint64_t offset, uint64_t index, uint8_t key_set_size,
+                    init_index_record(void *buffer, uint64_t offset, uint64_t base_offset, uint8_t key_set_size,
                                       uint16_t key_size) {
                         CHECK_NOT_NULL(buffer);
                         __pos pos;
                         pos.offset = offset;
                         pos.size = 0;
 
-                        // Write the index of this record.
-                        pos.size += buffer_utils::write<uint64_t>(buffer, &pos.offset, index);
+                        // Write the base offset of this record.
+                        pos.size += buffer_utils::write<uint64_t>(buffer, &pos.offset, base_offset);
                         // Write record size
                         pos.size += buffer_utils::write<uint8_t>(buffer, &pos.offset, key_set_size);
 
