@@ -159,6 +159,7 @@ REACTFS_NS_CORE
                         void *ptr = get_data_ptr();
                         uint64_t off = ((bucket * hash_header->bucket_prime) + offset) * hash_header->key_size;
                         POSTCONDITION(off < header->total_size);
+                        *base_offset = off;
                         return buffer_utils::increment_data_ptr(ptr, off);
                     }
 
@@ -303,7 +304,7 @@ REACTFS_NS_CORE
                     }
 
                     void commit_write_change(__write_rollback *record) {
-                        
+
                     }
 
                     void commit_update_change(__update_rollback *record) {
