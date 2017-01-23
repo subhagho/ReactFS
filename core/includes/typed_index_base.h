@@ -168,28 +168,70 @@ REACTFS_NS_CORE
                         rec->data_size = size;
                         memcpy(rec->key_data_ptr, key->key_data, *key->key_size);
 
+                        *this->record_count += 1;
+
                         return rec;
                     }
 
-                    __typed_index_record *update(uint32_t hash, __index_key_set *key, uint64_t offset, uint64_t size) {
+                    __typed_index_record *
+                    write_commit(uint8_t bucket_cell, uint16_t key_size) {
+                        void *ptr = this->key_set;
+                        uint64_t incr = (sizeof(__typed_index_record) + key_size) * (bucket_cell);
+                        ptr = buffer_utils::increment_data_ptr(ptr, incr);
+                        __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
+
+                        POSTCONDITION(rec->state == BLOCK_RECORD_STATE_USED);
+                        rec->state = BLOCK_RECORD_STATE_READABLE;
+
+                        return rec;
+                    }
+
+                    void write_rollback(uint8_t bucket_cell, uint16_t key_size) {
+                        void *ptr = this->key_set;
+                        uint64_t incr = (sizeof(__typed_index_record) + key_size) * (bucket_cell);
+                        ptr = buffer_utils::increment_data_ptr(ptr, incr);
+                        __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
+
+                        POSTCONDITION(rec->state == BLOCK_RECORD_STATE_USED);
+                        rec->state = BLOCK_RECORD_STATE_FREE;
+                        *this->record_count -= 1;
+                    }
+
+                    void write_extend_rollback() {
+                        *this->has_next_ptr = false;
+                        *this->next_ptr_offset = 0;
+                    }
+
+                    __typed_index_record *
+                    update(uint32_t hash, uint8_t bucket_cell, uint64_t offset, uint64_t size, uint16_t key_size) {
                         PRECONDITION(can_write_index());
-                        CHECK_NOT_NULL(key);
-                        CHECK_NOT_NULL(key->key_data);
                         CHECK_NOT_NULL(this->key_set);
 
                         void *ptr = this->key_set;
-                        uint64_t incr = (sizeof(__typed_index_record) + *key->key_size) * (*record_count);
+                        uint64_t incr = (sizeof(__typed_index_record) + key_size) * (bucket_cell);
                         ptr = buffer_utils::increment_data_ptr(ptr, incr);
                         __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
-                        POSTCONDITION(rec->state != BLOCK_RECORD_STATE_FREE);
+                        POSTCONDITION(rec->hash_value == hash);
 
-                        rec->state = BLOCK_RECORD_STATE_USED;
+                        rec->state = BLOCK_RECORD_STATE_READABLE;
                         rec->hash_value = hash;
                         rec->data_offset = offset;
                         rec->data_size = size;
-                        memcpy(rec->key_data_ptr, key->key_data, *key->key_size);
 
                         return rec;
+                    }
+
+                    void remove(uint32_t hash, uint8_t bucket_cell, uint16_t key_size) {
+                        uint64_t incr = (sizeof(__typed_index_record) + key_size) * bucket_cell;
+                        void *ptr = this->key_set;
+                        ptr = buffer_utils::increment_data_ptr(ptr, incr);
+                        __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
+
+                        PRECONDITION(
+                                rec->state == BLOCK_RECORD_STATE_USED || rec->state == BLOCK_RECORD_STATE_READABLE);
+                        PRECONDITION(rec->hash_value == hash);
+
+                        rec->state = BLOCK_RECORD_STATE_DELETED;
                     }
 
                     __typed_index_record *
@@ -247,6 +289,7 @@ REACTFS_NS_CORE
                         for (uint8_t ii = 0; ii < key_set_size; ii++) {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
                             __typed_index_record *rec = static_cast<__typed_index_record *>(ptr);
+
                             rec->state = BLOCK_RECORD_STATE_FREE;
                             rec->hash_value = 0;
                             rec->data_offset = 0;

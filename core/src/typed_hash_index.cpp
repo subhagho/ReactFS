@@ -216,12 +216,24 @@ void com::wookler::reactfs::core::typed_hash_index::commit(string txid) {
     hash_header->overflow_count = rollback_info->overflow_count;
     hash_header->overflow_offset = rollback_info->overflow_offset;
 
-    force_rollback();
+    free_rollback_data();
 }
 
 void com::wookler::reactfs::core::typed_hash_index::force_rollback() {
     CHECK_STATE_AVAILABLE(state);
     PRECONDITION(in_transaction());
+
+    if (NOT_EMPTY_P(rollback_info->updates)) {
+        std::sort(rollback_info->updates->begin(), rollback_info->updates->end(),
+                  typed_hash_index::update_rollback_compare);
+        for (__rollback_record *wr : *rollback_info->updates) {
+            CHECK_NOT_NULL(wr);
+            if (wr->update_type == HASH_UPDATE_WRITE) {
+                __write_rollback *r = static_cast<__write_rollback *>(wr);
+                write_rollback(r);
+            }
+        }
+    }
 
     free_rollback_data();
 }
@@ -316,6 +328,7 @@ com::wookler::reactfs::core::typed_hash_index::__write_index(uint32_t hash, __in
             __update_rollback *ur = get_update_rollback();
             CHECK_NOT_NULL(ur);
             ur->bucket_offset = ib.get_bucket_offset();
+            ur->hash_value = hash;
             ur->bucket_cell = r_offset;
             ur->data_offset = offset;
             ur->data_size = size;
@@ -334,7 +347,7 @@ com::wookler::reactfs::core::typed_hash_index::__write_index(uint32_t hash, __in
                     __write_rollback *wr = get_write_rollback();
                     CHECK_NOT_NULL(wr);
                     wr->bucket_offset = ib.get_bucket_offset();
-                    wr->has_next_ptr = false;
+                    wr->has_next_ptr = true;
                     wr->next_ptr_offset = n_offset;
                     ib.set_overflow_offset(n_offset);
 
@@ -351,7 +364,6 @@ com::wookler::reactfs::core::typed_hash_index::__write_index(uint32_t hash, __in
         __write_rollback *wr = get_write_rollback();
         CHECK_NOT_NULL(wr);
         wr->bucket_offset = ib.get_bucket_offset();
-        wr->record_count = 1;
         rec = ib.write(hash, index, offset, size);
     }
     return rec;
@@ -401,7 +413,7 @@ bool com::wookler::reactfs::core::typed_hash_index::delete_index(__index_key_set
                 CHECK_NOT_NULL(dr);
                 dr->bucket_offset = ptr->bucket_offset;
                 dr->bucket_cell = ptr->record_index;
-
+                dr->hash_value = hash;
                 return true;
             }
         }

@@ -78,15 +78,16 @@ REACTFS_NS_CORE
                 } __rollback_record;
 
                 typedef struct __write_rollback__ : __rollback_record {
-                    uint8_t record_count = 0;
                     bool has_next_ptr = false;
                     uint64_t next_ptr_offset = 0;
                 } __write_rollback;
 
                 typedef struct __delete_rollback__ : __rollback_record {
+                    uint32_t hash_value = 0;
                 } __delete_rollback;
 
                 typedef struct __update_rollback__ : __rollback_record {
+                    uint32_t hash_value = 0;
                     uint64_t data_offset = 0;
                     uint64_t data_size = 0;
                 } __update_rollback;
@@ -303,16 +304,43 @@ REACTFS_NS_CORE
                         }
                     }
 
-                    void commit_write_change(__write_rollback *record) {
+                    void write_rollback(__write_rollback *record) {
+                        CHECK_NOT_NULL(record);
+                        void *ptr = get_data_ptr();
+                        __typed_index_bucket ib(this->index_def);
+                        ib.read(ptr, record->bucket_offset, hash_header->key_size);
+                        if (record->has_next_ptr) {
+                            ib.write_extend_rollback();
+                        } else {
+                            ib.write_rollback(record->bucket_cell, hash_header->key_size);
+                        }
+                    }
 
+                    void commit_write_change(__write_rollback *record) {
+                        CHECK_NOT_NULL(record);
+                        void *ptr = get_data_ptr();
+                        __typed_index_bucket ib(this->index_def);
+                        ib.read(ptr, record->bucket_offset, hash_header->key_size);
+                        if (!record->has_next_ptr) {
+                            ib.write_commit(record->bucket_cell, hash_header->key_size);
+                        }
                     }
 
                     void commit_update_change(__update_rollback *record) {
-
+                        CHECK_NOT_NULL(record);
+                        void *ptr = get_data_ptr();
+                        __typed_index_bucket ib(this->index_def);
+                        ib.read(ptr, record->bucket_offset, hash_header->key_size);
+                        ib.update(record->hash_value, record->bucket_cell, record->data_offset, record->data_size,
+                                  hash_header->key_size);
                     }
 
                     void commit_delete_change(__delete_rollback *record) {
-
+                        CHECK_NOT_NULL(record);
+                        void *ptr = get_data_ptr();
+                        __typed_index_bucket ib(this->index_def);
+                        ib.read(ptr, record->bucket_offset, hash_header->key_size);
+                        ib.remove(record->hash_value, record->bucket_cell, hash_header->key_size);
                     }
 
                 public:
