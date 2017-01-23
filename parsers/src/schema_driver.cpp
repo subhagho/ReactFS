@@ -77,6 +77,7 @@ void com::wookler::reactfs::core::parsers::schema_driver::add_type(const string 
     state = __schema_parse_state::SPS_IN_TYPE;
 }
 
+
 void com::wookler::reactfs::core::parsers::schema_driver::add_declaration(const string &varname, const string &type,
                                                                           bool is_ref, int nullable) {
     CHECK_NOT_EMPTY(varname);
@@ -495,7 +496,7 @@ __complex_type *com::wookler::reactfs::core::parsers::schema_driver::translate()
     return tr.translate();
 }
 
-vector<record_index *>* com::wookler::reactfs::core::parsers::schema_driver::get_indexes(__complex_type *schema) {
+vector<record_index *> *com::wookler::reactfs::core::parsers::schema_driver::get_indexes(__complex_type *schema) {
     CHECK_NOT_NULL(schema);
     CHECK_NOT_NULL(schema_stack);
     CHECK_NOT_NULL(schema_stack->current_schema);

@@ -120,7 +120,7 @@ void debug_r(const char *s, ...);
 %type<lval>		IVALUE opt_nullable
 %type<str>		FULLTEXT_INDEX HASH_INDEX TREE_INDEX
 %type<str>		SVALUE VARNAME STRING DOUBLE BYTE CHAR BOOL SHORT INTEGER LONG FLOAT TIMESTAMP DATETIME  TEXT LIST MAP ASC DESC
-%type<str>		value values datatype variable nested_variable opt_sort column columns key_fields sort
+%type<str>		value values datatype variable nested_variable opt_sort column columns key_fields sort datatype_string
 %type<str>		declare declare_native declare_ref declare_native_list declare_ref_list declare_netive_map declare_ref_map
 
 
@@ -432,7 +432,22 @@ datatype:
 	|	TIMESTAMP			{ debug_r("datatype=%s", $1); $$ = strdup($1); }
 	|	DATETIME			{ debug_r("datatype=%s", $1); $$ = strdup($1); }
 	|	TEXT				{ debug_r("datatype=%s", $1); $$ = strdup($1); }
-	| 	STRING 				{ debug_r("datatype=%s", $1); $$ = strdup($1); }
+	|	datatype_string			{ 
+							debug_r("datatype=%s", $1); $$ = strdup($1);
+							FREE_PTR($1);
+						}
+	;
+
+datatype_string:
+		STRING LINBRACE IVALUE RINBRACE 
+						{
+							debug_r("datatype=%s size=%d", $1, $3);
+							int s = sizeof(char) * 128;
+							char *buff = (char *)malloc(s);
+							memset(buff, 0, s);
+							sprintf(buff, "%s(%d)", $1, $3);
+							$$ = buff;
+						}
 	;
 
 declare_finish:

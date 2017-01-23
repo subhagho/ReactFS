@@ -97,7 +97,6 @@ REACTFS_NS_CORE
                     string *transaction_id = nullptr;
                     uint64_t start_time = 0;
                     uint64_t overflow_offset = 0;
-                    uint32_t overflow_count = 0;
                     uint32_t overflow_write_index = 0;
                     vector<__rollback_record *> *updates = nullptr;
                 };
@@ -164,9 +163,9 @@ REACTFS_NS_CORE
                         return buffer_utils::increment_data_ptr(ptr, off);
                     }
 
-                    bool has_overflow_space() {
+                    bool has_overflow_space() const {
                         if (in_transaction()) {
-                            return (rollback_info->overflow_write_index < rollback_info->overflow_count);
+                            return (rollback_info->overflow_write_index < hash_header->overflow_count);
                         }
                         return (hash_header->overflow_write_index < hash_header->overflow_count);
                     }
@@ -178,12 +177,11 @@ REACTFS_NS_CORE
 
                         uint64_t offset = (r_size * rollback_info->overflow_write_index);
                         rollback_info->overflow_write_index++;
-                        rollback_info->overflow_count++;
 
                         return offset;
                     }
 
-                    bool in_transaction() {
+                    bool in_transaction() const {
                         if (NOT_NULL(rollback_info)) {
                             if (rollback_info->in_transaction) {
                                 if (NOT_EMPTY_P(rollback_info->transaction_id)) {
@@ -214,7 +212,6 @@ REACTFS_NS_CORE
                         rollback_info->in_transaction = true;
                         rollback_info->transaction_id->assign(tnx_id);
                         rollback_info->start_time = time_utils::now();
-                        rollback_info->overflow_count = hash_header->overflow_count;
                         rollback_info->overflow_write_index = hash_header->overflow_write_index;
                         rollback_info->overflow_offset = hash_header->overflow_offset;
                     }
@@ -230,7 +227,6 @@ REACTFS_NS_CORE
                                 }
                                 rollback_info->updates->clear();
                             }
-                            rollback_info->overflow_count = 0;
                             rollback_info->overflow_write_index = 0;
                             rollback_info->overflow_offset = 0;
                         }
@@ -440,18 +436,11 @@ REACTFS_NS_CORE
                     bool delete_index(__index_key_set *index, string transaction_id) override;
 
                     /*!
-                     * Get the available free space that this block has.
-                     *
-                     * @return - Space available (in bytes).
-                     */
-                    const uint64_t get_free_space() const override;
-
-                    /*!
-                     * Get the space currently used by this block.
-                     *
-                     * @return - Space used (in bytes).
-                     */
-                    const uint64_t get_used_space() const override;
+                    * Check if this index block can be written to.
+                    *
+                    * @return - Index can be written to?
+                    */
+                    virtual const bool has_write_space() const override;
 
                     /*!
                      * Create a new index record for the specified index and offset.

@@ -213,7 +213,6 @@ void com::wookler::reactfs::core::typed_hash_index::commit(string txid) {
         }
     }
     hash_header->overflow_write_index = rollback_info->overflow_write_index;
-    hash_header->overflow_count = rollback_info->overflow_count;
     hash_header->overflow_offset = rollback_info->overflow_offset;
 
     free_rollback_data();
@@ -246,12 +245,11 @@ void com::wookler::reactfs::core::typed_hash_index::rollback(string txid) {
     force_rollback();
 }
 
-const uint64_t com::wookler::reactfs::core::typed_hash_index::get_free_space() const {
-    return 0;
-}
+const bool com::wookler::reactfs::core::typed_hash_index::has_write_space() const {
+    CHECK_STATE_AVAILABLE(state);
+    PRECONDITION(header->write_state == __write_state::WRITABLE);
 
-const uint64_t com::wookler::reactfs::core::typed_hash_index::get_used_space() const {
-    return 0;
+    return has_overflow_space();
 }
 
 __typed_index_read *com::wookler::reactfs::core::typed_hash_index::__read_index(uint32_t hash, __index_key_set *index,

@@ -48,11 +48,9 @@ REACTFS_NS_CORE
                         /// Field type is a native type.
                                 NATIVE = 1,
                         /// Field type is a sized type.
-                                SIZED = 2,
+                                STRING = 2,
                         /// Field type is a complex type.
                                 COMPLEX = 3,
-                        /// Field type is an array.
-                                ARRAY = 4,
                         /// Field type is a list
                                 LIST = 5,
                         /// Field type is a map
@@ -88,11 +86,9 @@ REACTFS_NS_CORE
                             if (ii == 1) {
                                 return __field_type::NATIVE;
                             } else if (ii == 2) {
-                                return __field_type::SIZED;
+                                return __field_type::STRING;
                             } else if (ii == 3) {
                                 return __field_type::COMPLEX;
-                            } else if (ii == 4) {
-                                return __field_type::ARRAY;
                             } else if (ii == 5) {
                                 return __field_type::LIST;
                             } else if (ii == 6) {
@@ -547,6 +543,52 @@ REACTFS_NS_CORE
                                 parent->get_field_path(path);
                             }
                             path->push_back(this->index);
+                        }
+                    };
+
+                    class __string_type : public __native_type {
+                    private:
+                        uint8_t *max_size = nullptr;
+                    public:
+                        __string_type(__native_type *parent) : __native_type(parent) {
+                            this->type = __field_type::STRING;
+                        }
+
+                        __string_type(__native_type *parent, const uint8_t index, const string &name, uint8_t max_size)
+                                : __native_type(parent, index,
+                                                name,
+                                                __type_def_enum::TYPE_STRING) {
+                            this->type = __field_type::STRING;
+                            *this->max_size = max_size;
+                        }
+
+                        virtual uint64_t write(void *buffer, uint64_t offset) override {
+                            uint64_t size = __native_type::write(buffer, offset);
+                            offset += size;
+                            size += buffer_utils::write<uint8_t>(buffer, &offset, *max_size);
+                            return size;
+                        }
+
+                        virtual uint64_t read(void *buffer, uint64_t offset) override {
+                            uint64_t size = __native_type::read(buffer, offset);
+                            offset += size;
+                            size += buffer_utils::read<uint8_t>(buffer, &offset, &max_size);
+                            return size;
+                        }
+
+                        /*!
+                         * Utility function to print a readable format of the type structure.
+                         */
+                        virtual void print() const override {
+                            string t = __type_enum_helper::get_type_string(this->datatype);
+                            string n = this->get_canonical_name();
+                            LOG_DEBUG("[index=%d] [name=%s] %s(%d)", this->index, n.c_str(), t.c_str(), max_size);
+                            if (NOT_NULL(constraint)) {
+                                constraint->print();
+                            }
+                            if (NOT_NULL(default_value)) {
+                                default_value->print();
+                            }
                         }
                     };
 

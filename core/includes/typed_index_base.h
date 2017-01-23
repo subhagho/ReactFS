@@ -458,18 +458,11 @@ REACTFS_NS_CORE
                     virtual bool delete_index(__index_key_set *index, string transaction_id) = 0;
 
                     /*!
-                     * Get the available free space that this block has.
+                     * Check if this index block can be written to.
                      *
-                     * @return - Space available (in bytes).
+                     * @return - Index can be written to?
                      */
-                    virtual const uint64_t get_free_space() const = 0;
-
-                    /*!
-                     * Get the space currently used by this block.
-                     *
-                     * @return - Space used (in bytes).
-                     */
-                    virtual const uint64_t get_used_space() const = 0;
+                    virtual const bool has_write_space() const = 0;
 
                     /*!
                      * Create a new index record for the specified index and offset.

@@ -31,16 +31,16 @@
 // version 2.2 of Bison.
 
 /**
- ** \file /home/subho/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h
+ ** \file /work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h
  ** Define the com::wookler::reactfs::core::parsers::parser class.
  */
 
 // C++ LALR(1) parser skeleton written by Akim Demaille.
 
-#ifndef YY_YY_HOME_SUBHO_WORK_DEV_WOOKLER_REACTFS_PARSERS_INCLUDES_SCHEMA_TOKENS_H_INCLUDED
-# define YY_YY_HOME_SUBHO_WORK_DEV_WOOKLER_REACTFS_PARSERS_INCLUDES_SCHEMA_TOKENS_H_INCLUDED
+#ifndef YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_INCLUDES_SCHEMA_TOKENS_H_INCLUDED
+# define YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_INCLUDES_SCHEMA_TOKENS_H_INCLUDED
 // //                    "%code requires" blocks.
-#line 8 "/home/subho/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
+#line 8 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 
    #include <iostream>
    #include <cstdlib>
@@ -76,7 +76,7 @@
 # endif
 
 
-#line 80 "/home/subho/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 80 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 # include <cassert>
 # include <cstdlib> // std::abort
@@ -146,9 +146,9 @@
 # define YYDEBUG 1
 #endif
 
-#line 5 "/home/subho/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 namespace com { namespace wookler { namespace reactfs { namespace core { namespace parsers {
-#line 152 "/home/subho/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 152 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 
@@ -162,13 +162,13 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     /// Symbol semantic values.
     union semantic_type
     {
-    #line 60 "/home/subho/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
+    #line 60 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 
 	long lval;
 	double dval;
 	char* str;
 
-#line 172 "/home/subho/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 172 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
     };
 #else
     typedef YYSTYPE semantic_type;
@@ -401,7 +401,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     /// \param yyvalue   the value to check
     static bool yy_table_value_is_error_ (int yyvalue);
 
-    static const signed char yypact_ninf_;
+    static const short int yypact_ninf_;
     static const signed char yytable_ninf_;
 
     /// Convert a scanner token number \a t to a symbol number.
@@ -428,7 +428,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   // number is the opposite.  If YYTABLE_NINF, syntax error.
   static const unsigned char yytable_[];
 
-  static const unsigned char yycheck_[];
+  static const short int yycheck_[];
 
   // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
   // symbol of state STATE-NUM.
@@ -545,8 +545,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     enum
     {
       yyeof_ = 0,
-      yylast_ = 181,     ///< Last index in yytable_.
-      yynnts_ = 42,  ///< Number of nonterminal symbols.
+      yylast_ = 185,     ///< Last index in yytable_.
+      yynnts_ = 43,  ///< Number of nonterminal symbols.
       yyfinal_ = 8, ///< Termination state number.
       yyterror_ = 1,
       yyerrcode_ = 256,
@@ -560,11 +560,11 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   };
 
 
-#line 5 "/home/subho/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
+#line 5 "/work/dev/wookler/ReactFS/parsers/src/schema_parser.yy" // lalr1.cc:377
 } } } } } // com::wookler::reactfs::core::parsers
-#line 566 "/home/subho/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
+#line 566 "/work/dev/wookler/ReactFS/parsers/includes/schema_tokens.h" // lalr1.cc:377
 
 
 
 
-#endif // !YY_YY_HOME_SUBHO_WORK_DEV_WOOKLER_REACTFS_PARSERS_INCLUDES_SCHEMA_TOKENS_H_INCLUDED
+#endif // !YY_YY_WORK_DEV_WOOKLER_REACTFS_PARSERS_INCLUDES_SCHEMA_TOKENS_H_INCLUDED

@@ -284,9 +284,8 @@ REACTFS_NS_CORE
                         static __type_def_enum parse_type(const string &type) {
                             CHECK_NOT_EMPTY(type);
                             string t = string_utils::tolower(type);
-                            if (t == get_type_string(__type_def_enum::TYPE_STRING)) {
-                                return __type_def_enum::TYPE_STRING;
-                            } else if (t == get_type_string(__type_def_enum::TYPE_INTEGER)) {
+                            t = string_utils::trim(t);
+                            if (t == get_type_string(__type_def_enum::TYPE_INTEGER)) {
                                 return __type_def_enum::TYPE_INTEGER;
                             } else if (t == get_type_string(__type_def_enum::TYPE_LONG)) {
                                 return __type_def_enum::TYPE_LONG;
@@ -314,8 +313,32 @@ REACTFS_NS_CORE
                                 return __type_def_enum::TYPE_STRUCT;
                             } else if (t == get_type_string(__type_def_enum::TYPE_DATETIME)) {
                                 return __type_def_enum::TYPE_DATETIME;
+                            } else {
+                                string ss = get_type_string(__type_def_enum::TYPE_STRING);
+                                size_t bi = type.find(ss);
+                                if (bi == 0) {
+                                    return __type_def_enum::TYPE_STRING;
+                                }
                             }
                             return __type_def_enum::TYPE_UNKNOWN;
+                        }
+
+                        static uint8_t parse_string_size(const string &type) {
+                            CHECK_NOT_EMPTY(type);
+                            string t = string_utils::tolower(type);
+                            t = string_utils::trim(t);
+                            string ss = get_type_string(__type_def_enum::TYPE_STRING);
+                            size_t bi = t.find(ss);
+                            POSTCONDITION(bi == 0);
+                            size_t bs = t.find('(');
+                            POSTCONDITION(bs > 0);
+                            size_t be = t.find(')', bs);
+                            POSTCONDITION(be > 0);
+                            string s = t.substr(be + 1, bs);
+                            CHECK_NOT_EMPTY(s);
+                            int size = std::stoi(s);
+                            POSTCONDITION(size > 0 && size < UCHAR_MAX);
+                            return (uint8_t) size;
                         }
 
                         /*!
@@ -1599,7 +1622,7 @@ REACTFS_NS_CORE
                      * has to be defined with a max-size and is limited to a max of (SIZE_MAX_TYPE_STRING - 1) = 255.
                      */
                     class __dt_string : public __dt_text {
-
+                    private:
                     public:
 
                         /*!

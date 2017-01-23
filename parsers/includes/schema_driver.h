@@ -39,6 +39,7 @@
 
 #define TYPE_NAME_LIST "list"
 #define TYPE_NAME_MAP "map"
+#define TYPE_NAME_STRING "string"
 #define COLUMN_SORT_DIR_ASC "ASC"
 #define COLUMN_SORT_DIR_DESC "DESC"
 
@@ -316,8 +317,15 @@ REACTFS_NS_CORE
                                 __type_def_enum ft = __type_enum_helper::parse_type(*(field->type));
                                 POSTCONDITION(ft != __type_def_enum::TYPE_UNKNOWN);
                                 if (__type_enum_helper::is_native(ft)) {
-                                    nt = new __native_type(type, index, *(field->variable), ft);
-                                    CHECK_ALLOC(nt, TYPE_NAME(__native_type));
+                                    if (ft == __type_def_enum::TYPE_STRING) {
+                                        uint8_t si = __type_enum_helper::parse_string_size(*field->type);
+                                        __string_type *st = new __string_type(type, index, *(field->variable), si);
+                                        CHECK_ALLOC(st, TYPE_NAME(__string_type));
+                                        nt = st;
+                                    } else {
+                                        nt = new __native_type(type, index, *(field->variable), ft);
+                                        CHECK_ALLOC(nt, TYPE_NAME(__native_type));
+                                    }
                                 } else if (ft == __type_def_enum::TYPE_LIST) { // Is a list definition.
                                     // Collections should always have inner type definition.
                                     __declare *inner_type = field->inner_types;
@@ -766,6 +774,26 @@ REACTFS_NS_CORE
                             if (iter != indexes.end()) {
                                 throw TYPE_PARSER_ERROR("Duplicate index defined. [name=%s]", name.c_str());
                             }
+                        }
+
+                        void parse_string_decl(const string &type, __declare *dec) {
+                            CHECK_NOT_EMPTY(type);
+                            CHECK_NOT_NULL(dec);
+
+                            size_t bs = type.find('(');
+                            POSTCONDITION(bs > 0);
+                            size_t be = type.find(')', bs);
+                            POSTCONDITION(be > 0);
+
+                            string t = type.substr(0, bs);
+                            string s = type.substr(bs + 1, be);
+                            t = string_utils::trim(t);
+                            s = string_utils::trim(s);
+
+                            dec->type = new string(t);
+                            int size = std::stoi(s);
+                            POSTCONDITION(size > 0 && size < UCHAR_MAX);
+                            dec->size = size;
                         }
 
                     public:
