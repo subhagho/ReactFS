@@ -74,6 +74,13 @@ void com::wookler::reactfs::core::typed_block::open(uint64_t block_id, string fi
         write_ptr = nullptr;
     }
 
+    vector<__index_type *> indexes;
+    find_used_indexes(&indexes);
+    if (!IS_EMPTY(indexes)) {
+        for (__index_type *def : indexes) {
+            open_index(def);
+        }
+    }
     bool r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_READ_PREFIX), AverageMetric);
     POSTCONDITION(r);
     r = metrics_utils::create_metric(get_metric_name(BLOCK_TYPED_METRIC_WRITE_PREFIX), AverageMetric);
@@ -282,6 +289,8 @@ void com::wookler::reactfs::core::typed_block::add_index(record_index *index) {
         PRECONDITION(nl <= SIZE_MAX_NAME);
 
         iptr->used = true;
+        iptr->type = index->get_type();
+        iptr->block_id = header->block_id;
         memset(iptr->name, 0, SIZE_MAX_NAME + 1);
         strncpy(iptr->name, index->get_name(), nl);
 
@@ -308,4 +317,10 @@ void com::wookler::reactfs::core::typed_block::add_index(record_index *index) {
 
 void com::wookler::reactfs::core::typed_block::open_index(__index_type *def) {
     CHECK_NOT_NULL(def);
+    typed_index_base *bi = create_index_instance(def->type);
+    CHECK_NOT_NULL(bi);
+    string in = string(def->name);
+    string fn = string(def->block_path);
+    string uuid = string(header->block_uid);
+    bi->open_index(in, def->block_id, uuid, fn, this->updateable);
 }

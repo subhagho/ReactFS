@@ -1456,6 +1456,14 @@ REACTFS_NS_CORE
                             return true;
                         }
 
+                        __index_key_set *find_index_value(record_index *index) {
+                            CHECK_NOT_NULL(index);
+                            __index_key_set *ks = (__index_key_set *) malloc(sizeof(__index_key_set));
+                            CHECK_ALLOC(ks, TYPE_NAME(__index_key_set));
+                            
+                            return ks;
+                        }
+
                         void print() {
                             this->type->get_type_handler(__record_mode::RM_WRITE)->print(this);
                         }

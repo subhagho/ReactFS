@@ -44,6 +44,8 @@ REACTFS_NS_CORE
 
                 typedef struct __index_type__ {
                     bool used = false;
+                    __index_type_enum type;
+                    uint64_t block_id;
                     char name[SIZE_MAX_NAME + 1];
                     char block_path[SIZE_MAX_PATH + 1];
                 } __index_type;
@@ -91,6 +93,17 @@ REACTFS_NS_CORE
                         for (uint8_t ii = 0; ii < *index_count; ii++) {
                             if (!ptr->used) {
                                 return ptr;
+                            }
+                            ptr++;
+                        }
+                        return nullptr;
+                    }
+
+                    void find_used_indexes(vector<__index_type *> *indexes) {
+                        __index_type *ptr = index_ptrs;
+                        for (uint8_t ii = 0; ii < *index_count; ii++) {
+                            if (ptr->used) {
+                                indexes->push_back(ptr);
                             }
                             ptr++;
                         }
