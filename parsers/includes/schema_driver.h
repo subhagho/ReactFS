@@ -280,9 +280,16 @@ REACTFS_NS_CORE
                                 POSTCONDITION(type != __type_def_enum::TYPE_UNKNOWN);
                                 PRECONDITION(__type_enum_helper::is_inner_type_valid(type));
                                 if (__type_enum_helper::is_native(type)) {
-                                    __native_type *nt = new __native_type(parent, index, name, type);
-                                    CHECK_ALLOC(nt, TYPE_NAME(__native_type));
-                                    return nt;
+                                    if (type != __type_def_enum::TYPE_STRING) {
+                                        __native_type *nt = new __native_type(parent, index, name, type);
+                                        CHECK_ALLOC(nt, TYPE_NAME(__native_type));
+                                        return nt;
+                                    } else {
+                                        uint8_t si = __type_enum_helper::parse_string_size(*field->type);
+                                        __string_type *st = new __string_type(parent, index, name, si);
+                                        CHECK_ALLOC(st, TYPE_NAME(__string_type));
+                                        return st;
+                                    }
                                 }
                             } else {
                                 string *r_type = field->type;

@@ -334,7 +334,7 @@ REACTFS_NS_CORE
                             POSTCONDITION(bs > 0);
                             size_t be = t.find(')', bs);
                             POSTCONDITION(be > 0);
-                            string s = t.substr(be + 1, bs);
+                            string s = t.substr(bs + 1, (be - bs - 1));
                             CHECK_NOT_EMPTY(s);
                             int size = std::stoi(s);
                             POSTCONDITION(size > 0 && size < UCHAR_MAX);

@@ -272,7 +272,7 @@ REACTFS_NS_CORE
                          * @param value - Field data value.
                          * @return - Is valid?
                          */
-                        bool is_valid_value(const void *value) {
+                        virtual bool is_valid_value(const void *value) {
                             if (!nullable && IS_NULL(value)) {
                                 return false;
                             }
@@ -559,6 +559,8 @@ REACTFS_NS_CORE
                                                 name,
                                                 __type_def_enum::TYPE_STRING) {
                             this->type = __field_type::STRING;
+                            this->max_size = (uint8_t *) malloc(sizeof(uint8_t));
+                            CHECK_ALLOC(this->max_size, TYPE_NAME(uint8_t));
                             *this->max_size = max_size;
                         }
 
@@ -589,6 +591,34 @@ REACTFS_NS_CORE
                             if (NOT_NULL(default_value)) {
                                 default_value->print();
                             }
+                        }
+
+                        virtual uint32_t estimate_size() const override {
+                            return *this->max_size;
+                        }
+
+                        /*!
+                         * Check if the specified field value is a valid value.
+                         *
+                         * @param value - Field data value.
+                         * @return - Is valid?
+                         */
+                        bool is_valid_value(const void *value) override {
+                            if (!nullable && IS_NULL(value)) {
+                                return false;
+                            }
+                            if (NOT_NULL(value)) {
+                                char *ptr = (char *) value;
+                                CHECK_CAST(ptr, TYPE_NAME(void * ), TYPE_NAME(char * ));
+                                size_t s = strlen(ptr);
+                                if (s >= *max_size) {
+                                    return false;
+                                }
+                                if (NOT_NULL(constraint)) {
+                                    return constraint->validate(value);
+                                }
+                            }
+                            return true;
                         }
                     };
 

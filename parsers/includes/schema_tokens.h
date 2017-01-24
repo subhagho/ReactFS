@@ -428,7 +428,7 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
   // number is the opposite.  If YYTABLE_NINF, syntax error.
   static const unsigned char yytable_[];
 
-  static const short int yycheck_[];
+  static const unsigned char yycheck_[];
 
   // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
   // symbol of state STATE-NUM.
@@ -545,8 +545,8 @@ namespace com { namespace wookler { namespace reactfs { namespace core { namespa
     enum
     {
       yyeof_ = 0,
-      yylast_ = 185,     ///< Last index in yytable_.
-      yynnts_ = 43,  ///< Number of nonterminal symbols.
+      yylast_ = 184,     ///< Last index in yytable_.
+      yynnts_ = 44,  ///< Number of nonterminal symbols.
       yyfinal_ = 8, ///< Termination state number.
       yyterror_ = 1,
       yyerrcode_ = 256,
