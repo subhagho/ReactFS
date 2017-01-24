@@ -1768,7 +1768,7 @@ REACTFS_NS_CORE
                                 void *ptr = buffer_utils::increment_data_ptr(buffer, (offset + r_size));
                                 uint8_t *ft = static_cast<uint8_t *>(ptr);
                                 __field_type type = __field_type_helper::get_type(*ft);
-                                if (type == __field_type::NATIVE) {
+                                if (CHECK_NATIVE_TYPE(type)) {
                                     __native_type *ptr = __type_init_utils::read_inner_type(parent, buffer,
                                                                                             (offset + r_size),
                                                                                             &r_size);

@@ -1,20 +1,20 @@
 namespace com.wookler.test;
 
 type test_type {
-    string(32) testString default "TEST STRING" nullable,
+    string(64) testString default "TEST STRING" nullable,
     double testDouble constraint (in [2120, 1293, 98439, 980202]),
     float   testFloat  constraint(>=1000.00) default 8883.99,
-    list<string(32)>   testListString,
-    map<double, string(32)> testMapString
+    list<string(64)>   testListString,
+    map<double, string(64)> testMapString
 };
 
 type test_ref_type {
-    string(32) name,
-    map<string(32), typeref test_type> testRefMap
+    string(64) name,
+    map<string(64), typeref test_type> testRefMap
 };
 
 schema test_schema {
-    string(32) key,
+    string(64) key,
     long testLong,
     short  shortWithDefault default -128,
     typeref test_ref_type testTypeRef,

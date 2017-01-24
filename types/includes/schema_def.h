@@ -38,6 +38,8 @@
 #define MAP_TYPE_KEY_NAME "key"
 #define MAP_TYPE_VALUE_NAME "value"
 
+#define CHECK_NATIVE_TYPE(t) (t == __field_type::NATIVE || t == __field_type::STRING)
+
 REACTFS_NS_CORE
                 namespace types {
 
@@ -610,8 +612,9 @@ REACTFS_NS_CORE
                             if (NOT_NULL(value)) {
                                 char *ptr = (char *) value;
                                 CHECK_CAST(ptr, TYPE_NAME(void * ), TYPE_NAME(char * ));
-                                size_t s = strlen(ptr);
-                                if (s >= *max_size) {
+                                size_t size = strlen(ptr);
+                                if (size >= *max_size) {
+                                    LOG_ERROR("String size validation failed. [actual=%d][max=%d]", size, *max_size);
                                     return false;
                                 }
                                 if (NOT_NULL(constraint)) {
@@ -1487,6 +1490,11 @@ REACTFS_NS_CORE
                                 CHECK_ALLOC(type, TYPE_NAME(__native_type));
                                 *size += type->read(buffer, offset);
                                 return type;
+                            } else if (field_type == __field_type::STRING) {
+                                __string_type *type = new __string_type(parent);
+                                CHECK_ALLOC(type, TYPE_NAME(__string_type));
+                                *size += type->read(buffer, offset);
+                                return type;
                             } else if (field_type == __field_type::COMPLEX) {
                                 __complex_type *type = new __complex_type(parent);
                                 CHECK_ALLOC(type, TYPE_NAME(__complex_type));
@@ -1517,6 +1525,12 @@ REACTFS_NS_CORE
                             if (field_type == __field_type::NATIVE) {
                                 __native_type *type = new __native_type(parent);
                                 CHECK_ALLOC(type, TYPE_NAME(__native_type));
+                                *size += type->read(buffer, offset);
+                                POSTCONDITION(__type_enum_helper::is_native(type->get_datatype()));
+                                return type;
+                            } else if (field_type == __field_type::STRING) {
+                                __string_type *type = new __string_type(parent);
+                                CHECK_ALLOC(type, TYPE_NAME(__string_type));
                                 *size += type->read(buffer, offset);
                                 POSTCONDITION(__type_enum_helper::is_native(type->get_datatype()));
                                 return type;

@@ -85,7 +85,7 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(t);
                                 TRACE("Type --> [name=%s][type=%s]", t->get_name().c_str(),
                                       t->get_type_name(common_consts::EMPTY_STRING).c_str());
-                                if (t->get_type() == __field_type::NATIVE) {
+                                if (CHECK_NATIVE_TYPE(t->get_type())) {
                                     cpp_template.get_declare(t);
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
                                     cpp_template.generate_getter(t, CPPT_TOKEN_FUNC_GETTER_DEF);
@@ -114,7 +114,7 @@ REACTFS_NS_CORE
                                     cpp_template.generate_getter(t, CPPT_TOKEN_FUNC_GETTER_DEF);
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
 
-                                    if (it->get_type() == __field_type::NATIVE) {
+                                    if (CHECK_NATIVE_TYPE(it->get_type())) {
                                         if (it->get_datatype() == __type_def_enum::TYPE_TEXT ||
                                             it->get_datatype() == __type_def_enum::TYPE_STRING) {
                                             cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_STRING_ADD_DEF);
@@ -169,7 +169,7 @@ REACTFS_NS_CORE
                                     cpp_template.generate_getter(t, CPPT_TOKEN_FUNC_GETTER_DEF);
                                     cpp_template.generate_setter(t, CPPT_TOKEN_FUNC_SETTER_PTR_DEF);
 
-                                    if (vt->get_type() == __field_type::NATIVE) {
+                                    if (CHECK_NATIVE_TYPE(vt->get_type())) {
                                         if (vt->get_datatype() == __type_def_enum::TYPE_TEXT ||
                                             vt->get_datatype() == __type_def_enum::TYPE_STRING) {
                                             cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_STRING_ADD_DEF);
