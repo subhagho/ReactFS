@@ -471,6 +471,9 @@ REACTFS_NS_CORE
                         virtual bool compare(const void *target, void *source, __constraint_operator oper) = 0;
 
                         virtual void print(const void *value) const = 0;
+
+                        virtual uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) = 0;
                     };
 
                     /*!
@@ -561,6 +564,10 @@ REACTFS_NS_CORE
                             return sizeof(__T);
                         }
 
+                        virtual uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            throw BASE_ERROR("Method is only applicable to native types.");
+                        }
                     };
 
 
@@ -652,6 +659,16 @@ REACTFS_NS_CORE
                                 default:
                                     return false;
                             }
+                        }
+
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(BYTE));
+                            } else {
+                                memset(ptr, 0, sizeof(BYTE));
+                            }
+                            return sizeof(BYTE);
                         }
 
                         void print(const void *value) const override {
@@ -752,6 +769,16 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(char));
+                            } else {
+                                memset(ptr, 0, sizeof(char));
+                            }
+                            return sizeof(char);
+                        }
+
                         void print(const void *value) const override {
                             const char *s = static_cast<const char *>(value);
                             string ss = to_string(*s);
@@ -838,6 +865,16 @@ REACTFS_NS_CORE
                             if (oper == __constraint_operator::EQ)
                                 return (*s == *t);
                             return false;
+                        }
+
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(bool));
+                            } else {
+                                memset(ptr, 0, sizeof(bool));
+                            }
+                            return sizeof(bool);
                         }
 
                         void print(const void *value) const override {
@@ -938,6 +975,16 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(short));
+                            } else {
+                                memset(ptr, 0, sizeof(short));
+                            }
+                            return sizeof(short);
+                        }
+
                         void print(const void *value) const override {
                             const short *s = static_cast<const short *>(value);
                             string ss = to_string(*s);
@@ -1034,6 +1081,16 @@ REACTFS_NS_CORE
                                 default:
                                     return false;
                             }
+                        }
+
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(int));
+                            } else {
+                                memset(ptr, 0, sizeof(int));
+                            }
+                            return sizeof(int);
                         }
 
                         void print(const void *value) const override {
@@ -1134,6 +1191,16 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(long));
+                            } else {
+                                memset(ptr, 0, sizeof(long));
+                            }
+                            return sizeof(long);
+                        }
+
                         void print(const void *value) const override {
                             const long *s = static_cast<const long *>(value);
                             string ss = to_string(*s);
@@ -1230,6 +1297,16 @@ REACTFS_NS_CORE
                                 default:
                                     return false;
                             }
+                        }
+
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(uint64_t));
+                            } else {
+                                memset(ptr, 0, sizeof(uint64_t));
+                            }
+                            return sizeof(uint64_t);
                         }
 
                         void print(const void *value) const override {
@@ -1396,6 +1473,16 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(float));
+                            } else {
+                                memset(ptr, 0, sizeof(float));
+                            }
+                            return sizeof(float);
+                        }
+
                         void print(const void *value) const override {
                             const float *s = static_cast<const float *>(value);
                             string ss = to_string(*s);
@@ -1492,6 +1579,16 @@ REACTFS_NS_CORE
                                 default:
                                     return false;
                             }
+                        }
+
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(double));
+                            } else {
+                                memset(ptr, 0, sizeof(double));
+                            }
+                            return sizeof(double);
                         }
 
                         void print(const void *value) const override {
@@ -1674,6 +1771,17 @@ REACTFS_NS_CORE
                             const string *d = static_cast<const string *>(data);
                             CHECK_NOT_NULL(data);
                             return (sizeof(uint8_t) + (sizeof(char) * d->length()));
+                        }
+
+                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            PRECONDITION(size > 0)
+                            void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
+                            if (NOT_NULL(value)) {
+                                memcpy(ptr, value, sizeof(char) * size);
+                            } else {
+                                memset(ptr, 0, sizeof(char) * size);
+                            }
+                            return (sizeof(char) * size);
                         }
                     };
 

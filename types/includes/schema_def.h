@@ -1358,6 +1358,35 @@ REACTFS_NS_CORE
                         uint8_t field_count = 0;
                         vector<__field_value *> *data_ptr = nullptr;
 
+                        uint8_t
+                        get_column_value(const __index_column *column, void *buffer, uint16_t *offset) {
+                            CHECK_NOT_NULL(column->type);
+                            __base_datatype_io *h = column->type->get_type_handler(__record_mode::RM_WRITE);
+                            CHECK_NOT_NULL(h);
+
+                            __field_value *value = nullptr;
+                            uint8_t *path = column->path;
+                            for (uint8_t ii = 0; ii < column->count; ii++) {
+                                CHECK_NOT_NULL(path);
+                                if (ii == 0) {
+                                    PRECONDITION(*path < data_ptr->size());
+                                    value = (*data_ptr)[*path];
+                                }
+                                if (IS_NULL(value)) {
+                                    if (h->get_type() != __type_def_enum::TYPE_STRING) {
+                                        h->set_key_data(buffer, *offset, nullptr, 0);
+                                    } else {
+                                        __string_type *st = static_cast<__string_type *>(column->type);
+                                        CHECK_CAST(st, TYPE_NAME(__native_type), TYPE_NAME(__string_type));
+                                        h->set_key_data(buffer, *offset, nullptr, st->estimate_size());
+                                    }
+                                    break;
+                                } else if (ii = column->count - 1) {
+
+                                }
+                            }
+                        }
+
                     public:
                         mutable_record_struct(const __complex_type *type) {
                             CHECK_NOT_NULL(type);
@@ -1456,11 +1485,23 @@ REACTFS_NS_CORE
                             return true;
                         }
 
-                        __index_key_set *find_index_value(record_index *index) {
+                        __index_key_set *get_index_value(record_index *index) {
                             CHECK_NOT_NULL(index);
                             __index_key_set *ks = (__index_key_set *) malloc(sizeof(__index_key_set));
                             CHECK_ALLOC(ks, TYPE_NAME(__index_key_set));
-                            
+                            uint16_t key_size = index->compute_index_record_size();
+                            POSTCONDITION(key_size > 0);
+                            *ks->key_size = key_size;
+                            *ks->key_count = index->get_column_count();
+                            ks->key_data = malloc(sizeof(BYTE) * key_size);
+                            CHECK_ALLOC(ks->key_data, TYPE_NAME(void * ));
+
+                            for (uint8_t ii = 0; ii < index->get_column_count(); ii++) {
+                                const __index_column *col = index->get_index(ii);
+                                CHECK_NOT_NULL(col);
+                                void *data = get_column_value(col);
+
+                            }
                             return ks;
                         }
 
