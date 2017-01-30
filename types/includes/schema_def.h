@@ -1060,6 +1060,7 @@ REACTFS_NS_CORE
 
 
                     typedef struct __index_key_set__ {
+                        bool allocated = false;
                         uint8_t *key_count = nullptr;
                         uint16_t *key_size = nullptr;
                         void *key_data = nullptr;
@@ -1163,11 +1164,7 @@ REACTFS_NS_CORE
                                 const __index_column *column = get_index(ii);
                                 CHECK_NOT_NULL(column);
                                 PRECONDITION(__type_enum_helper::is_native(column->type->get_datatype()));
-                                if (column->type->get_datatype() == __type_def_enum::TYPE_STRING) {
-                                    size += UCHAR_MAX;
-                                } else {
-                                    size += column->type->estimate_size();
-                                }
+                                size += column->type->estimate_size();
                             }
                             return size;
                         }
@@ -1358,15 +1355,16 @@ REACTFS_NS_CORE
                         uint8_t field_count = 0;
                         vector<__field_value *> *data_ptr = nullptr;
 
-                        uint8_t
-                        get_column_value(const __index_column *column, void *buffer, uint16_t *offset) {
+                        uint16_t
+                        get_column_value(const __index_column *column, uint8_t col_index, void *buffer,
+                                         uint16_t *offset) {
                             CHECK_NOT_NULL(column->type);
                             __base_datatype_io *h = column->type->get_type_handler(__record_mode::RM_WRITE);
                             CHECK_NOT_NULL(h);
 
                             __field_value *value = nullptr;
                             uint8_t *path = column->path;
-                            for (uint8_t ii = 0; ii < column->count; ii++) {
+                            for (uint8_t ii = col_index; ii < column->count; ii++) {
                                 CHECK_NOT_NULL(path);
                                 if (ii == 0) {
                                     PRECONDITION(*path < data_ptr->size());
@@ -1374,17 +1372,29 @@ REACTFS_NS_CORE
                                 }
                                 if (IS_NULL(value)) {
                                     if (h->get_type() != __type_def_enum::TYPE_STRING) {
-                                        h->set_key_data(buffer, *offset, nullptr, 0);
+                                        return h->set_key_data(buffer, *offset, nullptr, 0);
                                     } else {
-                                        __string_type *st = static_cast<__string_type *>(column->type);
+                                        const __string_type *st = static_cast<const __string_type *>(column->type);
                                         CHECK_CAST(st, TYPE_NAME(__native_type), TYPE_NAME(__string_type));
-                                        h->set_key_data(buffer, *offset, nullptr, st->estimate_size());
+                                        return h->set_key_data(buffer, *offset, nullptr, st->estimate_size());
                                     }
-                                    break;
-                                } else if (ii = column->count - 1) {
-
+                                } else if (ii == column->count - 1) {
+                                    PRECONDITION(__type_enum_helper::is_native(h->get_type()));
+                                    if (h->get_type() != __type_def_enum::TYPE_STRING) {
+                                        return h->set_key_data(buffer, *offset, value->data, 0);
+                                    } else {
+                                        const __string_type *st = static_cast<const __string_type *>(column->type);
+                                        CHECK_CAST(st, TYPE_NAME(__native_type), TYPE_NAME(__string_type));
+                                        return h->set_key_data(buffer, *offset, value->data, st->estimate_size());
+                                    }
+                                } else {
+                                    PRECONDITION(h->get_type() == __type_def_enum::TYPE_STRUCT);
+                                    mutable_record_struct *__ptr = static_cast<mutable_record_struct *>(value->data);
+                                    CHECK_CAST(__ptr, TYPE_NAME(void * ), TYPE_NAME(mutable_record_struct));
+                                    return __ptr->get_column_value(column, (ii + 1), buffer, offset);
                                 }
                             }
+                            throw BASE_ERROR("Error finding index field value.");
                         }
 
                     public:
@@ -1495,13 +1505,16 @@ REACTFS_NS_CORE
                             *ks->key_count = index->get_column_count();
                             ks->key_data = malloc(sizeof(BYTE) * key_size);
                             CHECK_ALLOC(ks->key_data, TYPE_NAME(void * ));
+                            ks->allocated = true;
 
+                            uint16_t offset = 0;
                             for (uint8_t ii = 0; ii < index->get_column_count(); ii++) {
                                 const __index_column *col = index->get_index(ii);
                                 CHECK_NOT_NULL(col);
-                                void *data = get_column_value(col);
-
+                                uint16_t ws = get_column_value(col, offset, ks->key_data, 0);
+                                offset += ws;
                             }
+                            POSTCONDITION(offset == *ks->key_size);
                             return ks;
                         }
 

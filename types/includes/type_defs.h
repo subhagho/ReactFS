@@ -221,6 +221,11 @@ REACTFS_NS_CORE
                             return fields->estimate_size();
                         }
 
+                        virtual uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                            throw BASE_ERROR("Method is only applicable to native types.");
+                        }
+
                         void print(const void *value) const override {
                             const mutable_record_struct *st = static_cast<const mutable_record_struct *>(value);
                             for (uint8_t ii = 0; ii < st->get_field_count(); ii++) {
@@ -407,6 +412,7 @@ REACTFS_NS_CORE
                             uint32_t r_size = this->type_handler->estimate_size();
                             return (r_size * COLLECTION_SIZE_FACTOR);
                         }
+
 
                         void print(const void *value) const override {
 

@@ -50,6 +50,7 @@
 %token ${variable_copy}
 %token ${field_index}
 %token ${read_serde_calls}
+%token ${equals}
 
 VARIABLE_NATIVE_DEF:
 ${type} ${name} = nullptr;
@@ -396,6 +397,206 @@ CALL_TYPE_MAP_SETTER_TO_RECORD:
 	CHECK_NOT_NULL(ft);
 
 	__data->add_field(ft->get_index(), __ptr);
+}
+;;
+
+FUNC_EQUALS:
+/**
+ * Compare this type instance to the passed instance.
+ * 
+ * @param __target - Target instance to compare with. If pointer is not 
+ * 			of the same type will throw exception.
+ * @return - Is equal?
+ */
+bool equals(const void* __target) const override {
+	if (IS_NULL(__target)) {
+		return false;
+	}
+	const ${type_ptr} __t = dynamic_cast<const ${type_ptr}>(__target);
+	CHECK_CAST(__t, TYPE_NAME(void *), TYPE_NAME(${type_ptr}));
+
+	${equals}
+
+	return true;
+}
+;;
+
+CALL_NATIVE_EQUALS:
+{
+	// Compare field ${name}
+	const __native_type *nt = get_field_type("${name}");
+	CHECK_NOT_NULL(nt);
+	__base_datatype_io *th = nt->get_type_handler();
+	CHECK_NOT_NULL(th);
+	const void *tv = __t->get_${name}();
+	const void *sv = this->get_${name}();
+	bool r = th->compare(tv, sv, __constraint_operator::EQ);
+	if (!r)
+		return false;
+}
+;;
+
+CALL_TYPE_EQUALS:
+{
+	// Compare type instance ${name}
+	const void* tv = __t->get_${name}();
+	const ${type_ptr} sv = this->get_${name}();
+	if (IS_NULL(sv)) {
+		if (NOT_NULL(tv)) {
+			return false;
+		}
+		return true;
+	}
+	bool r = sv->equals(tv);
+	if (!r)
+		return false;
+}
+;;
+
+CALL_NATIVE_LIST_EQUALS:
+{
+	// Compare list instance ${name}
+	const vector<${type_ptr}> tv = __t->get_${name}();
+	const vector<${type_ptr}> sv = this->get_${name}();
+	if (IS_NULL(sv)) {
+		if (NOT_NULL(tv)) {
+			return false;
+		}
+		return true;
+	}
+	if (tv->size() != sv->size()) {
+		return false;
+	}
+	const __native_type *nt = get_field_type("${name}");
+	CHECK_NOT_NULL(nt);
+	
+	PRECONDITION(nt->get_type() == __field_type::LIST);
+	const __list_type *lt = dynamic_cast<__list_type *>(nt);
+	CHECK_CAST(lt, TYPE_NAME(__native_type), TYPE_NAME(__list_type));
+
+	// Get type handler for inner type.
+	__base_datatype_io *th = lt->get_inner_type()->get_type_handler();
+	CHECK_NOT_NULL(th);
+
+	for(uint32_t ii = 0; ii < tv->size(); ii++) {
+		void *v1 = (*sv)[ii];
+		const void *v2 = (*tv)[ii];
+		bool r = th->compare(v2, v1, __constraint_operator::EQ);
+		if (!r)
+			return false;
+	}
+}
+;;
+
+CALL_TYPE_LIST_EQUALS:
+{
+	// Compare list instance ${name}
+	const vector<${type_ptr}> *tv = __t->get_${name}();
+	const vector<${type_ptr}> *sv = this->get_${name}();
+	if (IS_NULL(sv)) {
+		if (NOT_NULL(tv)) {
+			return false;
+		}
+		return true;
+	}
+	if (tv->size() != sv->size()) {
+		return false;
+	}
+
+	for(uint32_t ii = 0; ii < tv->size(); ii++) {
+		${type_ptr} *v1 = (*sv)[ii];
+		const ${type_ptr} *v2 = (*tv)[ii];
+		if (IS_NULL(v1)) {
+			if (NOT_NULL(v2)) {
+				return false;
+			}
+			continue;
+		}
+		// Check inner type equals.
+		bool r = v1->equals(v2); 
+		if (!r)
+			return false;
+	}
+}
+;;
+
+CALL_NATIVE_MAP_EQUALS:
+{
+	// Compare map instance ${name}
+	const unordered_map<${key_type}, ${value_type_ptr}> *tv = __t->get_${name}();
+	const unordered_map<${key_type}, ${value_type_ptr}> *sv = this->get_${name}();
+	if (IS_NULL(sv)) {
+		if (NOT_NULL(tv)) {
+			return false;
+		}
+		return true;
+	}
+	if (tv->size() != sv->size()) {
+		return false;
+	}
+	
+	const __native_type *nt = get_field_type("${name}");
+	CHECK_NOT_NULL(nt);
+	
+	PRECONDITION(nt->get_type() == __field_type::MAP);
+	const __map_type *mt = dynamic_cast<__map_type *>(nt);
+	CHECK_CAST(mt, TYPE_NAME(__native_type), TYPE_NAME(__map_type));
+
+	// Get type handler for value type.
+	__base_datatype_io *th = mt->get_value_type()->get_type_handler();
+	CHECK_NOT_NULL(th);
+
+	unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_t;
+	unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_s;
+	
+	for(iter_s = sv->begin(); iter_s != sv->end(); iter_s++) {
+		iter_t = tv->find(iter_s->first);
+		if (iter_t == tv->end())
+			return false;
+		void *v1 = iter_s->second;
+		const void *v2 = iter_t->second;
+		bool r = th->compare(v2, v1, __constraint_operator::EQ);
+		if (!r)
+			return false;
+	}
+}
+;;
+
+CALL_TYPE_MAP_EQUALS:
+{
+	// Compare map instance ${name}
+	const unordered_map<${key_type}, ${value_type_ptr}> *tv = __t->get_${name}();
+	const unordered_map<${key_type}, ${value_type_ptr}> *sv = this->get_${name}();
+	if (IS_NULL(sv)) {
+		if (NOT_NULL(tv)) {
+			return false;
+		}
+		return true;
+	}
+	if (tv->size() != sv->size()) {
+		return false;
+	}
+
+	unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_t;
+	unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_s;
+	
+	for(iter_s = sv->begin(); iter_s != sv->end(); iter_s++) {
+		iter_t = tv->find(iter_s->first);
+		if (iter_t == tv->end())
+			return false;
+		${value_type_ptr} *v1 = iter_s->second;
+		const ${value_type_ptr} *v2 = iter_t->second;
+		if (IS_NULL(v1)) {
+			if (NOT_NULL(v2)) {
+				return false;
+			}
+			continue;
+		}
+		// Check value type equals.
+		bool r = v1->equals(v2);
+		if (!r)
+			return false;
+	}
 }
 ;;
 

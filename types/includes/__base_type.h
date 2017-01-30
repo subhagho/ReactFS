@@ -99,6 +99,15 @@ REACTFS_NS_CORE
                          * @param __data - Serialized data record.
                          */
                         virtual void deserialize(const record_struct *__data) = 0;
+
+                        /*!
+                         * Compare this instance of the data type with the specifed instance pointer.
+                         * Note: If pointer is not castable to this type, this call will throw an exception.
+                         *
+                         * @param __target - Pointer to the target instance.
+                         * @return - Is equal?
+                         */
+                        virtual bool equals(void* __target) const = 0;
                     };
 
                     class __mutable_base_type {
@@ -133,6 +142,15 @@ REACTFS_NS_CORE
                          * @return - Serialized data record.
                          */
                         virtual mutable_record_struct *serialize() = 0;
+
+                        /*!
+                         * Compare this instance of the data type with the specifed instance pointer.
+                         * Note: If pointer is not castable to this type, this call will throw an exception.
+                         *
+                         * @param __target - Pointer to the target instance.
+                         * @return - Is equal?
+                         */
+                        virtual bool equals(void* __target) const = 0;
                     };
                 }
 REACTFS_NS_CORE_END
