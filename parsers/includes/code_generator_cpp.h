@@ -99,6 +99,7 @@ REACTFS_NS_CORE
                                         cpp_template.add_native_copy_ptr(t, CPPT_TOKEN_COPY_CALL_NATIVE_PTR);
                                         cpp_template.add_native_copy(t, CPPT_TOKEN_COPY_CALL_NATIVE);
                                     }
+                                    cpp_template.add_native_equals(t);
                                     cpp_template.generate_native_setter_from_map(t);
                                     cpp_template.generate_native_setter_to_map(t);
                                     cpp_template.generate_free_call_local(t, CPPT_TOKEN_VARIABLE_NATIVE_FREE, false);
@@ -126,6 +127,7 @@ REACTFS_NS_CORE
                                         cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_LIST_NATIVE_FREE, false);
                                         cpp_template.add_list_copy_ptr(list, CPPT_TOKEN_COPY_CALL_NATIVE_LIST_PTR);
                                         cpp_template.add_list_copy(list, CPPT_TOKEN_COPY_CALL_NATIVE_LIST);
+                                        cpp_template.add_list_native_equals(t);
                                     } else if (it->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_list_add(t, CPPT_TOKEN_FUNC_LIST_TYPE_ADD_DEF);
                                         string tn = it->get_type_name(common_consts::EMPTY_STRING);
@@ -156,6 +158,7 @@ REACTFS_NS_CORE
                                         cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_LIST_TYPE_FREE, true);
                                         cpp_template.add_list_copy_ptr(list, CPPT_TOKEN_COPY_CALL_TYPE_LIST_PTR);
                                         cpp_template.add_list_copy(list, CPPT_TOKEN_COPY_CALL_TYPE_LIST);
+                                        cpp_template.add_list_type_equals(t);
                                     }
                                 } else if (t->get_type() == __field_type::MAP) {
                                     cpp_template.get_declare(t);
@@ -181,6 +184,7 @@ REACTFS_NS_CORE
                                         cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_MAP_NATIVE_FREE, false);
                                         cpp_template.add_map_copy_ptr(map, CPPT_TOKEN_COPY_CALL_NATIVE_MAP_PTR);
                                         cpp_template.add_map_copy(map, CPPT_TOKEN_COPY_CALL_NATIVE_MAP);
+                                        cpp_template.add_map_native_equals(t);
                                     } else if (vt->get_type() == __field_type::COMPLEX) {
                                         cpp_template.generate_map_add(t, CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF);
                                         string tn = vt->get_type_name(common_consts::EMPTY_STRING);
@@ -209,6 +213,7 @@ REACTFS_NS_CORE
                                         cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_MAP_TYPE_FREE, true);
                                         cpp_template.add_map_copy_ptr(map, CPPT_TOKEN_COPY_CALL_TYPE_MAP_PTR);
                                         cpp_template.add_map_copy(map, CPPT_TOKEN_COPY_CALL_TYPE_MAP);
+                                        cpp_template.add_map_type_equals(t);
                                     }
                                 } else if (t->get_type() == __field_type::COMPLEX) {
                                     cpp_template.get_declare(t);
@@ -234,6 +239,7 @@ REACTFS_NS_CORE
                                     cpp_template.generate_free_call(t, CPPT_TOKEN_VARIABLE_TYPE_FREE, true);
                                     cpp_template.add_type_copy(t);
                                     cpp_template.add_type_copy_ptr(t);
+                                    cpp_template.add_type_equals(t);
                                 }
                             }
                             string str = cpp_template.finish();

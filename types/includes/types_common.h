@@ -468,7 +468,7 @@ REACTFS_NS_CORE
                          * @param target - Target value pointer
                          * @return - Is comparision true?
                          */
-                        virtual bool compare(const void *target, void *source, __constraint_operator oper) = 0;
+                        virtual bool compare(const void *target, const void *source, __constraint_operator oper) = 0;
 
                         virtual void print(const void *value) const = 0;
 
@@ -553,7 +553,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override = 0;
+                        compare(const void *target, const void *source, __constraint_operator oper) override = 0;
 
                         /*!
                          * Estimate the storage size of the given type value.
@@ -640,7 +640,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const uint8_t *s = static_cast<const uint8_t *>(source);
@@ -748,7 +748,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const char *s = static_cast<const char *>(source);
@@ -857,7 +857,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const bool *s = static_cast<const bool *>(source);
@@ -954,7 +954,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const short *s = static_cast<const short *>(source);
@@ -1062,7 +1062,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const int *s = static_cast<const int *>(source);
@@ -1170,7 +1170,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const long *s = static_cast<const long *>(source);
@@ -1278,7 +1278,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const uint64_t *s = static_cast<const uint64_t *>(source);
@@ -1452,7 +1452,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const float *s = static_cast<const float *>(source);
@@ -1560,7 +1560,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const double *s = static_cast<const double *>(source);
@@ -1674,7 +1674,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *target, void *source, __constraint_operator oper) override {
+                        compare(const void *target, const void *source, __constraint_operator oper) override {
                             CHECK_NOT_NULL(source);
                             CHECK_NOT_NULL(target);
                             const char *s = static_cast<const char * >(source);

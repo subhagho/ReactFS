@@ -207,7 +207,7 @@ REACTFS_NS_CORE
                         }
 
                         virtual bool
-                        compare(const void *source, void *target, __constraint_operator oper) override {
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
                         }
 
@@ -399,7 +399,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, void *target, __constraint_operator oper) override {
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
                         }
 
@@ -675,7 +675,7 @@ REACTFS_NS_CORE
                          * @return - Is comparision true?
                          */
                         virtual bool
-                        compare(const void *source, void *target, __constraint_operator oper) override {
+                        compare(const void *source, const void *target, __constraint_operator oper) override {
                             throw BASE_ERROR("Compare only supported for native types.");
                         }
 

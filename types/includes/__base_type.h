@@ -71,7 +71,7 @@ REACTFS_NS_CORE
                         /// Source record, if type has been deserialized.
                         const record_struct *__data = nullptr;
 
-                        const __native_type *get_field_type(const string &name) {
+                        const __native_type *get_field_type(const string &name) const {
                             CHECK_NOT_NULL(record_type);
                             return record_type->get_field(name);
                         }
@@ -107,7 +107,7 @@ REACTFS_NS_CORE
                          * @param __target - Pointer to the target instance.
                          * @return - Is equal?
                          */
-                        virtual bool equals(void* __target) const = 0;
+                        virtual bool equals(const void* __target) const = 0;
                     };
 
                     class __mutable_base_type {
@@ -115,7 +115,7 @@ REACTFS_NS_CORE
                         /// Parsed schema definition for this type.
                         const __complex_type *record_type = nullptr;
 
-                        const __native_type *get_field_type(const string &name) {
+                        const __native_type *get_field_type(const string &name) const {
                             CHECK_NOT_NULL(record_type);
                             return record_type->get_field(name);
                         }
@@ -150,7 +150,7 @@ REACTFS_NS_CORE
                          * @param __target - Pointer to the target instance.
                          * @return - Is equal?
                          */
-                        virtual bool equals(void* __target) const = 0;
+                        virtual bool equals(const void* __target) const = 0;
                     };
                 }
 REACTFS_NS_CORE_END
