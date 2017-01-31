@@ -71,16 +71,17 @@ REACTFS_NS_CORE
                         /// Source record, if type has been deserialized.
                         const record_struct *__data = nullptr;
 
-                        const __native_type *get_field_type(const string &name) const {
-                            CHECK_NOT_NULL(record_type);
-                            return record_type->get_field(name);
-                        }
 
                     public:
                         /*!
                          * Base destructor.
                          */
                         virtual ~__base_type() {
+                        }
+
+                        const __native_type *get_field_type(const string &name) const {
+                            CHECK_NOT_NULL(record_type);
+                            return record_type->get_field(name);
                         }
 
                         /*!
@@ -115,16 +116,17 @@ REACTFS_NS_CORE
                         /// Parsed schema definition for this type.
                         const __complex_type *record_type = nullptr;
 
-                        const __native_type *get_field_type(const string &name) const {
-                            CHECK_NOT_NULL(record_type);
-                            return record_type->get_field(name);
-                        }
 
                     public:
                         /*!
                          * Base destructor.
                          */
                         virtual ~__mutable_base_type() {
+                        }
+
+                        const __native_type *get_field_type(const string &name) const {
+                            CHECK_NOT_NULL(record_type);
+                            return record_type->get_field(name);
                         }
 
                         /*!

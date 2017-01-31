@@ -44,6 +44,21 @@ namespace parsers {
 							values->push_back(" */");
 							// END KEY [FILE_COMMENT]
 
+							// KEY [COMPARE_CLASS_DEF]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"COMPARE_CLASS_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Generated code for type comparison utility for ${name}.");
+							values->push_back(" *");
+							values->push_back(" * Note:: Should not be modified as the changes will be lost when the code is re-generated.");
+							values->push_back(" */");
+							values->push_back("class compare_${name} {");
+							values->push_back("public:");
+							values->push_back("	${public_functions}");
+							values->push_back("};");
+							// END KEY [COMPARE_CLASS_DEF]
+
 							// KEY [INCLUDE_BASE]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -225,96 +240,19 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [COPY_CALL_NATIVE]
 
-							// KEY [CALL_NATIVE_READ_FROM_RECORD]
+							// KEY [FUNC_CONSTRUCTOR_READABLE]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"CALL_NATIVE_READ_FROM_RECORD", values});
-							values->push_back("// Set the value of ${name}");
-							values->push_back("const ${type_ptr} __var = static_cast<const ${type_ptr}>(__ptr);");
-							values->push_back("CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));");
-							values->push_back("this->${name} = __var;");
-							// END KEY [CALL_NATIVE_READ_FROM_RECORD]
-
-							// KEY [FUNC_CONSTRUCTOR_COPY]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"FUNC_CONSTRUCTOR_COPY", values});
+							__cpp_template.insert({"FUNC_CONSTRUCTOR_READABLE", values});
 							values->push_back("/**");
-							values->push_back(" * Copy constructor to create a copy instance of ${name}.");
-							values->push_back(" * Copy instances should be used to update existing records.");
-							values->push_back(" *");
-							values->push_back(" * @param source - Source instance of ${name} to copy from.");
-							values->push_back(" */");
-							values->push_back("${name}(const ${name_read} &source) {");
-							values->push_back("	this->record_type = source.get_record_type();");
-							values->push_back("	CHECK_NOT_NULL(this->record_type);");
-							values->push_back("");
-							values->push_back("    	${variable_inits}");
-							values->push_back("	${variable_copy}	");
-							values->push_back("}");
-							// END KEY [FUNC_CONSTRUCTOR_COPY]
-
-							// KEY [CALL_TYPE_EQUALS]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"CALL_TYPE_EQUALS", values});
-							values->push_back("{");
-							values->push_back("	// Compare type instance ${name}");
-							values->push_back("	const void* tv = __t->get_${name}();");
-							values->push_back("	const ${type_ptr} sv = this->get_${name}();");
-							values->push_back("	if (IS_NULL(sv)) {");
-							values->push_back("		if (NOT_NULL(tv)) {");
-							values->push_back("			return false;");
-							values->push_back("		}");
-							values->push_back("		return true;");
-							values->push_back("	}");
-							values->push_back("	bool r = sv->equals(tv);");
-							values->push_back("	if (!r)");
-							values->push_back("		return false;");
-							values->push_back("}");
-							// END KEY [CALL_TYPE_EQUALS]
-
-							// KEY [FUNC_NATIVE_SETTER_DEF]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"FUNC_NATIVE_SETTER_DEF", values});
-							values->push_back("/**");
-							values->push_back(" * Set the value to ${name}.");
+							values->push_back(" * Create a new read-only instance of ${name}. ");
 							values->push_back(" * ");
-							values->push_back(" * Method should only be used when this instance is being");
-							values->push_back(" * used to create or update a new record instance.");
-							values->push_back(" *");
-							values->push_back(" * @Param ${name} - Value reference.");
+							values->push_back(" * Type to be used when instance is being de-serialized from record data.");
 							values->push_back(" */");
-							values->push_back("void set_${name}(const ${type} &${name}) {");
-							values->push_back("	if (IS_NULL(this->${name})) {");
-							values->push_back("    		this->${name} = (${type_ptr})malloc(sizeof(${type}));");
-							values->push_back("    		CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));");
-							values->push_back("	}");
-							values->push_back("    	*(this->${name}) = ${name};");
+							values->push_back("${name}() {");
+							values->push_back("    ${variable_inits}");
 							values->push_back("}");
-							// END KEY [FUNC_NATIVE_SETTER_DEF]
-
-							// KEY [FUNC_DESERIALIZE]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"FUNC_DESERIALIZE", values});
-							values->push_back("/**");
-							values->push_back(" * Deserialize this type instance from the passed data map.");
-							values->push_back(" *");
-							values->push_back(" * @param __data - Serialized data record instance to load this type from.");
-							values->push_back(" */");
-							values->push_back("void deserialize(const record_struct *__data) override {");
-							values->push_back("    CHECK_NOT_NULL(__data);");
-							values->push_back("");
-							values->push_back("    this->record_type = __data->get_record_type();");
-							values->push_back("    CHECK_NOT_NULL(this->record_type);");
-							values->push_back("");
-							values->push_back("    ${read_map_calls}");
-							values->push_back("");
-							values->push_back("    this->__data = __data;");
-							values->push_back("}");
-							// END KEY [FUNC_DESERIALIZE]
+							// END KEY [FUNC_CONSTRUCTOR_READABLE]
 
 							// KEY [FUNC_CONSTRUCTOR_WRITABLE]
 							values = new std::vector<string>();
@@ -390,6 +328,33 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [FUNC_TYPE_MAP_SERIALIZER]
 
+							// KEY [FUNC_TYPE_LIST_DESERIALIZER]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_TYPE_LIST_DESERIALIZER", values});
+							values->push_back("/**");
+							values->push_back(" * Deserialize a list instance of type ${type_ptr} from the passed input data.");
+							values->push_back(" *");
+							values->push_back(" * @param __input - Void pointer to input data of type vector<record_struct *>");
+							values->push_back(" * @return - Deserialized pointer to list of type vector<${type_ptr} *>");
+							values->push_back(" */");
+							values->push_back("std::vector<${type_ptr}> *deserialize_list_${name}(const void *__input) {");
+							values->push_back("	CHECK_NOT_NULL(__input);");
+							values->push_back("	const std::vector<record_struct *> *__value = static_cast<const std::vector<record_struct *> *>( __input);");
+							values->push_back("	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(vector));");
+							values->push_back("");
+							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
+							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
+							values->push_back("	for(const record_struct *v : *__value) {");
+							values->push_back("		CHECK_NOT_NULL(v);");
+							values->push_back("		${type_ptr} __tv = deserialize_${type}(v);");
+							values->push_back("		CHECK_NOT_NULL(__tv);");
+							values->push_back("		__list->push_back(__tv);");
+							values->push_back("	}");
+							values->push_back("	return __list;");
+							values->push_back("}");
+							// END KEY [FUNC_TYPE_LIST_DESERIALIZER]
+
 							// KEY [FUNC_TYPE_LIST_SERIALIZER]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -443,25 +408,26 @@ namespace parsers {
 							values->push_back("		if (NOT_NULL(tv)) {");
 							values->push_back("			return false;");
 							values->push_back("		}");
-							values->push_back("		return true;");
 							values->push_back("	}");
-							values->push_back("	if (tv->size() != sv->size()) {");
-							values->push_back("		return false;");
-							values->push_back("	}");
-							values->push_back("");
-							values->push_back("	for(uint32_t ii = 0; ii < tv->size(); ii++) {");
-							values->push_back("		const ${type_ptr} v1 = (*sv)[ii];");
-							values->push_back("		const ${type_ptr} v2 = (*tv)[ii];");
-							values->push_back("		if (IS_NULL(v1)) {");
-							values->push_back("			if (NOT_NULL(v2)) {");
-							values->push_back("				return false;");
-							values->push_back("			}");
-							values->push_back("			continue;");
-							values->push_back("		}");
-							values->push_back("		// Check inner type equals.");
-							values->push_back("		bool r = v1->equals(v2); ");
-							values->push_back("		if (!r)");
+							values->push_back("	if (NOT_NULL(tv) && NOT_NULL(sv)) {");
+							values->push_back("		if (tv->size() != sv->size()) {");
 							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("");
+							values->push_back("		for(uint32_t ii = 0; ii < tv->size(); ii++) {");
+							values->push_back("			const ${type_ptr} v1 = (*sv)[ii];");
+							values->push_back("			const ${type_ptr} v2 = (*tv)[ii];");
+							values->push_back("			if (IS_NULL(v1)) {");
+							values->push_back("				if (NOT_NULL(v2)) {");
+							values->push_back("					return false;");
+							values->push_back("				}");
+							values->push_back("				continue;");
+							values->push_back("			}");
+							values->push_back("			// Check inner type equals.");
+							values->push_back("			bool r = v1->equals(v2); ");
+							values->push_back("			if (!r)");
+							values->push_back("				return false;");
+							values->push_back("		}");
 							values->push_back("	}");
 							values->push_back("}");
 							// END KEY [CALL_TYPE_LIST_EQUALS]
@@ -482,11 +448,12 @@ namespace parsers {
 							values->push_back("		if (NOT_NULL(tv)) {");
 							values->push_back("			return false;");
 							values->push_back("		}");
-							values->push_back("		return true;");
 							values->push_back("	}");
-							values->push_back("	bool r = th->compare(tv, sv, __constraint_operator::EQ);");
-							values->push_back("	if (!r)");
-							values->push_back("		return false;");
+							values->push_back("	if (NOT_NULL(sv) && NOT_NULL(tv)) {");
+							values->push_back("		bool r = th->compare(tv, sv, __constraint_operator::EQ);");
+							values->push_back("		if (!r)");
+							values->push_back("			return false;");
+							values->push_back("	}");
 							values->push_back("}");
 							// END KEY [CALL_NATIVE_EQUALS]
 
@@ -513,6 +480,158 @@ namespace parsers {
 							values->push_back("	return true;");
 							values->push_back("}");
 							// END KEY [FUNC_EQUALS]
+
+							// KEY [COPY_CALL_TYPE_MAP]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"COPY_CALL_TYPE_MAP", values});
+							values->push_back("// Deserialize the map ${name} from the source value.");
+							values->push_back("if (NOT_EMPTY_P(source.get_${name}())) {");
+							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
+							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
+							values->push_back("");
+							values->push_back("	const std::unordered_map<${key_type}, ${src_value_type_ptr} > *__s_map =  source.get_${name}();");
+							values->push_back("	std::unordered_map<${key_type}, ${src_value_type_ptr} >::const_iterator iter;");
+							values->push_back("	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {");
+							values->push_back("		CHECK_NOT_NULL(iter->second);");
+							values->push_back("		${value_type_ptr} __tv = new ${value_type}(*iter->second);");
+							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));");
+							values->push_back("		__map->insert({iter->first, __tv});");
+							values->push_back("	}	");
+							values->push_back("	this->${name} = __map;");
+							values->push_back("}");
+							// END KEY [COPY_CALL_TYPE_MAP]
+
+							// KEY [FUNC_LIST_STRING_ADD_DEF]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_LIST_STRING_ADD_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Add a string element to the list ${name}. ");
+							values->push_back(" * Elements are expected to be pre-assigned data");
+							values->push_back(" * value.");
+							values->push_back(" *");
+							values->push_back(" * Method should only be used when this instance is being");
+							values->push_back(" * used to create or update a new record instance.");
+							values->push_back(" *");
+							values->push_back(" * @param ${name} - String value to add to list.");
+							values->push_back(" */");
+							values->push_back("void add_to_${name}(const string &${name}) {");
+							values->push_back("    if (IS_NULL(this->${name})) {");
+							values->push_back("        this->${name} = new std::vector<${type_ptr}>();");
+							values->push_back("        CHECK_ALLOC(this->${name}, TYPE_NAME(vector));");
+							values->push_back("    }");
+							values->push_back("    if (!IS_EMPTY(${name})) {");
+							values->push_back("        uint32_t __size = ${name}.length() + 1;");
+							values->push_back("        char *__var = (char *)malloc(sizeof(char) * __size);");
+							values->push_back("        CHECK_ALLOC(__var, TYPE_NAME(char *));");
+							values->push_back("        memset(__var, 0, __size);");
+							values->push_back("        memcpy(__var, ${name}.c_str(), (__size - 1));");
+							values->push_back("        this->${name}->push_back(__var);");
+							values->push_back("    }");
+							values->push_back("}");
+							// END KEY [FUNC_LIST_STRING_ADD_DEF]
+
+							// KEY [FUNC_TYPE_DESERIALIZER]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_TYPE_DESERIALIZER", values});
+							values->push_back("/**");
+							values->push_back(" * Deserialize an instance of type ${name} from the ");
+							values->push_back(" * passed input data.");
+							values->push_back(" *");
+							values->push_back(" * @param __input - Void pointer to input data of type record_struct");
+							values->push_back(" * @return - Deserialized instance pointer of type ${type_ptr}");
+							values->push_back(" */");
+							values->push_back("${type_ptr} deserialize_${name}(const void *__input) {");
+							values->push_back("    CHECK_NOT_NULL(__input);");
+							values->push_back("    const record_struct *__value = static_cast<const record_struct *>(__input);");
+							values->push_back("    CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(record_struct));");
+							values->push_back("    ${type_ptr} __data = new ${type}();");
+							values->push_back("    __data->deserialize(__value);");
+							values->push_back("    CHECK_ALLOC(__data, TYPE_NAME(${type}));");
+							values->push_back("    return __data;");
+							values->push_back("}");
+							// END KEY [FUNC_TYPE_DESERIALIZER]
+
+							// KEY [CALL_LIST_TYPE_COMPARE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"CALL_LIST_TYPE_COMPARE", values});
+							values->push_back("{");
+							values->push_back("	// Compare list instance ${name}");
+							values->push_back("	const vector<${type_ptr}> *sv = source->get_${name}();");
+							values->push_back("	const vector<${target_type_ptr}> *tv = target->get_${name}();");
+							values->push_back("	if (IS_NULL(sv)) {");
+							values->push_back("		if (NOT_NULL(tv)) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("	if (NOT_NULL(tv) && NOT_NULL(sv)) {");
+							values->push_back("		if (tv->size() != sv->size()) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("");
+							values->push_back("		for(uint32_t ii = 0; ii < tv->size(); ii++) {");
+							values->push_back("			const ${type_ptr} v1 = (*sv)[ii];");
+							values->push_back("			const ${target_type_ptr} v2 = (*tv)[ii];");
+							values->push_back("			if (IS_NULL(v1)) {");
+							values->push_back("				if (NOT_NULL(v2)) {");
+							values->push_back("					return false;");
+							values->push_back("				}");
+							values->push_back("				continue;");
+							values->push_back("			}");
+							values->push_back("			// Check inner type equals.");
+							values->push_back("			bool r = compare_${type}::equals(v1, v2);	");
+							values->push_back("			if (!r)");
+							values->push_back("				return false;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("}");
+							// END KEY [CALL_LIST_TYPE_COMPARE]
+
+							// KEY [CALL_NATIVE_COMPARE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"CALL_NATIVE_COMPARE", values});
+							values->push_back("{");
+							values->push_back("	// Compare native field ${name}");
+							values->push_back("	const __native_type *nt = source->get_field_type(\"${name}\");");
+							values->push_back("	CHECK_NOT_NULL(nt);");
+							values->push_back("	__base_datatype_io *th = nt->get_type_handler(__record_mode::RM_READ);");
+							values->push_back("	CHECK_NOT_NULL(th);");
+							values->push_back("	const void *tv = source->get_${name}();");
+							values->push_back("	const void *sv = target->get_${name}();");
+							values->push_back("	if (IS_NULL(sv)) {");
+							values->push_back("		if (NOT_NULL(tv)) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("	if (NOT_NULL(sv) && NOT_NULL(tv)) {");
+							values->push_back("		bool r = th->compare(tv, sv, __constraint_operator::EQ);");
+							values->push_back("		if (!r)");
+							values->push_back("			return false;");
+							values->push_back("	}");
+							values->push_back("}");
+							// END KEY [CALL_NATIVE_COMPARE]
+
+							// KEY [FUNC_COMPARE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_COMPARE", values});
+							values->push_back("static bool equals(const ${type_ptr} source, const ${target_type_ptr} target) {");
+							values->push_back("	if (IS_NULL(source)) {");
+							values->push_back("		if (IS_NULL(target)) {");
+							values->push_back("			return true;");
+							values->push_back("		}");
+							values->push_back("		return false;");
+							values->push_back("	}");
+							values->push_back("");
+							values->push_back("	${equals}");
+							values->push_back("	");
+							values->push_back("	return true;");
+							values->push_back("}");
+							// END KEY [FUNC_COMPARE]
 
 							// KEY [FUNC_TYPE_SERIALIZER]
 							values = new std::vector<string>();
@@ -671,6 +790,35 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [FUNC_SETTER_TO_RECORD]
 
+							// KEY [FUNC_CONSTRUCTOR_COPY]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_CONSTRUCTOR_COPY", values});
+							values->push_back("/**");
+							values->push_back(" * Copy constructor to create a copy instance of ${name}.");
+							values->push_back(" * Copy instances should be used to update existing records.");
+							values->push_back(" *");
+							values->push_back(" * @param source - Source instance of ${name} to copy from.");
+							values->push_back(" */");
+							values->push_back("${name}(const ${name_read} &source) {");
+							values->push_back("	this->record_type = source.get_record_type();");
+							values->push_back("	CHECK_NOT_NULL(this->record_type);");
+							values->push_back("");
+							values->push_back("    	${variable_inits}");
+							values->push_back("	${variable_copy}	");
+							values->push_back("}");
+							// END KEY [FUNC_CONSTRUCTOR_COPY]
+
+							// KEY [CALL_NATIVE_READ_FROM_RECORD]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"CALL_NATIVE_READ_FROM_RECORD", values});
+							values->push_back("// Set the value of ${name}");
+							values->push_back("const ${type_ptr} __var = static_cast<const ${type_ptr}>(__ptr);");
+							values->push_back("CHECK_CAST(__var, TYPE_NAME(void *), TYPE_NAME(${type}));");
+							values->push_back("this->${name} = __var;");
+							// END KEY [CALL_NATIVE_READ_FROM_RECORD]
+
 							// KEY [FUNC_SETTER_FROM_RECORD]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -727,33 +875,6 @@ namespace parsers {
 							values->push_back("    this->read_value_${name}(__data);");
 							// END KEY [CALL_DESERIALIZE_VALUE]
 
-							// KEY [FUNC_TYPE_LIST_DESERIALIZER]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"FUNC_TYPE_LIST_DESERIALIZER", values});
-							values->push_back("/**");
-							values->push_back(" * Deserialize a list instance of type ${type_ptr} from the passed input data.");
-							values->push_back(" *");
-							values->push_back(" * @param __input - Void pointer to input data of type vector<record_struct *>");
-							values->push_back(" * @return - Deserialized pointer to list of type vector<${type_ptr} *>");
-							values->push_back(" */");
-							values->push_back("std::vector<${type_ptr}> *deserialize_list_${name}(const void *__input) {");
-							values->push_back("	CHECK_NOT_NULL(__input);");
-							values->push_back("	const std::vector<record_struct *> *__value = static_cast<const std::vector<record_struct *> *>( __input);");
-							values->push_back("	CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(vector));");
-							values->push_back("");
-							values->push_back("	std::vector<${type_ptr}> *__list = new std::vector<${type_ptr}>();");
-							values->push_back("	CHECK_ALLOC(__list, TYPE_NAME(vector));");
-							values->push_back("	for(const record_struct *v : *__value) {");
-							values->push_back("		CHECK_NOT_NULL(v);");
-							values->push_back("		${type_ptr} __tv = deserialize_${type}(v);");
-							values->push_back("		CHECK_NOT_NULL(__tv);");
-							values->push_back("		__list->push_back(__tv);");
-							values->push_back("	}");
-							values->push_back("	return __list;");
-							values->push_back("}");
-							// END KEY [FUNC_TYPE_LIST_DESERIALIZER]
-
 							// KEY [CALL_TYPE_LIST_READ_FROM_RECORD]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -776,42 +897,43 @@ namespace parsers {
 							values->push_back("		if (NOT_NULL(tv)) {");
 							values->push_back("			return false;");
 							values->push_back("		}");
-							values->push_back("		return true;");
 							values->push_back("	}");
-							values->push_back("	if (tv->size() != sv->size()) {");
-							values->push_back("		return false;");
-							values->push_back("	}");
-							values->push_back("	");
-							values->push_back("	const __native_type *nt = get_field_type(\"${name}\");");
-							values->push_back("	CHECK_NOT_NULL(nt);");
-							values->push_back("	");
-							values->push_back("	PRECONDITION(nt->get_type() == __field_type::MAP);");
-							values->push_back("	const __map_type *mt = dynamic_cast<const __map_type *>(nt);");
-							values->push_back("	CHECK_CAST(mt, TYPE_NAME(__native_type), TYPE_NAME(__map_type));");
-							values->push_back("");
-							values->push_back("	// Get type handler for value type.");
-							values->push_back("	__base_datatype_io *th = mt->get_value_type()->get_type_handler(__record_mode::RM_READ);");
-							values->push_back("	CHECK_NOT_NULL(th);");
-							values->push_back("");
-							values->push_back("	unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_t;");
-							values->push_back("	unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_s;");
-							values->push_back("	");
-							values->push_back("	for(iter_s = sv->begin(); iter_s != sv->end(); iter_s++) {");
-							values->push_back("		iter_t = tv->find(iter_s->first);");
-							values->push_back("		if (iter_t == tv->end())");
+							values->push_back("	if (NOT_NULL(tv) && NOT_NULL(sv)) {");
+							values->push_back("		if (tv->size() != sv->size()) {");
 							values->push_back("			return false;");
-							values->push_back("		const void *v1 = iter_s->second;");
-							values->push_back("		const void *v2 = iter_t->second;");
-							values->push_back("		if (IS_NULL(v1)) {");
-							values->push_back("			if (NOT_NULL(v2)) {");
-							values->push_back("				return false;");
-							values->push_back("			}");
-							values->push_back("			continue;");
 							values->push_back("		}");
+							values->push_back("	");
+							values->push_back("		const __native_type *nt = get_field_type(\"${name}\");");
+							values->push_back("		CHECK_NOT_NULL(nt);");
+							values->push_back("	");
+							values->push_back("		PRECONDITION(nt->get_type() == __field_type::MAP);");
+							values->push_back("		const __map_type *mt = dynamic_cast<const __map_type *>(nt);");
+							values->push_back("		CHECK_CAST(mt, TYPE_NAME(__native_type), TYPE_NAME(__map_type));");
 							values->push_back("");
-							values->push_back("		bool r = th->compare(v2, v1, __constraint_operator::EQ);");
-							values->push_back("		if (!r)");
-							values->push_back("			return false;");
+							values->push_back("		// Get type handler for value type.");
+							values->push_back("		__base_datatype_io *th = mt->get_value_type()->get_type_handler(__record_mode::RM_READ);");
+							values->push_back("		CHECK_NOT_NULL(th);");
+							values->push_back("");
+							values->push_back("		unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_t;");
+							values->push_back("		unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_s;");
+							values->push_back("	");
+							values->push_back("		for(iter_s = sv->begin(); iter_s != sv->end(); iter_s++) {");
+							values->push_back("			iter_t = tv->find(iter_s->first);");
+							values->push_back("			if (iter_t == tv->end())");
+							values->push_back("				return false;");
+							values->push_back("			const void *v1 = iter_s->second;");
+							values->push_back("			const void *v2 = iter_t->second;");
+							values->push_back("			if (IS_NULL(v1)) {");
+							values->push_back("				if (NOT_NULL(v2)) {");
+							values->push_back("					return false;");
+							values->push_back("				}");
+							values->push_back("				continue;");
+							values->push_back("			}");
+							values->push_back("");
+							values->push_back("			bool r = th->compare(v2, v1, __constraint_operator::EQ);");
+							values->push_back("			if (!r)");
+							values->push_back("				return false;");
+							values->push_back("		}");
 							values->push_back("	}");
 							values->push_back("}");
 							// END KEY [CALL_NATIVE_MAP_EQUALS]
@@ -822,6 +944,48 @@ namespace parsers {
 							__cpp_template.insert({"VARIABLE_NATIVE_DEF", values});
 							values->push_back("${type} ${name} = nullptr;");
 							// END KEY [VARIABLE_NATIVE_DEF]
+
+							// KEY [CALL_MAP_TYPE_COMPARE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"CALL_MAP_TYPE_COMPARE", values});
+							values->push_back("{");
+							values->push_back("	// Compare map instance ${name}");
+							values->push_back("	const unordered_map<${key_type}, ${value_type_ptr}> *sv = source->get_${name}();");
+							values->push_back("	const unordered_map<${key_type}, ${target_value_type_ptr}> *tv = target->get_${name}();");
+							values->push_back("	if (IS_NULL(sv)) {");
+							values->push_back("		if (NOT_NULL(tv)) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("	if (NOT_NULL(tv) && NOT_NULL(sv)) {");
+							values->push_back("		if (tv->size() != sv->size()) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("");
+							values->push_back("		unordered_map<${key_type}, ${target_value_type_ptr}>::const_iterator iter_t;");
+							values->push_back("		unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_s;");
+							values->push_back("	");
+							values->push_back("		for(iter_s = sv->begin(); iter_s != sv->end(); iter_s++) {");
+							values->push_back("			iter_t = tv->find(iter_s->first);");
+							values->push_back("			if (iter_t == tv->end())");
+							values->push_back("				return false;");
+							values->push_back("			const ${value_type_ptr} v1 = iter_s->second;");
+							values->push_back("			const ${target_value_type_ptr} v2 = iter_t->second;");
+							values->push_back("			if (IS_NULL(v1)) {");
+							values->push_back("				if (NOT_NULL(v2)) {");
+							values->push_back("					return false;");
+							values->push_back("				}");
+							values->push_back("				continue;");
+							values->push_back("			}");
+							values->push_back("			// Check value type equals.");
+							values->push_back("			bool r = compare_${type}::equals(v1, v2);");
+							values->push_back("			if (!r)");
+							values->push_back("				return false;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("}");
+							// END KEY [CALL_MAP_TYPE_COMPARE]
 
 							// KEY [FUNC_MAP_STRING_ADD_DEF]
 							values = new std::vector<string>();
@@ -862,20 +1026,6 @@ namespace parsers {
 							values->push_back("	FREE_NATIVE_MAP(this->${name});	");
 							// END KEY [VARIABLE_MAP_NATIVE_FREE]
 
-							// KEY [FUNC_CONSTRUCTOR_READABLE]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"FUNC_CONSTRUCTOR_READABLE", values});
-							values->push_back("/**");
-							values->push_back(" * Create a new read-only instance of ${name}. ");
-							values->push_back(" * ");
-							values->push_back(" * Type to be used when instance is being de-serialized from record data.");
-							values->push_back(" */");
-							values->push_back("${name}() {");
-							values->push_back("    ${variable_inits}");
-							values->push_back("}");
-							// END KEY [FUNC_CONSTRUCTOR_READABLE]
-
 							// KEY [CALL_TYPE_MAP_READ_FROM_RECORD]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -910,79 +1060,6 @@ namespace parsers {
 							values->push_back("}");
 							// END KEY [FUNC_STRING_SETTER_DEF]
 
-							// KEY [COPY_CALL_TYPE_MAP]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"COPY_CALL_TYPE_MAP", values});
-							values->push_back("// Deserialize the map ${name} from the source value.");
-							values->push_back("if (NOT_EMPTY_P(source.get_${name}())) {");
-							values->push_back("	std::unordered_map<${key_type}, ${value_type_ptr}> *__map = new std::unordered_map<${key_type}, ${value_type_ptr}>();");
-							values->push_back("	CHECK_ALLOC(__map, TYPE_NAME(unordered_map));");
-							values->push_back("");
-							values->push_back("	const std::unordered_map<${key_type}, ${src_value_type_ptr} > *__s_map =  source.get_${name}();");
-							values->push_back("	std::unordered_map<${key_type}, ${src_value_type_ptr} >::const_iterator iter;");
-							values->push_back("	for (iter = __s_map->begin(); iter != __s_map->end(); iter++) {");
-							values->push_back("		CHECK_NOT_NULL(iter->second);");
-							values->push_back("		${value_type_ptr} __tv = new ${value_type}(*iter->second);");
-							values->push_back("		CHECK_ALLOC(__tv, TYPE_NAME(${value_type}));");
-							values->push_back("		__map->insert({iter->first, __tv});");
-							values->push_back("	}	");
-							values->push_back("	this->${name} = __map;");
-							values->push_back("}");
-							// END KEY [COPY_CALL_TYPE_MAP]
-
-							// KEY [FUNC_LIST_STRING_ADD_DEF]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"FUNC_LIST_STRING_ADD_DEF", values});
-							values->push_back("/**");
-							values->push_back(" * Add a string element to the list ${name}. ");
-							values->push_back(" * Elements are expected to be pre-assigned data");
-							values->push_back(" * value.");
-							values->push_back(" *");
-							values->push_back(" * Method should only be used when this instance is being");
-							values->push_back(" * used to create or update a new record instance.");
-							values->push_back(" *");
-							values->push_back(" * @param ${name} - String value to add to list.");
-							values->push_back(" */");
-							values->push_back("void add_to_${name}(const string &${name}) {");
-							values->push_back("    if (IS_NULL(this->${name})) {");
-							values->push_back("        this->${name} = new std::vector<${type_ptr}>();");
-							values->push_back("        CHECK_ALLOC(this->${name}, TYPE_NAME(vector));");
-							values->push_back("    }");
-							values->push_back("    if (!IS_EMPTY(${name})) {");
-							values->push_back("        uint32_t __size = ${name}.length() + 1;");
-							values->push_back("        char *__var = (char *)malloc(sizeof(char) * __size);");
-							values->push_back("        CHECK_ALLOC(__var, TYPE_NAME(char *));");
-							values->push_back("        memset(__var, 0, __size);");
-							values->push_back("        memcpy(__var, ${name}.c_str(), (__size - 1));");
-							values->push_back("        this->${name}->push_back(__var);");
-							values->push_back("    }");
-							values->push_back("}");
-							// END KEY [FUNC_LIST_STRING_ADD_DEF]
-
-							// KEY [FUNC_TYPE_DESERIALIZER]
-							values = new std::vector<string>();
-							CHECK_ALLOC(values, TYPE_NAME(vector));
-							__cpp_template.insert({"FUNC_TYPE_DESERIALIZER", values});
-							values->push_back("/**");
-							values->push_back(" * Deserialize an instance of type ${name} from the ");
-							values->push_back(" * passed input data.");
-							values->push_back(" *");
-							values->push_back(" * @param __input - Void pointer to input data of type record_struct");
-							values->push_back(" * @return - Deserialized instance pointer of type ${type_ptr}");
-							values->push_back(" */");
-							values->push_back("${type_ptr} deserialize_${name}(const void *__input) {");
-							values->push_back("    CHECK_NOT_NULL(__input);");
-							values->push_back("    const record_struct *__value = static_cast<const record_struct *>(__input);");
-							values->push_back("    CHECK_CAST(__value, TYPE_NAME(void *), TYPE_NAME(record_struct));");
-							values->push_back("    ${type_ptr} __data = new ${type}();");
-							values->push_back("    __data->deserialize(__value);");
-							values->push_back("    CHECK_ALLOC(__data, TYPE_NAME(${type}));");
-							values->push_back("    return __data;");
-							values->push_back("}");
-							// END KEY [FUNC_TYPE_DESERIALIZER]
-
 							// KEY [FUNC_GETTER_DEF]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -997,6 +1074,59 @@ namespace parsers {
 							values->push_back("    return this->${name};");
 							values->push_back("}");
 							// END KEY [FUNC_GETTER_DEF]
+
+							// KEY [CALL_MAP_NATIVE_COMPARE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"CALL_MAP_NATIVE_COMPARE", values});
+							values->push_back("{");
+							values->push_back("	// Compare map instance ${name}");
+							values->push_back("	const unordered_map<${key_type}, ${value_type_ptr}> *tv = source->get_${name}();");
+							values->push_back("	const unordered_map<${key_type}, ${value_type_ptr}> *sv = target->get_${name}();");
+							values->push_back("	if (IS_NULL(sv)) {");
+							values->push_back("		if (NOT_NULL(tv)) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("	if (NOT_NULL(tv) && NOT_NULL(sv)) {");
+							values->push_back("		if (tv->size() != sv->size()) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("	");
+							values->push_back("		const __native_type *nt = source->get_field_type(\"${name}\");");
+							values->push_back("		CHECK_NOT_NULL(nt);");
+							values->push_back("	");
+							values->push_back("		PRECONDITION(nt->get_type() == __field_type::MAP);");
+							values->push_back("		const __map_type *mt = dynamic_cast<const __map_type *>(nt);");
+							values->push_back("		CHECK_CAST(mt, TYPE_NAME(__native_type), TYPE_NAME(__map_type));");
+							values->push_back("");
+							values->push_back("		// Get type handler for value type.");
+							values->push_back("		__base_datatype_io *th = mt->get_value_type()->get_type_handler(__record_mode::RM_READ);");
+							values->push_back("		CHECK_NOT_NULL(th);");
+							values->push_back("");
+							values->push_back("		unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_t;");
+							values->push_back("		unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_s;");
+							values->push_back("	");
+							values->push_back("		for(iter_s = sv->begin(); iter_s != sv->end(); iter_s++) {");
+							values->push_back("			iter_t = tv->find(iter_s->first);");
+							values->push_back("			if (iter_t == tv->end())");
+							values->push_back("				return false;");
+							values->push_back("			const void *v1 = iter_s->second;");
+							values->push_back("			const void *v2 = iter_t->second;");
+							values->push_back("			if (IS_NULL(v1)) {");
+							values->push_back("				if (NOT_NULL(v2)) {");
+							values->push_back("					return false;");
+							values->push_back("				}");
+							values->push_back("				continue;");
+							values->push_back("			}");
+							values->push_back("");
+							values->push_back("			bool r = th->compare(v2, v1, __constraint_operator::EQ);");
+							values->push_back("			if (!r)");
+							values->push_back("				return false;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("}");
+							// END KEY [CALL_MAP_NATIVE_COMPARE]
 
 							// KEY [VARIABLE_LIST_TYPE_FREE]
 							values = new std::vector<string>();
@@ -1017,31 +1147,32 @@ namespace parsers {
 							values->push_back("		if (NOT_NULL(tv)) {");
 							values->push_back("			return false;");
 							values->push_back("		}");
-							values->push_back("		return true;");
 							values->push_back("	}");
-							values->push_back("	if (tv->size() != sv->size()) {");
-							values->push_back("		return false;");
-							values->push_back("	}");
-							values->push_back("");
-							values->push_back("	unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_t;");
-							values->push_back("	unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_s;");
-							values->push_back("	");
-							values->push_back("	for(iter_s = sv->begin(); iter_s != sv->end(); iter_s++) {");
-							values->push_back("		iter_t = tv->find(iter_s->first);");
-							values->push_back("		if (iter_t == tv->end())");
+							values->push_back("	if (NOT_NULL(tv) && NOT_NULL(sv)) {");
+							values->push_back("		if (tv->size() != sv->size()) {");
 							values->push_back("			return false;");
-							values->push_back("		const ${value_type_ptr} v1 = iter_s->second;");
-							values->push_back("		const ${value_type_ptr} v2 = iter_t->second;");
-							values->push_back("		if (IS_NULL(v1)) {");
-							values->push_back("			if (NOT_NULL(v2)) {");
-							values->push_back("				return false;");
-							values->push_back("			}");
-							values->push_back("			continue;");
 							values->push_back("		}");
-							values->push_back("		// Check value type equals.");
-							values->push_back("		bool r = v1->equals(v2);");
-							values->push_back("		if (!r)");
-							values->push_back("			return false;");
+							values->push_back("");
+							values->push_back("		unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_t;");
+							values->push_back("		unordered_map<${key_type}, ${value_type_ptr}>::const_iterator iter_s;");
+							values->push_back("	");
+							values->push_back("		for(iter_s = sv->begin(); iter_s != sv->end(); iter_s++) {");
+							values->push_back("			iter_t = tv->find(iter_s->first);");
+							values->push_back("			if (iter_t == tv->end())");
+							values->push_back("				return false;");
+							values->push_back("			const ${value_type_ptr} v1 = iter_s->second;");
+							values->push_back("			const ${value_type_ptr} v2 = iter_t->second;");
+							values->push_back("			if (IS_NULL(v1)) {");
+							values->push_back("				if (NOT_NULL(v2)) {");
+							values->push_back("					return false;");
+							values->push_back("				}");
+							values->push_back("				continue;");
+							values->push_back("			}");
+							values->push_back("			// Check value type equals.");
+							values->push_back("			bool r = v1->equals(v2);");
+							values->push_back("			if (!r)");
+							values->push_back("				return false;");
+							values->push_back("		}");
 							values->push_back("	}");
 							values->push_back("}");
 							// END KEY [CALL_TYPE_MAP_EQUALS]
@@ -1078,6 +1209,115 @@ namespace parsers {
 							values->push_back("	FREE_NATIVE_LIST(this->${name});");
 							// END KEY [VARIABLE_LIST_NATIVE_FREE]
 
+							// KEY [CALL_LIST_NATIVE_COMPARE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"CALL_LIST_NATIVE_COMPARE", values});
+							values->push_back("{");
+							values->push_back("	// Compare list instance ${name}");
+							values->push_back("	const vector<${type_ptr}> *tv = source->get_${name}();");
+							values->push_back("	const vector<${type_ptr}> *sv = target->get_${name}();");
+							values->push_back("	if (IS_NULL(sv)) {");
+							values->push_back("		if (NOT_NULL(tv)) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("	if (NOT_NULL(tv) && NOT_NULL(sv)) {");
+							values->push_back("		if (tv->size() != sv->size()) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("		const __native_type *nt = source->get_field_type(\"${name}\");");
+							values->push_back("		CHECK_NOT_NULL(nt);");
+							values->push_back("	");
+							values->push_back("		PRECONDITION(nt->get_type() == __field_type::LIST);");
+							values->push_back("		const __list_type *lt = dynamic_cast<const __list_type *>(nt);");
+							values->push_back("		CHECK_CAST(lt, TYPE_NAME(__native_type), TYPE_NAME(__list_type));");
+							values->push_back("");
+							values->push_back("		// Get type handler for inner type.");
+							values->push_back("		__base_datatype_io *th = lt->get_inner_type()->get_type_handler(__record_mode::RM_READ);");
+							values->push_back("		CHECK_NOT_NULL(th);");
+							values->push_back("");
+							values->push_back("		for(uint32_t ii = 0; ii < tv->size(); ii++) {");
+							values->push_back("			const void *v1 = (*sv)[ii];");
+							values->push_back("			const void *v2 = (*tv)[ii];");
+							values->push_back("			if (IS_NULL(v1)) {");
+							values->push_back("				if (NOT_NULL(v2)) {");
+							values->push_back("					return false;");
+							values->push_back("				}");
+							values->push_back("				continue;");
+							values->push_back("			}");
+							values->push_back("");
+							values->push_back("			bool r = th->compare(v2, v1, __constraint_operator::EQ);");
+							values->push_back("			if (!r)");
+							values->push_back("				return false;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("	");
+							values->push_back("}");
+							// END KEY [CALL_LIST_NATIVE_COMPARE]
+
+							// KEY [FUNC_DESERIALIZE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_DESERIALIZE", values});
+							values->push_back("/**");
+							values->push_back(" * Deserialize this type instance from the passed data map.");
+							values->push_back(" *");
+							values->push_back(" * @param __data - Serialized data record instance to load this type from.");
+							values->push_back(" */");
+							values->push_back("void deserialize(const record_struct *__data) override {");
+							values->push_back("    CHECK_NOT_NULL(__data);");
+							values->push_back("");
+							values->push_back("    this->record_type = __data->get_record_type();");
+							values->push_back("    CHECK_NOT_NULL(this->record_type);");
+							values->push_back("");
+							values->push_back("    ${read_map_calls}");
+							values->push_back("");
+							values->push_back("    this->__data = __data;");
+							values->push_back("}");
+							// END KEY [FUNC_DESERIALIZE]
+
+							// KEY [CALL_TYPE_EQUALS]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"CALL_TYPE_EQUALS", values});
+							values->push_back("{");
+							values->push_back("	// Compare type instance ${name}");
+							values->push_back("	const void* tv = __t->get_${name}();");
+							values->push_back("	const ${type_ptr} sv = this->get_${name}();");
+							values->push_back("	if (IS_NULL(sv)) {");
+							values->push_back("		if (NOT_NULL(tv)) {");
+							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("		return true;");
+							values->push_back("	}");
+							values->push_back("	bool r = sv->equals(tv);");
+							values->push_back("	if (!r)");
+							values->push_back("		return false;");
+							values->push_back("}");
+							// END KEY [CALL_TYPE_EQUALS]
+
+							// KEY [FUNC_NATIVE_SETTER_DEF]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"FUNC_NATIVE_SETTER_DEF", values});
+							values->push_back("/**");
+							values->push_back(" * Set the value to ${name}.");
+							values->push_back(" * ");
+							values->push_back(" * Method should only be used when this instance is being");
+							values->push_back(" * used to create or update a new record instance.");
+							values->push_back(" *");
+							values->push_back(" * @Param ${name} - Value reference.");
+							values->push_back(" */");
+							values->push_back("void set_${name}(const ${type} &${name}) {");
+							values->push_back("	if (IS_NULL(this->${name})) {");
+							values->push_back("    		this->${name} = (${type_ptr})malloc(sizeof(${type}));");
+							values->push_back("    		CHECK_ALLOC(this->${name}, TYPE_NAME(${type}));");
+							values->push_back("	}");
+							values->push_back("    	*(this->${name}) = ${name};");
+							values->push_back("}");
+							// END KEY [FUNC_NATIVE_SETTER_DEF]
+
 							// KEY [CALL_TYPE_READ_FROM_RECORD]
 							values = new std::vector<string>();
 							CHECK_ALLOC(values, TYPE_NAME(vector));
@@ -1087,6 +1327,27 @@ namespace parsers {
 							values->push_back("CHECK_NOT_NULL(__var);");
 							values->push_back("this->${name} = __var;");
 							// END KEY [CALL_TYPE_READ_FROM_RECORD]
+
+							// KEY [CALL_TYPE_COMPARE]
+							values = new std::vector<string>();
+							CHECK_ALLOC(values, TYPE_NAME(vector));
+							__cpp_template.insert({"CALL_TYPE_COMPARE", values});
+							values->push_back("{");
+							values->push_back("	// Compare type ${name}");
+							values->push_back("	const ${type_ptr} s_ptr = source->get_${name}();");
+							values->push_back("	const ${target_type_ptr} t_ptr = target->get_${name}();");
+							values->push_back("	if (IS_NULL(s_ptr)) {");
+							values->push_back("		if (IS_NULL(t_ptr)) {");
+							values->push_back("			return true;");
+							values->push_back("		}");
+							values->push_back("	}");
+							values->push_back("	if (NOT_NULL(s_ptr) && NOT_NULL(t_ptr)) {");
+							values->push_back("		bool r = compare_${type}::equals(s_ptr, t_ptr);	");
+							values->push_back("		if (!r)");
+							values->push_back("			return false;");
+							values->push_back("	}");
+							values->push_back("}");
+							// END KEY [CALL_TYPE_COMPARE]
 
 							// KEY [FUNC_MAP_TYPE_ADD_DEF]
 							values = new std::vector<string>();
@@ -1175,35 +1436,36 @@ namespace parsers {
 							values->push_back("		if (NOT_NULL(tv)) {");
 							values->push_back("			return false;");
 							values->push_back("		}");
-							values->push_back("		return true;");
 							values->push_back("	}");
-							values->push_back("	if (tv->size() != sv->size()) {");
-							values->push_back("		return false;");
-							values->push_back("	}");
-							values->push_back("	const __native_type *nt = get_field_type(\"${name}\");");
-							values->push_back("	CHECK_NOT_NULL(nt);");
-							values->push_back("	");
-							values->push_back("	PRECONDITION(nt->get_type() == __field_type::LIST);");
-							values->push_back("	const __list_type *lt = dynamic_cast<const __list_type *>(nt);");
-							values->push_back("	CHECK_CAST(lt, TYPE_NAME(__native_type), TYPE_NAME(__list_type));");
-							values->push_back("");
-							values->push_back("	// Get type handler for inner type.");
-							values->push_back("	__base_datatype_io *th = lt->get_inner_type()->get_type_handler(__record_mode::RM_READ);");
-							values->push_back("	CHECK_NOT_NULL(th);");
-							values->push_back("");
-							values->push_back("	for(uint32_t ii = 0; ii < tv->size(); ii++) {");
-							values->push_back("		const void *v1 = (*sv)[ii];");
-							values->push_back("		const void *v2 = (*tv)[ii];");
-							values->push_back("		if (IS_NULL(v1)) {");
-							values->push_back("			if (NOT_NULL(v2)) {");
-							values->push_back("				return false;");
-							values->push_back("			}");
-							values->push_back("			continue;");
-							values->push_back("		}");
-							values->push_back("");
-							values->push_back("		bool r = th->compare(v2, v1, __constraint_operator::EQ);");
-							values->push_back("		if (!r)");
+							values->push_back("	if (NOT_NULL(tv) && NOT_NULL(sv)) {");
+							values->push_back("		if (tv->size() != sv->size()) {");
 							values->push_back("			return false;");
+							values->push_back("		}");
+							values->push_back("		const __native_type *nt = get_field_type(\"${name}\");");
+							values->push_back("		CHECK_NOT_NULL(nt);");
+							values->push_back("	");
+							values->push_back("		PRECONDITION(nt->get_type() == __field_type::LIST);");
+							values->push_back("		const __list_type *lt = dynamic_cast<const __list_type *>(nt);");
+							values->push_back("		CHECK_CAST(lt, TYPE_NAME(__native_type), TYPE_NAME(__list_type));");
+							values->push_back("");
+							values->push_back("		// Get type handler for inner type.");
+							values->push_back("		__base_datatype_io *th = lt->get_inner_type()->get_type_handler(__record_mode::RM_READ);");
+							values->push_back("		CHECK_NOT_NULL(th);");
+							values->push_back("");
+							values->push_back("		for(uint32_t ii = 0; ii < tv->size(); ii++) {");
+							values->push_back("			const void *v1 = (*sv)[ii];");
+							values->push_back("			const void *v2 = (*tv)[ii];");
+							values->push_back("			if (IS_NULL(v1)) {");
+							values->push_back("				if (NOT_NULL(v2)) {");
+							values->push_back("					return false;");
+							values->push_back("				}");
+							values->push_back("				continue;");
+							values->push_back("			}");
+							values->push_back("");
+							values->push_back("			bool r = th->compare(v2, v1, __constraint_operator::EQ);");
+							values->push_back("			if (!r)");
+							values->push_back("				return false;");
+							values->push_back("		}");
 							values->push_back("	}");
 							values->push_back("}");
 							// END KEY [CALL_NATIVE_LIST_EQUALS]
@@ -1278,6 +1540,7 @@ namespace parsers {
 REACTFS_NS_CORE_END
 #define CPPT_TOKEN_FILE_DEF "FILE_DEF"
 #define CPPT_TOKEN_FILE_COMMENT "FILE_COMMENT"
+#define CPPT_TOKEN_COMPARE_CLASS_DEF "COMPARE_CLASS_DEF"
 #define CPPT_TOKEN_INCLUDE_BASE "INCLUDE_BASE"
 #define CPPT_TOKEN_FUNC_DESTRUCTOR "FUNC_DESTRUCTOR"
 #define CPPT_TOKEN_COPY_CALL_TYPE_MAP_PTR "COPY_CALL_TYPE_MAP_PTR"
@@ -1290,19 +1553,22 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_COPY_CALL_STRING_PTR "COPY_CALL_STRING_PTR"
 #define CPPT_TOKEN_COPY_CALL_NATIVE_PTR "COPY_CALL_NATIVE_PTR"
 #define CPPT_TOKEN_COPY_CALL_NATIVE "COPY_CALL_NATIVE"
-#define CPPT_TOKEN_CALL_NATIVE_READ_FROM_RECORD "CALL_NATIVE_READ_FROM_RECORD"
-#define CPPT_TOKEN_FUNC_CONSTRUCTOR_COPY "FUNC_CONSTRUCTOR_COPY"
-#define CPPT_TOKEN_CALL_TYPE_EQUALS "CALL_TYPE_EQUALS"
-#define CPPT_TOKEN_FUNC_NATIVE_SETTER_DEF "FUNC_NATIVE_SETTER_DEF"
-#define CPPT_TOKEN_FUNC_DESERIALIZE "FUNC_DESERIALIZE"
+#define CPPT_TOKEN_FUNC_CONSTRUCTOR_READABLE "FUNC_CONSTRUCTOR_READABLE"
 #define CPPT_TOKEN_FUNC_CONSTRUCTOR_WRITABLE "FUNC_CONSTRUCTOR_WRITABLE"
 #define CPPT_TOKEN_FUNC_TYPE_MAP_DESERIALIZER "FUNC_TYPE_MAP_DESERIALIZER"
 #define CPPT_TOKEN_FUNC_TYPE_MAP_SERIALIZER "FUNC_TYPE_MAP_SERIALIZER"
+#define CPPT_TOKEN_FUNC_TYPE_LIST_DESERIALIZER "FUNC_TYPE_LIST_DESERIALIZER"
 #define CPPT_TOKEN_FUNC_TYPE_LIST_SERIALIZER "FUNC_TYPE_LIST_SERIALIZER"
 #define CPPT_TOKEN_FUNC_SERIALIZE "FUNC_SERIALIZE"
 #define CPPT_TOKEN_CALL_TYPE_LIST_EQUALS "CALL_TYPE_LIST_EQUALS"
 #define CPPT_TOKEN_CALL_NATIVE_EQUALS "CALL_NATIVE_EQUALS"
 #define CPPT_TOKEN_FUNC_EQUALS "FUNC_EQUALS"
+#define CPPT_TOKEN_COPY_CALL_TYPE_MAP "COPY_CALL_TYPE_MAP"
+#define CPPT_TOKEN_FUNC_LIST_STRING_ADD_DEF "FUNC_LIST_STRING_ADD_DEF"
+#define CPPT_TOKEN_FUNC_TYPE_DESERIALIZER "FUNC_TYPE_DESERIALIZER"
+#define CPPT_TOKEN_CALL_LIST_TYPE_COMPARE "CALL_LIST_TYPE_COMPARE"
+#define CPPT_TOKEN_CALL_NATIVE_COMPARE "CALL_NATIVE_COMPARE"
+#define CPPT_TOKEN_FUNC_COMPARE "FUNC_COMPARE"
 #define CPPT_TOKEN_FUNC_TYPE_SERIALIZER "FUNC_TYPE_SERIALIZER"
 #define CPPT_TOKEN_CALL_TYPE_MAP_SETTER_TO_RECORD "CALL_TYPE_MAP_SETTER_TO_RECORD"
 #define CPPT_TOKEN_CALL_TYPE_LIST_SETTER_TO_RECORD "CALL_TYPE_LIST_SETTER_TO_RECORD"
@@ -1312,30 +1578,34 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_CALL_SETTER_TO_RECORD "CALL_SETTER_TO_RECORD"
 #define CPPT_TOKEN_FUNC_MAP_NATIVE_ADD_DEF "FUNC_MAP_NATIVE_ADD_DEF"
 #define CPPT_TOKEN_FUNC_SETTER_TO_RECORD "FUNC_SETTER_TO_RECORD"
+#define CPPT_TOKEN_FUNC_CONSTRUCTOR_COPY "FUNC_CONSTRUCTOR_COPY"
+#define CPPT_TOKEN_CALL_NATIVE_READ_FROM_RECORD "CALL_NATIVE_READ_FROM_RECORD"
 #define CPPT_TOKEN_FUNC_SETTER_FROM_RECORD "FUNC_SETTER_FROM_RECORD"
 #define CPPT_TOKEN_COPY_CALL_STRING "COPY_CALL_STRING"
 #define CPPT_TOKEN_FUNC_SETTER_PTR_DEF "FUNC_SETTER_PTR_DEF"
 #define CPPT_TOKEN_CALL_DESERIALIZE_VALUE "CALL_DESERIALIZE_VALUE"
-#define CPPT_TOKEN_FUNC_TYPE_LIST_DESERIALIZER "FUNC_TYPE_LIST_DESERIALIZER"
 #define CPPT_TOKEN_CALL_TYPE_LIST_READ_FROM_RECORD "CALL_TYPE_LIST_READ_FROM_RECORD"
 #define CPPT_TOKEN_CALL_NATIVE_MAP_EQUALS "CALL_NATIVE_MAP_EQUALS"
 #define CPPT_TOKEN_VARIABLE_NATIVE_DEF "VARIABLE_NATIVE_DEF"
+#define CPPT_TOKEN_CALL_MAP_TYPE_COMPARE "CALL_MAP_TYPE_COMPARE"
 #define CPPT_TOKEN_FUNC_MAP_STRING_ADD_DEF "FUNC_MAP_STRING_ADD_DEF"
 #define CPPT_TOKEN_VARIABLE_TYPE_FREE "VARIABLE_TYPE_FREE"
 #define CPPT_TOKEN_VARIABLE_MAP_NATIVE_FREE "VARIABLE_MAP_NATIVE_FREE"
-#define CPPT_TOKEN_FUNC_CONSTRUCTOR_READABLE "FUNC_CONSTRUCTOR_READABLE"
 #define CPPT_TOKEN_CALL_TYPE_MAP_READ_FROM_RECORD "CALL_TYPE_MAP_READ_FROM_RECORD"
 #define CPPT_TOKEN_FUNC_STRING_SETTER_DEF "FUNC_STRING_SETTER_DEF"
-#define CPPT_TOKEN_COPY_CALL_TYPE_MAP "COPY_CALL_TYPE_MAP"
-#define CPPT_TOKEN_FUNC_LIST_STRING_ADD_DEF "FUNC_LIST_STRING_ADD_DEF"
-#define CPPT_TOKEN_FUNC_TYPE_DESERIALIZER "FUNC_TYPE_DESERIALIZER"
 #define CPPT_TOKEN_FUNC_GETTER_DEF "FUNC_GETTER_DEF"
+#define CPPT_TOKEN_CALL_MAP_NATIVE_COMPARE "CALL_MAP_NATIVE_COMPARE"
 #define CPPT_TOKEN_VARIABLE_LIST_TYPE_FREE "VARIABLE_LIST_TYPE_FREE"
 #define CPPT_TOKEN_CALL_TYPE_MAP_EQUALS "CALL_TYPE_MAP_EQUALS"
 #define CPPT_TOKEN_NAMESPACE "NAMESPACE"
 #define CPPT_TOKEN_CALL_TYPE_SETTER_TO_RECORD "CALL_TYPE_SETTER_TO_RECORD"
 #define CPPT_TOKEN_VARIABLE_LIST_NATIVE_FREE "VARIABLE_LIST_NATIVE_FREE"
+#define CPPT_TOKEN_CALL_LIST_NATIVE_COMPARE "CALL_LIST_NATIVE_COMPARE"
+#define CPPT_TOKEN_FUNC_DESERIALIZE "FUNC_DESERIALIZE"
+#define CPPT_TOKEN_CALL_TYPE_EQUALS "CALL_TYPE_EQUALS"
+#define CPPT_TOKEN_FUNC_NATIVE_SETTER_DEF "FUNC_NATIVE_SETTER_DEF"
 #define CPPT_TOKEN_CALL_TYPE_READ_FROM_RECORD "CALL_TYPE_READ_FROM_RECORD"
+#define CPPT_TOKEN_CALL_TYPE_COMPARE "CALL_TYPE_COMPARE"
 #define CPPT_TOKEN_FUNC_MAP_TYPE_ADD_DEF "FUNC_MAP_TYPE_ADD_DEF"
 #define CPPT_TOKEN_CLASS_DEF "CLASS_DEF"
 #define CPPT_TOKEN_FUNC_CONSTRUCTOR_COPY_PTR "FUNC_CONSTRUCTOR_COPY_PTR"
@@ -1354,30 +1624,32 @@ REACTFS_NS_CORE_END
 #define CPPT_TOKEN_DEF_VARIABLE_FREES "${variable_frees}"
 #define CPPT_TOKEN_DEF_USERNAME "${username}"
 #define CPPT_TOKEN_DEF_VERSION "${version}"
+#define CPPT_TOKEN_DEF_HEADER "${header}"
 #define CPPT_TOKEN_DEF_PUBLIC_FUNCTIONS "${public_functions}"
 #define CPPT_TOKEN_DEF_READ_MAP_CALLS "${read_map_calls}"
 #define CPPT_TOKEN_DEF_DECLARATIONS "${declarations}"
-#define CPPT_TOKEN_DEF_SET_MAP_CALLS "${set_map_calls}"
-#define CPPT_TOKEN_DEF_CONSTRUCTOR "${constructor}"
-#define CPPT_TOKEN_DEF_NESTED "${nested}"
 #define CPPT_TOKEN_DEF_VARIABLE_INITS "${variable_inits}"
 #define CPPT_TOKEN_DEF_NAME_READ "${name_read}"
 #define CPPT_TOKEN_DEF_PARENT "${parent}"
 #define CPPT_TOKEN_DEF_NAME "${name}"
 #define CPPT_TOKEN_DEF_INCLUDES "${includes}"
-#define CPPT_TOKEN_DEF_BODY "${body}"
-#define CPPT_TOKEN_DEF_KEY_TYPE "${key_type}"
-#define CPPT_TOKEN_DEF_RETURN "${return}"
-#define CPPT_TOKEN_DEF_EQUALS "${equals}"
-#define CPPT_TOKEN_DEF_VALUE_TYPE "${value_type}"
 #define CPPT_TOKEN_DEF_DATA_VAR "${data_var}"
 #define CPPT_TOKEN_DEF_SRC_VALUE_TYPE_PTR "${src_value_type_ptr}"
+#define CPPT_TOKEN_DEF_EQUALS "${equals}"
+#define CPPT_TOKEN_DEF_VALUE_TYPE "${value_type}"
+#define CPPT_TOKEN_DEF_RETURN "${return}"
+#define CPPT_TOKEN_DEF_BODY "${body}"
+#define CPPT_TOKEN_DEF_KEY_TYPE "${key_type}"
+#define CPPT_TOKEN_DEF_SET_MAP_CALLS "${set_map_calls}"
+#define CPPT_TOKEN_DEF_CONSTRUCTOR "${constructor}"
+#define CPPT_TOKEN_DEF_NESTED "${nested}"
+#define CPPT_TOKEN_DEF_TARGET_VALUE_TYPE_PTR "${target_value_type_ptr}"
 #define CPPT_TOKEN_DEF_M_NAME "${m_name}"
 #define CPPT_TOKEN_DEF_SRC_TYPE_PTR "${src_type_ptr}"
+#define CPPT_TOKEN_DEF_TARGET_TYPE_PTR "${target_type_ptr}"
 #define CPPT_TOKEN_DEF_VALUE_TYPE_PTR "${value_type_ptr}"
 #define CPPT_TOKEN_DEF_DESTRUCTOR "${destructor}"
 #define CPPT_TOKEN_DEF_PRIVATE_FUNCTIONS "${private_functions}"
 #define CPPT_TOKEN_DEF_TYPE_PTR "${type_ptr}"
-#define CPPT_TOKEN_DEF_HEADER "${header}"
 #define CPPT_TOKEN_DEF_TYPE "${type}"
 #endif // REACTFS_CPP_TEMPLATE_HEADER_H

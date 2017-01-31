@@ -62,6 +62,8 @@ REACTFS_NS_CORE
                         vector<string> variables;
                         vector<string> copy_constr_calls;
                         vector<string> copy_constr_calls_ptr;
+                        vector<string> type_compare_calls;
+                        vector<string> mutable_compare_calls;
 
                         string get_file_header(const string &classname, const string &schema_name,
                                                __version_header &version) {
@@ -426,11 +428,46 @@ REACTFS_NS_CORE
                             return m_class.class_str;
                         }
 
+                        string generate_compare_class() {
+                            string b1;
+                            READ_FROM_VECT(b1, type_compare_calls);
+                            //string b2;
+                            //READ_FROM_VECT(b2, mutable_compare_calls);
+                            //string body = common_utils::format("%s\n%s", b1.c_str(), b2.c_str());
+
+                            string fstr;
+                            READ_PARSED_ROWS(fstr, template_header, CPPT_TOKEN_FUNC_COMPARE);
+
+                            string tk_t_type_ptr = CPPT_TOKEN_DEF_TARGET_TYPE_PTR;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_equals = CPPT_TOKEN_DEF_EQUALS;
+
+                            string tn = common_utils::format("%s *", ro_class.classname.c_str());
+                            string ttn = common_utils::format("%s *", m_class.classname.c_str());
+
+                            REPLACE_TOKEN(fstr, tk_type_ptr, tn);
+                            REPLACE_TOKEN(fstr, tk_t_type_ptr, ttn);
+                            REPLACE_TOKEN(fstr, tk_equals, b1);
+
+                            string class_str;
+                            READ_PARSED_ROWS(class_str, template_header, CPPT_TOKEN_COMPARE_CLASS_DEF);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_p_func = CPPT_TOKEN_DEF_PUBLIC_FUNCTIONS;
+
+                            REPLACE_TOKEN(class_str, tk_name, ro_class.classname);
+                            REPLACE_TOKEN(class_str, tk_p_func, fstr);
+
+                            return class_str;
+                        }
+
                         string get_class_def() {
                             string ro_str = get_ro_class_def();
                             string m_str = get_m_class_def();
+                            string c_str = generate_compare_class();
 
-                            string class_def = common_utils::format("%s\n\n%s", ro_str.c_str(), m_str.c_str());
+                            string class_def = common_utils::format("%s\n\n%s\n\n%s\n", ro_str.c_str(), m_str.c_str(),
+                                                                    c_str.c_str());
                             if (!IS_EMPTY(this->name_space)) {
                                 string nstr = get_namespace();
                                 CHECK_NOT_EMPTY(nstr);
@@ -441,6 +478,23 @@ REACTFS_NS_CORE
                                 return nstr;
                             }
                             return class_def;
+                        }
+
+                        void add_native_compare(__native_type *type) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_CALL_NATIVE_COMPARE);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
+                            string tn = type->get_type_ptr(common_consts::EMPTY_STRING);
+                            const string nn = type->get_name();
+
+                            REPLACE_TOKEN(str, tk_type_ptr, tn);
+                            REPLACE_TOKEN(str, tk_name, nn);
+
+                            type_compare_calls.push_back(str);
+                            mutable_compare_calls.push_back(str);
                         }
 
                         void add_type_equals(__native_type *type, bool mutate) {
@@ -464,6 +518,30 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        void add_type_compare(__native_type *type, bool mutate, vector<string> *array) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_CALL_TYPE_COMPARE);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_s_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_t_type_ptr = CPPT_TOKEN_DEF_TARGET_TYPE_PTR;
+
+                            string ty = type->get_type_name(common_consts::EMPTY_STRING);
+                            string prefix = (mutate ? CPPT_MUTABLE_CLASS_PREFIX : common_consts::EMPTY_STRING);
+                            string tn = type->get_type_ptr(prefix);
+                            const string nn = type->get_name();
+                            prefix = (!mutate ? CPPT_MUTABLE_CLASS_PREFIX : common_consts::EMPTY_STRING);
+                            string ttn = type->get_type_ptr(prefix);
+
+                            REPLACE_TOKEN(str, tk_name, nn);
+                            REPLACE_TOKEN(str, tk_type, ty);
+                            REPLACE_TOKEN(str, tk_s_type_ptr, tn);
+                            REPLACE_TOKEN(str, tk_t_type_ptr, ttn);
+
+                            array->push_back(str);
+                        }
+
                         void add_list_type_equals(__list_type *type, bool mutate) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_CALL_TYPE_LIST_EQUALS);
@@ -485,6 +563,30 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        void add_list_type_compare(__list_type *type, bool mutate, vector<string> *array) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_CALL_LIST_TYPE_COMPARE);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_s_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+                            string tk_t_type_ptr = CPPT_TOKEN_DEF_TARGET_TYPE_PTR;
+
+                            string ty = type->get_inner_type()->get_type_name(common_consts::EMPTY_STRING);
+                            string prefix = (mutate ? CPPT_MUTABLE_CLASS_PREFIX : common_consts::EMPTY_STRING);
+                            string tn = type->get_inner_type()->get_type_ptr(prefix);
+                            const string nn = type->get_name();
+                            prefix = (!mutate ? CPPT_MUTABLE_CLASS_PREFIX : common_consts::EMPTY_STRING);
+                            string ttn = type->get_inner_type()->get_type_ptr(prefix);
+
+                            REPLACE_TOKEN(str, tk_name, nn);
+                            REPLACE_TOKEN(str, tk_type, ty);
+                            REPLACE_TOKEN(str, tk_s_type_ptr, tn);
+                            REPLACE_TOKEN(str, tk_t_type_ptr, ttn);
+
+                            array->push_back(str);
+                        }
+
                         void add_list_native_equals(__list_type *type, bool mutate) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_CALL_NATIVE_LIST_EQUALS);
@@ -503,6 +605,23 @@ REACTFS_NS_CORE
                             } else {
                                 ro_class.equals_calls.push_back(str);
                             }
+                        }
+
+                        void add_list_native_compare(__list_type *type) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_CALL_LIST_NATIVE_COMPARE);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type_ptr = CPPT_TOKEN_DEF_TYPE_PTR;
+
+                            string tn = type->get_inner_type()->get_type_ptr(common_consts::EMPTY_STRING);
+                            const string nn = type->get_name();
+
+                            REPLACE_TOKEN(str, tk_type_ptr, tn);
+                            REPLACE_TOKEN(str, tk_name, nn);
+
+                            type_compare_calls.push_back(str);
+                            mutable_compare_calls.push_back(str);
                         }
 
                         void add_map_native_equals(__map_type *type, bool mutate) {
@@ -531,6 +650,29 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        void add_map_native_compare(__map_type *type) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_CALL_MAP_NATIVE_COMPARE);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
+                            string tk_v_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
+
+                            const string nn = type->get_name();
+                            string tk = type->get_key_type()->get_type_name(common_consts::EMPTY_STRING);
+                            if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                tk = "std::string";
+                            }
+                            string tv = type->get_value_type()->get_type_ptr(common_consts::EMPTY_STRING);
+
+                            REPLACE_TOKEN(str, tk_name, nn);
+                            REPLACE_TOKEN(str, tk_k_type, tk);
+                            REPLACE_TOKEN(str, tk_v_type_ptr, tv);
+
+                            type_compare_calls.push_back(str);
+                            mutable_compare_calls.push_back(str);
+                        }
+
                         void add_map_type_equals(__map_type *type, bool mutate) {
                             string str;
                             READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_CALL_TYPE_MAP_EQUALS);
@@ -556,6 +698,36 @@ REACTFS_NS_CORE
                             } else {
                                 ro_class.equals_calls.push_back(str);
                             }
+                        }
+
+                        void add_map_type_compare(__map_type *type, bool mutate, vector<string> *array) {
+                            string str;
+                            READ_PARSED_ROWS(str, template_header, CPPT_TOKEN_CALL_MAP_TYPE_COMPARE);
+
+                            string tk_name = CPPT_TOKEN_DEF_NAME;
+                            string tk_type = CPPT_TOKEN_DEF_TYPE;
+                            string tk_k_type = CPPT_TOKEN_DEF_KEY_TYPE;
+                            string tk_sv_type_ptr = CPPT_TOKEN_DEF_VALUE_TYPE_PTR;
+                            string tk_tv_type_ptr = CPPT_TOKEN_DEF_TARGET_VALUE_TYPE_PTR;
+
+                            string key_t = type->get_key_type()->get_type_ptr(common_consts::EMPTY_STRING);
+                            if (type->get_key_type()->get_datatype() == __type_def_enum::TYPE_STRING) {
+                                key_t = "std::string";
+                            }
+                            string ty = type->get_value_type()->get_type_name(common_consts::EMPTY_STRING);
+                            string prefix = (mutate ? CPPT_MUTABLE_CLASS_PREFIX : common_consts::EMPTY_STRING);
+                            string tn = type->get_value_type()->get_type_ptr(prefix);
+                            const string nn = type->get_name();
+                            prefix = (!mutate ? CPPT_MUTABLE_CLASS_PREFIX : common_consts::EMPTY_STRING);
+                            string ttn = type->get_value_type()->get_type_ptr(prefix);
+
+                            REPLACE_TOKEN(str, tk_name, nn);
+                            REPLACE_TOKEN(str, tk_type, ty);
+                            REPLACE_TOKEN(str, tk_k_type, key_t);
+                            REPLACE_TOKEN(str, tk_sv_type_ptr, tn);
+                            REPLACE_TOKEN(str, tk_tv_type_ptr, ttn);
+
+                            array->push_back(str);
                         }
 
                     public:
@@ -601,11 +773,15 @@ REACTFS_NS_CORE
                             TRACE("EQUALS [NATIVE] [%s]", str.c_str());
                             m_class.equals_calls.push_back(str);
                             ro_class.equals_calls.push_back(str);
+
+                            add_native_compare(type);
                         }
 
                         void add_type_equals(__native_type *type) {
                             add_type_equals(type, true);
                             add_type_equals(type, false);
+                            add_type_compare(type, true, &mutable_compare_calls);
+                            add_type_compare(type, false, &type_compare_calls);
                         }
 
                         void add_list_native_equals(__native_type *type) {
@@ -614,6 +790,7 @@ REACTFS_NS_CORE
 
                             add_list_native_equals(lt, true);
                             add_list_native_equals(lt, false);
+                            add_list_native_compare(lt);
                         }
 
                         void add_list_type_equals(__native_type *type) {
@@ -622,6 +799,8 @@ REACTFS_NS_CORE
 
                             add_list_type_equals(lt, true);
                             add_list_type_equals(lt, false);
+                            add_list_type_compare(lt, true, &mutable_compare_calls);
+                            add_list_type_compare(lt, false, &type_compare_calls);
                         }
 
                         void add_map_native_equals(__native_type *type) {
@@ -630,6 +809,7 @@ REACTFS_NS_CORE
 
                             add_map_native_equals(mt, true);
                             add_map_native_equals(mt, false);
+                            add_map_native_compare(mt);
                         }
 
                         void add_map_type_equals(__native_type *type) {
@@ -638,6 +818,8 @@ REACTFS_NS_CORE
 
                             add_map_type_equals(mt, true);
                             add_map_type_equals(mt, false);
+                            add_map_type_compare(mt, true, &mutable_compare_calls);
+                            add_map_type_compare(mt, false, &type_compare_calls);
                         }
 
                         void generate_list_serde(__list_type *type, string token, bool mutate) {
