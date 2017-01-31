@@ -487,6 +487,16 @@ REACTFS_NS_CORE
                     read_index(__index_key_set *index, uint8_t rec_state = BLOCK_RECORD_STATE_READABLE) = 0;
 
                     /*!
+                     * Read the index record for the specified index.
+                     *
+                     * @param indexs - Vector of Data record index.
+                     * @param rec_state - Allow to read dirty/deleted records?
+                     * @return - Index record pointer.
+                     */
+                    virtual vector<const __typed_index_record *> *read_index(const vector<__index_key_set *> indexs,
+                                                                             uint8_t rec_state = BLOCK_RECORD_STATE_READABLE) = 0;
+
+                    /*!
                      * Close this instance of the block index.
                      */
                     virtual void close() = 0;

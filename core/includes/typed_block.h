@@ -107,7 +107,6 @@ REACTFS_NS_CORE
                             }
                             ptr++;
                         }
-                        return nullptr;
                     }
 
                 public:

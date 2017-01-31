@@ -104,6 +104,12 @@ REACTFS_NS_CORE
                 typedef __hash_index_header_v0__ __hash_index_header;
                 typedef __hash_rollback_info_v0__ __hash_rollback_info;
 
+                typedef struct __hash_bucket__ {
+                    uint32_t hash = 0;
+                    uint32_t bucket = 0;
+                    uint32_t offset = 0;
+                } __hash_bucket;
+
                 class typed_hash_index : public typed_index_base {
                 protected:
                     __hash_index_header *hash_header = nullptr;
@@ -285,6 +291,10 @@ REACTFS_NS_CORE
 
                     __typed_index_read *__read_index(uint32_t hash, __index_key_set *index, uint8_t rec_state);
 
+                    __typed_index_read *
+                    __read_index(uint32_t hash, uint32_t bucket, uint32_t bucket_offset, __index_key_set *index,
+                                 uint8_t rec_state);
+
                     void commit_change(__rollback_record *record) {
                         if (record->update_type == HASH_UPDATE_WRITE) {
                             __write_rollback *r = static_cast<__write_rollback *>(record);
@@ -337,6 +347,15 @@ REACTFS_NS_CORE
                         __typed_index_bucket ib(this->index_def);
                         ib.read(ptr, record->bucket_offset, hash_header->key_size);
                         ib.remove(record->hash_value, record->bucket_cell, hash_header->key_size);
+                    }
+
+                    static bool sort_buckets(const __hash_bucket v1, const __hash_bucket v2) {
+                        if (v1.bucket < v2.bucket) {
+                            return true;
+                        } else if (v1.bucket == v2.bucket) {
+                            return (v1.offset < v2.offset);
+                        }
+                        return false;
                     }
 
                 public:
@@ -463,6 +482,16 @@ REACTFS_NS_CORE
                      */
                     const __typed_index_record *
                     read_index(__index_key_set *index, uint8_t rec_state = BLOCK_RECORD_STATE_READABLE) override;
+
+                    /*!
+                     * Read the index record for the specified index.
+                     *
+                     * @param indexs - Vector of Data record index.
+                     * @param rec_state - Allow to read dirty/deleted records?
+                     * @return - Index record pointer.
+                     */
+                    virtual vector<const __typed_index_record *> *read_index(const vector<__index_key_set *> indexs,
+                                                                             uint8_t rec_state = BLOCK_RECORD_STATE_READABLE) override;
 
                     /*!
                      * Close this instance of the block index.

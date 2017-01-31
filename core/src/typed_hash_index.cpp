@@ -252,13 +252,12 @@ const bool com::wookler::reactfs::core::typed_hash_index::has_write_space() cons
     return has_overflow_space();
 }
 
-__typed_index_read *com::wookler::reactfs::core::typed_hash_index::__read_index(uint32_t hash, __index_key_set *index,
-                                                                                uint8_t rec_state) {
-    uint32_t bucket = hash % hash_header->bucket_count;
-    uint32_t boff = hash % hash_header->bucket_prime;
-
+__typed_index_read *
+com::wookler::reactfs::core::typed_hash_index::__read_index(uint32_t hash, uint32_t bucket, uint32_t bucket_offset,
+                                                            __index_key_set *index,
+                                                            uint8_t rec_state) {
     uint64_t base_offset = 0;
-    void *b_ptr = get_index_ptr(bucket, boff, &base_offset);
+    void *b_ptr = get_index_ptr(bucket, bucket_offset, &base_offset);
     CHECK_NOT_NULL(b_ptr);
 
     uint8_t r_offset = 0;
@@ -289,11 +288,56 @@ __typed_index_read *com::wookler::reactfs::core::typed_hash_index::__read_index(
     return nullptr;
 }
 
+__typed_index_read *com::wookler::reactfs::core::typed_hash_index::__read_index(uint32_t hash, __index_key_set *index,
+                                                                                uint8_t rec_state) {
+    uint32_t bucket = hash % hash_header->bucket_count;
+    uint32_t boff = hash % hash_header->bucket_prime;
+
+    return __read_index(hash, bucket, boff, index, rec_state);
+}
+
+vector<const __typed_index_record *> *com::wookler::reactfs::core::typed_hash_index::read_index(
+        const vector<__index_key_set *> indexs, uint8_t rec_state) {
+    CHECK_STATE_AVAILABLE(state);
+    CHECK_NOT_EMPTY(indexs);
+
+    vector<__hash_bucket> hashes;
+    for (__index_key_set *iptr : indexs) {
+        uint32_t hash = 0;
+        CHECK_NOT_NULL(iptr);
+        CHECK_NOT_NULL(iptr->key_data);
+        CHECK_NOT_NULL(iptr->key_size);
+        PRECONDITION(iptr->key_size > 0);
+        MurmurHash3_x86_32(iptr->key_data, *iptr->key_size, hash_header->block_seed, &hash);
+        __hash_bucket hb;
+        hb.hash = hash;
+        hb.bucket = hash % hash_header->bucket_count;
+        hb.offset = hash % hash_header->bucket_prime;
+
+        hashes.push_back(hb);
+    }
+    std::sort(hashes.begin(), hashes.end(), typed_hash_index::sort_buckets);
+
+    vector<const __typed_index_record *> *array = new vector<const __typed_index_record *>();
+    CHECK_ALLOC(array, TYPE_NAME(vector));
+
+    for (uint16_t ii = 0; ii < hashes.size(); ii++) {
+        __hash_bucket hb = hashes[ii];
+        __index_key_set *index = indexs[ii];
+        __typed_index_read *rec = __read_index(hb.hash, hb.bucket, hb.offset, index, rec_state);
+        if (NOT_NULL(rec) && NOT_NULL(rec->record)) {
+            array->push_back(rec->record);
+        }
+    }
+    return array;
+}
+
 const __typed_index_record *
 com::wookler::reactfs::core::typed_hash_index::read_index(__index_key_set *index, uint8_t rec_state) {
     CHECK_STATE_AVAILABLE(state);
     CHECK_NOT_NULL(index);
     CHECK_NOT_NULL(index->key_data);
+    CHECK_NOT_NULL(index->key_size);
     PRECONDITION(*index->key_size > 0);
 
     uint32_t hash = 0;
