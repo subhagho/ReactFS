@@ -67,6 +67,8 @@ main(const int argc, const char **argv) {
                 CHECK_ALLOC(rs, TYPE_NAME(test_schema));
                 rs->deserialize(rec);
                 LOG_DEBUG("[%s] size=%lu", rs->get_key(), r_size);
+                mutable_test_schema *ts = source[ii];
+                POSTCONDITION(compare_test_schema::equals(rs, ts));
                 CHECK_AND_FREE(rec);
                 CHECK_AND_FREE(rs);
                 offset += r_size;
