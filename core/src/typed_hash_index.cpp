@@ -288,14 +288,6 @@ com::wookler::reactfs::core::typed_hash_index::__read_index(uint32_t hash, uint3
     return nullptr;
 }
 
-__typed_index_read *com::wookler::reactfs::core::typed_hash_index::__read_index(uint32_t hash, __index_key_set *index,
-                                                                                uint8_t rec_state) {
-    uint32_t bucket = hash % hash_header->bucket_count;
-    uint32_t boff = hash % hash_header->bucket_prime;
-
-    return __read_index(hash, bucket, boff, index, rec_state);
-}
-
 vector<const __typed_index_record *> *com::wookler::reactfs::core::typed_hash_index::read_index(
         const vector<__index_key_set *> indexs, uint8_t rec_state) {
     CHECK_STATE_AVAILABLE(state);
@@ -342,8 +334,10 @@ com::wookler::reactfs::core::typed_hash_index::read_index(__index_key_set *index
 
     uint32_t hash = 0;
     MurmurHash3_x86_32(index->key_data, *index->key_size, hash_header->block_seed, &hash);
+    uint32_t bucket = hash % hash_header->bucket_count;
+    uint32_t boff = hash % hash_header->bucket_prime;
 
-    __typed_index_read *ptr = __read_index(hash, index, rec_state);
+    __typed_index_read *ptr = __read_index(hash, bucket, boff, index, rec_state);
     if (NOT_NULL(ptr) && NOT_NULL(ptr->record)) {
         return ptr->record;
     }
@@ -445,8 +439,10 @@ bool com::wookler::reactfs::core::typed_hash_index::delete_index(__index_key_set
 
     uint32_t hash = 0;
     MurmurHash3_x86_32(index->key_data, *index->key_size, hash_header->block_seed, &hash);
+    uint32_t bucket = hash % hash_header->bucket_count;
+    uint32_t boff = hash % hash_header->bucket_prime;
 
-    __typed_index_read *ptr = __read_index(hash, index, BLOCK_RECORD_STATE_FREE);
+    __typed_index_read *ptr = __read_index(hash, bucket, boff, index, BLOCK_RECORD_STATE_FREE);
     if (NOT_NULL(ptr)) {
         __typed_index_record *rec = ptr->record;
         if (NOT_NULL(rec)) {

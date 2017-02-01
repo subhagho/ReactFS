@@ -395,6 +395,12 @@ REACTFS_NS_CORE
                      */
                     virtual ~typed_index_base() = default;
 
+                    const char *get_index_name() {
+                        CHECK_STATE_AVAILABLE(state);
+                        CHECK_NOT_NULL(index_def);
+                        return index_def->get_name();
+                    }
+
                     /*!
                      * Create a new file backed data block index.
                      *

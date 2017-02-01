@@ -323,4 +323,6 @@ void com::wookler::reactfs::core::typed_block::open_index(__index_type *def) {
     string fn = string(def->block_path);
     string uuid = string(header->block_uid);
     bi->open_index(in, def->block_id, uuid, fn, this->updateable);
+
+    indexes.insert({in, bi});
 }

@@ -141,6 +141,9 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(handler);
                                 const void *d = rec->get_field(type->get_index());
                                 if (!type->is_valid_value(d)) {
+                                    LOG_DEBUG("Field validation failed. [field=%s]",
+                                              type->get_name().c_str());
+                                    handler->print(d);
                                     throw TYPE_VALID_ERROR("Field validation failed. [field=%s]",
                                                            type->get_name().c_str());
                                 }

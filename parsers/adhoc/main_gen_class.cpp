@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "common/includes/init_utils.h"
+#include "common/includes/timer.h"
 #include "schema_driver.h"
 #include "code_generator_cpp.h"
 #include "parsers/test/test_type_data.h"
@@ -29,13 +30,15 @@ main(const int argc, const char **argv) {
             __complex_type *schema = driver.translate();
             CHECK_NOT_NULL(schema);
 
+            uint32_t count = 100000;
+
             vector<mutable_test_schema *> source;
 
-            uint32_t rec_size = schema->estimate_size() * 200 * 5;
+            uint32_t rec_size = schema->estimate_size() * count * 5;
             LOG_DEBUG("Estimated record size = %d", rec_size);
 
-            for (int ii = 10; ii < 20; ii++) {
-                mutable_test_schema *ts = generate_schema(schema, ii);
+            for (int ii = 0; ii < count; ii++) {
+                mutable_test_schema *ts = generate_schema(schema, 10);
                 source.push_back(ts);
             }
 
@@ -45,28 +48,35 @@ main(const int argc, const char **argv) {
             __base_datatype_io *reader = schema->get_type_handler(__record_mode::RM_READ);
             CHECK_NOT_NULL(reader);
 
+            timer tm_s, tm_d;
             void *buffer = malloc(sizeof(char) * rec_size);
             uint64_t offset = 0;
-            for (int ii = 0; ii < 10; ii++) {
+            for (int ii = 0; ii < count; ii++) {
                 mutable_test_schema *ts = source[ii];
+                tm_s.restart();
                 mutable_record_struct *data = ts->serialize();
                 CHECK_NOT_NULL(data);
+                tm_s.pause();
                 uint64_t w_size = writer->write(buffer, data, offset, rec_size);
-                LOG_DEBUG("[%s] size=%lu", ts->get_key(), w_size);
+                if (ii == 0)
+                    LOG_DEBUG("[%s] size=%lu", ts->get_key(), w_size);
                 offset += w_size;
                 CHECK_AND_FREE(data);
 
 
             }
+            tm_s.stop();
             offset = 0;
-            for (int ii = 0; ii < 10; ii++) {
+            for (int ii = 0; ii < count; ii++) {
                 record_struct *rec = nullptr;
                 uint64_t r_size = reader->read(buffer, &rec, offset, rec_size);
                 CHECK_NOT_NULL(rec);
+                tm_d.restart();
                 test_schema *rs = new test_schema();
                 CHECK_ALLOC(rs, TYPE_NAME(test_schema));
                 rs->deserialize(rec);
-                LOG_DEBUG("[%s] size=%lu", rs->get_key(), r_size);
+                tm_d.pause();
+                // LOG_DEBUG("[%s] size=%lu", rs->get_key(), r_size);
                 mutable_test_schema *ts = source[ii];
                 POSTCONDITION(compare_test_schema::equals(rs, ts));
                 CHECK_AND_FREE(rec);
@@ -74,7 +84,11 @@ main(const int argc, const char **argv) {
                 offset += r_size;
             }
             FREE_PTR(buffer);
+            tm_d.stop();
 
+            LOG_INFO("[count=%d] Serialize time=%f msec [%lu]. De-Serialize time=%f msec [%lu]", count,
+                     ((double) tm_s.get_elapsed()) / count, tm_s.get_elapsed(),
+                     ((double) tm_d.get_elapsed()) / count, tm_d.get_elapsed());
             for (int ii = 0; ii < 10; ii++) {
                 mutable_test_schema *ts = source[ii];
                 CHECK_AND_FREE(ts);
