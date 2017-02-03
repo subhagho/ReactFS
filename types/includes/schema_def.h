@@ -539,12 +539,14 @@ REACTFS_NS_CORE
                             return this;
                         }
 
-                        virtual void get_field_path(vector<uint8_t> *path) const {
+                        virtual bool get_field_path(vector<uint8_t> *path) const {
                             CHECK_NOT_NULL(path);
+                            bool complex = false;
                             if (NOT_NULL(this->parent)) {
-                                parent->get_field_path(path);
+                                complex = parent->get_field_path(path);
                             }
                             path->push_back(this->index);
+                            return complex;
                         }
                     };
 
@@ -1071,6 +1073,7 @@ REACTFS_NS_CORE
                         char *name = nullptr;
                         __index_type_enum *type;
                         vector<__index_column *> *columns = nullptr;
+                        bool *complex_index = nullptr;
                         uint8_t *count = 0;
                         bool allocated = false;
 
@@ -1100,6 +1103,10 @@ REACTFS_NS_CORE
                             memset(this->name, 0, nl);
                             strncpy(this->name, name.c_str(), name.length());
 
+                            this->complex_index = (bool *) malloc(sizeof(bool));
+                            CHECK_ALLOC(this->complex_index, TYPE_NAME(bool));
+                            *this->complex_index = false;
+
                             this->allocated = true;
                         }
 
@@ -1116,8 +1123,17 @@ REACTFS_NS_CORE
                                 FREE_PTR(this->count);
                                 FREE_PTR(this->type);
                                 FREE_PTR(this->name);
+                                FREE_PTR(this->complex_index);
                             }
                             CHECK_AND_FREE(this->columns);
+                        }
+
+                        bool is_complex_index() const {
+                            return *complex_index;
+                        }
+
+                        void set_complex_index() {
+                            *this->complex_index = true;
                         }
 
                         const char *get_name() const {
@@ -1181,6 +1197,7 @@ REACTFS_NS_CORE
                             pos.size += buffer_utils::write_8str(buffer, &pos.offset, this->name, strlen(this->name));
 
                             pos.size += buffer_utils::write<uint8_t>(buffer, &pos.offset, *this->count);
+                            pos.size += buffer_utils::write<bool>(buffer, &pos.offset, *this->complex_index);
 
                             for (uint8_t ii = 0; ii < *count; ii++) {
                                 void *ptr = buffer_utils::increment_data_ptr(buffer, pos.offset);
@@ -1208,6 +1225,9 @@ REACTFS_NS_CORE
                             pos.size += buffer_utils::read<uint8_t>(buffer, &pos.offset, &count);
                             CHECK_NOT_NULL(count);
                             POSTCONDITION(*count > 0);
+
+                            pos.size += buffer_utils::read<bool>(buffer, &pos.offset, &complex_index);
+                            CHECK_NOT_NULL(this->complex_index);
 
                             columns = new vector<__index_column *>(*this->count);
                             CHECK_ALLOC(columns, TYPE_NAME(vector));
@@ -1355,6 +1375,7 @@ REACTFS_NS_CORE
                         uint8_t field_count = 0;
                         vector<__field_value *> *data_ptr = nullptr;
 
+
                         uint16_t
                         get_column_value(const __index_column *column, uint8_t col_index, void *buffer,
                                          uint16_t *offset) {
@@ -1497,6 +1518,8 @@ REACTFS_NS_CORE
 
                         __index_key_set *get_index_value(record_index *index) {
                             CHECK_NOT_NULL(index);
+                            PRECONDITION(!index->is_complex_index());
+
                             __index_key_set *ks = (__index_key_set *) malloc(sizeof(__index_key_set));
                             CHECK_ALLOC(ks, TYPE_NAME(__index_key_set));
                             uint16_t key_size = index->compute_index_record_size();
@@ -1516,6 +1539,16 @@ REACTFS_NS_CORE
                             }
                             POSTCONDITION(offset == *ks->key_size);
                             return ks;
+                        }
+
+                        vector<__index_key_set *> *get_index_values(record_index *index) {
+                            CHECK_NOT_NULL(index);
+                            PRECONDITION(index->is_complex_index());
+
+                            vector<__index_key_set *> *indexes = new vector<__index_key_set *>();
+                            CHECK_ALLOC(indexes, TYPE_NAME(vector));
+
+                            return indexes;
                         }
 
                         void print() {
@@ -1775,6 +1808,15 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        virtual bool get_field_path(vector<uint8_t> *path) const override {
+                            CHECK_NOT_NULL(path);
+                            bool complex = true;
+                            if (NOT_NULL(this->parent)) {
+                                parent->get_field_path(path);
+                            }
+                            path->push_back(this->index);
+                            return complex;
+                        }
                     };
 
                     class __map_type : public __native_type {
@@ -1990,6 +2032,15 @@ REACTFS_NS_CORE
                             }
                         }
 
+                        virtual bool get_field_path(vector<uint8_t> *path) const override {
+                            CHECK_NOT_NULL(path);
+                            bool complex = true;
+                            if (NOT_NULL(this->parent)) {
+                                parent->get_field_path(path);
+                            }
+                            path->push_back(this->index);
+                            return complex;
+                        }
                     };
 
                 }

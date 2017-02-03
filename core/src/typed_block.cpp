@@ -165,6 +165,15 @@ uint64_t com::wookler::reactfs::core::typed_block::write(void *source, uint32_t 
     uint64_t index = r_ptr->header->index;
     CHECK_AND_FREE(r_ptr);
 
+    if (!IS_EMPTY(indexes)) {
+        unordered_map<string, typed_index_base *>::iterator iter;
+        for (iter = indexes.begin(); iter != indexes.end(); iter++) {
+            typed_index_base *bi = iter->second;
+            CHECK_NOT_NULL(bi);
+            record_index *index_def = bi->get_index_def();
+
+        }
+    }
     return index;
 }
 

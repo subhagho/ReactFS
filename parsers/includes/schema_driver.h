@@ -448,10 +448,13 @@ REACTFS_NS_CORE
                                     CHECK_NOT_NULL(f);
 
                                     vector<uint8_t> path;
-                                    f->get_field_path(&path);
+                                    bool complex = f->get_field_path(&path);
                                     CHECK_NOT_EMPTY(path);
 
                                     index->add_index(count, &path, path.size(), kc->sort_asc, f);
+                                    if (complex) {
+                                        index->set_complex_index();
+                                    }
                                     count++;
                                     kc = kc->next;
                                 }
@@ -471,10 +474,13 @@ REACTFS_NS_CORE
                                 CHECK_NOT_NULL(f);
 
                                 vector<uint8_t> path;
-                                f->get_field_path(&path);
+                                bool complex = f->get_field_path(&path);
                                 CHECK_NOT_EMPTY(path);
 
                                 index->add_index(count, &path, path.size(), kc->sort_asc, f);
+                                if (complex) {
+                                    index->set_complex_index();
+                                }
                                 count++;
                                 kc = kc->next;
                             }

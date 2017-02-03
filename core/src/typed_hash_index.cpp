@@ -17,7 +17,7 @@ com::wookler::reactfs::core::typed_hash_index::create_index(const string &name, 
 
         Path *ip = get_index_file(filename, block_id, name);
         CHECK_NOT_NULL(ip);
-        if (ip->exists()) {
+        if (ip->exists() && overwrite) {
             LOG_INFO("Deleting index file. [file=%s]", ip->get_path().c_str());
             ip->remove();
         }

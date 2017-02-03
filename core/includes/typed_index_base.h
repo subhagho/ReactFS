@@ -81,6 +81,11 @@ REACTFS_NS_CORE
                         return *this->has_next_ptr;
                     }
 
+                    record_index *get_record_index_def() {
+                        CHECK_NOT_NULL(index_def);
+                        return index_def;
+                    }
+
                     uint64_t get_overflow_offset() {
                         CHECK_NOT_NULL(this->has_next_ptr);
                         if (*this->has_next_ptr) {
@@ -399,6 +404,12 @@ REACTFS_NS_CORE
                         CHECK_STATE_AVAILABLE(state);
                         CHECK_NOT_NULL(index_def);
                         return index_def->get_name();
+                    }
+
+                    record_index *get_index_def() {
+                        HECK_STATE_AVAILABLE(state);
+                        CHECK_NOT_NULL(index_def);
+                        return index_def;
                     }
 
                     /*!
