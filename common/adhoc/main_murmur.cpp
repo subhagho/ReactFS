@@ -125,6 +125,7 @@ int main(int argc, char **argv) {
         }
         LOG_DEBUG("Collision count = %d, No-collisions = %d, Max collisions = %d", c_count, nc_count, max_c);
 
+        unordered_map<uint8_t, uint16_t> counts;
         ofstream stream(DATA_FILENAME);
         for (uint32_t ii = 0; ii < rows.size(); ii++) {
             vector<uint16_t> v = rows[ii];
@@ -133,12 +134,22 @@ int main(int argc, char **argv) {
                     stream << " ";
                 }
                 stream << v[jj];
+                unordered_map<uint8_t, uint16_t>::iterator cit = counts.find(v[jj]);
+                if (cit != counts.end()) {
+                    cit->second += 1;
+                } else {
+                    counts.insert({v[jj], 1});
+                }
             }
             stream << "\n";
         }
         stream.flush();
         stream.close();
 
+        unordered_map<uint8_t, uint16_t>::iterator cit;
+        for (cit = counts.begin(); cit != counts.end(); cit++) {
+            LOG_WARN("[%d] = %d [%d]", cit->first, cit->second, (cit->first * cit->second));
+        }
         env_utils::dispose();
 
         exit(0);

@@ -1376,8 +1376,20 @@ REACTFS_NS_CORE
                         vector<__field_value *> *data_ptr = nullptr;
 
 
+                        uint16_t compute_key_count(const __index_column *column, uint8_t path_index) {
+                            CHECK_NOT_NULL(column->type);
+                            __base_datatype_io *h = column->type->get_type_handler(__record_mode::RM_WRITE);
+                            CHECK_NOT_NULL(h);
+
+                            __field_value *value = nullptr;
+                            uint8_t *path = column->path;
+                            for (uint8_t ii = path_index; ii < column->count; ii++) {
+
+                            }
+                        }
+
                         uint16_t
-                        get_column_value(const __index_column *column, uint8_t col_index, void *buffer,
+                        get_column_value(const __index_column *column, uint8_t path_index, void *buffer,
                                          uint16_t *offset) {
                             CHECK_NOT_NULL(column->type);
                             __base_datatype_io *h = column->type->get_type_handler(__record_mode::RM_WRITE);
@@ -1385,7 +1397,7 @@ REACTFS_NS_CORE
 
                             __field_value *value = nullptr;
                             uint8_t *path = column->path;
-                            for (uint8_t ii = col_index; ii < column->count; ii++) {
+                            for (uint8_t ii = path_index; ii < column->count; ii++) {
                                 CHECK_NOT_NULL(path);
                                 if (ii == 0) {
                                     PRECONDITION(*path < data_ptr->size());
