@@ -407,7 +407,7 @@ REACTFS_NS_CORE
                     }
 
                     record_index *get_index_def() {
-                        HECK_STATE_AVAILABLE(state);
+                        CHECK_STATE_AVAILABLE(state);
                         CHECK_NOT_NULL(index_def);
                         return index_def;
                     }
