@@ -39,6 +39,7 @@
 #define MAP_TYPE_VALUE_NAME "value"
 
 #define CHECK_NATIVE_TYPE(t) (t == __field_type::NATIVE || t == __field_type::STRING)
+#define RECORD_INDEX_BUFFER_ALLOC_SIZE 4
 
 REACTFS_NS_CORE
                 namespace types {
@@ -99,6 +100,124 @@ REACTFS_NS_CORE
                             throw BASE_ERROR("Not field type defined for value. [value=%d]", ii);
                         }
                     };
+
+
+                    typedef struct __index_column__ {
+                        uint8_t sequence = 0;
+                        uint8_t *path = nullptr;
+                        uint8_t count = 0;
+                        bool sort_asc = true;
+                        const __native_type *type = nullptr;
+                    } __index_column;
+
+
+                    typedef struct __index_key_set__ {
+                        bool allocated = false;
+                        uint8_t *key_count = nullptr;
+                        uint16_t *key_size = nullptr;
+                        void *key_data = nullptr;
+                    } __index_key_set;
+
+                    typedef struct __index_key_data__ {
+                        void *buffer = nullptr;
+                        uint16_t b_size = 0;
+                        uint16_t b_offset = 0;
+                        uint8_t count = 0;
+                        uint8_t key_count = 0;
+                        uint16_t key_size = 0;
+
+                        __index_key_set *keys = nullptr;
+                        __index_key_set *current_set = nullptr;
+                        __index_key_data__ *next = nullptr;
+
+                        bool can_add() {
+                            return (key_count < count);
+                        }
+
+                        __index_key_set *get_next() {
+                            PRECONDITION(can_add());
+                            PRECONDITION(b_offset + key_size <= b_size);
+
+                            __index_key_set *ptr = nullptr;
+                            key_count++;
+
+                            ptr = keys + key_count;
+                            *ptr->key_count = 0;
+                            ptr->allocated = true;
+                            *ptr->key_size = key_size;
+                            ptr->key_data = buffer_utils::increment_data_ptr(buffer, (b_offset + key_size));
+                            b_offset += key_size;
+
+                            current_set = ptr;
+                            return ptr;
+                        }
+
+                        void free_ptr() {
+                            FREE_PTR(buffer);
+                            FREE_PTR(keys);
+                            current_set = nullptr;
+                            next = nullptr;
+                        }
+                    } __index_key_data;
+
+                    typedef struct __index_keys__ {
+                        uint16_t count = 0;
+                        __index_key_data *key_sets = nullptr;
+                        __index_key_data *current_set = nullptr;
+
+                        __index_key_data *create(uint8_t set_count, uint16_t key_size) {
+                            PRECONDITION(set_count > 0);
+                            PRECONDITION(key_size > 0);
+
+                            __index_key_data *data = (__index_key_data *) malloc(sizeof(__index_key_data));
+                            CHECK_ALLOC(data, TYPE_NAME(__index_key_data));
+                            memset(data, 0, sizeof(__index_key_data));
+
+                            data->next = nullptr;
+                            data->key_size = key_size;
+                            data->b_size = sizeof(BYTE) * key_size * set_count;
+                            data->buffer = malloc(data->b_size);
+                            CHECK_ALLOC(data->buffer, TYPE_NAME(void * ));
+                            memset(data->buffer, 0, data->b_size);
+                            data->b_offset = 0;
+                            data->count = set_count;
+                            data->key_count = 0;
+                            data->keys = (__index_key_set *) malloc(data->count * sizeof(__index_key_set));
+                            CHECK_ALLOC(data->keys, TYPE_NAME(__index_key_set));
+                            memset(data->keys, 0, data->count * sizeof(__index_key_set));
+                            if (IS_NULL(key_sets)) {
+                                key_sets = data;
+                            } else {
+                                CHECK_NOT_NULL(current_set);
+                                current_set->next = data;
+                            }
+                            current_set = data;
+                            count += 1;
+
+                            return data;
+                        }
+
+                        __index_key_data *get(uint16_t index) {
+                            PRECONDITION(index < count);
+                            return (key_sets + index);
+                        }
+
+                        void free_ptr() {
+                            this->current_set = nullptr;
+                            __index_key_data *ptr = key_sets;
+
+                            for (uint16_t ii = 0; ii < count; ii++) {
+                                CHECK_NOT_NULL(ptr);
+                                __index_key_data *next = ptr->next;
+                                ptr->free_ptr();
+                                FREE_PTR(ptr);
+                                ptr = next;
+                            }
+                            key_sets = nullptr;
+                            current_set = nullptr;
+                            count = 0;
+                        }
+                    } __index_keys;
 
                     /*!
                      * Field definition for a native data type. (including string).
@@ -548,6 +667,33 @@ REACTFS_NS_CORE
                             path->push_back(this->index);
                             return complex;
                         }
+
+                        virtual uint16_t
+                        write_index_key(__index_keys *keys, void *value, uint8_t *path, uint8_t path_size,
+                                        uint8_t path_index) const {
+                            CHECK_NOT_NULL(keys);
+                            CHECK_NOT_NULL(keys->current_set);
+                            CHECK_NOT_NULL(keys->current_set->buffer);
+                            CHECK_NOT_NULL(this->type_handler);
+                            PRECONDITION(path_index == (path_size - 1));
+
+                            uint16_t w_size = 0;
+                            if (NOT_NULL(value)) {
+                                w_size = this->type_handler->set_key_data(keys->current_set->buffer,
+                                                                          keys->current_set->b_offset,
+                                                                          value,
+                                                                          this->type_handler->estimate_size());
+                                keys->current_set->b_offset += w_size;
+                            } else {
+                                w_size = this->type_handler->set_key_data(keys->current_set->buffer,
+                                                                          keys->current_set->b_offset,
+                                                                          nullptr,
+                                                                          this->type_handler->estimate_size());
+                                keys->current_set->b_offset += w_size;
+                            }
+
+                            return w_size;
+                        }
                     };
 
                     class __string_type : public __native_type {
@@ -624,6 +770,36 @@ REACTFS_NS_CORE
                                 }
                             }
                             return true;
+                        }
+
+                        virtual uint16_t
+                        write_index_key(__index_keys *keys, void *value, uint8_t *path, uint8_t path_size,
+                                        uint8_t path_index) const override {
+                            CHECK_NOT_NULL(keys);
+                            CHECK_NOT_NULL(keys->current_set);
+                            CHECK_NOT_NULL(keys->current_set->buffer);
+                            CHECK_NOT_NULL(this->type_handler);
+                            PRECONDITION(path_index == (path_size - 1));
+
+
+                            uint16_t e_size = this->estimate_size();
+                            POSTCONDITION((keys->current_set->b_offset + e_size) <= keys->current_set->b_size);
+                            uint16_t w_size = 0;
+                            if (NOT_NULL(value)) {
+                                w_size = this->type_handler->set_key_data(keys->current_set->buffer,
+                                                                          keys->current_set->b_offset,
+                                                                          value,
+                                                                          e_size);
+                                keys->current_set->b_offset += w_size;
+                            } else {
+                                w_size = this->type_handler->set_key_data(keys->current_set->buffer,
+                                                                          keys->current_set->b_offset,
+                                                                          nullptr,
+                                                                          e_size);
+                                keys->current_set->b_offset += w_size;
+                            }
+
+                            return w_size;
                         }
                     };
 
@@ -755,6 +931,13 @@ REACTFS_NS_CORE
                             name_index.insert({name, type});
                         }
 
+                        __native_type *get_field_by_index(const uint8_t index) const {
+                            unordered_map<uint8_t, __native_type *>::const_iterator fiter = fields.find(index);
+                            if (fiter != fields.end()) {
+                                return fiter->second;
+                            }
+                            return nullptr;
+                        }
 
                     public:
                         /*!
@@ -1050,23 +1233,24 @@ REACTFS_NS_CORE
                             }
                             return nullptr;
                         }
+
+                        virtual uint16_t
+                        write_index_key(__index_keys *keys, void *value, uint8_t *path, uint8_t path_size,
+                                        uint8_t path_index) const override {
+                            CHECK_NOT_NULL(keys);
+                            CHECK_NOT_NULL(keys->current_set);
+                            CHECK_NOT_NULL(keys->current_set->buffer);
+                            PRECONDITION(path_index < (path_size - 1));
+
+                            uint8_t index = *(path + path_index);
+                            POSTCONDITION(index >= 0 && index < fields.size());
+
+                            __native_type *type = get_field_by_index(index);
+                            CHECK_NOT_NULL(type);
+
+                            return type->write_index_key(keys, value, path, path_size, (path_index + 1));
+                        }
                     };
-
-                    typedef struct __index_column__ {
-                        uint8_t sequence = 0;
-                        uint8_t *path = nullptr;
-                        uint8_t count = 0;
-                        bool sort_asc = true;
-                        const __native_type *type = nullptr;
-                    } __index_column;
-
-
-                    typedef struct __index_key_set__ {
-                        bool allocated = false;
-                        uint8_t *key_count = nullptr;
-                        uint16_t *key_size = nullptr;
-                        void *key_data = nullptr;
-                    } __index_key_set;
 
                     class record_index {
                     private:
@@ -1376,18 +1560,6 @@ REACTFS_NS_CORE
                         vector<__field_value *> *data_ptr = nullptr;
 
 
-                        uint16_t compute_key_count(const __index_column *column, uint8_t path_index) {
-                            CHECK_NOT_NULL(column->type);
-                            __base_datatype_io *h = column->type->get_type_handler(__record_mode::RM_WRITE);
-                            CHECK_NOT_NULL(h);
-
-                            __field_value *value = nullptr;
-                            uint8_t *path = column->path;
-                            for (uint8_t ii = path_index; ii < column->count; ii++) {
-
-                            }
-                        }
-
                         uint16_t
                         get_column_value(const __index_column *column, uint8_t path_index, void *buffer,
                                          uint16_t *offset) {
@@ -1397,37 +1569,28 @@ REACTFS_NS_CORE
 
                             __field_value *value = nullptr;
                             uint8_t *path = column->path;
-                            for (uint8_t ii = path_index; ii < column->count; ii++) {
-                                CHECK_NOT_NULL(path);
-                                if (ii == 0) {
-                                    PRECONDITION(*path < data_ptr->size());
-                                    value = (*data_ptr)[*path];
-                                }
-                                if (IS_NULL(value)) {
-                                    if (h->get_type() != __type_def_enum::TYPE_STRING) {
-                                        return h->set_key_data(buffer, *offset, nullptr, 0);
-                                    } else {
-                                        const __string_type *st = static_cast<const __string_type *>(column->type);
-                                        CHECK_CAST(st, TYPE_NAME(__native_type), TYPE_NAME(__string_type));
-                                        return h->set_key_data(buffer, *offset, nullptr, st->estimate_size());
-                                    }
-                                } else if (ii == column->count - 1) {
-                                    PRECONDITION(__type_enum_helper::is_native(h->get_type()));
-                                    if (h->get_type() != __type_def_enum::TYPE_STRING) {
-                                        return h->set_key_data(buffer, *offset, value->data, 0);
-                                    } else {
-                                        const __string_type *st = static_cast<const __string_type *>(column->type);
-                                        CHECK_CAST(st, TYPE_NAME(__native_type), TYPE_NAME(__string_type));
-                                        return h->set_key_data(buffer, *offset, value->data, st->estimate_size());
-                                    }
-                                } else {
-                                    PRECONDITION(h->get_type() == __type_def_enum::TYPE_STRUCT);
-                                    mutable_record_struct *__ptr = static_cast<mutable_record_struct *>(value->data);
-                                    CHECK_CAST(__ptr, TYPE_NAME(void * ), TYPE_NAME(mutable_record_struct));
-                                    return __ptr->get_column_value(column, (ii + 1), buffer, offset);
-                                }
+                            CHECK_NOT_NULL(path);
+                            if (path_index == 0) {
+                                PRECONDITION(*path < data_ptr->size());
+                                value = (*data_ptr)[*path];
+                            }
+                            if (path_index == column->count - 1) {
+                                PRECONDITION(__type_enum_helper::is_native(h->get_type()));
+                                return h->set_key_data(buffer, *offset, value->data, column->type->estimate_size());
+                            } else {
+                                PRECONDITION(h->get_type() == __type_def_enum::TYPE_STRUCT);
+                                mutable_record_struct *__ptr = static_cast<mutable_record_struct *>(value->data);
+                                CHECK_CAST(__ptr, TYPE_NAME(void * ), TYPE_NAME(mutable_record_struct));
+                                return __ptr->get_column_value(column, (path_index + 1), buffer, offset);
                             }
                             throw BASE_ERROR("Error finding index field value.");
+                        }
+
+
+                        uint16_t
+                        get_column_value(const __index_column *column, uint8_t path_index, __index_key_data *node,
+                                         __index_keys *keys) {
+
                         }
 
                     public:
@@ -1553,14 +1716,24 @@ REACTFS_NS_CORE
                             return ks;
                         }
 
-                        vector<__index_key_set *> *get_index_values(record_index *index) {
+                        __index_keys *get_index_values(record_index *index) {
                             CHECK_NOT_NULL(index);
                             PRECONDITION(index->is_complex_index());
 
-                            vector<__index_key_set *> *indexes = new vector<__index_key_set *>();
-                            CHECK_ALLOC(indexes, TYPE_NAME(vector));
+                            uint16_t key_size = index->compute_index_record_size();
+                            POSTCONDITION(key_size > 0);
 
-                            return indexes;
+                            __index_keys *keys = (__index_keys *) malloc(sizeof(__index_keys));
+                            CHECK_ALLOC(keys, TYPE_NAME(__index_keys));
+                            memset(keys, 0, sizeof(__index_keys));
+
+                            uint16_t offset = 0;
+                            for (uint8_t ii = 0; ii < index->get_column_count(); ii++) {
+                                const __index_column *col = index->get_index(ii);
+                                CHECK_NOT_NULL(col);
+                            }
+
+                            return keys;
                         }
 
                         void print() {
@@ -1829,6 +2002,24 @@ REACTFS_NS_CORE
                             path->push_back(this->index);
                             return complex;
                         }
+
+                        virtual uint16_t
+                        write_index_key(__index_keys *keys, void *value, uint8_t *path, uint8_t path_size,
+                                        uint8_t path_index) const override {
+                            CHECK_NOT_NULL(keys);
+                            CHECK_NOT_NULL(keys->current_set);
+                            CHECK_NOT_NULL(keys->current_set->buffer);
+
+                            if (__type_enum_helper::is_native(this->inner_type)) {
+                                PRECONDITION(path_index == (path_size - 1));
+                            } else if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
+                                PRECONDITION(path_index < (path_size - 1));
+                            }
+                            __index_key_data *current_ptr = keys->current_set;
+                            
+                            throw BASE_ERROR("Invalid inner type for index data. [type=%s]",
+                                             __type_enum_helper::get_datatype(this->inner_type).c_str());
+                        }
                     };
 
                     class __map_type : public __native_type {
@@ -2055,6 +2246,38 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    class index_key_utils {
+                    private:
+
+
+                    public:
+                        static __index_key_set *get_unique_key(mutable_record_struct *data, record_index *index) {
+                            CHECK_NOT_NULL(data);
+                            CHECK_NOT_NULL(index);
+
+                            return data->get_index_value(index);
+                        }
+
+                        static __index_keys *get_keys(mutable_record_struct *data, record_index *index) {
+                            CHECK_NOT_NULL(data);
+                            CHECK_NOT_NULL(index);
+
+                            uint16_t key_size = index->compute_index_record_size();
+                            POSTCONDITION(key_size > 0);
+
+                            __index_keys *keys = (__index_keys *) malloc(sizeof(__index_keys));
+                            CHECK_ALLOC(keys, TYPE_NAME(__index_keys));
+                            memset(keys, 0, sizeof(__index_keys));
+
+                            uint16_t offset = 0;
+                            for (uint8_t ii = 0; ii < index->get_column_count(); ii++) {
+                                const __index_column *col = index->get_index(ii);
+                                CHECK_NOT_NULL(col);
+                            }
+
+                            return keys;
+                        }
+                    };
                 }
 REACTFS_NS_CORE_END
 #endif //REACTFS_SCHEMA_DEF_H

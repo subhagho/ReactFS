@@ -10,6 +10,7 @@
 #include "common/includes/ext/murmur3.h"
 
 #define KEY_COUNT 200000
+#define OVERFLOW_SIZE 8
 #define DATA_FILENAME "/tmp/collision.dat"
 
 using namespace com::wookler::reactfs::common;
@@ -147,9 +148,14 @@ int main(int argc, char **argv) {
         stream.close();
 
         unordered_map<uint8_t, uint16_t>::iterator cit;
+        uint32_t overflow = 0;
         for (cit = counts.begin(); cit != counts.end(); cit++) {
+            if (cit->first > OVERFLOW_SIZE) {
+                overflow += (cit->first * cit->second);
+            }
             LOG_WARN("[%d] = %d [%d]", cit->first, cit->second, (cit->first * cit->second));
         }
+        LOG_WARN("Total overflows = %d", overflow);
         env_utils::dispose();
 
         exit(0);
