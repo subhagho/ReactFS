@@ -102,14 +102,6 @@ REACTFS_NS_CORE
                     };
 
 
-                    typedef struct __index_column__ {
-                        uint8_t sequence = 0;
-                        uint8_t *path = nullptr;
-                        uint8_t count = 0;
-                        bool sort_asc = true;
-                        const __native_type *type = nullptr;
-                    } __index_column;
-
 
                     typedef struct __index_key_set__ {
                         bool allocated = false;
@@ -119,6 +111,7 @@ REACTFS_NS_CORE
                     } __index_key_set;
 
                     typedef struct __index_key_data__ {
+                        bool used = true;
                         void *buffer = nullptr;
                         uint16_t b_size = 0;
                         uint16_t b_offset = 0;
@@ -695,6 +688,14 @@ REACTFS_NS_CORE
                             return w_size;
                         }
                     };
+
+                    typedef struct __index_column__ {
+                        uint8_t sequence = 0;
+                        uint8_t *path = nullptr;
+                        uint8_t count = 0;
+                        bool sort_asc = true;
+                        const __native_type *type = nullptr;
+                    } __index_column;
 
                     class __string_type : public __native_type {
                     private:
@@ -2009,14 +2010,22 @@ REACTFS_NS_CORE
                             CHECK_NOT_NULL(keys);
                             CHECK_NOT_NULL(keys->current_set);
                             CHECK_NOT_NULL(keys->current_set->buffer);
+                            CHECK_NOT_NULL(this->write_handler);
+
+                            __index_key_data *current_ptr = keys->current_set;
 
                             if (__type_enum_helper::is_native(this->inner_type)) {
                                 PRECONDITION(path_index == (path_size - 1));
+                                if (IS_NULL(value)) {
+                                    return inner->write_index_key(keys, value, path, path_size, path_index);
+                                } else {
+
+                                }
                             } else if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
                                 PRECONDITION(path_index < (path_size - 1));
+
                             }
-                            __index_key_data *current_ptr = keys->current_set;
-                            
+
                             throw BASE_ERROR("Invalid inner type for index data. [type=%s]",
                                              __type_enum_helper::get_datatype(this->inner_type).c_str());
                         }

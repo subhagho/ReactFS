@@ -225,8 +225,8 @@ REACTFS_NS_CORE
                         }
 
                         virtual uint16_t
-                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
-                            throw BASE_ERROR("Method is only applicable to native types.");
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
+                            throw BASE_ERROR("Set key data not implemented for structs.");
                         }
 
                         void print(const void *value) const override {
@@ -245,6 +245,14 @@ REACTFS_NS_CORE
                         }
                     };
 
+                    template<typename __T>
+                    class __dt_sized_type : public __datatype_io<__T> {
+                    public:
+                        __dt_sized_type(__type_def_enum type) : __datatype_io<__T>(type) {}
+
+                        virtual uint32_t get_size(const void *value) const = 0;
+                    };
+
                     /*!
                      * List type is a collection of basic types or structs.
                      * Internally implemented as a vector of type pointers.
@@ -253,7 +261,7 @@ REACTFS_NS_CORE
                      * @tparam __type - Datatype enum of the array element type.
                      */
                     template<typename __T, __type_def_enum __type>
-                    class __dt_list : public __datatype_io<vector<__T *>> {
+                    class __dt_list : public __dt_sized_type<vector<__T *>> {
                     protected:
                         /// Datatype of the array elements (should be basic types or structs).
                         __type_def_enum inner_type = __type;
@@ -265,7 +273,7 @@ REACTFS_NS_CORE
                          * Default constructor.
                          *
                          */
-                        __dt_list(__native_type *type) : __datatype_io<vector<__T *>>(
+                        __dt_list(__native_type *type) : __dt_sized_type<vector<__T *>>(
                                 __type_def_enum::TYPE_LIST) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(this->inner_type));
                             if (this->inner_type == __type_def_enum::TYPE_STRUCT) {
@@ -416,6 +424,17 @@ REACTFS_NS_CORE
                             return (r_size * COLLECTION_SIZE_FACTOR);
                         }
 
+                        virtual uint32_t get_size(const void *value) const override {
+                            if (NOT_NULL(value)) {
+                                const vector<__T *> *data = static_cast< const vector<__T *> *>(value);
+                                CHECK_NOT_NULL(data);
+                                if (IS_EMPTY_P(data)) {
+                                    return 0;
+                                }
+                                return data->size();
+                            }
+                            return 0;
+                        }
 
                         void print(const void *value) const override {
 
@@ -499,7 +518,7 @@ REACTFS_NS_CORE
                      * @tparam __value_type - Value datatype enum.
                      */
                     template<typename __K, __type_def_enum __key_type, typename __V, __type_def_enum __value_type>
-                    class __dt_map : public __datatype_io<unordered_map<__K, __V *>> {
+                    class __dt_map : public __dt_sized_type<unordered_map<__K, __V *>> {
                     protected:
                         /// Datatype enum of the map key.
                         __type_def_enum key_type = __key_type;
@@ -514,7 +533,7 @@ REACTFS_NS_CORE
                         /*!<constructor
                          * Default empty constructor.
                          */
-                        __dt_map(__native_type *v_type) : __datatype_io<unordered_map<__K, __V *>>(
+                        __dt_map(__native_type *v_type) : __dt_sized_type<unordered_map<__K, __V *>>(
                                 __type_def_enum::TYPE_MAP) {
                             PRECONDITION(__type_enum_helper::is_inner_type_valid(value_type));
                             PRECONDITION(__type_enum_helper::is_native(key_type));
@@ -693,6 +712,18 @@ REACTFS_NS_CORE
                             return ((k_size * COLLECTION_SIZE_FACTOR) + (v_size * COLLECTION_SIZE_FACTOR));
                         }
 
+
+                        virtual uint32_t get_size(const void *value) const override {
+                            if (IS_NULL(value)) {
+                                return 0;
+                            }
+                            const unordered_map<__K, __V *> *data = static_cast<const unordered_map<__K, __V *> *>(value);
+                            CHECK_NOT_NULL(data);
+                            if (IS_EMPTY_P(data)) {
+                                return 0;
+                            }
+                            return data->size();
+                        }
 
                         void print(const void *value) const override {
                             cout << "************************" << " MAP " << "************************\n";

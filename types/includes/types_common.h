@@ -473,7 +473,7 @@ REACTFS_NS_CORE
                         virtual void print(const void *value) const = 0;
 
                         virtual uint16_t
-                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) = 0;
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) = 0;
                     };
 
                     /*!
@@ -565,8 +565,9 @@ REACTFS_NS_CORE
                         }
 
                         virtual uint16_t
-                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
-                            throw BASE_ERROR("Method is only applicable to native types.");
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
+                            throw BASE_ERROR("No default implementation define. [type=%s]",
+                                             __type_enum_helper::get_datatype(this->type).c_str());
                         }
                     };
 
@@ -661,7 +662,8 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
                                 memcpy(ptr, value, sizeof(BYTE));
@@ -769,7 +771,8 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
                                 memcpy(ptr, value, sizeof(char));
@@ -867,7 +870,8 @@ REACTFS_NS_CORE
                             return false;
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
                                 memcpy(ptr, value, sizeof(bool));
@@ -975,7 +979,8 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
                                 memcpy(ptr, value, sizeof(short));
@@ -1083,7 +1088,8 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
                                 memcpy(ptr, value, sizeof(int));
@@ -1191,7 +1197,8 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
                                 memcpy(ptr, value, sizeof(long));
@@ -1299,7 +1306,8 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
                                 memcpy(ptr, value, sizeof(uint64_t));
@@ -1473,7 +1481,8 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
                                 memcpy(ptr, value, sizeof(float));
@@ -1581,7 +1590,8 @@ REACTFS_NS_CORE
                             }
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
                                 memcpy(ptr, value, sizeof(double));
@@ -1773,7 +1783,8 @@ REACTFS_NS_CORE
                             return (sizeof(uint8_t) + (sizeof(char) * d->length()));
                         }
 
-                        uint16_t set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size) override {
+                        uint16_t
+                        set_key_data(void *buffer, uint16_t offset, const void *value, uint8_t size, ...) override {
                             PRECONDITION(size > 0)
                             void *ptr = buffer_utils::increment_data_ptr(buffer, offset);
                             if (NOT_NULL(value)) {
