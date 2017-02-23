@@ -17,6 +17,8 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <mutex>
+
 #if defined(__unix)
 #include <malloc.h>
 #include <stdlib.h>
@@ -135,6 +137,7 @@ namespace com {
 #define REACTFS_NS_COMMON REACTFS_NS namespace common {
 #define REACTFS_NS_COMMON_END REACTFS_NS_END }
 
+#define LOCK_GUARD(n) std::lock_guard<std::mutex> lock(n);
 #define REACTFS_NS_PREFIX com::wookler::reactfs
 #define REACTFS_NS_COMMON_PREFIX REACTFS_NS_PREFIX::common
 
