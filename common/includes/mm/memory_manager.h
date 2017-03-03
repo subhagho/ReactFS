@@ -25,7 +25,7 @@ REACTFS_NS_COMMON
                         uint32_t *used = nullptr;
                         memory_block *next = nullptr;
                         void *overflow_ptr = nullptr;
-
+                        uint32_t write_offset = 0;
                     public:
                         memory_block(const uint32_t size, void *ptr) {
                             PRECONDITION(size > 0);
@@ -74,9 +74,39 @@ REACTFS_NS_COMMON
                             }
                         }
 
-                        void *get() {
+                        const void *get(uint32_t offset = 0) {
                             PRECONDITION(*used == used_flag);
-                            return data_ptr;
+                            if (offset == 0)
+                                return data_ptr;
+                            else {
+                                PRECONDITION(offset < this->write_offset);
+                                void *ptr = buffer_utils::increment_data_ptr(this->data_ptr, offset);
+                                return ptr;
+                            }
+                        }
+
+                        void append(void *data, uint32_t size) {
+                            PRECONDITION(*used == used_flag);
+                            PRECONDITION(size > 0);
+                            PRECONDITION(this->size > (this->write_offset + sizeof(uint32_t) + size));
+                            CHECK_NOT_NULL(data);
+
+                            void *ptr = buffer_utils::increment_data_ptr(this->data_ptr, write_offset);
+                            memcpy(ptr, data, size);
+                            this->write_offset += size;
+                        }
+
+                        void write(void *data, uint32_t offset, uint32_t size) {
+                            PRECONDITION(*used == used_flag);
+                            PRECONDITION(size > 0);
+                            PRECONDITION(this->size > (offset + sizeof(uint32_t) + size));
+                            CHECK_NOT_NULL(data);
+
+                            void *ptr = buffer_utils::increment_data_ptr(this->data_ptr, offset);
+                            memcpy(ptr, data, size);
+                            if (offset + size > this->write_offset) {
+                                this->write_offset = offset + size;
+                            }
                         }
 
                         void set_next(memory_block *next) {
@@ -89,6 +119,18 @@ REACTFS_NS_COMMON
 
                         bool has_next() {
                             return NOT_NULL(this->next);
+                        }
+
+                        void set_overflow(void *overflow_ptr) {
+                            this->overflow_ptr = overflow_ptr;
+                        }
+
+                        void *get_overflow() {
+                            return overflow_ptr;
+                        }
+
+                        bool has_overflow() {
+                            return NOT_NULL(this->overflow_ptr);
                         }
                     };
 
@@ -227,6 +269,17 @@ REACTFS_NS_COMMON
                         uint32_t current_array_size = 0;
                         vector<mblock_pool *> blocks;
 
+                        mblock_pool *allocate() {
+                            PRECONDITION(current_array_size < max_array_size);
+
+                            mblock_pool *mp = new mblock_pool(block_size, min_array_size);
+                            CHECK_ALLOC(mp, TYPE_NAME(mblock_pool));
+
+                            blocks.push_back(mp);
+
+                            return mp;
+                        }
+
                     public:
                         memory_array(const uint32_t block_size, const uint32_t min_size, const uint32_t max_size) {
                             LOCK_GUARD(__lock);
@@ -257,8 +310,8 @@ REACTFS_NS_COMMON
                             if (current_array_size == min_array_size) {
                                 return;
                             }
-                            uint32_t size = current_array_size;
-                            while (size > min_array_size) {
+                            uint32_t size = min_array_size;
+                            while (size > 0) {
                                 vector<mblock_pool *>::iterator iter;
                                 for (iter = blocks.begin(); iter != blocks.end(); iter++) {
                                     mblock_pool *mp = *iter;
