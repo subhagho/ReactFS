@@ -6,6 +6,7 @@
 
 #include "common/includes/common_utils.h"
 #include "common/includes/__threads.h"
+#include "common/includes/mm/memory_manager.h"
 
 using namespace std;
 using namespace com::wookler::reactfs::common;

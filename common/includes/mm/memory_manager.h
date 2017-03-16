@@ -85,7 +85,7 @@ REACTFS_NS_COMMON
                             }
                         }
 
-                        void append(void *data, uint32_t size) {
+                        void append(const void *data, uint32_t size) {
                             PRECONDITION(*used == used_flag);
                             PRECONDITION(size > 0);
                             PRECONDITION(this->size > (this->write_offset + sizeof(uint32_t) + size));
@@ -96,7 +96,7 @@ REACTFS_NS_COMMON
                             this->write_offset += size;
                         }
 
-                        void write(void *data, uint32_t offset, uint32_t size) {
+                        void write(const void *data, uint32_t offset, uint32_t size) {
                             PRECONDITION(*used == used_flag);
                             PRECONDITION(size > 0);
                             PRECONDITION(this->size > (offset + sizeof(uint32_t) + size));
@@ -134,8 +134,38 @@ REACTFS_NS_COMMON
                         }
                     };
 
+                    template<typename __T>
+                    class typed_memory_block : public memory_block {
+                    public:
+                        typed_memory_block(const uint32_t size, void *ptr) : memory_block(size, ptr) {
+
+                        }
+
+                        uint32_t get_size() {
+                            return sizeof(__T);
+                        }
+
+                        uint32_t append(const __T *value) {
+                            memory_block::append(value, sizeof(__T));
+                        }
+
+                        uint32_t write(const __T *value, uint32_t offset) {
+                            memory_block::write(value, offset, sizeof(__T));
+                            return sizeof(__T);
+                        }
+
+                        const __T *get_value(uint32_t offset = 0) {
+                            uint32_t r_offset = offset * sizeof(__T);
+                            const void *ptr = memory_block::get(r_offset);
+                            if (NOT_NULL(ptr)) {
+                                return static_cast<const __T *>(ptr);
+                            }
+                            return nullptr;
+                        }
+                    };
+
                     class mblock_pool {
-                    private:
+                    protected:
                         void *base_ptr = nullptr;
                         memory_block *head = nullptr;
                         memory_block *used_blocks = nullptr;
@@ -193,14 +223,25 @@ REACTFS_NS_COMMON
                             }
                         }
 
-                    public:
-                        mblock_pool(uint32_t block_size, uint32_t count) {
+                        void allocate(uint32_t block_size, uint32_t count) {
                             PRECONDITION(block_size > 0);
                             PRECONDITION(count > 0);
 
                             uint32_t size = (block_size + sizeof(uint32_t)) * count;
                             base_ptr = malloc(sizeof(BYTE) * size);
                             CHECK_ALLOC(base_ptr, TYPE_NAME(void * ));
+
+                            this->block_size = block_size;
+                            this->count = count;
+                        }
+
+                        mblock_pool() {
+
+                        }
+
+                    public:
+                        mblock_pool(uint32_t block_size, uint32_t count) {
+                            allocate(block_size, count);
 
                             void *ptr = base_ptr;
                             memory_block *mb = nullptr;
@@ -257,6 +298,42 @@ REACTFS_NS_COMMON
 
                             remove_used_block(used_blocks, block);
                             add_free_block(block);
+                        }
+                    };
+
+                    template<typename __T>
+                    class typed_mblock_pool : public mblock_pool {
+
+                    public:
+                        typed_mblock_pool(uint32_t block_rows, uint32_t count) {
+                            allocate((block_rows * sizeof(__T)), count);
+
+                            void *ptr = base_ptr;
+                            typed_memory_block<__T> *mb = nullptr;
+                            typed_memory_block<__T> *last = nullptr;
+                            for (uint32_t ii = 0; ii < count; ii++) {
+                                mb = new typed_memory_block<__T>(block_size, ptr);
+                                CHECK_ALLOC(mb, TYPE_NAME(memory_block));
+                                if (IS_NULL(head)) {
+                                    head = mb;
+                                } else {
+                                    CHECK_NOT_NULL(last);
+                                    last->set_next(mb);
+                                }
+                                last = mb;
+                                ptr = buffer_utils::increment_data_ptr(ptr, (block_size + sizeof(uint32_t)));
+                            }
+                            free_blocks = head;
+                        }
+
+                        typed_memory_block<__T> *get_free_block() {
+                            memory_block *block = mblock_pool::get_free_block();
+                            if (NOT_NULL(block)) {
+                                typed_memory_block<__T> *tb = dynamic_cast<typed_memory_block<__T> *>(block);
+                                CHECK_CAST(tb, TYPE_NAME(memory_block), TYPE_NAME(typed_memory_block));
+                                return tb;
+                            }
+                            return nullptr;
                         }
                     };
 
